@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
@@ -7,6 +7,8 @@ import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProgramExercise {
   id: string;
