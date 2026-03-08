@@ -212,6 +212,36 @@ export type Database = {
         }
         Relationships: []
       }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          items: Json
+          status: string | null
+          total_coins_used: number | null
+          total_price: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          items: Json
+          status?: string | null
+          total_coins_used?: number | null
+          total_price: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          status?: string | null
+          total_coins_used?: number | null
+          total_price?: number
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       payments: {
         Row: {
           amount: number
