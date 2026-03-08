@@ -49,7 +49,10 @@ export function useWeightTracking() {
       .update({ current_weight: weightKg })
       .eq('id', user.id);
 
-    if (profileError) return { error: profileError.message };
+    if (profileError) {
+      console.error('Profile update error:', profileError);
+      return { error: profileError.message };
+    }
 
     await refreshProfile();
     await fetchHistory();
