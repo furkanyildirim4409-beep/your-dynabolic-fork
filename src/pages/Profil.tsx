@@ -29,6 +29,7 @@ const Profil = () => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
+  const macros = useMacros();
   
   // Base values from real data or defaults
   const hasRealBodyFat = latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0;
