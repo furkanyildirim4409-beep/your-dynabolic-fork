@@ -33,6 +33,8 @@ const parseWorkoutDate = (dateStr: string): Date => {
 };
 
 const WorkoutCalendar = () => {
+  const { data: workoutHistory = [] } = useWorkoutHistory();
+  const { data: assignedWorkouts = [] } = useAssignedWorkouts();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [slideDirection, setSlideDirection] = useState(0);
   const [selectedDay, setSelectedDay] = useState<CalendarDayData | null>(null);
