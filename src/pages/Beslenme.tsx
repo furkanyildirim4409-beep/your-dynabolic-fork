@@ -635,6 +635,7 @@ const Beslenme = () => {
   }, [logs, logsLoading]);
 
   const waterGoal = 3.5;
+  const waterIntake = totalMl / 1000;
   const progress = (waterIntake / waterGoal) * 100;
 
   const openMealScanner = () => {
