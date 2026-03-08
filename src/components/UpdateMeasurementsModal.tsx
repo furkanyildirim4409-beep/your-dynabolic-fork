@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { calcNavyBodyFat, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { calcNavyBodyFat, calcMuscleMass, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { useAuth } from "@/context/AuthContext";
 import { Ruler, Calculator } from "lucide-react";
 
 interface Props {
@@ -26,15 +27,17 @@ const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: 
 
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const { latest, saveMeasurement } = useBodyMeasurements();
+  const { profile } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const weightKg = profile?.current_weight ? Number(profile.current_weight) : null;
 
   useEffect(() => {
     if (isOpen) {
       if (latest) {
         const pre: Record<string, string> = {};
         fields.forEach(({ key }) => {
-          // Skip pre-filling body_fat_pct if it's negative (invalid)
           const val = latest[key as keyof typeof latest];
           if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
             pre[key] = String(val);
@@ -50,6 +53,13 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const navyEstimate =
     form.waist && form.neck && !form.body_fat_pct
       ? calcNavyBodyFat(Number(form.waist), Number(form.neck))
+      : null;
+
+  // Estimate muscle mass from BF% + weight
+  const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
+  const muscleEstimate =
+    !form.muscle_mass_kg && effectiveBf && weightKg
+      ? calcMuscleMass(weightKg, effectiveBf)
       : null;
 
   // Validate ranges
@@ -79,7 +89,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         const v = form[key];
         (input as any)[key] = v ? Number(v) : null;
       });
-      await saveMeasurement(input);
+      await saveMeasurement(input, weightKg);
       toast({ title: "Ölçümler kaydedildi ✅" });
       onClose();
     } catch (e: any) {
@@ -121,13 +131,26 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           })}
         </div>
 
-        {navyEstimate != null && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
-            <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
-            <p className="text-xs text-foreground">
-              Navy formülü tahmini yağ oranı:{" "}
-              <span className="font-display text-primary">%{navyEstimate}</span>
-            </p>
+        {(navyEstimate != null || muscleEstimate != null) && (
+          <div className="mt-3 space-y-2">
+            {navyEstimate != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+                <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Tahmini yağ oranı:{" "}
+                  <span className="font-display text-primary">%{navyEstimate}</span>
+                </p>
+              </div>
+            )}
+            {muscleEstimate != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+                <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Tahmini kas kütlesi ({weightKg}kg × %{effectiveBf} yağ):{" "}
+                  <span className="font-display text-primary">{muscleEstimate} kg</span>
+                </p>
+              </div>
+            )}
           </div>
         )}
 
