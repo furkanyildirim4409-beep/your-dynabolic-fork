@@ -29,10 +29,16 @@ const Profil = () => {
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
   
-  // Derive waistScale from real data or timeline slider
-  const waistScale = latestMeasurement?.waist
-    ? Number(latestMeasurement.waist) / 85
-    : 1.2 - (timelineValue[0] / 100) * 0.35;
+  // Base values from real data or defaults
+  const currentBodyFat = latestMeasurement?.body_fat_pct ? Number(latestMeasurement.body_fat_pct) : 20;
+  const currentMuscleMass = latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : 70;
+  const currentWaist = latestMeasurement?.waist ? Number(latestMeasurement.waist) : 85;
+
+  // Timeline slider always controls projection — interpolate from current toward goal
+  const progress = timelineValue[0] / 100;
+  const goalWaist = currentWaist * 0.85; // 15% waist reduction target
+  const projectedWaist = currentWaist - (currentWaist - goalWaist) * progress;
+  const waistScale = projectedWaist / 85;
 
   const bodyStats = [
     { label: "Boy", value: "182 cm" },
