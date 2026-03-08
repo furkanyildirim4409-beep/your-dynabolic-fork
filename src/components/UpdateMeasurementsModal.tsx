@@ -3,10 +3,12 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { calcNavyBodyFat, calcMuscleMass, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { calcNavyBodyFat, calcMuscleMass, calcBMR, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
 import { useAuth } from "@/context/AuthContext";
-import { Ruler, Calculator } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { Ruler, Calculator, UserCog } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -25,11 +27,25 @@ const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: 
   { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg", min: 20, max: 120, placeholder: "ör: 70" },
 ];
 
+const activityOptions = [
+  { value: "sedentary", label: "Hareketsiz", desc: "Masa başı iş, egzersiz yok" },
+  { value: "light", label: "Hafif Aktif", desc: "Haftada 1-3 gün" },
+  { value: "moderate", label: "Orta Aktif", desc: "Haftada 3-5 gün" },
+  { value: "active", label: "Aktif", desc: "Haftada 6-7 gün" },
+  { value: "very_active", label: "Çok Aktif", desc: "Günde 2 antrenman" },
+];
+
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const { latest, saveMeasurement } = useBodyMeasurements();
-  const { profile } = useAuth();
+  const { profile, refreshProfile, user } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const profileAny = profile as Record<string, unknown> | null;
+  const [heightCm, setHeightCm] = useState("");
+  const [birthDate, setBirthDate] = useState("");
+  const [gender, setGender] = useState("male");
+  const [activityLevel, setActivityLevel] = useState("moderate");
 
   const weightKg = profile?.current_weight ? Number(profile.current_weight) : null;
 
@@ -38,7 +54,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       if (latest) {
         const pre: Record<string, string> = {};
         fields.forEach(({ key }) => {
-          if (key === "muscle_mass_kg") return; // always recompute from weight + BF unless user enters manually
+          if (key === "muscle_mass_kg") return;
           const val = latest[key as keyof typeof latest];
           if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
             pre[key] = String(val);
@@ -48,22 +64,33 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       } else {
         setForm({});
       }
+
+      setHeightCm(profileAny?.height_cm ? String(profileAny.height_cm) : "");
+      setBirthDate(profileAny?.birth_date ? String(profileAny.birth_date) : "");
+      setGender((profileAny?.gender as string) || "male");
+      setActivityLevel((profileAny?.activity_level as string) || "moderate");
     }
-  }, [isOpen, latest]);
+  }, [isOpen, latest, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level]);
 
   const navyEstimate =
     form.waist && form.neck && !form.body_fat_pct
-      ? calcNavyBodyFat(Number(form.waist), Number(form.neck))
+      ? calcNavyBodyFat(Number(form.waist), Number(form.neck), heightCm ? Number(heightCm) : undefined)
       : null;
 
-  // Estimate muscle mass from BF% + weight
   const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
   const muscleEstimate =
     effectiveBf != null && weightKg != null
       ? calcMuscleMass(weightKg, effectiveBf)
       : null;
 
-  // Validate ranges
+  const previewAge = birthDate
+    ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+  const previewBMR =
+    weightKg && heightCm && previewAge
+      ? calcBMR(weightKg, Number(heightCm), previewAge, gender as "male" | "female")
+      : null;
+
   const getValidationError = (key: string, value: string): string | null => {
     if (!value) return null;
     const field = fields.find(f => f.key === key);
@@ -85,6 +112,23 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
     }
     setSaving(true);
     try {
+      if (user) {
+        const profileUpdate: Record<string, unknown> = {};
+        if (heightCm) profileUpdate.height_cm = Number(heightCm);
+        if (birthDate) profileUpdate.birth_date = birthDate;
+        if (gender) profileUpdate.gender = gender;
+        if (activityLevel) profileUpdate.activity_level = activityLevel;
+
+        if (Object.keys(profileUpdate).length > 0) {
+          const { error: pErr } = await supabase
+            .from("profiles")
+            .update(profileUpdate)
+            .eq("id", user.id);
+          if (pErr) console.error("Profile update error:", pErr.message);
+          else await refreshProfile();
+        }
+      }
+
       const input: MeasurementInput = {};
       fields.forEach(({ key }) => {
         const v = form[key];
@@ -110,7 +154,70 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           </DialogTitle>
         </DialogHeader>
 
-        <div className="grid grid-cols-2 gap-3 mt-2">
+        {/* Profile Fields */}
+        <div className="space-y-3">
+          <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+            <UserCog className="w-4 h-4" />
+            PROFİL BİLGİLERİ
+          </div>
+          <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Boy (cm)</Label>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="ör: 175"
+                value={heightCm}
+                onChange={(e) => setHeightCm(e.target.value)}
+                className="h-9 bg-secondary/50 border-border"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Doğum Tarihi</Label>
+              <Input
+                type="date"
+                value={birthDate}
+                onChange={(e) => setBirthDate(e.target.value)}
+                className="h-9 bg-secondary/50 border-border"
+              />
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Cinsiyet</Label>
+              <Select value={gender} onValueChange={setGender}>
+                <SelectTrigger className="h-9 bg-secondary/50 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="male">Erkek</SelectItem>
+                  <SelectItem value="female">Kadın</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground">Aktivite Düzeyi</Label>
+              <Select value={activityLevel} onValueChange={setActivityLevel}>
+                <SelectTrigger className="h-9 bg-secondary/50 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {activityOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label}
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+          </div>
+        </div>
+
+        {/* Measurement Fields */}
+        <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-2">
+          <Ruler className="w-4 h-4" />
+          VÜCUT ÖLÇÜLERİ
+        </div>
+
+        <div className="grid grid-cols-2 gap-3">
           {fields.map(({ key, label, unit, placeholder }) => {
             const error = form[key] ? getValidationError(key, form[key]) : null;
             return (
@@ -132,7 +239,8 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           })}
         </div>
 
-        {(navyEstimate != null || muscleEstimate != null) && (
+        {/* Estimates */}
+        {(navyEstimate != null || muscleEstimate != null || previewBMR != null) && (
           <div className="mt-3 space-y-2">
             {navyEstimate != null && (
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
@@ -147,8 +255,17 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
                 <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  Tahmini kas kütlesi ({weightKg}kg × %{effectiveBf} yağ):{" "}
+                  Tahmini LBM ({weightKg}kg × %{effectiveBf} yağ):{" "}
                   <span className="font-display text-primary">{muscleEstimate} kg</span>
+                </p>
+              </div>
+            )}
+            {previewBMR != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+                <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Bazal Metabolizma (BMR):{" "}
+                  <span className="font-display text-primary">{previewBMR.toLocaleString()} kcal</span>
                 </p>
               </div>
             )}

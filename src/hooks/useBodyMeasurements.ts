@@ -69,6 +69,21 @@ export function calcBMR(
   return Math.round(bmr);
 }
 
+const ACTIVITY_MULTIPLIERS: Record<string, number> = {
+  sedentary: 1.2,
+  light: 1.375,
+  moderate: 1.55,
+  active: 1.725,
+  very_active: 1.9,
+};
+
+/** TDEE = BMR × activity multiplier */
+export function calcTDEE(bmr: number, activityLevel: string): number | null {
+  const mult = ACTIVITY_MULTIPLIERS[activityLevel];
+  if (!mult || bmr <= 0) return null;
+  return Math.round(bmr * mult);
+}
+
 export function useBodyMeasurements() {
   const { user } = useAuth();
   const [latest, setLatest] = useState<BodyMeasurement | null>(null);

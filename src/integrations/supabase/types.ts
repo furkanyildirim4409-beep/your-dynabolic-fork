@@ -352,6 +352,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          activity_level: string | null
           avatar_url: string | null
           bio: string | null
           bio_coins: number | null
@@ -371,6 +372,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          activity_level?: string | null
           avatar_url?: string | null
           bio?: string | null
           bio_coins?: number | null
@@ -390,6 +392,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          activity_level?: string | null
           avatar_url?: string | null
           bio?: string | null
           bio_coins?: number | null
