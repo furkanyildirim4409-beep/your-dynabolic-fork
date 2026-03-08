@@ -14,9 +14,34 @@ interface CartViewProps {
 
 const CartView = ({ isOpen, onClose }: CartViewProps) => {
   const { items, removeFromCart, updateQuantity, cartTotal: totalPrice, cartCount: totalItems, clearCart } = useCart();
+  const { user } = useAuth();
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!user || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("orders").insert({
+        user_id: user.id,
+        items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
+        total_price: grandTotal,
+        total_coins_used: 0,
+        status: "pending",
+      });
+      if (error) {
+        toast({ title: "Sipariş kaydedilemedi", description: error.message, variant: "destructive" });
+        return;
+      }
+      clearCart();
+      onClose();
+      toast({ title: "Sipariş Tamamlandı! 🎉", description: "Siparişiniz başarıyla oluşturuldu." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const applyPromo = () => {
     if (promoCode.toUpperCase() === "DYNABOLIC10") {
