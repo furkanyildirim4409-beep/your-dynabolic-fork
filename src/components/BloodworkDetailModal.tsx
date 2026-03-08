@@ -16,12 +16,12 @@ const hormoneTrends = [
   { month: "Oca", testosterone: 680, cortisol: 13 },
 ];
 
-const biomarkers = [
-  { name: "Testosteron", value: 680, unit: "ng/dL", range: "300-1000", status: "normal" as const, change: 3.1 },
-  { name: "Kortizol", value: 13, unit: "µg/dL", range: "6-23", status: "normal" as const, change: -7.1 },
-  { name: "Vitamin D", value: 22, unit: "ng/mL", range: "30-100", status: "low" as const, change: -12 },
-  { name: "Ferritin", value: 28, unit: "ng/mL", range: "30-400", status: "low" as const, change: -5 },
-  { name: "TSH", value: 2.1, unit: "mIU/L", range: "0.4-4.0", status: "normal" as const, change: 0 },
+const biomarkers: { name: string; value: number; unit: string; range: string; status: "normal" | "low" | "high"; change: number }[] = [
+  { name: "Testosteron", value: 680, unit: "ng/dL", range: "300-1000", status: "normal", change: 3.1 },
+  { name: "Kortizol", value: 13, unit: "µg/dL", range: "6-23", status: "normal", change: -7.1 },
+  { name: "Vitamin D", value: 22, unit: "ng/mL", range: "30-100", status: "low", change: -12 },
+  { name: "Ferritin", value: 28, unit: "ng/mL", range: "30-400", status: "low", change: -5 },
+  { name: "TSH", value: 2.1, unit: "mIU/L", range: "0.4-4.0", status: "normal", change: 0 },
   { name: "Hemoglobin", value: 15.2, unit: "g/dL", range: "13.5-17.5", status: "normal" as const, change: 1.3 } as const,
   { name: "CRP", value: 0.8, unit: "mg/L", range: "0-3", status: "normal" as const, change: -20 },
 ];
