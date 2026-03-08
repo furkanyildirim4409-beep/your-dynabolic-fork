@@ -54,6 +54,8 @@ const Profil = () => {
     profileWeight && profileHeight && profileAge
       ? calcBMR(profileWeight, profileHeight, profileAge, profileGender)
       : null;
+  const profileActivityLevel = (profileAny?.activity_level as string) ?? "moderate";
+  const calculatedTDEE = calculatedBMR ? calcTDEE(calculatedBMR, profileActivityLevel) : null;
 
   // Timeline slider always controls projection — interpolate from current toward goal
   const progress = timelineValue[0] / 100;
@@ -67,7 +69,8 @@ const Profil = () => {
     { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0 ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
     { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true, tooltip: "Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır" },
     { label: "BMI", value: profileWeight && profileHeight ? (profileWeight / ((profileHeight / 100) ** 2)).toFixed(1) : "—" },
-    { label: "Bazal Metabolizma", value: calculatedBMR ? `${calculatedBMR.toLocaleString()} kcal` : "—", tooltip: "Mifflin-St Jeor formülüyle hesaplanmıştır" },
+    { label: "BMR", value: calculatedBMR ? `${calculatedBMR.toLocaleString()} kcal` : "—", tooltip: "Mifflin-St Jeor formülüyle hesaplanmıştır" },
+    { label: "TDEE", value: calculatedTDEE ? `${calculatedTDEE.toLocaleString()} kcal` : "—", highlight: true, tooltip: "BMR × aktivite çarpanı ile günlük kalori ihtiyacı" },
   ];
 
   const recoveryZones = [
