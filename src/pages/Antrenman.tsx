@@ -148,29 +148,68 @@ const Antrenman = () => {
                   <h2 className="font-display text-lg text-foreground tracking-wide">
                     ATANAN ANTRENMANLAR
                   </h2>
-                  <span className="text-xs text-primary">{assignedWorkouts.length} Görev</span>
+                  <span className="text-xs text-primary">{workouts.length} Görev</span>
                 </div>
                 
-                <div className="space-y-4">
-                  {assignedWorkouts.map((workout, index) => (
-                    <motion.div
-                      key={workout.id}
-                      initial={{ opacity: 0, y: 20 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: 0.2 + index * 0.1 }}
-                    >
-                      <WorkoutCard
-                        title={workout.title}
-                        day={workout.day}
-                        exercises={workout.exercises}
-                        duration={workout.duration}
-                        intensity={workout.intensity}
-                        coachNote={workout.coachNote}
-                        onStart={() => setActiveWorkout(workout.title)}
-                      />
-                    </motion.div>
-                  ))}
-                </div>
+                {isLoading ? (
+                  <div className="space-y-4">
+                    {[1, 2, 3].map((i) => (
+                      <div key={i} className="glass-card p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <Skeleton className="w-12 h-12 rounded-xl" />
+                          <div className="flex-1 space-y-2">
+                            <Skeleton className="h-5 w-3/4" />
+                            <Skeleton className="h-3 w-1/3" />
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-4">
+                          <Skeleton className="h-3 w-16" />
+                          <Skeleton className="h-3 w-12" />
+                          <Skeleton className="h-5 w-14 rounded-full" />
+                        </div>
+                        <Skeleton className="h-12 w-full rounded-xl" />
+                      </div>
+                    ))}
+                  </div>
+                ) : workouts.length === 0 ? (
+                  <motion.div
+                    initial={{ opacity: 0, scale: 0.95 }}
+                    animate={{ opacity: 1, scale: 1 }}
+                    className="glass-card p-8 text-center"
+                  >
+                    <div className="w-20 h-20 rounded-2xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
+                      <Coffee className="w-10 h-10 text-primary" />
+                    </div>
+                    <h3 className="font-display text-lg text-foreground mb-2">DİNLENME GÜNÜ</h3>
+                    <p className="text-muted-foreground text-sm mb-1">
+                      Bugün için atanmış antrenman yok.
+                    </p>
+                    <p className="text-muted-foreground/60 text-xs">
+                      Koçun yeni bir program atadığında burada görünecek.
+                    </p>
+                  </motion.div>
+                ) : (
+                  <div className="space-y-4">
+                    {workouts.map((workout, index) => (
+                      <motion.div
+                        key={workout.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: 0.2 + index * 0.1 }}
+                      >
+                        <WorkoutCard
+                          title={workout.title}
+                          day={workout.day}
+                          exercises={workout.exercises}
+                          duration={workout.duration}
+                          intensity={workout.intensity}
+                          coachNote={workout.coachNote}
+                          onStart={() => setActiveWorkout(workout.title)}
+                        />
+                      </motion.div>
+                    ))}
+                  </div>
+                )}
               </div>
             </motion.div>
           ) : (
