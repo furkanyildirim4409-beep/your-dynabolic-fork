@@ -226,7 +226,15 @@ const Profil = () => {
               </p>
             </div>
             <div className="text-center p-2 bg-secondary/50 rounded-lg">
-              <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
+              <div className="flex items-center gap-1">
+                <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent><p>Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır</p></TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-display text-lg text-primary">
                 {currentMuscleMass != null
                   ? `${(currentMuscleMass + progress * 4).toFixed(1)}kg`
