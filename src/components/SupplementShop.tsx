@@ -48,11 +48,16 @@ const SupplementShop = () => {
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string>>({});
 
-  const handleAddToCart = (supplement: ShopSupplement) => {
+  const handleAddToCart = async (supplement: ShopSupplement) => {
     const isDiscountActive = coinDiscounts[supplement.id] || false;
     const maxDiscount = calculateMaxDiscount(supplement.price, bioCoins);
     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
     const selectedFlavor = selectedFlavors[supplement.id] || supplement.flavors[0] || "";
+
+    if (isDiscountActive && bioCoins < coinsNeeded) {
+      toast.error("Yetersiz bakiye!");
+      return;
+    }
 
     const title = selectedFlavor 
       ? `${supplement.name} - ${selectedFlavor}` 
@@ -69,9 +74,12 @@ const SupplementShop = () => {
       type: "supplement",
     });
 
-    if (isDiscountActive) {
-      setBioCoins((prev) => prev - coinsNeeded);
+    if (isDiscountActive && user) {
+      const newBalance = bioCoins - coinsNeeded;
+      await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+      await refreshProfile();
       setCoinDiscounts((prev) => ({ ...prev, [supplement.id]: false }));
+      toast.success("Bio-Coin indirimi uygulandı!");
     }
   };
 

@@ -104,10 +104,15 @@ const Kesfet = () => {
     setShowProductDetail(true);
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = async (product: any) => {
     const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
     const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
+
+    if (isDiscountActive && bioCoins < coinsNeeded) {
+      toast({ title: "Yetersiz bakiye!", description: "Yeterli Bio-Coin'iniz bulunmuyor.", variant: "destructive" });
+      return;
+    }
 
     addToCart({
       id: `${product.id}-${product.coachId}-${Date.now()}`,
@@ -120,8 +125,10 @@ const Kesfet = () => {
       type: "product",
     });
 
-    if (isDiscountActive) {
-      setBioCoins(prev => prev - coinsNeeded);
+    if (isDiscountActive && user) {
+      const newBalance = bioCoins - coinsNeeded;
+      await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+      await refreshProfile();
       setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
     }
   };
