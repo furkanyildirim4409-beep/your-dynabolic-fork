@@ -29,7 +29,7 @@ const Login = () => {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     setLoading(true);
-    try { if (view === "login") await signIn(email, password); else if (view === "signup") await signUp(email, password, "athlete", fullName); } catch {} finally { setLoading(false); }
+    try { if (view === "login") await signIn(email, password); else if (view === "signup") await signUp(email, password, fullName); } catch {} finally { setLoading(false); }
   };
 
   const handleForgotPassword = async (e: React.FormEvent) => {
