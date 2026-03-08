@@ -37,6 +37,7 @@ import Achievements from "./pages/Achievements";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import BiometricLogin from "./pages/BiometricLogin";
+import CoachAthletes from "./pages/CoachAthletes";
 
 const queryClient = new QueryClient();
 
