@@ -227,18 +227,26 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       if (error) throw error;
 
       // Award bio coins to profile
-      const { data: profile } = await supabase
+      const { data: currentProfile } = await supabase
         .from("profiles")
         .select("bio_coins")
         .eq("id", user.id)
         .single();
 
-      if (profile) {
+      if (currentProfile) {
         await supabase
           .from("profiles")
-          .update({ bio_coins: (profile.bio_coins ?? 0) + bioCoinsEarned })
+          .update({ bio_coins: (currentProfile.bio_coins ?? 0) + bioCoinsEarned })
           .eq("id", user.id);
       }
+
+      // Log transaction
+      await supabase.from("bio_coin_transactions").insert({
+        user_id: user.id,
+        amount: bioCoinsEarned,
+        type: "workout",
+        description: `${workoutTitle} tamamlandı`,
+      });
 
       // Mark assignment as completed
       if (assignmentId) {
