@@ -52,12 +52,18 @@ interface Meal {
   foods: FoodItem[];
 }
 
-// --- HEDEFLER (Goals) ---
-const macroGoals = {
-  protein: 180,
-  carbs: 250,
-  fat: 70,
-  calories: 2200,
+// --- HEDEFLER (Goals) - dynamic from profile ---
+const useProfileMacroGoals = () => {
+  const { profile } = useAuth();
+  const p = profile as Record<string, unknown> | null;
+  return {
+    protein: p?.daily_protein_target ? Number(p.daily_protein_target) : 180,
+    carbs: p?.daily_carb_target ? Number(p.daily_carb_target) : 250,
+    fat: p?.daily_fat_target ? Number(p.daily_fat_target) : 70,
+    get calories() {
+      return this.protein * 4 + this.carbs * 4 + this.fat * 9;
+    },
+  };
 };
 
 // --- ÖRNEK YİYECEK VERİTABANI ---
@@ -82,7 +88,7 @@ const emptyMealSlots: Meal[] = [
 ];
 
 // --- MACRO DASHBOARD COMPONENT ---
-const MacroDashboard = ({ meals }: { meals: Meal[] }) => {
+const MacroDashboard = ({ meals, macroGoals }: { meals: Meal[]; macroGoals: { protein: number; carbs: number; fat: number; calories: number } }) => {
   const totals = useMemo(() => {
     return meals.reduce(
       (acc, meal) => ({
@@ -585,6 +591,7 @@ const FoodDetailWizard = ({
 // --- ANA SAYFA ---
 const Beslenme = () => {
   const { user } = useAuth();
+  const macroGoals = useProfileMacroGoals();
   const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
@@ -817,7 +824,7 @@ const Beslenme = () => {
         </div>
 
         {/* MACRO DASHBOARD */}
-        <MacroDashboard meals={meals} />
+        <MacroDashboard meals={meals} macroGoals={macroGoals} />
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">

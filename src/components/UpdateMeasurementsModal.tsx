@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { calcNavyBodyFat, calcMuscleMass, calcBMR, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { calcNavyBodyFat, calcMuscleMass, calcBMR, calcTDEE, calcMacroTargets, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Ruler, Calculator, UserCog } from "lucide-react";
+import { Ruler, Calculator, UserCog, Target } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
@@ -35,6 +35,12 @@ const activityOptions = [
   { value: "very_active", label: "Çok Aktif", desc: "Günde 2 antrenman" },
 ];
 
+const goalOptions = [
+  { value: "cut", label: "Kilo Ver", desc: "TDEE - 500 kcal" },
+  { value: "maintenance", label: "Koruma", desc: "TDEE" },
+  { value: "bulk", label: "Kas Yap", desc: "TDEE + 300 kcal" },
+];
+
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const { latest, saveMeasurement } = useBodyMeasurements();
   const { profile, refreshProfile, user } = useAuth();
@@ -46,6 +52,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState("male");
   const [activityLevel, setActivityLevel] = useState("moderate");
+  const [fitnessGoal, setFitnessGoal] = useState("maintenance");
 
   const weightKg = profile?.current_weight ? Number(profile.current_weight) : null;
 
@@ -69,8 +76,9 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       setBirthDate(profileAny?.birth_date ? String(profileAny.birth_date) : "");
       setGender((profileAny?.gender as string) || "male");
       setActivityLevel((profileAny?.activity_level as string) || "moderate");
+      setFitnessGoal((profileAny?.fitness_goal as string) || "maintenance");
     }
-  }, [isOpen, latest, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level]);
+  }, [isOpen, latest, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level, profileAny?.fitness_goal]);
 
   const navyEstimate =
     form.waist && form.neck && !form.body_fat_pct
@@ -90,6 +98,8 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
     weightKg && heightCm && previewAge
       ? calcBMR(weightKg, Number(heightCm), previewAge, gender as "male" | "female")
       : null;
+  const previewTDEE = previewBMR ? calcTDEE(previewBMR, activityLevel) : null;
+  const previewMacros = previewTDEE && weightKg ? calcMacroTargets(weightKg, previewTDEE, fitnessGoal) : null;
 
   const getValidationError = (key: string, value: string): string | null => {
     if (!value) return null;
@@ -118,6 +128,14 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         if (birthDate) profileUpdate.birth_date = birthDate;
         if (gender) profileUpdate.gender = gender;
         if (activityLevel) profileUpdate.activity_level = activityLevel;
+        profileUpdate.fitness_goal = fitnessGoal;
+
+        // Auto-calculate macro targets if we have enough data
+        if (previewMacros) {
+          profileUpdate.daily_protein_target = previewMacros.protein;
+          profileUpdate.daily_carb_target = previewMacros.carbs;
+          profileUpdate.daily_fat_target = previewMacros.fat;
+        }
 
         if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabase
@@ -209,6 +227,25 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
               </Select>
             </div>
           </div>
+
+          {/* Fitness Goal */}
+          <div className="col-span-2 space-y-1">
+            <Label className="text-xs text-muted-foreground flex items-center gap-1">
+              <Target className="w-3 h-3" /> Hedef
+            </Label>
+            <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
+              <SelectTrigger className="h-9 bg-secondary/50 border-border">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                {goalOptions.map((opt) => (
+                  <SelectItem key={opt.value} value={opt.value}>
+                    {opt.label} ({opt.desc})
+                  </SelectItem>
+                ))}
+              </SelectContent>
+            </Select>
+          </div>
         </div>
 
         {/* Measurement Fields */}
@@ -240,7 +277,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         </div>
 
         {/* Estimates */}
-        {(navyEstimate != null || muscleEstimate != null || previewBMR != null) && (
+        {(navyEstimate != null || muscleEstimate != null || previewBMR != null || previewMacros != null) && (
           <div className="mt-3 space-y-2">
             {navyEstimate != null && (
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
@@ -264,9 +301,25 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
                 <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  Bazal Metabolizma (BMR):{" "}
-                  <span className="font-display text-primary">{previewBMR.toLocaleString()} kcal</span>
+                  BMR: <span className="font-display text-primary">{previewBMR.toLocaleString()} kcal</span>
+                  {previewTDEE && <> → TDEE: <span className="font-display text-primary">{previewTDEE.toLocaleString()} kcal</span></>}
                 </p>
+              </div>
+            )}
+            {previewMacros != null && (
+              <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                  <p className="text-xs font-medium text-foreground">
+                    Hedef Kalori: <span className="font-display text-primary">{previewMacros.calories.toLocaleString()} kcal</span>
+                    <span className="text-muted-foreground ml-1">({goalOptions.find(g => g.value === fitnessGoal)?.label})</span>
+                  </p>
+                </div>
+                <div className="flex gap-3 pl-6 text-[11px]">
+                  <span className="text-foreground">P: <span className="font-display text-primary">{previewMacros.protein}g</span></span>
+                  <span className="text-foreground">K: <span className="font-display text-primary">{previewMacros.carbs}g</span></span>
+                  <span className="text-foreground">Y: <span className="font-display text-primary">{previewMacros.fat}g</span></span>
+                </div>
               </div>
             )}
           </div>
