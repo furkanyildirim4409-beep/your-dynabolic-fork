@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Calendar, AlertCircle, CheckCircle2, Clock, Receipt, Download, History } from "lucide-react";
+import { CreditCard, Calendar, AlertCircle, CheckCircle2, Clock, Receipt, Download, History, Package, Coins } from "lucide-react";
 import confetti from "canvas-confetti";
 import { invoices as initialInvoices } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import PaymentModal, { PaymentDetails } from "@/components/PaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import type { Invoice } from "@/types/shared-models";
 
 const statusConfig = {
