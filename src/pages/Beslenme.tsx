@@ -282,7 +282,7 @@ const Beslenme = () => {
       )}
 
       {activeTab === "history" && <NutritionHistory />}
-      {activeTab === "scanner" && <NutriScanner />}
+      {activeTab === "scanner" && <NutriScanner isOpen={activeTab === "scanner"} onClose={() => setActiveTab("today")} />}
 
       {/* Add Food to Meal Modal */}
       <AnimatePresence>

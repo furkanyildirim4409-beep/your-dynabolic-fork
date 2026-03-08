@@ -186,7 +186,7 @@ const Kokpit = () => {
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.9 }} className="grid grid-cols-3 gap-2">
         <div className="glass-card p-3 text-center">
           <Activity className="w-4 h-4 text-primary mx-auto mb-1" />
-          <p className="font-display text-lg text-foreground">{currentUser.readiness}%</p>
+          <p className="font-display text-lg text-foreground">{currentUser.readinessScore}%</p>
           <p className="text-muted-foreground text-[9px]">HAZIRLIK</p>
         </div>
         <div className="glass-card p-3 text-center">

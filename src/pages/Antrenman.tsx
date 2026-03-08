@@ -249,10 +249,8 @@ const Antrenman = () => {
       {/* Vision AI Execution */}
       {showVisionAI && workout && (
         <VisionAIExecution
-          workoutId={workout.id}
           workoutTitle={workout.title}
           onClose={() => { setShowVisionAI(false); setSelectedWorkout(null); }}
-          onComplete={handleCompleteWorkout}
         />
       )}
 

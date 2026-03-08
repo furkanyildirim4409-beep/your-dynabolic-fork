@@ -46,7 +46,7 @@ const CoachProfile = () => {
 
   const handleAddToCart = (product: any) => {
     hapticSuccess();
-    addItem({ id: product.id, name: product.title, price: product.price, image: product.image, quantity: 1, bioCoinsDiscount: product.bioCoins });
+    addToCart({ id: product.id, title: product.title, price: product.price, image: product.image, type: "product" });
     toast({ title: "Sepete Eklendi ✓", description: `${product.title} sepete eklendi.` });
   };
 

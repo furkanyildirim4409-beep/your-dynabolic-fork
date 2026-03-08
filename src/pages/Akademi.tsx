@@ -168,7 +168,7 @@ const Akademi = () => {
                   <div className="absolute inset-0 bg-black/60 flex items-center justify-center">
                     <div className="text-center">
                       <Lock className="w-8 h-8 text-muted-foreground mx-auto mb-1" />
-                      <p className="text-muted-foreground text-xs">Seviye {currentUser?.level || 5} gerekli</p>
+                      <p className="text-muted-foreground text-xs">Seviye 10 gerekli</p>
                     </div>
                   </div>
                 )}
