@@ -71,57 +71,11 @@ const foodDatabase = [
   { name: "Avokado", amount: "Yarım", cal: 120, macros: { p: 1, c: 6, f: 11 }, baseGrams: 75 },
 ];
 
-const initialMealData: Meal[] = [
-  {
-    id: "kahvalti",
-    title: "Kahvaltı",
-    time: "07:30",
-    totalCal: 480,
-    totalMacros: { p: 28, c: 45, f: 12 },
-    isCompleted: true,
-    icon: "☕",
-    color: "text-yellow-500",
-    foods: [
-      { name: "Yulaf Ezmesi", amount: "60g", cal: 220, macros: { p: 8, c: 35, f: 4 }, isEaten: true },
-      { name: "Yumurta (Haşlanmış)", amount: "3 Adet", cal: 210, macros: { p: 18, c: 1, f: 15 }, isEaten: true },
-    ],
-  },
-  {
-    id: "ogle",
-    title: "Öğle Yemeği",
-    time: "12:45",
-    totalCal: 720,
-    totalMacros: { p: 52, c: 60, f: 18 },
-    isCompleted: false,
-    icon: "☀️",
-    color: "text-orange-500",
-    foods: [
-      { name: "Izgara Tavuk Göğsü", amount: "200g", cal: 330, macros: { p: 46, c: 0, f: 6 }, isEaten: false },
-      { name: "Basmati Pirinç", amount: "250g", cal: 320, macros: { p: 6, c: 70, f: 1 }, isEaten: false },
-    ],
-  },
-  {
-    id: "ara",
-    title: "Ara Öğün",
-    time: "16:00",
-    totalCal: 0,
-    totalMacros: { p: 0, c: 0, f: 0 },
-    isCompleted: false,
-    icon: "🍏",
-    color: "text-green-500",
-    foods: [],
-  },
-  {
-    id: "aksam",
-    title: "Akşam Yemeği",
-    time: "19:30",
-    totalCal: 400,
-    totalMacros: { p: 42, c: 10, f: 20 },
-    isCompleted: false,
-    icon: "🌙",
-    color: "text-indigo-400",
-    foods: [{ name: "Somon Fileto", amount: "150g", cal: 310, macros: { p: 34, c: 0, f: 18 }, isEaten: false }],
-  },
+const emptyMealSlots: Meal[] = [
+  { id: "kahvalti", title: "Kahvaltı", time: "07:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☕", color: "text-yellow-500", foods: [] },
+  { id: "ogle", title: "Öğle Yemeği", time: "12:45", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☀️", color: "text-orange-500", foods: [] },
+  { id: "ara", title: "Ara Öğün", time: "16:00", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🍏", color: "text-green-500", foods: [] },
+  { id: "aksam", title: "Akşam Yemeği", time: "19:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🌙", color: "text-indigo-400", foods: [] },
 ];
 
 // --- MACRO DASHBOARD COMPONENT ---
