@@ -10,13 +10,14 @@ import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
 const MAX_DISCOUNT_PERCENTAGE = 0.20;
-const USER_BIO_COINS = 2450;
 
 const calculateMaxDiscount = (productPrice: number, userCoins: number): number => {
   const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
@@ -66,7 +67,8 @@ const Kesfet = () => {
   const navigate = useNavigate();
   const { openStories } = useStory();
   const { addToCart, cartCount, openCart } = useCart();
-  const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
+  const { profile, user, refreshProfile } = useAuth();
+  const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
@@ -102,10 +104,15 @@ const Kesfet = () => {
     setShowProductDetail(true);
   };
 
-  const handleAddToCart = (product: any) => {
+  const handleAddToCart = async (product: any) => {
     const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
     const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
+
+    if (isDiscountActive && bioCoins < coinsNeeded) {
+      toast({ title: "Yetersiz bakiye!", description: "Yeterli Bio-Coin'iniz bulunmuyor.", variant: "destructive" });
+      return;
+    }
 
     addToCart({
       id: `${product.id}-${product.coachId}-${Date.now()}`,
@@ -118,8 +125,10 @@ const Kesfet = () => {
       type: "product",
     });
 
-    if (isDiscountActive) {
-      setBioCoins(prev => prev - coinsNeeded);
+    if (isDiscountActive && user) {
+      const newBalance = bioCoins - coinsNeeded;
+      await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+      await refreshProfile();
       setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
     }
   };

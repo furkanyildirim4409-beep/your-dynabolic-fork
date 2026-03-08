@@ -4,11 +4,13 @@ import { Star, Coins, ShoppingCart } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { shopSupplements, ShopSupplement } from "@/lib/mockData";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
-const COIN_TO_TL_RATE = 0.1; // 1000 Bio-Coin = 100 TL
-const MAX_DISCOUNT_PERCENTAGE = 0.20; // 20% cap on all physical products
-const USER_BIO_COINS = 2450; // Mock user balance
+const COIN_TO_TL_RATE = 0.1;
+const MAX_DISCOUNT_PERCENTAGE = 0.20;
 
 const calculateMaxDiscount = (productPrice: number, userCoins: number): number => {
   const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
@@ -41,15 +43,21 @@ const getCategoryLabel = (category: ShopSupplement["category"]): string => {
 
 const SupplementShop = () => {
   const { addToCart } = useCart();
-  const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
+  const { profile, user, refreshProfile } = useAuth();
+  const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string>>({});
 
-  const handleAddToCart = (supplement: ShopSupplement) => {
+  const handleAddToCart = async (supplement: ShopSupplement) => {
     const isDiscountActive = coinDiscounts[supplement.id] || false;
     const maxDiscount = calculateMaxDiscount(supplement.price, bioCoins);
     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
     const selectedFlavor = selectedFlavors[supplement.id] || supplement.flavors[0] || "";
+
+    if (isDiscountActive && bioCoins < coinsNeeded) {
+      toast.error("Yetersiz bakiye!");
+      return;
+    }
 
     const title = selectedFlavor 
       ? `${supplement.name} - ${selectedFlavor}` 
@@ -66,9 +74,12 @@ const SupplementShop = () => {
       type: "supplement",
     });
 
-    if (isDiscountActive) {
-      setBioCoins((prev) => prev - coinsNeeded);
+    if (isDiscountActive && user) {
+      const newBalance = bioCoins - coinsNeeded;
+      await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+      await refreshProfile();
       setCoinDiscounts((prev) => ({ ...prev, [supplement.id]: false }));
+      toast.success("Bio-Coin indirimi uygulandı!");
     }
   };
 
