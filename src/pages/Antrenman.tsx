@@ -102,7 +102,7 @@ const Antrenman = () => {
       <AnimatePresence>
         {showPRs && (
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: "auto" }} exit={{ opacity: 0, height: 0 }}>
-            <PersonalRecords />
+            <PersonalRecords isOpen={showPRs} onClose={() => setShowPRs(false)} />
           </motion.div>
         )}
       </AnimatePresence>
