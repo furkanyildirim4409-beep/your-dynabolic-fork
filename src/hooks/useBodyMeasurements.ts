@@ -31,12 +31,20 @@ export interface MeasurementInput {
 
 /** Navy Seal BF% formula (male), default height 175cm */
 export function calcNavyBodyFat(waist: number, neck: number, height = 175): number | null {
-  if (waist <= neck || waist <= 0 || neck <= 0 || height <= 0) return null;
+  if (waist <= 0 || neck <= 0 || height <= 0) return null;
   const diff = waist - neck;
   if (diff <= 0) return null;
-  const bf = 86.010 * Math.log10(diff) - 70.041 * Math.log10(height) + 36.76;
-  if (bf <= 0 || bf > 60) return null;
-  return Math.round(bf * 10) / 10;
+
+  const denominator = 1.0324 - 0.19077 * Math.log10(diff) + 0.15456 * Math.log10(height);
+  if (denominator <= 0) return null;
+
+  const bf = 495 / denominator - 450;
+  if (!isFinite(bf) || isNaN(bf)) return null;
+
+  const clamped = Math.max(bf, 2);
+  if (clamped > 60) return null;
+
+  return Math.round(clamped * 10) / 10;
 }
 
 /** Estimate muscle mass from weight and body fat % */
