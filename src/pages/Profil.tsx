@@ -8,6 +8,7 @@ import BodyScanUpload from "@/components/BodyScanUpload";
 import BloodworkUpload from "@/components/BloodworkUpload";
 import WearableDeviceSync from "@/components/WearableDeviceSync";
 import TransformationTimeline from "@/components/profile/TransformationTimeline";
+import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
