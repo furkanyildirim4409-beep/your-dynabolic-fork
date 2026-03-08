@@ -30,8 +30,9 @@ const Profil = () => {
   const { latest: latestMeasurement } = useBodyMeasurements();
   
   // Base values from real data or defaults
-  const currentBodyFat = latestMeasurement?.body_fat_pct ? Number(latestMeasurement.body_fat_pct) : 20;
-  const currentMuscleMass = latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : 70;
+  const hasRealBodyFat = latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0;
+  const currentBodyFat = hasRealBodyFat ? Number(latestMeasurement.body_fat_pct) : null;
+  const currentMuscleMass = latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : null;
   const currentWaist = latestMeasurement?.waist ? Number(latestMeasurement.waist) : 85;
 
   // Timeline slider always controls projection — interpolate from current toward goal
