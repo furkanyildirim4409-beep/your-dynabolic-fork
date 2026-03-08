@@ -128,6 +128,14 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         if (birthDate) profileUpdate.birth_date = birthDate;
         if (gender) profileUpdate.gender = gender;
         if (activityLevel) profileUpdate.activity_level = activityLevel;
+        profileUpdate.fitness_goal = fitnessGoal;
+
+        // Auto-calculate macro targets if we have enough data
+        if (previewMacros) {
+          profileUpdate.daily_protein_target = previewMacros.protein;
+          profileUpdate.daily_carb_target = previewMacros.carbs;
+          profileUpdate.daily_fat_target = previewMacros.fat;
+        }
 
         if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabase
