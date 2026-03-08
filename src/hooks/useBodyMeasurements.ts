@@ -55,6 +55,20 @@ export function calcMuscleMass(weightKg: number, bodyFatPct: number): number | n
   return Math.round(lbm * 10) / 10;
 }
 
+/** Mifflin-St Jeor BMR (kcal/day) */
+export function calcBMR(
+  weightKg: number,
+  heightCm: number,
+  age: number,
+  gender: "male" | "female" = "male"
+): number | null {
+  if (weightKg <= 0 || heightCm <= 0 || age <= 0 || age > 120) return null;
+  const base = 10 * weightKg + 6.25 * heightCm - 5 * age;
+  const bmr = gender === "male" ? base + 5 : base - 161;
+  if (bmr <= 0 || !isFinite(bmr)) return null;
+  return Math.round(bmr);
+}
+
 export function useBodyMeasurements() {
   const { user } = useAuth();
   const [latest, setLatest] = useState<BodyMeasurement | null>(null);
