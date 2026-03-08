@@ -94,7 +94,10 @@ const Profil = () => {
     }
   };
 
+  const isCoach = profile?.role === "coach";
+
   const menuItems = [
+    ...(isCoach ? [{ icon: Users, label: "Sporcularım", description: "Sporcu makro hedeflerini yönet", action: "athletes" }] : []),
     { icon: Settings, label: "Ayarlar", description: "Uygulama tercihlerini düzenle", action: "settings" },
     { icon: Bell, label: "Bildirimler", description: "Hatırlatıcıları yönet", action: "notifications" },
     { icon: Shield, label: "Gizlilik", description: "Veri paylaşım ayarları", action: "privacy" },
