@@ -42,36 +42,32 @@ export function useWeightTracking() {
       return { error: 'Not authenticated' };
     }
 
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.error('Weight log auth check failed:', authError?.message, authError);
-      return { error: authError?.message || 'Authentication not ready' };
+    const safeWeight = Number(weightKg);
+    if (isNaN(safeWeight) || safeWeight <= 0) {
+      console.error('Weight log blocked: invalid weight value', weightKg);
+      return { error: 'Invalid weight value' };
     }
 
-    if (authData.user.id !== user.id) {
-      console.error('Weight log auth mismatch:', {
-        contextUserId: user.id,
-        sessionUserId: authData.user.id,
-      });
-      return { error: 'Authentication mismatch' };
-    }
+    console.log('logWeight: inserting weight_logs', { user_id: user.id, weight_kg: safeWeight });
 
     const { error: logError } = await supabase
       .from('weight_logs')
-      .insert({ user_id: authData.user.id, weight_kg: weightKg });
+      .insert({ user_id: user.id, weight_kg: safeWeight });
 
     if (logError) {
-      console.error('Weight log insert error:', logError.message, logError);
+      console.error('Weight log INSERT failed:', JSON.stringify(logError, null, 2));
       return { error: logError.message };
     }
 
+    console.log('logWeight: updating profiles.current_weight', { id: user.id, current_weight: safeWeight });
+
     const { error: profileError } = await supabase
       .from('profiles')
-      .update({ current_weight: weightKg })
-      .eq('id', authData.user.id);
+      .update({ current_weight: safeWeight })
+      .eq('id', user.id);
 
     if (profileError) {
-      console.error('Profile weight update error:', profileError.message, profileError);
+      console.error('Profile UPDATE failed:', JSON.stringify(profileError, null, 2));
       return { error: profileError.message };
     }
 
