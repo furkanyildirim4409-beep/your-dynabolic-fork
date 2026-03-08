@@ -39,7 +39,10 @@ export function useWeightTracking() {
       .from('weight_logs')
       .insert({ user_id: user.id, weight_kg: weightKg });
 
-    if (logError) return { error: logError.message };
+    if (logError) {
+      console.error('Weight log insert error:', logError);
+      return { error: logError.message };
+    }
 
     const { error: profileError } = await supabase
       .from('profiles')
