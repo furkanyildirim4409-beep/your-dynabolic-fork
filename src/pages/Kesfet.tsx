@@ -167,7 +167,9 @@ const Kesfet = () => {
                 </div>
               )}
             </motion.button>
-            <BioCoinWallet balance={bioCoins} />
+            <div onClick={() => setShowTransactionHistory(true)} className="cursor-pointer">
+              <BioCoinWallet balance={bioCoins} />
+            </div>
           </div>
         </div>
 
