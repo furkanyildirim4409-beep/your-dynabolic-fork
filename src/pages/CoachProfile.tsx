@@ -48,8 +48,6 @@ const CoachProfile = () => {
 
   const coach = getCoachById(id || "1") || coaches[0];
 
-  if (!coach) return <div className="p-4 text-center text-muted-foreground">Koç bulunamadı</div>;
-
   const handleHighlightClick = (highlight: { id: string; title: string; thumbnail: string }) => {
     const story: Story = {
       id: highlight.id,
