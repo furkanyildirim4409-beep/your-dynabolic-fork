@@ -280,6 +280,15 @@ const Profil = () => {
         </div>
       </motion.div>
 
+      {/* Weight History Chart */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.23 }}
+      >
+        <WeightHistoryChart />
+      </motion.div>
+
       {/* Body Stats */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
