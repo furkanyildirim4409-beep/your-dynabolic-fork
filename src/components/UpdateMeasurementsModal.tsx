@@ -131,13 +131,26 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           })}
         </div>
 
-        {navyEstimate != null && (
-          <div className="mt-3 flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
-            <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
-            <p className="text-xs text-foreground">
-              Navy formülü tahmini yağ oranı:{" "}
-              <span className="font-display text-primary">%{navyEstimate}</span>
-            </p>
+        {(navyEstimate != null || muscleEstimate != null) && (
+          <div className="mt-3 space-y-2">
+            {navyEstimate != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+                <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Tahmini yağ oranı:{" "}
+                  <span className="font-display text-primary">%{navyEstimate}</span>
+                </p>
+              </div>
+            )}
+            {muscleEstimate != null && (
+              <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
+                <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
+                <p className="text-xs text-foreground">
+                  Tahmini kas kütlesi ({weightKg}kg × %{effectiveBf} yağ):{" "}
+                  <span className="font-display text-primary">{muscleEstimate} kg</span>
+                </p>
+              </div>
+            )}
           </div>
         )}
 
