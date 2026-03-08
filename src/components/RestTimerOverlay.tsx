@@ -161,6 +161,16 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           Sıfırla
         </button>
 
+        {/* Next exercise preview */}
+        {nextExercise && (
+          <div className="mt-6 w-[85%] max-w-sm">
+            <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 text-center">
+              <p className="text-muted-foreground text-xs">Sıradaki Hareket</p>
+              <p className="text-foreground text-sm font-medium mt-0.5">{nextExercise}</p>
+            </div>
+          </div>
+        )}
+
         {/* Skip Rest Button */}
         <motion.button
           initial={{ y: 20, opacity: 0 }}
@@ -173,16 +183,6 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           <Play className="w-5 h-5 text-primary" />
           <span className="font-display text-foreground tracking-wide">DİNLENMEYİ ATLA</span>
         </motion.button>
-
-        {/* Next exercise preview */}
-        {nextExercise && (
-          <div className="absolute bottom-8 left-4 right-4">
-            <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 text-center">
-              <p className="text-muted-foreground text-xs">Sıradaki Hareket</p>
-              <p className="text-foreground text-sm font-medium mt-0.5">{nextExercise}</p>
-            </div>
-          </div>
-        )}
       </motion.div>
     </AnimatePresence>
   );
