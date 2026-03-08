@@ -77,15 +77,15 @@ export function useNutritionLogs() {
     const totalC = foods.reduce((s, f) => s + f.macros.c, 0);
     const totalF = foods.reduce((s, f) => s + f.macros.f, 0);
 
-    const { error } = await supabase.from("nutrition_logs").insert({
+    const { error } = await supabase.from("nutrition_logs").insert([{
       user_id: user.id,
       meal_name: mealName,
-      foods: foods as unknown as Record<string, unknown>[],
+      foods: JSON.parse(JSON.stringify(foods)),
       total_calories: totalCal,
       total_protein: totalP,
       total_carbs: totalC,
       total_fat: totalF,
-    });
+    }]);
 
     if (error) {
       console.error("Nutrition log insert error:", error.message);
