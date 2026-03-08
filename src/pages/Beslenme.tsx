@@ -5,6 +5,7 @@ import {
   Check,
   Search,
   Plus,
+  Minus,
   Droplets,
   Camera,
   X,
@@ -26,6 +27,8 @@ import { assignedSupplements as initialSupplements } from "@/lib/mockData";
 import type { Supplement } from "@/components/SupplementTracker";
 import { useNutritionLogs } from "@/hooks/useNutritionLogs";
 import { useAuth } from "@/context/AuthContext";
+import { useWaterTracking } from "@/hooks/useWaterTracking";
+
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- TİP TANIMLAMALARI ---
@@ -583,7 +586,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
-  const [waterIntake, setWaterIntake] = useState(2.0);
+  const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
@@ -632,6 +635,7 @@ const Beslenme = () => {
   }, [logs, logsLoading]);
 
   const waterGoal = 3.5;
+  const waterIntake = totalMl / 1000;
   const progress = (waterIntake / waterGoal) * 100;
 
   const openMealScanner = () => {
@@ -865,7 +869,7 @@ const Beslenme = () => {
                   <span className="text-foreground font-bold text-sm">SU TAKİBİ</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-display font-bold text-foreground">{waterIntake}L</span>
+                  <span className="text-2xl font-display font-bold text-foreground">{waterIntake.toFixed(1)}L</span>
                   <span className="text-muted-foreground text-sm">/{waterGoal}L</span>
                 </div>
               </div>
@@ -889,13 +893,30 @@ const Beslenme = () => {
                     />
                   ))}
                 </div>
-                <Button
-                  size="sm"
-                  onClick={() => setWaterIntake((prev) => Math.min(prev + 0.25, 5))}
-                  className="bg-blue-600 hover:bg-blue-500 text-white h-8 w-8 rounded-lg p-0"
-                >
-                  <Plus size={16} />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    disabled={waterLoading || totalMl === 0}
+                    onClick={async () => {
+                      const err = await removeLatestWater();
+                      if (!err) toast({ title: "Su çıkarıldı", description: "Son bardak kaldırıldı" });
+                    }}
+                    className="bg-blue-600/30 hover:bg-blue-500/40 text-blue-300 h-8 w-8 rounded-lg p-0"
+                  >
+                    <Minus size={16} />
+                  </Button>
+                  <Button
+                    size="sm"
+                    disabled={waterLoading}
+                    onClick={async () => {
+                      const err = await addWater(250);
+                      if (!err) toast({ title: "Su eklendi", description: "+250ml kaydedildi" });
+                    }}
+                    className="bg-blue-600 hover:bg-blue-500 text-white h-8 w-8 rounded-lg p-0"
+                  >
+                    <Plus size={16} />
+                  </Button>
+                </div>
               </div>
             </div>
 
