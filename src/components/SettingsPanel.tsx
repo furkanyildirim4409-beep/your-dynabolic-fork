@@ -25,6 +25,19 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const { notifications, updateNotification, language, setLanguage, appearance, setAppearance } = useSettings();
   const { isOffline, setOfflineMode } = useOfflineMode();
   const [isExporting, setIsExporting] = useState(false);
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: subscribePush } = usePushNotifications();
+
+  const handlePushToggle = async () => {
+    if (pushSubscribed) return;
+    hapticMedium();
+    const ok = await subscribePush();
+    if (ok) {
+      hapticSuccess();
+      toast({ title: "Push Bildirimleri Aktif 🔔", description: "Sipariş durumu değiştiğinde bildirim alacaksınız." });
+    } else {
+      toast({ title: "İzin Verilmedi", description: "Tarayıcı bildirim izni reddedildi.", variant: "destructive" });
+    }
+  };
 
   const handleExportData = async () => {
     if (isOffline) {
