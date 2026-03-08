@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Bell, Globe, Moon, Sun, WifiOff, Download, Smartphone, Lock, 
   HelpCircle, ChevronRight, Dumbbell, MessageSquare, CreditCard, 
-  Users, FileText, AlertTriangle
+  Users, FileText, AlertTriangle, BellRing
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useSettings, Language, languageLabels } from "@/context/SettingsContext
 import { useOfflineMode } from "@/context/OfflineContext";
 import { toast } from "@/hooks/use-toast";
 import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/haptics";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface SettingsPanelProps {
   isOpen: boolean;
