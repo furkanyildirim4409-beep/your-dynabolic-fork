@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import PaymentModal, { PaymentDetails } from "@/components/PaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 import { Skeleton } from "@/components/ui/skeleton";
+import OrderDetailModal from "@/components/OrderDetailModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Invoice } from "@/types/shared-models";
