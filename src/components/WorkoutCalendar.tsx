@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Dumbbell, Timer, Target, X, CheckCircle2, Moon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isToday, isFuture, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
-import { workoutHistory, assignedWorkouts } from "@/lib/mockData";
+import { useWorkoutHistory } from "@/hooks/useWorkoutHistory";
+import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CalendarDayData {
@@ -32,6 +33,8 @@ const parseWorkoutDate = (dateStr: string): Date => {
 };
 
 const WorkoutCalendar = () => {
+  const { data: workoutHistory = [] } = useWorkoutHistory();
+  const { data: assignedWorkouts = [] } = useAssignedWorkouts();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [slideDirection, setSlideDirection] = useState(0);
   const [selectedDay, setSelectedDay] = useState<CalendarDayData | null>(null);
@@ -72,7 +75,7 @@ const WorkoutCalendar = () => {
     if (isFuture(date) || isToday(date)) {
       const dayOfWeek = format(date, 'EEEE', { locale: tr });
       const scheduledWorkout = assignedWorkouts.find(w => 
-        w.day.toLowerCase() === dayOfWeek.toLowerCase()
+        w.day.toLowerCase().startsWith(dayOfWeek.toLowerCase())
       );
 
       if (scheduledWorkout) {
