@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Bell, Globe, Moon, Sun, WifiOff, Download, Smartphone, Lock, 
   HelpCircle, ChevronRight, Dumbbell, MessageSquare, CreditCard, 
-  Users, FileText, AlertTriangle
+  Users, FileText, AlertTriangle, BellRing
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,7 @@ import { useSettings, Language, languageLabels } from "@/context/SettingsContext
 import { useOfflineMode } from "@/context/OfflineContext";
 import { toast } from "@/hooks/use-toast";
 import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/haptics";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 interface SettingsPanelProps {
   isOpen: boolean;
@@ -24,6 +25,19 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const { notifications, updateNotification, language, setLanguage, appearance, setAppearance } = useSettings();
   const { isOffline, setOfflineMode } = useOfflineMode();
   const [isExporting, setIsExporting] = useState(false);
+  const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: subscribePush } = usePushNotifications();
+
+  const handlePushToggle = async () => {
+    if (pushSubscribed) return;
+    hapticMedium();
+    const ok = await subscribePush();
+    if (ok) {
+      hapticSuccess();
+      toast({ title: "Push Bildirimleri Aktif 🔔", description: "Sipariş durumu değiştiğinde bildirim alacaksınız." });
+    } else {
+      toast({ title: "İzin Verilmedi", description: "Tarayıcı bildirim izni reddedildi.", variant: "destructive" });
+    }
+  };
 
   const handleExportData = async () => {
     if (isOffline) {
@@ -117,6 +131,15 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                   </div>
                   <Switch checked={notifications.communityAlerts} onCheckedChange={() => handleNotificationToggle("communityAlerts")} />
                 </div>
+                {pushSupported && (
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center"><BellRing className="w-4 h-4 text-amber-400" /></div>
+                      <div><p className="text-foreground text-sm font-medium">Push Bildirimleri</p><p className="text-muted-foreground text-xs">Sipariş durumu güncellemeleri</p></div>
+                    </div>
+                    <Switch checked={pushSubscribed} onCheckedChange={handlePushToggle} />
+                  </div>
+                )}
               </div>
             </div>
 
