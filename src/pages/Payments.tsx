@@ -21,6 +21,28 @@ const statusConfig = {
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
 const formatCurrency = (amount: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0 }).format(amount);
 
+const orderStatusConfig: Record<string, { label: string; className: string }> = {
+  pending: { label: "Hazırlanıyor", className: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  shipped: { label: "Kargolandı", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  delivered: { label: "Teslim Edildi", className: "bg-green-500/20 text-green-400 border-green-500/30" },
+  cancelled: { label: "İptal", className: "bg-red-500/20 text-red-400 border-red-500/30" },
+};
+
+interface OrderItem {
+  id?: string;
+  title?: string;
+  price?: number;
+  quantity?: number;
+}
+
+const getOrderSummary = (items: unknown): string => {
+  const arr = Array.isArray(items) ? items as OrderItem[] : [];
+  if (arr.length === 0) return "Sipariş";
+  const first = arr[0]?.title || "Ürün";
+  if (arr.length === 1) return first;
+  return `${first} ve ${arr.length - 1} diğer ürün`;
+};
+
 const fireConfetti = () => {
   const count = 200;
   const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
