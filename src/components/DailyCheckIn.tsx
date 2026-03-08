@@ -63,14 +63,14 @@ const sliderConfigs: SliderConfig[] = [
 
 function calculateReadiness(mood: number, sleep: number, soreness: number, stress: number): number {
   return Math.round(
-    (mood * 0.25 + sleep * 0.35 + (10 - soreness) * 0.2 + (10 - stress) * 0.2) * 10
+    (mood / 5) * 25 + (sleep / 5) * 35 + ((5 - soreness) / 5) * 20 + ((5 - stress) / 5) * 20
   );
 }
 
 const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
-  const [values, setValues] = useState({ mood: 7, sleep: 7, soreness: 5, stress: 4 });
+  const [values, setValues] = useState({ mood: 3, sleep: 3, soreness: 3, stress: 3 });
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
@@ -195,7 +195,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
                       value={[values[config.id]]}
                       onValueChange={(val) => handleSliderChange(config.id, val)}
                       min={1}
-                      max={10}
+                      max={5}
                       step={1}
                       className="w-full relative z-10"
                     />
