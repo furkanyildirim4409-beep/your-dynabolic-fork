@@ -138,7 +138,18 @@ const Profil = () => {
         </div>
 
         {/* Realistic 3D Avatar */}
-        <RealisticBodyAvatar waistScale={waistScale} />
+        <RealisticBodyAvatar
+          waistScale={waistScale}
+          measurements={latestMeasurement ? {
+            neck: latestMeasurement.neck,
+            chest: latestMeasurement.chest,
+            shoulder: latestMeasurement.shoulder,
+            waist: latestMeasurement.waist,
+            hips: latestMeasurement.hips,
+            arm: latestMeasurement.arm,
+            thigh: latestMeasurement.thigh,
+          } : undefined}
+        />
 
         {/* Recovery Alert */}
         <div className="mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-3">
