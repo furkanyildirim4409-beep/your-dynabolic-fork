@@ -35,8 +35,18 @@ export function calcNavyBodyFat(waist: number, neck: number, height = 175): numb
   const diff = waist - neck;
   if (diff <= 0) return null;
   const bf = 86.010 * Math.log10(diff) - 70.041 * Math.log10(height) + 36.76;
-  if (bf <= 0 || bf > 60) return null; // unrealistic values
+  if (bf <= 0 || bf > 60) return null;
   return Math.round(bf * 10) / 10;
+}
+
+/** Estimate muscle mass from weight and body fat % */
+export function calcMuscleMass(weightKg: number, bodyFatPct: number): number | null {
+  if (weightKg <= 0 || bodyFatPct <= 0 || bodyFatPct >= 100) return null;
+  const leanMass = weightKg * (1 - bodyFatPct / 100);
+  // ~roughly 45-50% of lean mass is skeletal muscle
+  const muscleMass = leanMass * 0.47;
+  if (muscleMass <= 0) return null;
+  return Math.round(muscleMass * 10) / 10;
 }
 
 export function useBodyMeasurements() {
