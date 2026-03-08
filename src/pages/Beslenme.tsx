@@ -26,6 +26,8 @@ import { assignedSupplements as initialSupplements } from "@/lib/mockData";
 import type { Supplement } from "@/components/SupplementTracker";
 import { useNutritionLogs } from "@/hooks/useNutritionLogs";
 import { useAuth } from "@/context/AuthContext";
+import { useWaterTracking } from "@/hooks/useWaterTracking";
+import { Minus } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 
 // --- TİP TANIMLAMALARI ---
