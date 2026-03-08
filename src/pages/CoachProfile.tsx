@@ -35,7 +35,7 @@ const hasExcessCoins = (productPrice: number, userCoins: number): boolean => {
 
 const CoachProfile = () => {
   const navigate = useNavigate();
-  const { id } = useParams();
+  const { coachId } = useParams();
   const { openStories } = useStory();
   const { addToCart, openCart } = useCart();
   const [activeTab, setActiveTab] = useState("feed");
