@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
+import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
