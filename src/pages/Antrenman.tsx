@@ -17,7 +17,6 @@ const Antrenman = () => {
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
-  const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
 
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
