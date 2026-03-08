@@ -1,0 +1,2 @@
+const BentoStatDetailModal = ({ isOpen, onClose, statType }: any) => isOpen ? <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={onClose}><div className="glass-card p-6 max-w-sm" onClick={e=>e.stopPropagation()}><p className="text-foreground">Sağlık Detayı: {statType}</p><button onClick={onClose} className="mt-4 text-primary text-sm">Kapat</button></div></div> : null;
+export default BentoStatDetailModal;

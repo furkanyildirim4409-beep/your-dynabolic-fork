@@ -1,0 +1,2 @@
+const NextMissionCard = ({ title, duration, calories, coach }: any) => <div className="glass-card p-4"><p className="text-primary font-bold text-sm">{title}</p><p className="text-muted-foreground text-xs">{duration} • {calories} • {coach}</p></div>;
+export default NextMissionCard;

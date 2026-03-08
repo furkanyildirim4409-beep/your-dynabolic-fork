@@ -1,0 +1,2 @@
+const DailyCheckIn = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div className="fixed inset-0 z-50 bg-black/80 flex items-center justify-center" onClick={onClose}><div className="glass-card p-6 max-w-sm w-full mx-4" onClick={e=>e.stopPropagation()}><h3 className="text-foreground font-bold mb-4">Günlük Check-in</h3><p className="text-muted-foreground text-sm">Yakında aktif olacak.</p><button onClick={onClose} className="mt-4 text-primary text-sm">Kapat</button></div></div> : null;
+export default DailyCheckIn;
