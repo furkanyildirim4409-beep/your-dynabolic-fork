@@ -1,0 +1,2 @@
+const ProductDetail = ({ product, isOpen, onClose, onAddToCart }: any) => { if (!isOpen) return null; return <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose}><div className="absolute bottom-0 left-0 right-0 bg-background p-6 rounded-t-3xl" onClick={e => e.stopPropagation()}><h3 className="font-display text-foreground">{product?.title}</h3><button onClick={onClose} className="mt-4 w-full bg-primary text-primary-foreground py-3 rounded-xl font-display">KAPAT</button></div></div>; };
+export default ProductDetail;
