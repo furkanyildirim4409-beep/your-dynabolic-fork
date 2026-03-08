@@ -240,6 +240,7 @@ const Payments = () => {
 
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} payment={getPaymentDetails()} onPaymentSuccess={handlePaymentSuccess} />
       <PaymentReceiptModal isOpen={showReceiptModal} onClose={() => setShowReceiptModal(false)} invoice={selectedReceipt} />
+      <OrderDetailModal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} order={selectedOrder} />
     </div>
   );
 };
