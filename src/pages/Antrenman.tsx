@@ -5,7 +5,7 @@ import WorkoutCard from "@/components/WorkoutCard";
 import VisionAIExecution from "@/components/VisionAIExecution";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
-import { workoutHistory, WorkoutHistoryEntry } from "@/lib/mockData";
+import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
