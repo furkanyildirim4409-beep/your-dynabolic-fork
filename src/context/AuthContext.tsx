@@ -31,7 +31,7 @@ export const useAuth = () => {
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await (supabase as any)
       .from("profiles")
       .select("*")
       .eq("id", userId)
