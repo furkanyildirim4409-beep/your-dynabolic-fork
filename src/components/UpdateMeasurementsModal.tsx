@@ -12,16 +12,16 @@ interface Props {
   onClose: () => void;
 }
 
-const fields: { key: keyof MeasurementInput; label: string; unit: string }[] = [
-  { key: "neck", label: "Boyun", unit: "cm" },
-  { key: "chest", label: "Göğüs", unit: "cm" },
-  { key: "shoulder", label: "Omuz", unit: "cm" },
-  { key: "waist", label: "Bel", unit: "cm" },
-  { key: "hips", label: "Kalça", unit: "cm" },
-  { key: "arm", label: "Kol", unit: "cm" },
-  { key: "thigh", label: "Bacak", unit: "cm" },
-  { key: "body_fat_pct", label: "Yağ Oranı", unit: "%" },
-  { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg" },
+const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: number; max?: number; placeholder?: string }[] = [
+  { key: "neck", label: "Boyun", unit: "cm", min: 25, max: 55, placeholder: "ör: 38" },
+  { key: "chest", label: "Göğüs", unit: "cm", min: 70, max: 150, placeholder: "ör: 100" },
+  { key: "shoulder", label: "Omuz", unit: "cm", min: 80, max: 160, placeholder: "ör: 115" },
+  { key: "waist", label: "Bel", unit: "cm", min: 55, max: 150, placeholder: "ör: 82" },
+  { key: "hips", label: "Kalça", unit: "cm", min: 60, max: 150, placeholder: "ör: 95" },
+  { key: "arm", label: "Kol", unit: "cm", min: 20, max: 55, placeholder: "ör: 35" },
+  { key: "thigh", label: "Bacak", unit: "cm", min: 35, max: 80, placeholder: "ör: 55" },
+  { key: "body_fat_pct", label: "Yağ Oranı", unit: "%", min: 3, max: 60, placeholder: "otomatik hesaplanır" },
+  { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg", min: 20, max: 120, placeholder: "ör: 70" },
 ];
 
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
