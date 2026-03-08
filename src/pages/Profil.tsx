@@ -212,13 +212,13 @@ const Profil = () => {
             <div className="text-center p-2 bg-secondary/50 rounded-lg">
               <p className="text-muted-foreground text-[10px]">TAHMİNİ YAĞ</p>
               <p className="font-display text-lg text-stat-hrv">
-                %{(12.4 - (timelineValue[0] / 100) * 3.4).toFixed(1)}
+                %{(currentBodyFat - progress * (currentBodyFat * 0.25)).toFixed(1)}
               </p>
             </div>
             <div className="text-center p-2 bg-secondary/50 rounded-lg">
               <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
               <p className="font-display text-lg text-primary">
-                {(74 + (timelineValue[0] / 100) * 4).toFixed(1)}kg
+                {(currentMuscleMass + progress * 4).toFixed(1)}kg
               </p>
             </div>
           </div>
