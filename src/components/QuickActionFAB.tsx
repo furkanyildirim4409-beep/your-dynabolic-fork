@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Droplets, Scale, MessageSquare, GraduationCap, ChefHat, CreditCard, User } from "lucide-react";
+import { Plus, X, Droplets, Scale, MessageSquare, GraduationCap, ChefHat, CreditCard, User, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useWeightTracking } from "@/hooks/useWeightTracking";
+import { useAuth } from "@/context/AuthContext";
 
 interface QuickAction {
   id: string;
@@ -20,9 +22,12 @@ interface QuickActionFABProps {
 
 const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const { logWeight, isLoading: weightLoading } = useWeightTracking();
   const [isOpen, setIsOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
-  const [weight, setWeight] = useState("78.5");
+  const [weight, setWeight] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [waterCount, setWaterCount] = useState(0);
 
   const handleAddWater = () => {
@@ -36,16 +41,23 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   };
 
   const handleLogWeight = () => {
+    setWeight(String(profile?.current_weight ?? 78.5));
     setShowWeightModal(true);
     setIsOpen(false);
   };
 
-  const handleSaveWeight = () => {
-    toast({
-      title: "Ağırlık Kaydedildi ⚖️",
-      description: `Güncel ağırlığın: ${weight} kg`,
-    });
-    setShowWeightModal(false);
+  const handleSaveWeight = async () => {
+    const kg = parseFloat(weight);
+    if (isNaN(kg) || kg <= 0) return;
+    setIsSaving(true);
+    const result = await logWeight(kg);
+    setIsSaving(false);
+    if (result?.error) {
+      toast({ title: "Hata", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Kilo kaydı başarıyla eklendi! ⚖️", description: `Güncel ağırlığın: ${kg} kg` });
+      setShowWeightModal(false);
+    }
   };
 
   const handleReportToCoach = () => {
@@ -183,8 +195,8 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
               />
               <span className="text-foreground font-display text-xl">kg</span>
             </div>
-            <Button onClick={handleSaveWeight} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display">
-              KAYDET
+            <Button onClick={handleSaveWeight} disabled={isSaving} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display">
+              {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> KAYDEDİLİYOR...</> : "KAYDET"}
             </Button>
           </div>
         </DialogContent>
