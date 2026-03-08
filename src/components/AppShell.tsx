@@ -1,6 +1,7 @@
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import EliteDock from "./EliteDock";
+import QuickActionFAB from "./QuickActionFAB";
 
 const AppShell = ({ children }: { children: ReactNode }) => (
   <div className="relative min-h-screen bg-background">
@@ -10,6 +11,7 @@ const AppShell = ({ children }: { children: ReactNode }) => (
         {children}
       </motion.main>
       <EliteDock />
+      <QuickActionFAB />
     </div>
   </div>
 );
