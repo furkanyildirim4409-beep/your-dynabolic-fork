@@ -14,6 +14,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
+import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
@@ -73,6 +74,7 @@ const Kesfet = () => {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
@@ -128,6 +130,15 @@ const Kesfet = () => {
     if (isDiscountActive && user) {
       const newBalance = bioCoins - coinsNeeded;
       await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+
+      // Log spend transaction
+      await supabase.from("bio_coin_transactions").insert({
+        user_id: user.id,
+        amount: -coinsNeeded,
+        type: "purchase",
+        description: `${product.title} indirimi`,
+      });
+
       await refreshProfile();
       setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
     }
@@ -156,7 +167,9 @@ const Kesfet = () => {
                 </div>
               )}
             </motion.button>
-            <BioCoinWallet balance={bioCoins} />
+            <div onClick={() => setShowTransactionHistory(true)} className="cursor-pointer">
+              <BioCoinWallet balance={bioCoins} />
+            </div>
           </div>
         </div>
 
@@ -438,6 +451,11 @@ const Kesfet = () => {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      <BioCoinTransactionHistory
+        isOpen={showTransactionHistory}
+        onClose={() => setShowTransactionHistory(false)}
+      />
     </>
   );
 };

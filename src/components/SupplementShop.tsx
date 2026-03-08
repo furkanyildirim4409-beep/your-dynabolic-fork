@@ -77,6 +77,15 @@ const SupplementShop = () => {
     if (isDiscountActive && user) {
       const newBalance = bioCoins - coinsNeeded;
       await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+
+      // Log spend transaction
+      await supabase.from("bio_coin_transactions").insert({
+        user_id: user.id,
+        amount: -coinsNeeded,
+        type: "purchase",
+        description: `${title} indirimi`,
+      });
+
       await refreshProfile();
       setCoinDiscounts((prev) => ({ ...prev, [supplement.id]: false }));
       toast.success("Bio-Coin indirimi uygulandı!");

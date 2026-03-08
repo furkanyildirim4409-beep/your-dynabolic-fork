@@ -66,6 +66,33 @@ export type Database = {
           },
         ]
       }
+      bio_coin_transactions: {
+        Row: {
+          amount: number
+          created_at: string
+          description: string | null
+          id: string
+          type: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          description?: string | null
+          id?: string
+          type?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       coach_invites: {
         Row: {
           coach_id: string
@@ -209,6 +236,36 @@ export type Database = {
           total_fat?: number | null
           total_protein?: number | null
           user_id?: string
+        }
+        Relationships: []
+      }
+      orders: {
+        Row: {
+          created_at: string | null
+          id: string
+          items: Json
+          status: string | null
+          total_coins_used: number | null
+          total_price: number
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string | null
+          id?: string
+          items: Json
+          status?: string | null
+          total_coins_used?: number | null
+          total_price: number
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string | null
+          id?: string
+          items?: Json
+          status?: string | null
+          total_coins_used?: number | null
+          total_price?: number
+          user_id?: string | null
         }
         Relationships: []
       }
