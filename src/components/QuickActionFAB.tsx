@@ -1,11 +1,13 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { Plus, X, Droplets, Scale, MessageSquare, GraduationCap, ChefHat, CreditCard, User } from "lucide-react";
+import { Plus, X, Droplets, Scale, MessageSquare, GraduationCap, ChefHat, CreditCard, User, Loader2 } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useWeightTracking } from "@/hooks/useWeightTracking";
+import { useAuth } from "@/context/AuthContext";
 
 interface QuickAction {
   id: string;
