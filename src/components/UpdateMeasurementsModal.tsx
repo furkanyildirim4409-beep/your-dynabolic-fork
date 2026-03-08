@@ -12,16 +12,16 @@ interface Props {
   onClose: () => void;
 }
 
-const fields: { key: keyof MeasurementInput; label: string; unit: string }[] = [
-  { key: "neck", label: "Boyun", unit: "cm" },
-  { key: "chest", label: "Göğüs", unit: "cm" },
-  { key: "shoulder", label: "Omuz", unit: "cm" },
-  { key: "waist", label: "Bel", unit: "cm" },
-  { key: "hips", label: "Kalça", unit: "cm" },
-  { key: "arm", label: "Kol", unit: "cm" },
-  { key: "thigh", label: "Bacak", unit: "cm" },
-  { key: "body_fat_pct", label: "Yağ Oranı", unit: "%" },
-  { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg" },
+const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: number; max?: number; placeholder?: string }[] = [
+  { key: "neck", label: "Boyun", unit: "cm", min: 25, max: 55, placeholder: "ör: 38" },
+  { key: "chest", label: "Göğüs", unit: "cm", min: 70, max: 150, placeholder: "ör: 100" },
+  { key: "shoulder", label: "Omuz", unit: "cm", min: 80, max: 160, placeholder: "ör: 115" },
+  { key: "waist", label: "Bel", unit: "cm", min: 55, max: 150, placeholder: "ör: 82" },
+  { key: "hips", label: "Kalça", unit: "cm", min: 60, max: 150, placeholder: "ör: 95" },
+  { key: "arm", label: "Kol", unit: "cm", min: 20, max: 55, placeholder: "ör: 35" },
+  { key: "thigh", label: "Bacak", unit: "cm", min: 35, max: 80, placeholder: "ör: 55" },
+  { key: "body_fat_pct", label: "Yağ Oranı", unit: "%", min: 3, max: 60, placeholder: "otomatik hesaplanır" },
+  { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg", min: 20, max: 120, placeholder: "ör: 70" },
 ];
 
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
@@ -52,7 +52,26 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       ? calcNavyBodyFat(Number(form.waist), Number(form.neck))
       : null;
 
+  // Validate ranges
+  const getValidationError = (key: string, value: string): string | null => {
+    if (!value) return null;
+    const field = fields.find(f => f.key === key);
+    if (!field || !field.min || !field.max) return null;
+    const num = Number(value);
+    if (num < field.min || num > field.max) return `${field.min}-${field.max} arası olmalı`;
+    return null;
+  };
+
+  const hasValidationErrors = fields.some(({ key }) => {
+    const v = form[key];
+    return v ? getValidationError(key, v) !== null : false;
+  });
+
   const handleSave = async () => {
+    if (hasValidationErrors) {
+      toast({ title: "Hata", description: "Ölçüm değerlerini kontrol edin", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const input: MeasurementInput = {};
@@ -81,21 +100,25 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 mt-2">
-          {fields.map(({ key, label, unit }) => (
-            <div key={key} className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                {label} ({unit})
-              </Label>
-              <Input
-                type="number"
-                step="0.1"
-                placeholder="—"
-                value={form[key] ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-                className="h-9 bg-secondary/50 border-border"
-              />
-            </div>
-          ))}
+          {fields.map(({ key, label, unit, placeholder }) => {
+            const error = form[key] ? getValidationError(key, form[key]) : null;
+            return (
+              <div key={key} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  {label} ({unit})
+                </Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  placeholder={placeholder || "—"}
+                  value={form[key] ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                  className={`h-9 bg-secondary/50 border-border ${error ? "border-destructive" : ""}`}
+                />
+                {error && <p className="text-destructive text-[10px]">{error}</p>}
+              </div>
+            );
+          })}
         </div>
 
         {navyEstimate != null && (
