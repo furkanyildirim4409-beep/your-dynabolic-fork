@@ -161,6 +161,19 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           Sıfırla
         </button>
 
+        {/* Skip Rest Button */}
+        <motion.button
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.3 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onClose}
+          className="absolute bottom-8 left-4 right-4 flex items-center justify-center gap-3 bg-secondary/80 hover:bg-secondary px-8 py-4 rounded-2xl border border-border transition-colors"
+        >
+          <Play className="w-5 h-5 text-primary" />
+          <span className="font-display text-foreground tracking-wide">DİNLENMEYİ ATLA</span>
+        </motion.button>
+
         {/* Next exercise preview */}
         {nextExercise && (
           <div className="absolute bottom-8 left-4 right-4">
