@@ -195,7 +195,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
                       value={[values[config.id]]}
                       onValueChange={(val) => handleSliderChange(config.id, val)}
                       min={1}
-                      max={10}
+                      max={5}
                       step={1}
                       className="w-full relative z-10"
                     />
