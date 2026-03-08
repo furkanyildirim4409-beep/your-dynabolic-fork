@@ -8,6 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import PaymentModal, { PaymentDetails } from "@/components/PaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
 import { Skeleton } from "@/components/ui/skeleton";
+import OrderDetailModal from "@/components/OrderDetailModal";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import type { Invoice } from "@/types/shared-models";
@@ -60,6 +61,7 @@ const Payments = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user) { setOrdersLoading(false); return; }
@@ -210,7 +212,7 @@ const Payments = () => {
           orders.map((order, index) => {
             const status = orderStatusConfig[order.status || "pending"] || orderStatusConfig.pending;
             return (
-              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4">
+              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4 cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all" onClick={() => setSelectedOrder(order)}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
@@ -238,6 +240,7 @@ const Payments = () => {
 
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} payment={getPaymentDetails()} onPaymentSuccess={handlePaymentSuccess} />
       <PaymentReceiptModal isOpen={showReceiptModal} onClose={() => setShowReceiptModal(false)} invoice={selectedReceipt} />
+      <OrderDetailModal isOpen={!!selectedOrder} onClose={() => setSelectedOrder(null)} order={selectedOrder} />
     </div>
   );
 };
