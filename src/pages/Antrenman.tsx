@@ -230,7 +230,8 @@ const Antrenman = () => {
       <AnimatePresence>
         {activeWorkout && (
           <VisionAIExecution
-            workoutTitle={activeWorkout}
+            workoutTitle={activeWorkout.title}
+            exercises={activeWorkout.programExercises}
             onClose={() => setActiveWorkout(null)}
           />
         )}

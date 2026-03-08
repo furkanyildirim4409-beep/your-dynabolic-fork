@@ -5,12 +5,22 @@ import RestTimerOverlay from "./RestTimerOverlay";
 import ExerciseRestTimerOverlay from "./ExerciseRestTimerOverlay";
 import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
-import { detailedExercises, assignedWorkouts } from "@/lib/mockData";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
 
+interface ProgramExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  restTime: string;
+  notes: string | null;
+  videoUrl: string | null;
+}
+
 interface VisionAIExecutionProps {
   workoutTitle: string;
+  exercises?: ProgramExercise[];
   onClose: () => void;
 }
 
@@ -35,18 +45,21 @@ const getRPEColor = (rpe: number): { bg: string; text: string; border: string } 
   return { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/50" };
 };
 
-const getFilteredExercises = (workoutTitle: string): Exercise[] => {
-  const workoutDef = assignedWorkouts.find(w => w.title === workoutTitle);
-  if (workoutDef && workoutDef.categoryFilter && workoutDef.categoryFilter !== "rest") {
-    const filtered = detailedExercises.filter(ex => ex.category === workoutDef.categoryFilter);
-    return filtered.length > 0 ? filtered : detailedExercises;
-  }
-  return detailedExercises;
-};
-
-const VisionAIExecution = ({ workoutTitle, onClose }: VisionAIExecutionProps) => {
+const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: VisionAIExecutionProps) => {
   const { triggerAchievement } = useAchievements();
-  const exercises = getFilteredExercises(workoutTitle);
+  
+  const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
+    id: ex.id,
+    name: ex.name,
+    sets: ex.sets ?? 3,
+    targetReps: parseInt(ex.reps) || 10,
+    reps: parseInt(ex.reps) || 10,
+    tempo: "3-1-2",
+    restDuration: parseInt(ex.restTime) || 60,
+    rpe: 7,
+    notes: ex.notes ?? undefined,
+    videoUrl: ex.videoUrl ?? undefined,
+  }));
   
   const [timer, setTimer] = useState(0);
   const [isRunning, setIsRunning] = useState(true);
