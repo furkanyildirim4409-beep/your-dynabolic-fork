@@ -447,13 +447,15 @@ const VisionAIExecution = ({ workoutTitle, onClose }: VisionAIExecutionProps) =>
       {/* Exercise Rest Timer Overlay (between exercises) */}
       {showExerciseRestTimer && currentExerciseIndex < exercises.length - 1 && (
         <ExerciseRestTimerOverlay
-          isOpen={showExerciseRestTimer}
-          onClose={() => { setShowExerciseRestTimer(false); handleExerciseRestComplete(); }}
           duration={90}
-          currentExercise={exercise.name}
-          nextExercise={exercises[currentExerciseIndex + 1].name}
-          nextExerciseDetails={{ sets: exercises[currentExerciseIndex + 1].sets, reps: exercises[currentExerciseIndex + 1].targetReps }}
-          onSkip={() => { setShowExerciseRestTimer(false); handleExerciseRestSkip(); }}
+          onComplete={handleExerciseRestComplete}
+          onSkip={handleExerciseRestSkip}
+          completedExerciseName={exercise.name}
+          nextExerciseName={exercises[currentExerciseIndex + 1].name}
+          nextExerciseSets={exercises[currentExerciseIndex + 1].sets}
+          nextExerciseReps={exercises[currentExerciseIndex + 1].targetReps}
+          currentExerciseNumber={currentExerciseIndex + 1}
+          totalExercises={exercises.length}
         />
       )}
 
