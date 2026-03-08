@@ -86,6 +86,8 @@ const Profil = () => {
     if (action === "logout") {
       await signOut();
       navigate("/login", { replace: true });
+    } else if (action === "athletes") {
+      navigate("/sporcularim");
     } else {
       toast({
         title: `${action} (Demo)`,
