@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -10,29 +10,35 @@ import WearableDeviceSync from "@/components/WearableDeviceSync";
 import TransformationTimeline from "@/components/profile/TransformationTimeline";
 import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
+import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
+import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(false);
   const { isOffline } = useOfflineMode();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { latest: latestMeasurement } = useBodyMeasurements();
   
-  // Calculate waist scale based on timeline (1.2 at start, 0.85 at goal)
-  const waistScale = 1.2 - (timelineValue[0] / 100) * 0.35;
+  // Derive waistScale from real data or timeline slider
+  const waistScale = latestMeasurement?.waist
+    ? Number(latestMeasurement.waist) / 85
+    : 1.2 - (timelineValue[0] / 100) * 0.35;
 
   const bodyStats = [
     { label: "Boy", value: "182 cm" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
-    { label: "Yağ Oranı", value: "12.4%", highlight: true },
-    { label: "Kas Kütlesi", value: "74 kg", highlight: true },
+    { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
+    { label: "Kas Kütlesi", value: latestMeasurement?.muscle_mass_kg ? `${latestMeasurement.muscle_mass_kg} kg` : "—", highlight: true },
     { label: "BMI", value: "23.7" },
     { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];
@@ -132,7 +138,18 @@ const Profil = () => {
         </div>
 
         {/* Realistic 3D Avatar */}
-        <RealisticBodyAvatar waistScale={waistScale} />
+        <RealisticBodyAvatar
+          waistScale={waistScale}
+          measurements={latestMeasurement ? {
+            neck: latestMeasurement.neck,
+            chest: latestMeasurement.chest,
+            shoulder: latestMeasurement.shoulder,
+            waist: latestMeasurement.waist,
+            hips: latestMeasurement.hips,
+            arm: latestMeasurement.arm,
+            thigh: latestMeasurement.thigh,
+          } : undefined}
+        />
 
         {/* Recovery Alert */}
         <div className="mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-3">
@@ -296,9 +313,20 @@ const Profil = () => {
         transition={{ delay: 0.25 }}
         className="glass-card p-4"
       >
-        <h2 className="font-display text-lg text-foreground mb-4 tracking-wide">
-          VÜCUT VERİLERİ
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            VÜCUT VERİLERİ
+          </h2>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowMeasurements(true)}
+            className="text-xs gap-1.5"
+          >
+            <Ruler className="w-3.5 h-3.5" />
+            Güncelle
+          </Button>
+        </div>
         
         <div className="grid grid-cols-2 gap-3">
           {bodyStats.map((stat, index) => (
@@ -419,6 +447,12 @@ const Profil = () => {
       <BodyScanUpload 
         isOpen={showBodyScan} 
         onClose={() => setShowBodyScan(false)} 
+      />
+
+      {/* Update Measurements Modal */}
+      <UpdateMeasurementsModal
+        isOpen={showMeasurements}
+        onClose={() => setShowMeasurements(false)}
       />
     </div>
   );
