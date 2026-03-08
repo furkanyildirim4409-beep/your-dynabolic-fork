@@ -36,6 +36,7 @@ import SaglikTrendleri from "./pages/SaglikTrendleri";
 import Achievements from "./pages/Achievements";
 import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
+import BiometricLogin from "./pages/BiometricLogin";
 
 const queryClient = new QueryClient();
 
@@ -70,6 +71,7 @@ const App = () => {
                             {/* Public */}
                             <Route path="/login" element={<Login />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
+                            <Route path="/biometric-login" element={<BiometricLogin />} />
 
                             {/* Protected athlete routes */}
                             <Route path="/" element={<P><AppPage><Kokpit /></AppPage></P>} />
