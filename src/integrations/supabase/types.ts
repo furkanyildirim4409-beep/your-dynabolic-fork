@@ -93,6 +93,51 @@ export type Database = {
         }
         Relationships: []
       }
+      body_measurements: {
+        Row: {
+          arm: number | null
+          body_fat_pct: number | null
+          chest: number | null
+          hips: number | null
+          id: string
+          logged_at: string | null
+          muscle_mass_kg: number | null
+          neck: number | null
+          shoulder: number | null
+          thigh: number | null
+          user_id: string | null
+          waist: number | null
+        }
+        Insert: {
+          arm?: number | null
+          body_fat_pct?: number | null
+          chest?: number | null
+          hips?: number | null
+          id?: string
+          logged_at?: string | null
+          muscle_mass_kg?: number | null
+          neck?: number | null
+          shoulder?: number | null
+          thigh?: number | null
+          user_id?: string | null
+          waist?: number | null
+        }
+        Update: {
+          arm?: number | null
+          body_fat_pct?: number | null
+          chest?: number | null
+          hips?: number | null
+          id?: string
+          logged_at?: string | null
+          muscle_mass_kg?: number | null
+          neck?: number | null
+          shoulder?: number | null
+          thigh?: number | null
+          user_id?: string | null
+          waist?: number | null
+        }
+        Relationships: []
+      }
       coach_invites: {
         Row: {
           coach_id: string
