@@ -84,6 +84,37 @@ export function calcTDEE(bmr: number, activityLevel: string): number | null {
   return Math.round(bmr * mult);
 }
 
+const GOAL_OFFSETS: Record<string, number> = {
+  cut: -500,
+  bulk: 300,
+  maintenance: 0,
+};
+
+export interface MacroTargets {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+}
+
+/** Calculate macro targets based on weight, TDEE and fitness goal */
+export function calcMacroTargets(
+  weightKg: number,
+  tdee: number,
+  goal: string = "maintenance"
+): MacroTargets | null {
+  if (weightKg <= 0 || tdee <= 0) return null;
+  const offset = GOAL_OFFSETS[goal] ?? 0;
+  const calories = tdee + offset;
+  const protein = Math.round(2.0 * weightKg);
+  const fat = Math.round(0.8 * weightKg);
+  const proteinCal = protein * 4;
+  const fatCal = fat * 9;
+  const carbCal = calories - proteinCal - fatCal;
+  const carbs = Math.max(0, Math.round(carbCal / 4));
+  return { calories, protein, carbs, fat };
+}
+
 export function useBodyMeasurements() {
   const { user } = useAuth();
   const [latest, setLatest] = useState<BodyMeasurement | null>(null);
