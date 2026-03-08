@@ -313,9 +313,20 @@ const Profil = () => {
         transition={{ delay: 0.25 }}
         className="glass-card p-4"
       >
-        <h2 className="font-display text-lg text-foreground mb-4 tracking-wide">
-          VÜCUT VERİLERİ
-        </h2>
+        <div className="flex items-center justify-between mb-4">
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            VÜCUT VERİLERİ
+          </h2>
+          <Button
+            size="sm"
+            variant="outline"
+            onClick={() => setShowMeasurements(true)}
+            className="text-xs gap-1.5"
+          >
+            <Ruler className="w-3.5 h-3.5" />
+            Güncelle
+          </Button>
+        </div>
         
         <div className="grid grid-cols-2 gap-3">
           {bodyStats.map((stat, index) => (
