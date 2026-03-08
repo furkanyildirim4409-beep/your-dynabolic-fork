@@ -1,12 +1,15 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { CreditCard, Calendar, AlertCircle, CheckCircle2, Clock, Receipt, Download, History } from "lucide-react";
+import { CreditCard, Calendar, AlertCircle, CheckCircle2, Clock, Receipt, Download, History, Package, Coins } from "lucide-react";
 import confetti from "canvas-confetti";
 import { invoices as initialInvoices } from "@/lib/mockData";
 import { Button } from "@/components/ui/button";
 import { toast } from "@/hooks/use-toast";
 import PaymentModal, { PaymentDetails } from "@/components/PaymentModal";
 import PaymentReceiptModal from "@/components/PaymentReceiptModal";
+import { Skeleton } from "@/components/ui/skeleton";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import type { Invoice } from "@/types/shared-models";
 
 const statusConfig = {
@@ -18,6 +21,28 @@ const statusConfig = {
 const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("tr-TR", { day: "numeric", month: "long", year: "numeric" });
 const formatCurrency = (amount: number) => new Intl.NumberFormat("tr-TR", { style: "currency", currency: "TRY", minimumFractionDigits: 0 }).format(amount);
 
+const orderStatusConfig: Record<string, { label: string; className: string }> = {
+  pending: { label: "Hazırlanıyor", className: "bg-amber-500/20 text-amber-400 border-amber-500/30" },
+  shipped: { label: "Kargolandı", className: "bg-blue-500/20 text-blue-400 border-blue-500/30" },
+  delivered: { label: "Teslim Edildi", className: "bg-green-500/20 text-green-400 border-green-500/30" },
+  cancelled: { label: "İptal", className: "bg-red-500/20 text-red-400 border-red-500/30" },
+};
+
+interface OrderItem {
+  id?: string;
+  title?: string;
+  price?: number;
+  quantity?: number;
+}
+
+const getOrderSummary = (items: unknown): string => {
+  const arr = Array.isArray(items) ? items as OrderItem[] : [];
+  if (arr.length === 0) return "Sipariş";
+  const first = arr[0]?.title || "Ürün";
+  if (arr.length === 1) return first;
+  return `${first} ve ${arr.length - 1} diğer ürün`;
+};
+
 const fireConfetti = () => {
   const count = 200;
   const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
@@ -28,10 +53,28 @@ const fireConfetti = () => {
 };
 
 const Payments = () => {
+  const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setOrdersLoading(false); return; }
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!error && data) setOrders(data);
+      setOrdersLoading(false);
+    };
+    fetchOrders();
+  }, [user]);
   const [selectedReceipt, setSelectedReceipt] = useState<Invoice | null>(null);
 
   const paidInvoices = invoices.filter((inv) => inv.status === "paid");
@@ -140,6 +183,56 @@ const Payments = () => {
               </motion.div>
             ))}
           </>
+        )}
+      </div>
+
+      {/* Orders Section */}
+      <div className="space-y-3">
+        <h2 className="font-display text-lg text-foreground flex items-center gap-2">
+          <Package className="w-4 h-4 text-primary" />SİPARİŞLERİM
+        </h2>
+        {ordersLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass-card p-4 space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-5 w-1/4" />
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="glass-card p-6 text-center">
+            <Package className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground text-sm">Henüz bir siparişiniz bulunmuyor.</p>
+          </div>
+        ) : (
+          orders.map((order, index) => {
+            const status = orderStatusConfig[order.status || "pending"] || orderStatusConfig.pending;
+            return (
+              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground text-sm">{getOrderSummary(order.items)}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border ${status.className} flex items-center gap-1`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-xs mt-1">{formatDate(order.created_at)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {order.total_coins_used > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-amber-400">
+                        <Coins className="w-3 h-3" />{order.total_coins_used}
+                      </span>
+                    )}
+                    <p className="font-display text-lg text-foreground">{formatCurrency(Number(order.total_price))}</p>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
         )}
       </div>
 
