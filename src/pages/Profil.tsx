@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Beef, Wheat, Droplets, Flame } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Beef, Wheat, Droplets, Flame, Users } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -86,6 +86,8 @@ const Profil = () => {
     if (action === "logout") {
       await signOut();
       navigate("/login", { replace: true });
+    } else if (action === "athletes") {
+      navigate("/sporcularim");
     } else {
       toast({
         title: `${action} (Demo)`,
@@ -94,7 +96,10 @@ const Profil = () => {
     }
   };
 
+  const isCoach = profile?.role === "coach";
+
   const menuItems = [
+    ...(isCoach ? [{ icon: Users, label: "Sporcularım", description: "Sporcu makro hedeflerini yönet", action: "athletes" }] : []),
     { icon: Settings, label: "Ayarlar", description: "Uygulama tercihlerini düzenle", action: "settings" },
     { icon: Bell, label: "Bildirimler", description: "Hatırlatıcıları yönet", action: "notifications" },
     { icon: Shield, label: "Gizlilik", description: "Veri paylaşım ayarları", action: "privacy" },
