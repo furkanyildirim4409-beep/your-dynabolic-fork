@@ -100,21 +100,25 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         </DialogHeader>
 
         <div className="grid grid-cols-2 gap-3 mt-2">
-          {fields.map(({ key, label, unit }) => (
-            <div key={key} className="space-y-1">
-              <Label className="text-xs text-muted-foreground">
-                {label} ({unit})
-              </Label>
-              <Input
-                type="number"
-                step="0.1"
-                placeholder="—"
-                value={form[key] ?? ""}
-                onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
-                className="h-9 bg-secondary/50 border-border"
-              />
-            </div>
-          ))}
+          {fields.map(({ key, label, unit, placeholder }) => {
+            const error = form[key] ? getValidationError(key, form[key]) : null;
+            return (
+              <div key={key} className="space-y-1">
+                <Label className="text-xs text-muted-foreground">
+                  {label} ({unit})
+                </Label>
+                <Input
+                  type="number"
+                  step="0.1"
+                  placeholder={placeholder || "—"}
+                  value={form[key] ?? ""}
+                  onChange={(e) => setForm((p) => ({ ...p, [key]: e.target.value }))}
+                  className={`h-9 bg-secondary/50 border-border ${error ? "border-destructive" : ""}`}
+                />
+                {error && <p className="text-destructive text-[10px]">{error}</p>}
+              </div>
+            );
+          })}
         </div>
 
         {navyEstimate != null && (
