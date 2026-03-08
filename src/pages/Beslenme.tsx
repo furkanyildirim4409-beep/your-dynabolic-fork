@@ -579,7 +579,7 @@ const FoodDetailWizard = ({
 // --- ANA SAYFA ---
 const Beslenme = () => {
   const { user } = useAuth();
-  const macroGoals = useProfileMacroGoals();
+  const macroGoals = useMacros();
   const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
