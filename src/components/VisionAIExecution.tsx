@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
@@ -7,6 +7,8 @@ import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
 interface ProgramExercise {
   id: string;
@@ -47,6 +49,7 @@ const getRPEColor = (rpe: number): { bg: string; text: string; border: string } 
 
 const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: VisionAIExecutionProps) => {
   const { triggerAchievement } = useAchievements();
+  const { user } = useAuth();
   
   const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
     id: ex.id,
@@ -79,6 +82,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
   const [showRpeInfo, setShowRpeInfo] = useState(false);
   const [showHeartRateInfo, setShowHeartRateInfo] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
+  const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
+  const workoutStartTime = useRef(Date.now());
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
@@ -137,6 +145,16 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
   };
 
   const handleConfirmSet = () => {
+    // Track this completed set
+    if (!completedSetsRef.current[currentExerciseIndex]) {
+      completedSetsRef.current[currentExerciseIndex] = [];
+    }
+    completedSetsRef.current[currentExerciseIndex].push({
+      weight,
+      reps: reps || exercise.targetReps,
+      isFailure: false,
+    });
+
     setShowComplete(true);
     setIsRunning(false);
     playSound('confirm');
@@ -149,6 +167,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
         if (currentExerciseIndex < exercises.length - 1) {
           setShowExerciseRestTimer(true);
         } else {
+          saveWorkoutLog();
           setShowWorkoutSummary(true);
           triggerAchievement("workout_complete");
           if (new Date().getHours() < 6) triggerAchievement("early_workout");
@@ -158,6 +177,74 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
       }, 1500);
     } else {
       setTimeout(() => { setShowComplete(false); setShowRestTimer(true); }, 1000);
+    }
+  };
+
+  const calculateTotalTonnage = (): number => {
+    let total = 0;
+    Object.values(completedSetsRef.current).forEach(sets => {
+      sets.forEach(s => { total += s.weight * s.reps; });
+    });
+    return total;
+  };
+
+  const getTotalSetsCompleted = (): number => {
+    let total = 0;
+    Object.values(completedSetsRef.current).forEach(sets => { total += sets.length; });
+    return total;
+  };
+
+  const saveWorkoutLog = async () => {
+    if (!user?.id) return;
+    setIsSaving(true);
+    
+    const durationMinutes = Math.round((Date.now() - workoutStartTime.current) / 60000);
+    const tonnage = calculateTotalTonnage();
+    const bioCoinsEarned = 150;
+
+    const details = exercises.map((ex, idx) => ({
+      exerciseName: ex.name,
+      sets: (completedSetsRef.current[idx] ?? []).map(s => ({
+        weight: s.weight,
+        reps: s.reps,
+        isFailure: s.isFailure,
+      })),
+    }));
+
+    try {
+      const { error } = await supabase.from("workout_logs").insert({
+        user_id: user.id,
+        workout_name: workoutTitle,
+        duration_minutes: durationMinutes,
+        tonnage,
+        exercises_count: exercises.length,
+        bio_coins_earned: bioCoinsEarned,
+        completed: true,
+        details,
+      });
+
+      if (error) throw error;
+
+      // Award bio coins to profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("bio_coins")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        await supabase
+          .from("profiles")
+          .update({ bio_coins: (profile.bio_coins ?? 0) + bioCoinsEarned })
+          .eq("id", user.id);
+      }
+
+      toast.success("Antrenman kaydedildi!");
+    } catch (err: any) {
+      console.error("Workout log save error:", err.message);
+      toast.error("Antrenman kaydedilemedi.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -209,10 +296,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-muted-foreground text-center mb-8">Harika iş çıkardın! Tüm hareketleri başarıyla tamamladın.</motion.p>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-6 w-full max-w-sm space-y-4 mb-8">
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Hareket</span><span className="font-display text-lg text-foreground">{exercises.length}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{exercises.reduce((acc, ex) => acc + ex.sets, 0)}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{getTotalSetsCompleted()}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Süre</span><span className="font-display text-lg text-foreground">{Math.round((Date.now() - workoutStartTime.current) / 60000)} dk</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Tonnaj</span><span className="font-display text-lg text-foreground">{calculateTotalTonnage() >= 1000 ? `${(calculateTotalTonnage() / 1000).toFixed(1)} Ton` : `${calculateTotalTonnage()} kg`}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Kazanılan Bio-Coin</span><span className="font-display text-lg text-primary">+150</span></div>
               </motion.div>
-              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow">ANTRENMANI BİTİR</motion.button>
+              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} disabled={isSaving} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow disabled:opacity-50">{isSaving ? "KAYDEDİLİYOR..." : "ANTRENMANI BİTİR"}</motion.button>
             </motion.div>
           )}
         </AnimatePresence>
