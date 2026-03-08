@@ -356,7 +356,17 @@ const Profil = () => {
                   : "bg-secondary/50"
               }`}
             >
-              <p className="text-muted-foreground text-xs">{stat.label}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-muted-foreground text-xs">{stat.label}</p>
+                {stat.tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent><p>{stat.tooltip}</p></TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <p className={`font-display text-lg mt-1 ${
                 stat.highlight ? "text-primary" : "text-foreground"
               }`}>
