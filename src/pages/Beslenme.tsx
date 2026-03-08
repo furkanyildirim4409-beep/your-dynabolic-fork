@@ -586,7 +586,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
-  const [waterIntake, setWaterIntake] = useState(2.0);
+  const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
