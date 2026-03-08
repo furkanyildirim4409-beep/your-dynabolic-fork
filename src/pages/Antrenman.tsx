@@ -233,6 +233,7 @@ const Antrenman = () => {
           <VisionAIExecution
             workoutTitle={activeWorkout.title}
             exercises={activeWorkout.programExercises}
+            assignmentId={activeWorkout.id}
             onClose={() => setActiveWorkout(null)}
           />
         )}
