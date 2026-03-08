@@ -1,12 +1,14 @@
 import { useState } from "react";
 import { motion, AnimatePresence, LayoutGroup } from "framer-motion";
 import { useLocation, useNavigate } from "react-router-dom";
-import { LayoutGrid, Dumbbell, Leaf, Globe, User, Plus, X, Droplets, Scale, MessageSquare, BookOpen, CreditCard } from "lucide-react";
+import { LayoutGrid, Dumbbell, Leaf, Globe, User, Plus, Droplets, Scale, MessageSquare, BookOpen, CreditCard, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { toast } from "@/hooks/use-toast";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { useWeightTracking } from "@/hooks/useWeightTracking";
+import { useAuth } from "@/context/AuthContext";
 
 const navItems = [
   { id: "kokpit", label: "Kokpit", icon: <LayoutGrid className="w-6 h-6" />, path: "/kokpit" },
@@ -19,18 +21,44 @@ const navItems = [
 const EliteDock = () => {
   const location = useLocation();
   const navigate = useNavigate();
+  const { profile } = useAuth();
+  const { logWeight } = useWeightTracking();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);
-  const [weight, setWeight] = useState("78.5");
+  const [weight, setWeight] = useState("");
+  const [isSaving, setIsSaving] = useState(false);
   const [selectedWaterAmount, setSelectedWaterAmount] = useState<number | null>(null);
   const waterOptions = [150, 200, 250, 300, 500];
 
   const currentPath = location.pathname === "/" ? "/kokpit" : location.pathname;
 
+  const handleOpenWeight = () => {
+    setWeight(String(profile?.current_weight ?? ""));
+    setShowWeightModal(true);
+    setIsFabOpen(false);
+  };
+
+  const handleSaveWeight = async () => {
+    const kg = Number(weight);
+    if (isNaN(kg) || kg <= 0) {
+      toast({ title: "Geçersiz değer", description: "Lütfen geçerli bir ağırlık girin.", variant: "destructive" });
+      return;
+    }
+    setIsSaving(true);
+    const result = await logWeight(kg);
+    setIsSaving(false);
+    if (result?.error) {
+      toast({ title: "Hata", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Ağırlık Kaydedildi ⚖️", description: `Güncel ağırlığın: ${kg} kg` });
+      setShowWeightModal(false);
+    }
+  };
+
   const fabActions = [
     { id: "water", label: "Su Ekle", icon: <Droplets className="w-5 h-5" />, onClick: () => { setShowWaterModal(true); setIsFabOpen(false); } },
-    { id: "weight", label: "Ağırlık Gir", icon: <Scale className="w-5 h-5" />, onClick: () => { setShowWeightModal(true); setIsFabOpen(false); } },
+    { id: "weight", label: "Ağırlık Gir", icon: <Scale className="w-5 h-5" />, onClick: handleOpenWeight },
     { id: "coach", label: "Koça Raporla", icon: <MessageSquare className="w-5 h-5" />, onClick: () => { setIsFabOpen(false); if (location.pathname !== "/kokpit") navigate("/kokpit"); setTimeout(() => window.dispatchEvent(new CustomEvent('openCoachChat')), 150); } },
     { id: "payments", label: "Ödemeler", icon: <CreditCard className="w-5 h-5" />, onClick: () => { navigate("/odemeler"); setIsFabOpen(false); } },
     { id: "academy", label: "Akademi", icon: <BookOpen className="w-5 h-5" />, onClick: () => { navigate("/akademi"); setIsFabOpen(false); } },
@@ -74,16 +102,27 @@ const EliteDock = () => {
         </div>
       </motion.div>
 
+      {/* Weight Modal - Connected to Supabase */}
       <Dialog open={showWeightModal} onOpenChange={setShowWeightModal}>
         <DialogContent className="bg-zinc-900 border-white/10 max-w-sm z-[100]">
           <DialogHeader><DialogTitle className="text-white">AĞIRLIK GİRİŞİ</DialogTitle></DialogHeader>
           <div className="space-y-4">
-            <div className="flex items-center justify-center gap-2"><Input type="number" value={weight} onChange={(e) => setWeight(e.target.value)} className="text-center text-3xl h-16 bg-zinc-800 border-white/10 text-white font-bold w-32" /><span className="text-xl text-zinc-400">kg</span></div>
-            <Button onClick={() => { toast({ title: "Ağırlık Kaydedildi ⚖️", description: `Güncel ağırlığın: ${weight} kg` }); setShowWeightModal(false); }} className="w-full bg-[#ccff00] text-black hover:bg-[#b3e600] font-bold">KAYDET</Button>
+            <div className="text-center">
+              <Scale className="w-12 h-12 mx-auto text-[#ccff00] mb-4" />
+              <p className="text-zinc-400 text-sm">Güncel ağırlığını gir</p>
+            </div>
+            <div className="flex items-center justify-center gap-2">
+              <Input type="number" step="0.1" value={weight} onChange={(e) => setWeight(e.target.value)} className="text-center text-3xl h-16 bg-zinc-800 border-white/10 text-white font-bold w-32" />
+              <span className="text-xl text-zinc-400">kg</span>
+            </div>
+            <Button onClick={handleSaveWeight} disabled={isSaving} className="w-full bg-[#ccff00] text-black hover:bg-[#b3e600] font-bold">
+              {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> KAYDEDİLİYOR...</> : "KAYDET"}
+            </Button>
           </div>
         </DialogContent>
       </Dialog>
 
+      {/* Water Modal */}
       <Dialog open={showWaterModal} onOpenChange={setShowWaterModal}>
         <DialogContent className="bg-zinc-900 border-white/10 max-w-sm z-[100]">
           <DialogHeader><DialogTitle className="text-white">SU EKLE 💧</DialogTitle></DialogHeader>
