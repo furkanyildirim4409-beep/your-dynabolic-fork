@@ -10,13 +10,14 @@ import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
 const MAX_DISCOUNT_PERCENTAGE = 0.20;
-const USER_BIO_COINS = 2450;
 
 const calculateMaxDiscount = (productPrice: number, userCoins: number): number => {
   const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
