@@ -23,12 +23,16 @@ const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
+  const [showMeasurements, setShowMeasurements] = useState(false);
   const { isOffline } = useOfflineMode();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { latest: latestMeasurement } = useBodyMeasurements();
   
-  // Calculate waist scale based on timeline (1.2 at start, 0.85 at goal)
-  const waistScale = 1.2 - (timelineValue[0] / 100) * 0.35;
+  // Derive waistScale from real data or timeline slider
+  const waistScale = latestMeasurement?.waist
+    ? Number(latestMeasurement.waist) / 85
+    : 1.2 - (timelineValue[0] / 100) * 0.35;
 
   const bodyStats = [
     { label: "Boy", value: "182 cm" },
