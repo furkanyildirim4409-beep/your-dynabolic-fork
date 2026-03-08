@@ -1,178 +1,415 @@
 import { useState } from "react";
+import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, LogOut, Trophy, Coins, Flame, Target, Calendar, ChevronRight, Edit2, Camera, Scan, FileText, History, Award, TrendingUp, Share2, Shield } from "lucide-react";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Progress } from "@/components/ui/progress";
-import { Button } from "@/components/ui/button";
-import { useAuth } from "@/context/AuthContext";
-import { currentUser, workoutHistory } from "@/lib/mockData";
-import SettingsPanel from "@/components/SettingsPanel";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff } from "lucide-react";
+import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
 import BloodworkUpload from "@/components/BloodworkUpload";
-import PersonalRecords from "@/components/PersonalRecords";
+import WearableDeviceSync from "@/components/WearableDeviceSync";
 import TransformationTimeline from "@/components/profile/TransformationTimeline";
-import { useNavigate } from "react-router-dom";
-import { hapticLight, hapticMedium } from "@/lib/haptics";
+import SettingsPanel from "@/components/SettingsPanel";
+import { Slider } from "@/components/ui/slider";
+import { Button } from "@/components/ui/button";
+import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
+import { toast } from "@/hooks/use-toast";
+import { useOfflineMode } from "@/context/OfflineContext";
+import { useAuth } from "@/context/AuthContext";
 
 const Profil = () => {
-  const navigate = useNavigate();
-  const { profile, signOut } = useAuth();
+  const [timelineValue, setTimelineValue] = useState([50]);
   const [showSettings, setShowSettings] = useState(false);
-  const [showWallet, setShowWallet] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
-  const [activeSection, setActiveSection] = useState<"overview" | "records" | "bloodwork" | "transformation">("overview");
+  const { isOffline } = useOfflineMode();
+  const { profile, signOut } = useAuth();
+  const navigate = useNavigate();
+  
+  // Calculate waist scale based on timeline (1.2 at start, 0.85 at goal)
+  const waistScale = 1.2 - (timelineValue[0] / 100) * 0.35;
 
-  const stats = [
-    { label: "Seviye", value: currentUser.level, icon: <Target className="w-4 h-4 text-primary" /> },
-    { label: "Seri", value: `${currentUser.streak} gün`, icon: <Flame className="w-4 h-4 text-orange-400" /> },
-    { label: "Bio-Coin", value: currentUser.bioCoins.toLocaleString(), icon: <Coins className="w-4 h-4 text-yellow-500" /> },
-    { label: "Antrenman", value: workoutHistory.length, icon: <Calendar className="w-4 h-4 text-blue-400" /> },
+  const bodyStats = [
+    { label: "Boy", value: "182 cm" },
+    { label: "Kilo", value: "78.5 kg" },
+    { label: "Yağ Oranı", value: "12.4%", highlight: true },
+    { label: "Kas Kütlesi", value: "74 kg", highlight: true },
+    { label: "BMI", value: "23.7" },
+    { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];
+
+  const recoveryZones = [
+    { zone: "Göğüs", status: "Toparlanma Gerekiyor", severity: "high" },
+    { zone: "Omuz", status: "Toparlanma Gerekiyor", severity: "high" },
+    { zone: "Bacak", status: "Hazır", severity: "ok" },
+    { zone: "Sırt", status: "Yarın Hazır", severity: "medium" },
+  ];
+
+  const handleSettingsAction = async (action: string) => {
+    if (action === "logout") {
+      await signOut();
+      navigate("/login", { replace: true });
+    } else {
+      toast({
+        title: `${action} (Demo)`,
+        description: "Bu özellik yakında aktif olacak!",
+      });
+    }
+  };
 
   const menuItems = [
-    { label: "Bio-Coin Cüzdan", icon: <Coins className="w-5 h-5 text-yellow-500" />, onClick: () => setShowWallet(true) },
-    { label: "Başarımlar", icon: <Trophy className="w-5 h-5 text-amber-500" />, onClick: () => navigate("/achievements") },
-    { label: "Vücut Taraması", icon: <Scan className="w-5 h-5 text-primary" />, onClick: () => { hapticMedium(); setShowBodyScan(true); } },
-    { label: "Sağlık Trendleri", icon: <TrendingUp className="w-5 h-5 text-emerald-400" />, onClick: () => navigate("/saglik-trendleri") },
-    { label: "Ayarlar", icon: <Settings className="w-5 h-5 text-muted-foreground" />, onClick: () => setShowSettings(true) },
-    { label: "Çıkış Yap", icon: <LogOut className="w-5 h-5 text-destructive" />, onClick: signOut, danger: true },
+    { icon: Settings, label: "Ayarlar", description: "Uygulama tercihlerini düzenle", action: "settings" },
+    { icon: Bell, label: "Bildirimler", description: "Hatırlatıcıları yönet", action: "notifications" },
+    { icon: Shield, label: "Gizlilik", description: "Veri paylaşım ayarları", action: "privacy" },
+    { icon: LogOut, label: "Çıkış Yap", description: "Hesabından çık", danger: true, action: "logout" },
   ];
-
-  const sectionTabs = [
-    { key: "overview" as const, label: "Genel" },
-    { key: "records" as const, label: "Rekorlar" },
-    { key: "bloodwork" as const, label: "Kan Tahlili" },
-    { key: "transformation" as const, label: "Dönüşüm" },
-  ];
-
-  // XP calculation
-  const currentXP = 720;
-  const nextLevelXP = 1000;
-  const xpProgress = (currentXP / nextLevelXP) * 100;
 
   return (
     <div className="space-y-6 pb-24">
-      {/* Profile Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="text-center pt-4">
-        <div className="relative inline-block mb-3">
-          <div className="p-1 rounded-full bg-gradient-to-tr from-primary via-primary/50 to-primary">
-            <Avatar className="w-24 h-24 border-2 border-background">
-              <AvatarImage src={currentUser.avatar} />
-              <AvatarFallback className="text-2xl">{profile?.full_name?.charAt(0) || "U"}</AvatarFallback>
-            </Avatar>
+      {/* Header with Bio-Coins */}
+      <div className="flex items-center justify-between">
+        <div>
+          <h1 className="font-display text-2xl text-foreground">PROFİL</h1>
+          <p className="text-muted-foreground text-sm">Dijital İkiz & Vücut Analizi</p>
+        </div>
+        <BioCoinWallet balance={profile?.bio_coins ?? 0} showLabel />
+      </div>
+
+      {/* User ID Card Header */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.05 }}
+        className="glass-card p-4 flex items-center gap-4 border border-primary/30"
+      >
+        <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center neon-glow-sm relative">
+          <User className="w-10 h-10 text-primary" />
+          <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-bold">
+            ELİT
           </div>
-          <button className="absolute bottom-1 right-1 p-1.5 rounded-full bg-primary text-primary-foreground shadow-lg">
-            <Camera className="w-3 h-3" />
-          </button>
         </div>
-        <h1 className="font-display text-xl font-bold text-foreground">{profile?.full_name || "Sporcu"}</h1>
-        <p className="text-muted-foreground text-xs mt-1">{currentUser.email}</p>
-        <div className="flex items-center justify-center gap-2 mt-2">
-          <span className="text-xs bg-primary/20 text-primary px-2 py-0.5 rounded-full font-display flex items-center gap-1"><Shield className="w-3 h-3" /> Seviye {currentUser.level}</span>
-          <span className="text-xs bg-yellow-500/20 text-yellow-500 px-2 py-0.5 rounded-full font-display flex items-center gap-1"><Coins className="w-3 h-3" /> {currentUser.bioCoins}</span>
+        <div className="flex-1">
+          <div className="flex items-center gap-2">
+            <h3 className="font-display text-xl text-foreground">{profile?.full_name || "SPORCU"}</h3>
+            <Shield className="w-4 h-4 text-primary" />
+          </div>
+          <p className="text-primary text-sm font-medium">{profile?.email}</p>
+          <div className="flex gap-6 mt-3">
+            <div className="text-center">
+              <p className="font-display text-lg text-primary">847</p>
+              <p className="text-muted-foreground text-[10px]">Antrenman</p>
+            </div>
+            <div className="text-center">
+              <p className="font-display text-lg text-foreground">156</p>
+              <p className="text-muted-foreground text-[10px]">Gün Serisi</p>
+            </div>
+            <div className="text-center">
+              <p className="font-display text-lg text-foreground">12</p>
+              <p className="text-muted-foreground text-[10px]">Rozet</p>
+            </div>
+          </div>
         </div>
       </motion.div>
 
-      {/* Level progress */}
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }} className="glass-card p-4">
+      {/* 3D Avatar Section - Now Realistic */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.1 }}
+        className="glass-card p-4 overflow-hidden"
+      >
         <div className="flex items-center justify-between mb-2">
-          <span className="text-muted-foreground text-xs font-display">Seviye {currentUser.level}</span>
-          <span className="text-muted-foreground text-xs font-display">Seviye {currentUser.level + 1}</span>
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            DİJİTAL İKİZ
+          </h2>
+          <div className="flex items-center gap-1">
+            <motion.div
+              className="w-2 h-2 rounded-full bg-primary"
+              animate={{ opacity: [1, 0.5, 1] }}
+              transition={{ duration: 1.5, repeat: Infinity }}
+            />
+            <span className="text-[10px] text-muted-foreground">CANLI</span>
+          </div>
         </div>
-        <Progress value={xpProgress} className="h-2.5" />
-        <div className="flex items-center justify-between mt-2">
-          <p className="text-muted-foreground text-[10px]">{currentXP} / {nextLevelXP} XP</p>
-          <p className="text-primary text-[10px] font-display">{nextLevelXP - currentXP} XP kaldı</p>
+
+        {/* Realistic 3D Avatar */}
+        <RealisticBodyAvatar waistScale={waistScale} />
+
+        {/* Recovery Alert */}
+        <div className="mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-3">
+          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
+          <div>
+            <p className="text-destructive text-xs font-medium">
+              KAS TOPARLANMASI GEREKİYOR
+            </p>
+            <p className="text-muted-foreground text-[10px]">
+              Göğüs ve Omuz bölgeleri dinlenme gerektirir
+            </p>
+          </div>
         </div>
       </motion.div>
 
-      {/* Stats grid */}
-      <div className="grid grid-cols-4 gap-2">
-        {stats.map((stat, i) => (
-          <motion.div key={stat.label} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.1 + i * 0.05 }} className="glass-card p-3 text-center">
-            <div className="flex justify-center mb-1">{stat.icon}</div>
-            <p className="font-display text-sm text-foreground">{stat.value}</p>
-            <p className="text-muted-foreground text-[10px]">{stat.label}</p>
-          </motion.div>
-        ))}
-      </div>
+      {/* Timeline AI - Body Transformation */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.15 }}
+        className="glass-card p-4"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <TrendingUp className="w-5 h-5 text-primary" />
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            ZAMAN YOLCULUĞU
+          </h2>
+        </div>
 
-      {/* Section tabs */}
-      <div className="flex gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
-        {sectionTabs.map(tab => (
-          <button
-            key={tab.key}
-            onClick={() => { hapticLight(); setActiveSection(tab.key); }}
-            className={`flex-1 py-2 rounded-lg text-[10px] font-display transition-all ${activeSection === tab.key ? "bg-primary text-primary-foreground" : "text-muted-foreground"}`}
+        {/* Timeline Slider */}
+        <div className="space-y-3">
+          <div className="flex justify-between text-xs">
+            <span className="text-muted-foreground">BUGÜN</span>
+            <span className="text-primary font-medium">HEDEF (TEMMUZ 2026)</span>
+          </div>
+          
+          <Slider
+            value={timelineValue}
+            onValueChange={setTimelineValue}
+            max={100}
+            step={1}
+            className="w-full"
+          />
+
+          {/* Tooltip */}
+          <div className="text-center">
+            <span className="inline-block bg-primary/20 text-primary text-xs px-3 py-1 rounded-full">
+              TAHMİNİ FİZİK: {Math.round(timelineValue[0])}% İlerleme
+            </span>
+          </div>
+
+          {/* Projected Stats */}
+          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
+            <div className="text-center p-2 bg-secondary/50 rounded-lg">
+              <p className="text-muted-foreground text-[10px]">TAHMİNİ YAĞ</p>
+              <p className="font-display text-lg text-stat-hrv">
+                %{(12.4 - (timelineValue[0] / 100) * 3.4).toFixed(1)}
+              </p>
+            </div>
+            <div className="text-center p-2 bg-secondary/50 rounded-lg">
+              <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
+              <p className="font-display text-lg text-primary">
+                {(74 + (timelineValue[0] / 100) * 4).toFixed(1)}kg
+              </p>
+            </div>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Bio-Coins Earned Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.17 }}
+        className="glass-card p-4"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Coins className="w-5 h-5 text-primary" />
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            BIO-COIN CÜZDANI
+          </h2>
+        </div>
+
+        <div className="grid grid-cols-3 gap-3">
+          <div className="text-center p-3 bg-primary/10 border border-primary/30 rounded-xl">
+            <p className="font-display text-2xl text-primary">{(profile?.bio_coins ?? 0).toLocaleString()}</p>
+            <p className="text-muted-foreground text-[10px]">TOPLAM</p>
+          </div>
+          <div className="text-center p-3 bg-secondary/50 rounded-xl">
+            <p className="font-display text-2xl text-foreground">+125</p>
+            <p className="text-muted-foreground text-[10px]">BU HAFTA</p>
+          </div>
+          <div className="text-center p-3 bg-secondary/50 rounded-xl">
+            <p className="font-display text-2xl text-foreground">3</p>
+            <p className="text-muted-foreground text-[10px]">SATIN ALIM</p>
+          </div>
+        </div>
+
+        <p className="text-muted-foreground text-xs mt-3 text-center">
+          Her tamamlanan antrenman = Bio-Coin kazanırsın! 💪
+        </p>
+      </motion.div>
+
+      {/* Wearable Device Sync */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.19 }}
+      >
+        <WearableDeviceSync />
+      </motion.div>
+
+      {/* Recovery Zones */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="glass-card p-4"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Target className="w-5 h-5 text-primary" />
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            TOPARLANMA BÖLGELERİ
+          </h2>
+        </div>
+
+        <div className="space-y-2">
+          {recoveryZones.map((zone, index) => (
+            <div
+              key={index}
+              className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl"
+            >
+              <span className="text-foreground text-sm">{zone.zone}</span>
+              <span className={`text-xs px-2 py-1 rounded-full ${
+                zone.severity === "high" 
+                  ? "bg-destructive/20 text-destructive" 
+                  : zone.severity === "medium"
+                  ? "bg-yellow-500/20 text-yellow-500"
+                  : "bg-stat-hrv/20 text-stat-hrv"
+              }`}>
+                {zone.status}
+              </span>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Body Stats */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.25 }}
+        className="glass-card p-4"
+      >
+        <h2 className="font-display text-lg text-foreground mb-4 tracking-wide">
+          VÜCUT VERİLERİ
+        </h2>
+        
+        <div className="grid grid-cols-2 gap-3">
+          {bodyStats.map((stat, index) => (
+            <div 
+              key={index} 
+              className={`p-3 rounded-xl ${
+                stat.highlight 
+                  ? "bg-primary/10 border border-primary/30" 
+                  : "bg-secondary/50"
+              }`}
+            >
+              <p className="text-muted-foreground text-xs">{stat.label}</p>
+              <p className={`font-display text-lg mt-1 ${
+                stat.highlight ? "text-primary" : "text-foreground"
+              }`}>
+                {stat.value}
+              </p>
+            </div>
+          ))}
+        </div>
+      </motion.div>
+
+      {/* Transformation Timeline */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.3 }}
+      >
+        <TransformationTimeline />
+      </motion.div>
+
+      {/* Body Scan Upload Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.32 }}
+        className="glass-card p-4"
+      >
+        <div className="flex items-center gap-2 mb-4">
+          <Camera className="w-5 h-5 text-primary" />
+          <h2 className="font-display text-lg text-foreground tracking-wide">
+            YENİ FOTOĞRAF EKLE
+          </h2>
+        </div>
+        
+        <p className="text-muted-foreground text-sm mb-4">
+          İlerlemenizi takip etmek için güncel vücut fotoğraflarınızı ekleyin.
+        </p>
+        
+        {isOffline ? (
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button 
+                disabled
+                className="w-full h-12 font-display opacity-50 cursor-not-allowed"
+              >
+                <WifiOff className="w-5 h-5 mr-2" />
+                FOTOĞRAF YÜKLE
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>İnternet bağlantısı gerekli</p>
+            </TooltipContent>
+          </Tooltip>
+        ) : (
+          <Button 
+            onClick={() => setShowBodyScan(true)}
+            className="w-full h-12 font-display neon-glow-sm"
           >
-            {tab.label}
+            <Camera className="w-5 h-5 mr-2" />
+            FOTOĞRAF YÜKLE
+          </Button>
+        )}
+      </motion.div>
+
+      {/* Bloodwork Upload Section */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+      >
+        <BloodworkUpload disabled={isOffline} />
+      </motion.div>
+
+      {/* Settings Menu */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.35 }}
+        className="glass-card p-4 space-y-2"
+      >
+        {menuItems.map((item, index) => (
+          <button
+            key={index}
+            onClick={() => item.action === "settings" ? setShowSettings(true) : handleSettingsAction(item.action)}
+            className="w-full flex items-center gap-4 p-3 rounded-xl hover:bg-secondary/50 transition-colors text-left"
+          >
+            <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+              item.danger ? "bg-destructive/20" : "bg-primary/10"
+            }`}>
+              <item.icon className={`w-5 h-5 ${item.danger ? "text-destructive" : "text-primary"}`} />
+            </div>
+            <div className="flex-1">
+              <p className={`font-medium text-sm ${item.danger ? "text-destructive" : "text-foreground"}`}>
+                {item.label}
+              </p>
+              <p className="text-muted-foreground text-xs">{item.description}</p>
+            </div>
+            <ChevronRight className="w-4 h-4 text-muted-foreground" />
           </button>
         ))}
-      </div>
+      </motion.div>
 
-      {/* Section content */}
-      <AnimatePresence mode="wait">
-        {activeSection === "overview" && (
-          <motion.div key="overview" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }} className="space-y-4">
-            {/* Workout history */}
-            <div>
-              <div className="flex items-center justify-between mb-3">
-                <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Son Antrenmanlar</h2>
-                <button onClick={() => navigate("/antrenman")} className="text-primary text-xs flex items-center gap-1">Tümü <ChevronRight className="w-3 h-3" /></button>
-              </div>
-              <div className="space-y-2">
-                {workoutHistory.slice(0, 5).map((w, i) => (
-                  <motion.div key={w.id} initial={{ opacity: 0, x: -10 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.2 + i * 0.05 }} className="glass-card p-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-foreground text-sm">{w.name}</p>
-                      <p className="text-muted-foreground text-xs">{w.date} • {w.duration}</p>
-                    </div>
-                    <div className="text-right">
-                      <p className="text-primary text-xs font-display">{w.tonnage}</p>
-                      <p className="text-yellow-500 text-[10px]">+{w.bioCoins} coin</p>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </div>
-
-            {/* Menu */}
-            <div className="space-y-2">
-              {menuItems.map((item, i) => (
-                <motion.button key={item.label} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 + i * 0.05 }} onClick={item.onClick} className={`w-full glass-card p-4 flex items-center gap-3 text-left transition-all ${item.danger ? "hover:border-destructive/30" : "hover:border-primary/20"}`}>
-                  {item.icon}
-                  <span className={`flex-1 text-sm ${item.danger ? "text-destructive" : "text-foreground"}`}>{item.label}</span>
-                  <ChevronRight className="w-4 h-4 text-muted-foreground" />
-                </motion.button>
-              ))}
-            </div>
-          </motion.div>
-        )}
-
-        {activeSection === "records" && (
-          <motion.div key="records" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <PersonalRecords isOpen={activeSection === "records"} onClose={() => setActiveSection("overview")} />
-          </motion.div>
-        )}
-
-        {activeSection === "bloodwork" && (
-          <motion.div key="bloodwork" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <BloodworkUpload />
-          </motion.div>
-        )}
-
-        {activeSection === "transformation" && (
-          <motion.div key="transformation" initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0, x: 20 }}>
-            <TransformationTimeline />
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Modals */}
+      {/* Settings Panel */}
       <SettingsPanel isOpen={showSettings} onClose={() => setShowSettings(false)} />
-      <BioCoinWallet isOpen={showWallet} onClose={() => setShowWallet(false)} />
-      <BodyScanUpload isOpen={showBodyScan} onClose={() => setShowBodyScan(false)} />
+
+      {/* Body Scan Upload Modal */}
+      <BodyScanUpload 
+        isOpen={showBodyScan} 
+        onClose={() => setShowBodyScan(false)} 
+      />
     </div>
   );
 };
