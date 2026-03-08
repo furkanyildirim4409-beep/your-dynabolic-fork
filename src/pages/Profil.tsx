@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
+import { useMacros } from "@/hooks/useMacros";
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
