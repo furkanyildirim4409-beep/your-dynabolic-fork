@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Minus, Plus, Trash2, X, CreditCard, Tag, ChevronRight } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, X, CreditCard, Tag, ChevronRight, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface CartViewProps {
   isOpen: boolean;
