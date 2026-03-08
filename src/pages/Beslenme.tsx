@@ -5,6 +5,7 @@ import {
   Check,
   Search,
   Plus,
+  Minus,
   Droplets,
   Camera,
   X,
