@@ -144,11 +144,31 @@ const HumanBody = ({ waistScale = 1 }: HumanBodyProps) => {
   );
 };
 
-interface RealisticBodyAvatarProps {
-  waistScale?: number;
+export interface AvatarMeasurements {
+  neck?: number | null;
+  chest?: number | null;
+  shoulder?: number | null;
+  waist?: number | null;
+  hips?: number | null;
+  arm?: number | null;
+  thigh?: number | null;
 }
 
-const RealisticBodyAvatar = ({ waistScale = 1 }: RealisticBodyAvatarProps) => {
+interface RealisticBodyAvatarProps {
+  waistScale?: number;
+  measurements?: AvatarMeasurements;
+}
+
+const MeasurementLabel = ({ value, label, className }: { value?: number | null; label: string; className: string }) => {
+  if (!value) return null;
+  return (
+    <div className={`absolute backdrop-blur-md bg-muted/30 border border-border/40 text-[10px] px-2 py-0.5 rounded-full text-foreground font-medium whitespace-nowrap pointer-events-none ${className}`}>
+      {label}: {value}cm
+    </div>
+  );
+};
+
+const RealisticBodyAvatar = ({ waistScale = 1, measurements }: RealisticBodyAvatarProps) => {
   return (
     <div className="w-full h-72 relative">
       <Canvas camera={{ position: [0, 0.5, 4.5], fov: 45 }}>
@@ -171,6 +191,19 @@ const RealisticBodyAvatar = ({ waistScale = 1 }: RealisticBodyAvatarProps) => {
           autoRotate={false}
         />
       </Canvas>
+
+      {/* Measurement Labels */}
+      {measurements && (
+        <div className="absolute inset-0 pointer-events-none">
+          <MeasurementLabel value={measurements.shoulder} label="Omuz" className="top-[18%] right-2" />
+          <MeasurementLabel value={measurements.chest} label="Göğüs" className="top-[30%] right-2" />
+          <MeasurementLabel value={measurements.waist} label="Bel" className="top-[42%] right-2" />
+          <MeasurementLabel value={measurements.hips} label="Kalça" className="top-[52%] right-2" />
+          <MeasurementLabel value={measurements.arm} label="Kol" className="top-[30%] left-1" />
+          <MeasurementLabel value={measurements.neck} label="Boyun" className="top-[12%] left-1" />
+          <MeasurementLabel value={measurements.thigh} label="Bacak" className="bottom-[18%] left-1" />
+        </div>
+      )}
 
       {/* Sweat/Glow Effect Overlay */}
       <div className="absolute inset-0 pointer-events-none">

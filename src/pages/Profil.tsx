@@ -448,6 +448,12 @@ const Profil = () => {
         isOpen={showBodyScan} 
         onClose={() => setShowBodyScan(false)} 
       />
+
+      {/* Update Measurements Modal */}
+      <UpdateMeasurementsModal
+        isOpen={showMeasurements}
+        onClose={() => setShowMeasurements(false)}
+      />
     </div>
   );
 };
