@@ -63,7 +63,7 @@ const sliderConfigs: SliderConfig[] = [
 
 function calculateReadiness(mood: number, sleep: number, soreness: number, stress: number): number {
   return Math.round(
-    (mood * 0.25 + sleep * 0.35 + (10 - soreness) * 0.2 + (10 - stress) * 0.2) * 10
+    (mood / 5) * 25 + (sleep / 5) * 35 + ((5 - soreness) / 5) * 20 + ((5 - stress) / 5) * 20
   );
 }
 
