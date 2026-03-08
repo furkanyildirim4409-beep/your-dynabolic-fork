@@ -65,7 +65,22 @@ const UniversalCartDrawer = () => {
     }, 100);
   };
 
-  const handlePaymentSuccess = () => {
+  const handlePaymentSuccess = async () => {
+    if (!user) return;
+
+    const { error } = await supabase.from("orders").insert({
+      user_id: user.id,
+      items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
+      total_price: cartTotal,
+      total_coins_used: totalCoinsUsed,
+      status: "pending",
+    });
+
+    if (error) {
+      toast({ title: "Sipariş kaydedilemedi", description: error.message, variant: "destructive" });
+      return;
+    }
+
     fireConfetti();
     clearCart();
     closeCart();
