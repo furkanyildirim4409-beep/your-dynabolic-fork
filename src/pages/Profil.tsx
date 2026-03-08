@@ -32,7 +32,14 @@ const Profil = () => {
   // Base values from real data or defaults
   const hasRealBodyFat = latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0;
   const currentBodyFat = hasRealBodyFat ? Number(latestMeasurement.body_fat_pct) : null;
-  const currentMuscleMass = latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : null;
+  const profileWeight = profile?.current_weight ? Number(profile.current_weight) : null;
+  const recalculatedMuscleMass =
+    currentBodyFat != null && profileWeight != null
+      ? calcMuscleMass(profileWeight, currentBodyFat)
+      : null;
+  const currentMuscleMass =
+    recalculatedMuscleMass ??
+    (latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : null);
   const currentWaist = latestMeasurement?.waist ? Number(latestMeasurement.waist) : 85;
 
   // Timeline slider always controls projection — interpolate from current toward goal
@@ -45,7 +52,7 @@ const Profil = () => {
     { label: "Boy", value: "182 cm" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
     { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0 ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
-    { label: "Kas Kütlesi", value: latestMeasurement?.muscle_mass_kg ? `${latestMeasurement.muscle_mass_kg} kg` : "—", highlight: true },
+    { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true },
     { label: "BMI", value: "23.7" },
     { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];

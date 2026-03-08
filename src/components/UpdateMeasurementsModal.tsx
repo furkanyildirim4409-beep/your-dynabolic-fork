@@ -59,7 +59,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   // Estimate muscle mass from BF% + weight
   const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
   const muscleEstimate =
-    !form.muscle_mass_kg && effectiveBf && weightKg
+    effectiveBf != null && weightKg != null
       ? calcMuscleMass(weightKg, effectiveBf)
       : null;
 
