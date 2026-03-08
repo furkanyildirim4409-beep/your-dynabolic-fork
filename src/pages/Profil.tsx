@@ -42,6 +42,19 @@ const Profil = () => {
     (latestMeasurement?.muscle_mass_kg ? Number(latestMeasurement.muscle_mass_kg) : null);
   const currentWaist = latestMeasurement?.waist ? Number(latestMeasurement.waist) : 85;
 
+  // BMR calculation from profile data
+  const profileAny = profile as Record<string, unknown> | null;
+  const profileHeight = profileAny?.height_cm ? Number(profileAny.height_cm) : null;
+  const profileGender = (profileAny?.gender as "male" | "female") ?? "male";
+  const profileBirthDate = profileAny?.birth_date ? String(profileAny.birth_date) : null;
+  const profileAge = profileBirthDate
+    ? Math.floor((Date.now() - new Date(profileBirthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
+    : null;
+  const calculatedBMR =
+    profileWeight && profileHeight && profileAge
+      ? calcBMR(profileWeight, profileHeight, profileAge, profileGender)
+      : null;
+
   // Timeline slider always controls projection — interpolate from current toward goal
   const progress = timelineValue[0] / 100;
   const goalWaist = currentWaist * 0.85; // 15% waist reduction target
@@ -49,12 +62,12 @@ const Profil = () => {
   const waistScale = projectedWaist / 85;
 
   const bodyStats = [
-    { label: "Boy", value: "182 cm" },
+    { label: "Boy", value: profileHeight ? `${profileHeight} cm` : "—" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
     { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0 ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
     { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true, tooltip: "Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır" },
-    { label: "BMI", value: "23.7" },
-    { label: "Bazal Metabolizma", value: "1,890 kcal" },
+    { label: "BMI", value: profileWeight && profileHeight ? (profileWeight / ((profileHeight / 100) ** 2)).toFixed(1) : "—" },
+    { label: "Bazal Metabolizma", value: calculatedBMR ? `${calculatedBMR.toLocaleString()} kcal` : "—", tooltip: "Mifflin-St Jeor formülüyle hesaplanmıştır" },
   ];
 
   const recoveryZones = [
