@@ -61,6 +61,7 @@ const Payments = () => {
   const [showReceiptModal, setShowReceiptModal] = useState(false);
   const [orders, setOrders] = useState<any[]>([]);
   const [ordersLoading, setOrdersLoading] = useState(true);
+  const [selectedOrder, setSelectedOrder] = useState<any | null>(null);
 
   useEffect(() => {
     if (!user) { setOrdersLoading(false); return; }
