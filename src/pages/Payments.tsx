@@ -212,7 +212,7 @@ const Payments = () => {
           orders.map((order, index) => {
             const status = orderStatusConfig[order.status || "pending"] || orderStatusConfig.pending;
             return (
-              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4">
+              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4 cursor-pointer hover:ring-1 hover:ring-primary/30 transition-all" onClick={() => setSelectedOrder(order)}>
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
