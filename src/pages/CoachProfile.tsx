@@ -46,7 +46,7 @@ const CoachProfile = () => {
   const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
 
-  const coach = getCoachById(id || "1") || coaches[0];
+  const coach = getCoachById(coachId || "1") || coaches[0];
 
   const handleHighlightClick = (highlight: { id: string; title: string; thumbnail: string }) => {
     const story: Story = {
