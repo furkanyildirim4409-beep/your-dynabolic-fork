@@ -179,10 +179,14 @@ const CartView = ({ isOpen, onClose }: CartViewProps) => {
                 </div>
               </div>
 
-              <Button className="w-full" onClick={() => {}}>
-                <CreditCard className="w-4 h-4 mr-2" />
-                Ödemeye Geç
-                <ChevronRight className="w-4 h-4 ml-auto" />
+              <Button className="w-full" onClick={handleCheckout} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                {isSubmitting ? "İşleniyor..." : "Ödemeye Geç"}
+                {!isSubmitting && <ChevronRight className="w-4 h-4 ml-auto" />}
               </Button>
 
               <button onClick={clearCart} className="w-full text-center text-xs text-muted-foreground hover:text-destructive transition-colors">
