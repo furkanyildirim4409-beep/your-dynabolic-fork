@@ -70,7 +70,7 @@ function calculateReadiness(mood: number, sleep: number, soreness: number, stres
 const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
-  const [values, setValues] = useState({ mood: 7, sleep: 7, soreness: 5, stress: 4 });
+  const [values, setValues] = useState({ mood: 3, sleep: 3, soreness: 3, stress: 3 });
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [hasSubmittedToday, setHasSubmittedToday] = useState(false);
