@@ -27,15 +27,17 @@ const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: 
 
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const { latest, saveMeasurement } = useBodyMeasurements();
+  const { profile } = useAuth();
   const [form, setForm] = useState<Record<string, string>>({});
   const [saving, setSaving] = useState(false);
+
+  const weightKg = profile?.current_weight ? Number(profile.current_weight) : null;
 
   useEffect(() => {
     if (isOpen) {
       if (latest) {
         const pre: Record<string, string> = {};
         fields.forEach(({ key }) => {
-          // Skip pre-filling body_fat_pct if it's negative (invalid)
           const val = latest[key as keyof typeof latest];
           if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
             pre[key] = String(val);
@@ -51,6 +53,13 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const navyEstimate =
     form.waist && form.neck && !form.body_fat_pct
       ? calcNavyBodyFat(Number(form.waist), Number(form.neck))
+      : null;
+
+  // Estimate muscle mass from BF% + weight
+  const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
+  const muscleEstimate =
+    !form.muscle_mass_kg && effectiveBf && weightKg
+      ? calcMuscleMass(weightKg, effectiveBf)
       : null;
 
   // Validate ranges
