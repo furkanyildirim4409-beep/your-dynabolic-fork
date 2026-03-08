@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, ChevronRight, Clock, Flame, Play, X, CheckCircle2, Timer, RotateCcw, CalendarDays, List, History, ChevronDown, ChevronUp, TrendingUp, Target } from "lucide-react";
+import { Dumbbell, ChevronRight, Clock, Flame, Play, X, CheckCircle2, Timer, RotateCcw, CalendarDays, List, History, ChevronDown, ChevronUp, TrendingUp, Target, Trophy } from "lucide-react";
 import { assignedWorkouts, detailedExercises, workoutHistory } from "@/lib/mockData";
 import WorkoutCard from "@/components/WorkoutCard";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
