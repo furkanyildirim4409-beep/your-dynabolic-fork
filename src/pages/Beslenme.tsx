@@ -869,7 +869,7 @@ const Beslenme = () => {
                   <span className="text-foreground font-bold text-sm">SU TAKİBİ</span>
                 </div>
                 <div className="text-right">
-                  <span className="text-2xl font-display font-bold text-foreground">{waterIntake}L</span>
+                  <span className="text-2xl font-display font-bold text-foreground">{waterIntake.toFixed(1)}L</span>
                   <span className="text-muted-foreground text-sm">/{waterGoal}L</span>
                 </div>
               </div>
