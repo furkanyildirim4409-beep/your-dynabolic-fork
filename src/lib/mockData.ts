@@ -308,3 +308,64 @@ export const exerciseHistory: ExerciseHistoryRecord[] = [
   { exerciseName: "Deadlift", date: "2026-01-23", sets: [{ weight: 180, reps: 5 }, { weight: 200, reps: 3 }] },
   { exerciseName: "Deadlift", date: "2026-01-16", sets: [{ weight: 175, reps: 5 }, { weight: 190, reps: 3 }] },
 ];
+
+// ============================================
+// SHOP SUPPLEMENTS
+// ============================================
+
+export interface ShopSupplement {
+  id: string;
+  name: string;
+  brand: string;
+  price: number;
+  originalPrice?: number;
+  rating: number;
+  reviews: number;
+  image: string;
+  category: string;
+  description: string;
+  inStock: boolean;
+  servings: number;
+  perServing: string;
+  tags: string[];
+  flavors: string[];
+}
+
+export const shopSupplements: ShopSupplement[] = [
+  {
+    id: "shop-1", name: "Kreatin Monohidrat", brand: "Optimum Nutrition", price: 349, originalPrice: 449,
+    rating: 4.8, reviews: 1250, image: "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=400&fit=crop",
+    category: "Performans", description: "Saf mikronize kreatin monohidrat. Kas gücü ve dayanıklılığı artırır.",
+    inStock: true, servings: 60, perServing: "5g", tags: ["En Çok Satan", "Koç Önerisi"], flavors: ["Aromasız"],
+  },
+  {
+    id: "shop-2", name: "Whey Protein İzolat", brand: "Gold Standard", price: 899, originalPrice: 1099,
+    rating: 4.9, reviews: 3200, image: "https://images.unsplash.com/photo-1593095948071-474c5cc2989d?w=400&h=400&fit=crop",
+    category: "Protein", description: "Her serviste 25g saf protein. Hızlı emilim, düşük yağ.",
+    inStock: true, servings: 30, perServing: "30g (1 scoop)", tags: ["En Çok Satan"], flavors: ["Çikolata", "Vanilya", "Çilek"],
+  },
+  {
+    id: "shop-3", name: "Omega-3 Balık Yağı", brand: "Nordic Naturals", price: 279,
+    rating: 4.7, reviews: 890, image: "https://images.unsplash.com/photo-1584017911766-d451b3d0e843?w=400&h=400&fit=crop",
+    category: "Sağlık", description: "Yüksek EPA/DHA içerikli moleküler distile balık yağı.",
+    inStock: true, servings: 60, perServing: "2 kapsül", tags: ["Koç Önerisi"], flavors: [],
+  },
+  {
+    id: "shop-4", name: "Vitamin D3 + K2", brand: "Thorne", price: 189,
+    rating: 4.6, reviews: 567, image: "https://images.unsplash.com/photo-1471864190281-a93a3070b6de?w=400&h=400&fit=crop",
+    category: "Vitamin", description: "Kemik sağlığı ve bağışıklık sistemi desteği.",
+    inStock: true, servings: 90, perServing: "1 kapsül", tags: [], flavors: [],
+  },
+  {
+    id: "shop-5", name: "Magnezyum Bisglisinat", brand: "Doctor's Best", price: 159,
+    rating: 4.5, reviews: 445, image: "https://images.unsplash.com/photo-1550572017-edd951aa8f72?w=400&h=400&fit=crop",
+    category: "Mineral", description: "Yüksek biyoyararlanımlı magnezyum. Kas fonksiyonu ve uyku kalitesi.",
+    inStock: true, servings: 60, perServing: "2 kapsül", tags: [], flavors: [],
+  },
+  {
+    id: "shop-6", name: "Pre-Workout Extreme", brand: "C4", price: 449, originalPrice: 549,
+    rating: 4.4, reviews: 1890, image: "https://images.unsplash.com/photo-1594381898411-846e7d193883?w=400&h=400&fit=crop",
+    category: "Performans", description: "Beta-alanin, kafein ve sitrülin malat ile antrenman öncesi enerji.",
+    inStock: false, servings: 30, perServing: "1 scoop", tags: ["Yeni"], flavors: ["Mavi Ahududu", "Yeşil Elma"],
+  },
+];

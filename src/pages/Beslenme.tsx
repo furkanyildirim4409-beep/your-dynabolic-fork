@@ -5,6 +5,7 @@ import { foodDatabase, assignedSupplements } from "@/lib/mockData";
 import SupplementTracker from "@/components/SupplementTracker";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
 
 const targets = { calories: 2600, protein: 180, carbs: 300, fat: 75 };
 const consumed = { calories: 1840, protein: 142, carbs: 210, fat: 52 };
@@ -109,7 +110,10 @@ const Beslenme = () => {
         <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium mb-3">Takviyeler</h2>
         <SupplementTracker
           supplements={supplements}
-          onToggle={(id) => setSupplements(prev => prev.map(s => s.id === id ? { ...s, takenToday: !s.takenToday } : s))}
+          onToggleTaken={(id) => setSupplements(prev => prev.map(s => s.id === id ? { ...s, takenToday: !s.takenToday } : s))}
+          onRefill={(id) => {
+            toast({ title: "Yeniden sipariş verildi", description: "Takviye siparişiniz oluşturuldu." });
+          }}
         />
       </div>
     </div>
