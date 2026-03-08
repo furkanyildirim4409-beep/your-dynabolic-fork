@@ -5,6 +5,7 @@ import { foodDatabase, assignedSupplements } from "@/lib/mockData";
 import SupplementTracker from "@/components/SupplementTracker";
 import { Input } from "@/components/ui/input";
 import { Progress } from "@/components/ui/progress";
+import { toast } from "@/hooks/use-toast";
 
 const targets = { calories: 2600, protein: 180, carbs: 300, fat: 75 };
 const consumed = { calories: 1840, protein: 142, carbs: 210, fat: 52 };

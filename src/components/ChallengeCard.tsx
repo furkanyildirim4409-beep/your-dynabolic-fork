@@ -168,7 +168,7 @@ const ChallengeCard = ({ challenge, onAccept, onDecline, onViewDetails }: Challe
               {hasBonus && (
                 <span className="flex items-center gap-0.5 justify-end text-emerald-400 text-[10px]">
                   <Coins className="w-2.5 h-2.5" />
-                  +{potentialBonus.bonus} bonus
+                  +{potentialBonus.total - challenge.bioCoinsReward} bonus
                 </span>
               )}
             </>
