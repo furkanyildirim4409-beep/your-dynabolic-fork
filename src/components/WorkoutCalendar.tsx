@@ -75,7 +75,7 @@ const WorkoutCalendar = () => {
     if (isFuture(date) || isToday(date)) {
       const dayOfWeek = format(date, 'EEEE', { locale: tr });
       const scheduledWorkout = assignedWorkouts.find(w => 
-        w.day.toLowerCase() === dayOfWeek.toLowerCase()
+        w.day.toLowerCase().startsWith(dayOfWeek.toLowerCase())
       );
 
       if (scheduledWorkout) {
