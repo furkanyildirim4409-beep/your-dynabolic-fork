@@ -267,7 +267,7 @@ const CoachProfile = () => {
 
       {/* Product Detail */}
       {selectedProduct && (
-        <ProductDetail product={selectedProduct} isOpen={!!selectedProduct} onClose={() => setSelectedProduct(null)} />
+        <ProductDetail product={selectedProduct} isOpen={!!selectedProduct} onClose={() => setSelectedProduct(null)} onAddToCart={handleAddToCart} />
       )}
 
       {/* Coach Chat */}
