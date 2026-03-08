@@ -67,7 +67,8 @@ const Kesfet = () => {
   const navigate = useNavigate();
   const { openStories } = useStory();
   const { addToCart, cartCount, openCart } = useCart();
-  const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
+  const { profile, user, refreshProfile } = useAuth();
+  const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
