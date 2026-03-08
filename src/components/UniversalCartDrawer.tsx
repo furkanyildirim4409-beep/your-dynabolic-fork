@@ -33,6 +33,7 @@ const fireConfetti = () => {
 
 const UniversalCartDrawer = () => {
   const { items, removeFromCart, updateQuantity, clearCart, cartTotal, isCartOpen, closeCart } = useCart();
+  const { user } = useAuth();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   
   const totalCoinsUsed = items.reduce((acc, item) => acc + (item.coinsUsed || 0) * item.quantity, 0);
