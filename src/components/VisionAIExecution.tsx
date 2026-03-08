@@ -296,10 +296,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-muted-foreground text-center mb-8">Harika iş çıkardın! Tüm hareketleri başarıyla tamamladın.</motion.p>
               <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-6 w-full max-w-sm space-y-4 mb-8">
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Hareket</span><span className="font-display text-lg text-foreground">{exercises.length}</span></div>
-                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{exercises.reduce((acc, ex) => acc + ex.sets, 0)}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{getTotalSetsCompleted()}</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Süre</span><span className="font-display text-lg text-foreground">{Math.round((Date.now() - workoutStartTime.current) / 60000)} dk</span></div>
+                <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Tonnaj</span><span className="font-display text-lg text-foreground">{calculateTotalTonnage() >= 1000 ? `${(calculateTotalTonnage() / 1000).toFixed(1)} Ton` : `${calculateTotalTonnage()} kg`}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Kazanılan Bio-Coin</span><span className="font-display text-lg text-primary">+150</span></div>
               </motion.div>
-              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow">ANTRENMANI BİTİR</motion.button>
+              <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} disabled={isSaving} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow disabled:opacity-50">{isSaving ? "KAYDEDİLİYOR..." : "ANTRENMANI BİTİR"}</motion.button>
             </motion.div>
           )}
         </AnimatePresence>
