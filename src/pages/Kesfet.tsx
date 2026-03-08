@@ -1,242 +1,435 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Globe, Search, Star, Users, Trophy, ChevronRight, Heart, TrendingUp, Zap, BookOpen, Award, Crown, Filter, SlidersHorizontal } from "lucide-react";
-import { coaches, getLeaderboardCoaches } from "@/lib/mockData";
-import { Input } from "@/components/ui/input";
-import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Button } from "@/components/ui/button";
 import { useNavigate } from "react-router-dom";
-import { hapticLight } from "@/lib/haptics";
+import { Globe, X, Heart, MessageCircle, Share2, Verified, Coins, Trophy, Star, Users, Shield, ShoppingBag } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Switch } from "@/components/ui/switch";
+import { toast } from "@/hooks/use-toast";
+import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
+import ProductDetail from "@/components/ProductDetail";
+import { useStory, type Story } from "@/context/StoryContext";
+import { useCart } from "@/context/CartContext";
+import SupplementShop from "@/components/SupplementShop";
+import BioCoinWallet from "@/components/BioCoinWallet";
 
-const categories = ["Hepsi", "Hipertrofi", "Powerlifting", "Mobilite", "Beslenme", "Yoga"];
+// Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
+const COIN_TO_TL_RATE = 0.1;
+const MAX_DISCOUNT_PERCENTAGE = 0.20;
+const USER_BIO_COINS = 2450;
 
-interface FeaturedProgram {
-  id: string;
-  title: string;
-  coach: string;
-  coachAvatar: string;
-  image: string;
-  duration: string;
-  level: string;
-  rating: number;
-  enrollments: number;
-  price: number;
-  tags: string[];
-}
+const calculateMaxDiscount = (productPrice: number, userCoins: number): number => {
+  const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
+  const maxPossibleFromCoins = userCoins * COIN_TO_TL_RATE;
+  return Math.min(maxPossibleFromCoins, maxAllowedByPercentage);
+};
 
-const featuredPrograms: FeaturedProgram[] = [
-  { id: "fp1", title: "12 Hafta Hipertrofi", coach: "Koç Serdar", coachAvatar: "https://images.unsplash.com/photo-1568602471122-7832951cc4c5?w=100", image: "https://images.unsplash.com/photo-1534438327276-14e5300c3a48?w=400&h=250&fit=crop", duration: "12 Hafta", level: "Orta", rating: 4.9, enrollments: 342, price: 799, tags: ["Kas Kütlesi", "Push/Pull"] },
-  { id: "fp2", title: "Güç Döngüsü 5x5", coach: "Koç Elif", coachAvatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=100", image: "https://images.unsplash.com/photo-1526506118085-60ce8714f8c5?w=400&h=250&fit=crop", duration: "8 Hafta", level: "İleri", rating: 4.8, enrollments: 198, price: 599, tags: ["Güç", "Compound"] },
-  { id: "fp3", title: "Yağ Yakma Programı", coach: "Koç Burak", coachAvatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=100", image: "https://images.unsplash.com/photo-1517836357463-d25dfeac3438?w=400&h=250&fit=crop", duration: "6 Hafta", level: "Başlangıç", rating: 4.7, enrollments: 521, price: 499, tags: ["Kardio", "HIIT"] },
-];
+const calculateCoinsNeeded = (discountAmount: number): number => {
+  return Math.ceil(discountAmount / COIN_TO_TL_RATE);
+};
 
-const trendingTopics = [
-  { id: "tt1", title: "Kreatin Yükleme", views: "12.4K", emoji: "💊" },
-  { id: "tt2", title: "Uyku Optimizasyonu", views: "8.7K", emoji: "😴" },
-  { id: "tt3", title: "Deload Haftası", views: "6.2K", emoji: "🔄" },
-  { id: "tt4", title: "RPE Ölçekleme", views: "5.1K", emoji: "📊" },
-];
+const hasExcessCoins = (productPrice: number, userCoins: number): boolean => {
+  const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
+  const maxPossibleFromCoins = userCoins * COIN_TO_TL_RATE;
+  return maxPossibleFromCoins > maxAllowedByPercentage;
+};
 
-const communityPosts = [
-  { id: "cp1", author: "Mehmet D.", avatar: "https://images.unsplash.com/photo-1500648767791-00dcc994a43e?w=80", content: "3 ayda bench press PR'ımı 120kg'dan 145kg'a çıkardım! 💪", likes: 87, comments: 23, time: "2 saat önce" },
-  { id: "cp2", author: "Zeynep K.", avatar: "https://images.unsplash.com/photo-1494790108377-be9c29b29330?w=80", content: "Bugünkü squat PR: 100kg x 5! İlk kez bu ağırlığı taşıdım 🎉", likes: 134, comments: 41, time: "4 saat önce" },
-  { id: "cp3", author: "Burak Ş.", avatar: "https://images.unsplash.com/photo-1506794778202-cad84cf45f1d?w=80", content: "6 aylık dönüşüm fotoğraflarım hazır. 92kg → 80kg, yağ oranı %22 → %14", likes: 256, comments: 67, time: "6 saat önce" },
-];
+const getMedalBadge = (rank: number) => {
+  if (rank === 1) return { emoji: "🥇", color: "from-yellow-400 to-yellow-600", glow: "shadow-[0_0_20px_rgba(250,204,21,0.5)]" };
+  if (rank === 2) return { emoji: "🥈", color: "from-gray-300 to-gray-400", glow: "shadow-[0_0_15px_rgba(156,163,175,0.4)]" };
+  if (rank === 3) return { emoji: "🥉", color: "from-amber-600 to-amber-700", glow: "shadow-[0_0_15px_rgba(217,119,6,0.4)]" };
+  return null;
+};
+
+const getAllProducts = () => {
+  return coaches.flatMap(coach =>
+    coach.products.map(product => ({
+      ...product,
+      coachName: coach.name,
+      coachId: coach.id
+    }))
+  ).slice(0, 8);
+};
+
+const getAllPosts = () => {
+  return coaches.flatMap(coach =>
+    coach.posts.map(post => ({
+      ...post,
+      coachName: coach.name,
+      coachId: coach.id,
+      coachAvatar: coach.avatar
+    }))
+  );
+};
 
 const Kesfet = () => {
   const navigate = useNavigate();
-  const [activeCategory, setActiveCategory] = useState("Hepsi");
-  const [searchQuery, setSearchQuery] = useState("");
-  const [showSearch, setShowSearch] = useState(false);
+  const { openStories } = useStory();
+  const { addToCart, cartCount, openCart } = useCart();
+  const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
+  const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
-  const leaderboard = getLeaderboardCoaches();
+  const [selectedProduct, setSelectedProduct] = useState<any>(null);
+  const [showProductDetail, setShowProductDetail] = useState(false);
 
-  const filteredCoaches = coaches.filter(c => {
-    if (searchQuery && !c.name.toLowerCase().includes(searchQuery.toLowerCase())) return false;
-    if (activeCategory !== "Hepsi" && !c.specialty.includes(activeCategory)) return false;
-    return true;
-  });
+  const sortedCoaches = getLeaderboardCoaches();
+  const allProducts = getAllProducts();
+  const allPosts = getAllPosts();
 
-  const handleLikePost = (postId: string) => {
-    hapticLight();
+  const handleCoachClick = (coachId: string) => {
+    navigate(`/coach/${coachId}`);
+  };
+
+  const handleStoryClick = (coach: Coach) => {
+    const story: Story = {
+      id: `coach-${coach.id}`,
+      title: coach.name,
+      thumbnail: coach.avatar,
+      content: coach.storyContent,
+    };
+    openStories([story], 0, {
+      categoryLabel: coach.specialty,
+      categoryGradient: "from-primary to-primary/60",
+    });
+  };
+
+  const handleLike = (postId: string) => {
     setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
   };
 
+  const handleProductClick = (product: any) => {
+    setSelectedProduct(product);
+    setShowProductDetail(true);
+  };
+
+  const handleAddToCart = (product: any) => {
+    const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
+    const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
+    const coinsNeeded = calculateCoinsNeeded(maxDiscount);
+
+    addToCart({
+      id: `${product.id}-${product.coachId}-${Date.now()}`,
+      title: product.title,
+      price: product.price,
+      discountedPrice: isDiscountActive ? Math.round(product.price - maxDiscount) : undefined,
+      coinsUsed: isDiscountActive ? coinsNeeded : undefined,
+      image: product.image,
+      coachName: product.coachName,
+      type: "product",
+    });
+
+    if (isDiscountActive) {
+      setBioCoins(prev => prev - coinsNeeded);
+      setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
+    }
+  };
+
   return (
-    <div className="space-y-6 pb-24">
-      {/* Header */}
-      <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }}>
-        <div className="flex items-center justify-between mb-1">
-          <div className="flex items-center gap-2">
-            <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-            <h1 className="font-display text-xl font-bold text-foreground">KEŞFET</h1>
+    <>
+      <div className="space-y-6 pb-24">
+        {/* Header */}
+        <div className="flex items-center justify-between">
+          <div>
+            <h1 className="font-display text-2xl text-foreground">KEŞFET</h1>
+            <p className="text-muted-foreground text-sm">Pazar Yeri & Sosyal Ağ</p>
           </div>
-          <Button variant="ghost" size="sm" onClick={() => setShowSearch(!showSearch)} className="p-2">
-            <Search className="w-4 h-4 text-muted-foreground" />
-          </Button>
-        </div>
-        <p className="text-muted-foreground text-xs">Koçları keşfet, toplulukla bağlan</p>
-      </motion.div>
-
-      {/* Search */}
-      <AnimatePresence>
-        {showSearch && (
-          <motion.div initial={{ height: 0, opacity: 0 }} animate={{ height: "auto", opacity: 1 }} exit={{ height: 0, opacity: 0 }}>
-            <div className="relative">
-              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-              <Input placeholder="Koç, program veya konu ara..." value={searchQuery} onChange={e => setSearchQuery(e.target.value)} className="pl-10 bg-card border-border" autoFocus />
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
-
-      {/* Categories */}
-      <div className="flex gap-2 overflow-x-auto no-scrollbar">
-        {categories.map(cat => (
-          <button key={cat} onClick={() => { hapticLight(); setActiveCategory(cat); }} className={`px-3 py-1.5 rounded-full text-xs whitespace-nowrap transition-all ${activeCategory === cat ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground border border-border"}`}>{cat}</button>
-        ))}
-      </div>
-
-      {/* Featured Programs */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Zap className="w-4 h-4 text-primary" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Öne Çıkan Programlar</h2>
-        </div>
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-          {featuredPrograms.map((program, i) => (
-            <motion.div key={program.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} className="glass-card min-w-[260px] overflow-hidden flex-shrink-0">
-              <div className="relative h-32">
-                <img src={program.image} alt={program.title} className="w-full h-full object-cover" loading="lazy" />
-                <div className="absolute inset-0 bg-gradient-to-t from-background to-transparent" />
-                <div className="absolute top-2 right-2 px-2 py-0.5 rounded-full bg-background/70 backdrop-blur-sm text-[10px] font-display text-foreground">{program.level}</div>
-                <div className="absolute bottom-2 left-3">
-                  <p className="text-foreground text-sm font-display">{program.title}</p>
+          <div className="flex items-center gap-3">
+            <motion.button
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+              onClick={() => openCart()}
+              className="relative p-2"
+            >
+              <ShoppingBag className="w-5 h-5 text-muted-foreground" />
+              {cartCount > 0 && (
+                <div className="absolute -top-1 -right-1 w-5 h-5 rounded-full bg-primary flex items-center justify-center">
+                  <span className="text-primary-foreground text-[10px] font-bold">{cartCount}</span>
                 </div>
-              </div>
-              <div className="p-3">
-                <div className="flex items-center gap-2 mb-2">
-                  <Avatar className="w-5 h-5"><AvatarImage src={program.coachAvatar} /><AvatarFallback className="text-[8px]">{program.coach.charAt(0)}</AvatarFallback></Avatar>
-                  <span className="text-muted-foreground text-[10px]">{program.coach}</span>
-                </div>
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-3">
-                    <span className="text-muted-foreground text-[10px] flex items-center gap-0.5"><Star className="w-3 h-3 text-yellow-500" />{program.rating}</span>
-                    <span className="text-muted-foreground text-[10px]">{program.enrollments} kişi</span>
-                    <span className="text-muted-foreground text-[10px]">{program.duration}</span>
+              )}
+            </motion.button>
+            <BioCoinWallet balance={bioCoins} />
+          </div>
+        </div>
+
+        {/* Elite Coaches Stories */}
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="glass-card p-4"
+        >
+          <div className="flex items-center gap-2 mb-4">
+            <Globe className="w-5 h-5 text-primary" />
+            <h2 className="font-display text-sm text-foreground tracking-wide">ELİT KOÇLAR</h2>
+          </div>
+          <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
+            {coaches.map((coach) => (
+              <motion.button
+                key={coach.id}
+                onClick={() => handleStoryClick(coach)}
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className="flex flex-col items-center gap-2 flex-shrink-0"
+              >
+                <div className={`p-0.5 rounded-full ${coach.hasNewStory ? "bg-gradient-to-tr from-primary via-yellow-500 to-primary" : "bg-muted"}`}>
+                  <div className="p-0.5 rounded-full bg-background">
+                    <Avatar className="w-16 h-16">
+                      <AvatarImage src={coach.avatar} alt={coach.name} className="object-cover" />
+                      <AvatarFallback className="bg-secondary text-foreground">{coach.name.charAt(4)}</AvatarFallback>
+                    </Avatar>
                   </div>
-                  <span className="text-primary font-display text-sm">₺{program.price}</span>
                 </div>
-                <div className="flex gap-1 mt-2">
-                  {program.tags.map(tag => (
-                    <span key={tag} className="text-[9px] bg-primary/10 text-primary px-1.5 py-0.5 rounded-full">{tag}</span>
-                  ))}
+                <div className="text-center">
+                  <p className="text-foreground text-xs font-medium truncate w-16">{coach.name}</p>
+                  <p className="text-muted-foreground text-[10px]">{coach.specialty.split(" ")[0]}</p>
                 </div>
+              </motion.button>
+            ))}
+          </div>
+        </motion.div>
+
+        {/* Tab Navigation */}
+        <Tabs defaultValue="akis" className="w-full">
+          <TabsList className="w-full grid grid-cols-3 bg-secondary/50 border border-white/5">
+            <TabsTrigger value="akis" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">AKIŞ</TabsTrigger>
+            <TabsTrigger value="koclar" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">KOÇLAR</TabsTrigger>
+            <TabsTrigger value="magaza" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">MAĞAZA</TabsTrigger>
+          </TabsList>
+
+          {/* AKIŞ (Feed) Tab */}
+          <TabsContent value="akis" className="mt-4">
+            <div className="space-y-4">
+              {allPosts.map((post, index) => {
+                const isLiked = likedPosts[post.id + post.coachId];
+                const displayLikes = isLiked ? post.likes + 1 : post.likes;
+                return (
+                  <motion.div
+                    key={`${post.id}-${post.coachId}`}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    className="glass-card overflow-hidden"
+                  >
+                    <button
+                      onClick={() => handleCoachClick(post.coachId)}
+                      className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors"
+                    >
+                      <Avatar className="w-10 h-10">
+                        <AvatarImage src={post.coachAvatar} alt={post.coachName} className="object-cover" />
+                        <AvatarFallback className="bg-primary/20 text-primary">{post.coachName.charAt(4)}</AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1 text-left">
+                        <div className="flex items-center gap-1">
+                          <span className="text-foreground text-sm font-medium">{post.coachName}</span>
+                          <Verified className="w-4 h-4 text-primary fill-primary" />
+                        </div>
+                        <span className="text-muted-foreground text-xs">Elit Koç</span>
+                      </div>
+                    </button>
+
+                    {post.type === "transformation" && (
+                      <div className="grid grid-cols-2 gap-1 px-4">
+                        <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden">
+                          <img src={post.beforeImage} alt="Önce" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded">ÖNCE</span>
+                        </div>
+                        <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden border-2 border-primary/50">
+                          <img src={post.afterImage} alt="Sonra" className="w-full h-full object-cover" />
+                          <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded">SONRA</span>
+                        </div>
+                      </div>
+                    )}
+
+                    {post.type === "video" && post.videoThumbnail && (
+                      <div className="relative aspect-video mx-4 bg-muted rounded-lg overflow-hidden">
+                        <img src={post.videoThumbnail} alt="Video" className="w-full h-full object-cover" />
+                        <div className="absolute inset-0 flex items-center justify-center bg-black/30">
+                          <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
+                            <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1" />
+                          </div>
+                        </div>
+                      </div>
+                    )}
+
+                    <div className="p-4">
+                      <p className="text-foreground text-sm">{post.content}</p>
+                    </div>
+
+                    <div className="px-4 pb-4 flex items-center gap-6">
+                      <button
+                        onClick={() => handleLike(post.id + post.coachId)}
+                        className={`flex items-center gap-2 transition-colors ${isLiked ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`}
+                      >
+                        <Heart className={`w-5 h-5 ${isLiked ? "fill-destructive" : ""}`} />
+                        <span className="text-xs">{displayLikes.toLocaleString()}</span>
+                      </button>
+                      <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                        <MessageCircle className="w-5 h-5" />
+                        <span className="text-xs">{post.comments}</span>
+                      </button>
+                      <button
+                        onClick={() => toast({ title: "Link Kopyalandı (Demo)" })}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto"
+                      >
+                        <Share2 className="w-5 h-5" />
+                      </button>
+                    </div>
+                  </motion.div>
+                );
+              })}
+            </div>
+          </TabsContent>
+
+          {/* KOÇLAR (Leaderboard) Tab */}
+          <TabsContent value="koclar" className="mt-4">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-3">
+              <div className="flex items-center gap-2 mb-4">
+                <Trophy className="w-5 h-5 text-primary" />
+                <h2 className="font-display text-sm text-foreground tracking-wide">KOÇLAR LİGİ</h2>
               </div>
+              {sortedCoaches.map((coach, index) => {
+                const rank = index + 1;
+                const medal = getMedalBadge(rank);
+                return (
+                  <motion.button
+                    key={coach.id}
+                    initial={{ opacity: 0, x: -20 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: index * 0.1 }}
+                    onClick={() => handleCoachClick(coach.id)}
+                    className={`w-full glass-card p-4 flex items-center gap-4 hover:bg-white/5 transition-all ${medal ? medal.glow : ""}`}
+                  >
+                    <div className={`w-10 h-10 rounded-full flex items-center justify-center ${medal ? `bg-gradient-to-br ${medal.color}` : "bg-secondary"}`}>
+                      {medal ? <span className="text-xl">{medal.emoji}</span> : <span className="font-display text-sm text-foreground">#{rank}</span>}
+                    </div>
+                    <div className="relative">
+                      <Avatar className={`w-14 h-14 ${rank === 1 ? "ring-2 ring-offset-2 ring-offset-background ring-yellow-500" : rank === 2 ? "ring-2 ring-offset-2 ring-offset-background ring-gray-400" : rank === 3 ? "ring-2 ring-offset-2 ring-offset-background ring-amber-600" : ""}`}>
+                        <AvatarImage src={coach.avatar} alt={coach.name} className="object-cover" />
+                        <AvatarFallback className="bg-primary/20 text-primary font-display">{coach.name.split(" ")[1]?.charAt(0) || coach.name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                      {rank <= 3 && (
+                        <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-bold">TOP{rank}</div>
+                      )}
+                    </div>
+                    <div className="flex-1 text-left">
+                      <div className="flex items-center gap-2">
+                        <span className="text-foreground font-display text-sm">{coach.name}</span>
+                        <Verified className="w-4 h-4 text-primary fill-primary" />
+                      </div>
+                      <div className="flex items-center gap-3 mt-1">
+                        <span className="text-muted-foreground text-[10px] flex items-center gap-1"><Star className="w-3 h-3 text-primary fill-primary" />{coach.rating}</span>
+                        <span className="text-muted-foreground text-[10px] flex items-center gap-1"><Users className="w-3 h-3" />{coach.students}</span>
+                      </div>
+                    </div>
+                    <div className="text-right">
+                      <p className="font-display text-lg text-primary">{coach.score}</p>
+                      <p className="text-muted-foreground text-[10px]">puan</p>
+                    </div>
+                  </motion.button>
+                );
+              })}
             </motion.div>
-          ))}
-        </div>
-      </div>
+          </TabsContent>
 
-      {/* Trending Topics */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <TrendingUp className="w-4 h-4 text-emerald-400" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Trend Konular</h2>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          {trendingTopics.map((topic, i) => (
-            <motion.button key={topic.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-card p-3 flex items-center gap-3 text-left">
-              <span className="text-2xl">{topic.emoji}</span>
-              <div>
-                <p className="text-foreground text-xs font-medium">{topic.title}</p>
-                <p className="text-muted-foreground text-[10px]">{topic.views} görüntülenme</p>
-              </div>
-            </motion.button>
-          ))}
-        </div>
-      </div>
+          {/* MAĞAZA Tab */}
+          <TabsContent value="magaza" className="mt-4">
+            <Tabs defaultValue="urunler" className="w-full">
+              <TabsList className="w-full grid grid-cols-2 bg-secondary/50 border border-white/5 mb-4">
+                <TabsTrigger value="urunler" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">ÜRÜNLER</TabsTrigger>
+                <TabsTrigger value="supplementler" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">SUPPLEMENTLER</TabsTrigger>
+              </TabsList>
 
-      {/* Leaderboard */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Trophy className="w-4 h-4 text-yellow-500" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Liderlik Tablosu</h2>
-        </div>
-        <div className="flex gap-3 overflow-x-auto no-scrollbar pb-2">
-          {leaderboard.map((coach, i) => (
-            <motion.button key={coach.id} initial={{ opacity: 0, scale: 0.9 }} animate={{ opacity: 1, scale: 1 }} transition={{ delay: i * 0.1 }} onClick={() => navigate(`/coach/${coach.id}`)} className="glass-card p-4 min-w-[140px] text-center flex-shrink-0">
-              <div className={`text-xs font-display mb-2 ${i === 0 ? "text-yellow-500" : i === 1 ? "text-zinc-400" : "text-amber-700"}`}>
-                {i === 0 ? <Crown className="w-4 h-4 mx-auto" /> : `#${i + 1}`}
-              </div>
-              <Avatar className="w-12 h-12 mx-auto mb-2 ring-2 ring-offset-2 ring-offset-background ring-primary/30">
-                <AvatarImage src={coach.avatar} />
-                <AvatarFallback>{coach.name.charAt(0)}</AvatarFallback>
-              </Avatar>
-              <p className="text-foreground text-xs font-medium">{coach.name}</p>
-              <p className="text-primary text-[10px] font-display">{coach.score} puan</p>
-            </motion.button>
-          ))}
-        </div>
-      </div>
+              <TabsContent value="urunler">
+                {/* Bio-Coin Balance */}
+                <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} className="glass-card p-3 flex items-center justify-between mb-4">
+                  <div className="flex items-center gap-2">
+                    <Coins className="w-5 h-5 text-primary" />
+                    <span className="text-foreground text-sm">Bakiyen:</span>
+                  </div>
+                  <span className="font-display text-lg text-primary">{bioCoins.toLocaleString()} BIO</span>
+                </motion.div>
 
-      {/* Community Feed */}
-      <div>
-        <div className="flex items-center gap-2 mb-3">
-          <Users className="w-4 h-4 text-primary" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Topluluk</h2>
-        </div>
-        <div className="space-y-3">
-          {communityPosts.map((post, i) => (
-            <motion.div key={post.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} className="glass-card p-4">
-              <div className="flex items-center gap-3 mb-3">
-                <Avatar className="w-8 h-8"><AvatarImage src={post.avatar} /><AvatarFallback>{post.author.charAt(0)}</AvatarFallback></Avatar>
-                <div className="flex-1">
-                  <p className="text-foreground text-sm font-medium">{post.author}</p>
-                  <p className="text-muted-foreground text-[10px]">{post.time}</p>
+                <div className="grid grid-cols-2 gap-3">
+                  {allProducts.map((product, index) => {
+                    const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
+                    const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
+                    const coinsNeeded = calculateCoinsNeeded(maxDiscount);
+                    const discountedPrice = product.price - maxDiscount;
+
+                    return (
+                      <motion.div
+                        key={`${product.id}-${product.coachId}`}
+                        initial={{ opacity: 0, scale: 0.9 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        transition={{ delay: index * 0.05 }}
+                        className="glass-card overflow-hidden"
+                      >
+                        <div className="aspect-square bg-muted relative cursor-pointer" onClick={() => handleProductClick(product)}>
+                          <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                          {isDiscountActive && (
+                            <div className="absolute top-2 left-2">
+                              <span className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full font-medium">-{Math.round(maxDiscount)}₺</span>
+                            </div>
+                          )}
+                        </div>
+                        <div className="p-3">
+                          <p className="text-foreground text-xs font-medium line-clamp-1">{product.title}</p>
+                          <p className="text-muted-foreground text-[10px] mt-0.5">{product.coachName}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            {isDiscountActive ? (
+                              <div className="flex items-center gap-1">
+                                <span className="text-muted-foreground text-xs line-through">{product.price}₺</span>
+                                <span className="text-primary font-display text-sm">{Math.round(discountedPrice)}₺</span>
+                              </div>
+                            ) : (
+                              <span className="text-primary font-display text-sm">{product.price}₺</span>
+                            )}
+                          </div>
+                          {maxDiscount > 0 && (
+                            <div className="mt-2 flex items-center justify-between">
+                              <div className="flex items-center gap-1">
+                                <Coins className="w-3 h-3 text-primary" />
+                                <span className="text-[10px] text-muted-foreground">Bio-Coin</span>
+                              </div>
+                              <Switch
+                                checked={isDiscountActive}
+                                onCheckedChange={(checked) => setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: checked }))}
+                                className="scale-75"
+                              />
+                            </div>
+                          )}
+                          <motion.button
+                            whileTap={{ scale: 0.95 }}
+                            onClick={() => handleAddToCart(product)}
+                            className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1"
+                          >
+                            <ShoppingBag className="w-3 h-3" />
+                            SEPETE EKLE
+                          </motion.button>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
                 </div>
-              </div>
-              <p className="text-foreground text-sm mb-3">{post.content}</p>
-              <div className="flex items-center gap-4">
-                <button onClick={() => handleLikePost(post.id)} className="flex items-center gap-1.5 text-xs text-muted-foreground">
-                  <Heart className={`w-4 h-4 ${likedPosts[post.id] ? "text-destructive fill-red-500" : ""}`} />
-                  {post.likes + (likedPosts[post.id] ? 1 : 0)}
-                </button>
-                <span className="flex items-center gap-1.5 text-xs text-muted-foreground">💬 {post.comments}</span>
-              </div>
-            </motion.div>
-          ))}
-        </div>
+              </TabsContent>
+
+              <TabsContent value="supplementler">
+                <SupplementShop />
+              </TabsContent>
+            </Tabs>
+          </TabsContent>
+        </Tabs>
       </div>
 
-      {/* Coach cards */}
-      <div>
-        <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium mb-3">Koçlar</h2>
-        <div className="space-y-3">
-          {filteredCoaches.map((coach, i) => (
-            <motion.button key={coach.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: i * 0.05 }} onClick={() => navigate(`/coach/${coach.id}`)} className="w-full glass-card p-4 flex items-center gap-3 text-left">
-              <div className="relative">
-                <Avatar className="w-14 h-14">
-                  <AvatarImage src={coach.avatar} />
-                  <AvatarFallback>{coach.name.charAt(0)}</AvatarFallback>
-                </Avatar>
-                {coach.hasNewStory && <div className="absolute -top-0.5 -right-0.5 w-3 h-3 rounded-full bg-primary border-2 border-background" />}
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="text-foreground text-sm font-medium">{coach.name}</p>
-                <p className="text-primary text-xs">{coach.specialty}</p>
-                <div className="flex items-center gap-3 mt-1">
-                  <span className="text-muted-foreground text-[10px] flex items-center gap-1"><Star className="w-3 h-3 text-yellow-500" />{coach.rating}</span>
-                  <span className="text-muted-foreground text-[10px] flex items-center gap-1"><Users className="w-3 h-3" />{coach.students}</span>
-                  <span className="text-muted-foreground text-[10px] flex items-center gap-1"><Heart className="w-3 h-3" />{coach.followers}</span>
-                </div>
-              </div>
-              <ChevronRight className="w-4 h-4 text-muted-foreground" />
-            </motion.button>
-          ))}
-        </div>
-      </div>
-    </div>
+      {/* Product Detail Modal */}
+      {showProductDetail && selectedProduct && (
+        <ProductDetail
+          product={selectedProduct}
+          isOpen={showProductDetail}
+          onClose={() => { setShowProductDetail(false); setSelectedProduct(null); }}
+          onAddToCart={handleAddToCart}
+        />
+      )}
+    </>
   );
 };
 

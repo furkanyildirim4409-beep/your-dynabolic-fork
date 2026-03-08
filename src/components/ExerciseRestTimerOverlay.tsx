@@ -1,150 +1,234 @@
-import { useState, useEffect, useRef } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Play, Pause, SkipForward, Plus, X, ChevronRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { motion } from "framer-motion";
+import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-react";
+import { hapticLight } from "@/lib/haptics";
+import { toast } from "sonner";
 
 interface ExerciseRestTimerOverlayProps {
-  isOpen: boolean;
-  onClose: () => void;
-  duration?: number;
-  currentExercise?: string;
-  nextExercise?: string;
-  nextExerciseDetails?: { sets: number; reps: number; weight?: number };
-  onSkip?: () => void;
+  duration: number;
+  onComplete: () => void;
+  onSkip: () => void;
+  completedExerciseName: string;
+  nextExerciseName: string;
+  nextExerciseSets: number;
+  nextExerciseReps: number;
+  currentExerciseNumber: number;
+  totalExercises: number;
 }
 
 const ExerciseRestTimerOverlay = ({
-  isOpen, onClose, duration = 90,
-  currentExercise = "Bench Press",
-  nextExercise = "Incline Dumbbell Press",
-  nextExerciseDetails = { sets: 4, reps: 10, weight: 35 },
+  duration,
+  onComplete,
   onSkip,
+  completedExerciseName,
+  nextExerciseName,
+  nextExerciseSets,
+  nextExerciseReps,
+  currentExerciseNumber,
+  totalExercises,
 }: ExerciseRestTimerOverlayProps) => {
   const [timeLeft, setTimeLeft] = useState(duration);
-  const [isRunning, setIsRunning] = useState(true);
-  const [totalTime, setTotalTime] = useState(duration);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const [totalDuration, setTotalDuration] = useState(duration);
+  const progress = ((totalDuration - timeLeft) / totalDuration) * 100;
 
   useEffect(() => {
-    if (isOpen) {
-      setTimeLeft(duration);
-      setTotalTime(duration);
-      setIsRunning(true);
+    if (timeLeft <= 0) {
+      playSound(880, 0.2);
+      setTimeout(() => playSound(1100, 0.15), 100);
+      onComplete();
+      return;
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isOpen, duration]);
 
-  useEffect(() => {
-    if (isRunning && timeLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setTimeLeft((t) => {
-          if (t <= 1) {
-            setIsRunning(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            return 0;
-          }
-          return t - 1;
-        });
-      }, 1000);
+    const timer = setInterval(() => {
+      setTimeLeft((prev) => {
+        if (prev <= 4 && prev > 1) {
+          playSound(600, 0.1);
+        }
+        return prev - 1;
+      });
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [timeLeft, onComplete]);
+
+  const playSound = (frequency: number, dur: number) => {
+    try {
+      const audioContext = new (window.AudioContext || (window as any).webkitAudioContext)();
+      const oscillator = audioContext.createOscillator();
+      const gainNode = audioContext.createGain();
+
+      oscillator.connect(gainNode);
+      gainNode.connect(audioContext.destination);
+
+      oscillator.frequency.setValueAtTime(frequency, audioContext.currentTime);
+      gainNode.gain.setValueAtTime(0.1, audioContext.currentTime);
+      gainNode.gain.exponentialRampToValueAtTime(0.01, audioContext.currentTime + dur);
+
+      oscillator.start(audioContext.currentTime);
+      oscillator.stop(audioContext.currentTime + dur);
+    } catch (e) {
+      // Audio not supported
     }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isRunning, timeLeft]);
+  };
 
-  const progress = totalTime > 0 ? ((totalTime - timeLeft) / totalTime) * 100 : 100;
-  const mins = Math.floor(timeLeft / 60);
-  const secs = timeLeft % 60;
-  const isFinished = timeLeft === 0;
+  const formatTime = (seconds: number) => {
+    const mins = Math.floor(seconds / 60);
+    const secs = seconds % 60;
+    return `${mins.toString().padStart(2, "0")}:${secs.toString().padStart(2, "0")}`;
+  };
 
-  if (!isOpen) return null;
+  const handleAdd30Seconds = () => {
+    hapticLight();
+    setTimeLeft((prev) => prev + 30);
+    setTotalDuration((prev) => prev + 30);
+    toast.success("+30 saniye eklendi", { duration: 1500 });
+  };
+
+  const circumference = 2 * Math.PI * 100;
+  const strokeDashoffset = circumference - (progress / 100) * circumference;
 
   return (
-    <AnimatePresence>
+    <motion.div
+      initial={{ opacity: 0 }}
+      animate={{ opacity: 1 }}
+      exit={{ opacity: 0 }}
+      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center"
+    >
+      {/* Background Pulse */}
       <motion.div
-        initial={{ y: "100%", opacity: 0 }}
+        className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent"
+        animate={{ opacity: [0.3, 0.6, 0.3] }}
+        transition={{ duration: 2, repeat: Infinity }}
+      />
+
+      {/* Header */}
+      <motion.div
+        initial={{ y: -20, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        exit={{ y: "100%", opacity: 0 }}
-        transition={{ type: "spring", damping: 25 }}
-        className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-border rounded-t-2xl p-4 pb-8"
+        className="absolute top-8 left-0 right-0 text-center"
       >
-        {/* Close */}
-        <button onClick={onClose} className="absolute top-3 right-3 p-1.5 rounded-full bg-secondary">
-          <X className="w-4 h-4 text-muted-foreground" />
-        </button>
-
-        {/* Current exercise label */}
-        <p className="text-muted-foreground text-xs text-center mb-1">
-          {currentExercise} tamamlandı
+        <div className="flex items-center justify-center gap-2 text-primary mb-2">
+          <Timer className="w-5 h-5" />
+          <span className="font-display text-sm tracking-wider">HAREKET ARASI DİNLENME</span>
+        </div>
+        <p className="text-muted-foreground text-sm">
+          Hareket {currentExerciseNumber} / {totalExercises} tamamlandı
         </p>
-
-        {/* Timer */}
-        <div className="text-center mb-4">
-          <motion.p
-            key={timeLeft}
-            initial={{ scale: 1.05 }}
-            animate={{ scale: 1 }}
-            className={`font-display text-5xl font-bold ${isFinished ? "text-primary" : timeLeft <= 10 ? "text-destructive" : "text-foreground"}`}
-          >
-            {mins}:{secs.toString().padStart(2, "0")}
-          </motion.p>
-          {isFinished && <p className="text-primary text-sm mt-1">Hazır! Sonraki harekete geç 💪</p>}
-        </div>
-
-        {/* Progress bar */}
-        <div className="h-1.5 rounded-full bg-secondary overflow-hidden mb-4">
-          <motion.div
-            className={`h-full rounded-full ${isFinished ? "bg-primary" : timeLeft <= 10 ? "bg-destructive" : "bg-primary"}`}
-            animate={{ width: `${progress}%` }}
-            transition={{ duration: 0.5 }}
-          />
-        </div>
-
-        {/* Controls */}
-        <div className="flex items-center justify-center gap-3 mb-4">
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { setTimeLeft((t) => t + 30); setTotalTime((t) => t + 30); }}
-            className="px-3 py-2 rounded-lg bg-secondary text-xs text-muted-foreground flex items-center gap-1"
-          >
-            <Plus className="w-3 h-3" /> 30sn
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => setIsRunning(!isRunning)}
-            className="w-12 h-12 rounded-full bg-primary flex items-center justify-center"
-          >
-            {isRunning ? <Pause className="w-5 h-5 text-primary-foreground" /> : <Play className="w-5 h-5 text-primary-foreground ml-0.5" />}
-          </motion.button>
-          <motion.button
-            whileTap={{ scale: 0.9 }}
-            onClick={() => { onSkip?.(); onClose(); }}
-            className="px-3 py-2 rounded-lg bg-secondary text-xs text-muted-foreground flex items-center gap-1"
-          >
-            <SkipForward className="w-3 h-3" /> Atla
-          </motion.button>
-        </div>
-
-        {/* Next exercise preview */}
-        {nextExercise && (
-          <motion.div
-            initial={{ opacity: 0 }}
-            animate={{ opacity: 1 }}
-            transition={{ delay: 0.3 }}
-            className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 flex items-center gap-3"
-          >
-            <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-              <ChevronRight className="w-5 h-5 text-primary" />
-            </div>
-            <div className="flex-1 min-w-0">
-              <p className="text-muted-foreground text-[10px] uppercase tracking-widest">Sıradaki</p>
-              <p className="text-foreground text-sm font-medium truncate">{nextExercise}</p>
-              <p className="text-muted-foreground text-xs">
-                {nextExerciseDetails.sets}x{nextExerciseDetails.reps}
-                {nextExerciseDetails.weight && ` • ${nextExerciseDetails.weight}kg`}
-              </p>
-            </div>
-          </motion.div>
-        )}
       </motion.div>
-    </AnimatePresence>
+
+      {/* Completed Exercise */}
+      <motion.div
+        initial={{ opacity: 0, y: -10 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.2 }}
+        className="absolute top-28 text-center"
+      >
+        <p className="text-muted-foreground text-xs mb-1">Tamamlanan:</p>
+        <p className="text-foreground/60 font-display text-sm line-through">{completedExerciseName}</p>
+      </motion.div>
+
+      {/* Circular Timer */}
+      <div className="relative mt-8">
+        <motion.div
+          className="absolute inset-0 rounded-full"
+          style={{
+            boxShadow: `0 0 60px hsl(var(--primary) / 0.3), 0 0 120px hsl(var(--primary) / 0.1)`,
+          }}
+          animate={{ opacity: [0.5, 1, 0.5] }}
+          transition={{ duration: 2, repeat: Infinity }}
+        />
+
+        <svg width="240" height="240" className="transform -rotate-90">
+          <circle cx="120" cy="120" r="100" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
+          <motion.circle
+            cx="120" cy="120" r="100" fill="none"
+            stroke="hsl(var(--primary))"
+            strokeWidth="6"
+            strokeLinecap="round"
+            strokeDasharray={circumference}
+            initial={{ strokeDashoffset: circumference }}
+            animate={{ strokeDashoffset }}
+            transition={{ duration: 0.5, ease: "linear" }}
+            style={{ filter: "drop-shadow(0 0 10px hsl(var(--primary) / 0.5))" }}
+          />
+        </svg>
+
+        <div className="absolute inset-0 flex flex-col items-center justify-center">
+          <motion.span
+            key={timeLeft}
+            initial={{ scale: 1.1, opacity: 0 }}
+            animate={{ scale: 1, opacity: 1 }}
+            className={`font-display text-5xl ${timeLeft <= 3 ? "text-destructive" : "text-foreground"}`}
+            style={{
+              textShadow: timeLeft <= 3
+                ? "0 0 20px hsl(var(--destructive) / 0.5)"
+                : "0 0 20px hsl(var(--primary) / 0.3)",
+            }}
+          >
+            {formatTime(timeLeft)}
+          </motion.span>
+          <span className="text-muted-foreground text-xs mt-1">kalan süre</span>
+        </div>
+      </div>
+
+      {/* +30 Seconds Button */}
+      <button
+        type="button"
+        onClick={(e) => { e.stopPropagation(); handleAdd30Seconds(); }}
+        className="relative z-50 mt-4 flex items-center gap-2 px-6 py-3 rounded-xl bg-primary/20 border border-primary/30 text-primary active:scale-95 active:bg-primary/30 transition-transform cursor-pointer select-none"
+        style={{ pointerEvents: 'auto' }}
+      >
+        <Plus className="w-5 h-5" />
+        <span className="font-display text-base">+30 SANİYE</span>
+      </button>
+
+      {/* Next Exercise Preview */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.4 }}
+        className="mt-6 glass-card p-4 w-[85%] max-w-sm"
+      >
+        <div className="flex items-center gap-2 text-primary mb-3">
+          <ArrowRight className="w-4 h-4" />
+          <span className="font-display text-xs tracking-wider">SIRADAKİ HAREKET</span>
+        </div>
+        <div className="flex items-center gap-4">
+          <div className="w-14 h-14 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
+            <Dumbbell className="w-6 h-6 text-primary" />
+          </div>
+          <div className="flex-1">
+            <p className="font-display text-lg text-foreground">{nextExerciseName}</p>
+            <p className="text-muted-foreground text-sm">{nextExerciseSets} set × {nextExerciseReps} tekrar</p>
+          </div>
+        </div>
+      </motion.div>
+
+      {/* Sound Indicator */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        animate={{ opacity: 1 }}
+        transition={{ delay: 0.3 }}
+        className="mt-4 flex items-center gap-2 text-muted-foreground"
+      >
+        <Volume2 className="w-4 h-4" />
+        <span className="text-xs">Sesli uyarı aktif</span>
+      </motion.div>
+
+      {/* Skip Button */}
+      <motion.button
+        initial={{ y: 20, opacity: 0 }}
+        animate={{ y: 0, opacity: 1 }}
+        transition={{ delay: 0.5 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={onSkip}
+        className="absolute bottom-12 flex items-center gap-3 bg-secondary/80 hover:bg-secondary px-8 py-4 rounded-2xl border border-white/10 transition-colors"
+      >
+        <SkipForward className="w-5 h-5 text-primary" />
+        <span className="font-display text-foreground tracking-wide">DİNLENMEYİ ATLA</span>
+      </motion.button>
+    </motion.div>
   );
 };
 
