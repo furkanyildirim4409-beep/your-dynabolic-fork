@@ -3,7 +3,8 @@ import { motion, AnimatePresence } from "framer-motion";
 import { ChevronLeft, ChevronRight, Dumbbell, Timer, Target, X, CheckCircle2, Moon } from "lucide-react";
 import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay, addMonths, subMonths, getDay, isToday, isFuture, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
-import { workoutHistory, assignedWorkouts } from "@/lib/mockData";
+import { useWorkoutHistory } from "@/hooks/useWorkoutHistory";
+import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 
 interface CalendarDayData {
