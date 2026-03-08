@@ -1,0 +1,2 @@
+const CoachChat = ({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) => isOpen ? <div className="fixed inset-0 z-50 bg-black/80" onClick={onClose}><div className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-white/10 p-4" onClick={e=>e.stopPropagation()}><button onClick={onClose} className="text-muted-foreground text-sm mb-4">✕ Kapat</button><p className="text-foreground font-bold">Koç Serdar</p><p className="text-muted-foreground text-sm mt-2">Mesajlaşma yakında aktif olacak.</p></div></div> : null;
+export default CoachChat;

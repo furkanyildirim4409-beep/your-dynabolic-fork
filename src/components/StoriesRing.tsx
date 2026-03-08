@@ -1,0 +1,2 @@
+const StoriesRing = () => <div className="flex gap-3 overflow-x-auto no-scrollbar">{["Değişimler","Soru-Cevap","Antrenman","Motivasyon"].map(c=><div key={c} className="flex flex-col items-center gap-1 flex-shrink-0"><div className="w-14 h-14 rounded-full bg-gradient-to-br from-primary/50 to-primary/20 border-2 border-primary/40"/><span className="text-[10px] text-muted-foreground">{c}</span></div>)}</div>;
+export default StoriesRing;

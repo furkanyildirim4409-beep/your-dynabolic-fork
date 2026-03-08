@@ -1,0 +1,2 @@
+const CoachAdjustmentBanner = ({ adjustment, onDismiss }: any) => <div className="glass-card border-primary/30 p-4 flex items-center gap-3"><div className="flex-1"><p className="text-primary text-xs font-bold uppercase">Koç Güncelleme</p><p className="text-foreground text-sm mt-1">{adjustment.message}</p></div><button onClick={()=>onDismiss(adjustment.id)} className="text-muted-foreground text-xs">Tamam</button></div>;
+export default CoachAdjustmentBanner;

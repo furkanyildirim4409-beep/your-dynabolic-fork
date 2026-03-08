@@ -1,0 +1,2 @@
+const StreakTierWidget = () => <div className="glass-card p-4 flex items-center gap-4"><div className="w-12 h-12 rounded-full bg-primary/20 flex items-center justify-center text-primary font-bold">12</div><div><p className="text-foreground text-sm font-bold">12 Gün Seri 🔥</p><p className="text-muted-foreground text-xs">Pro Tier • 875 XP</p></div></div>;
+export default StreakTierWidget;

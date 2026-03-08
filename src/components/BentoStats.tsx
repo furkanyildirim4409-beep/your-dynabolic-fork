@@ -1,0 +1,3 @@
+export type BentoStatType = "hrv" | "sleep" | "strain";
+const BentoStats = ({ onStatClick }: { onStatClick: (s: BentoStatType) => void }) => <div className="grid grid-cols-3 gap-3">{([["42ms","HRV","hrv"],["7.2h","Uyku","sleep"],["6.8","Strain","strain"]] as const).map(([v,l,k])=><button key={k} onClick={()=>onStatClick(k as BentoStatType)} className="glass-card-premium p-3 text-center"><span className="font-bold text-foreground">{v}</span><p className="text-[10px] text-muted-foreground mt-1">{l}</p></button>)}</div>;
+export default BentoStats;
