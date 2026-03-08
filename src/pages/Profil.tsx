@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -52,7 +52,7 @@ const Profil = () => {
     { label: "Boy", value: "182 cm" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
     { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0 ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
-    { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true },
+    { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true, tooltip: "Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır" },
     { label: "BMI", value: "23.7" },
     { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];
@@ -226,7 +226,15 @@ const Profil = () => {
               </p>
             </div>
             <div className="text-center p-2 bg-secondary/50 rounded-lg">
-              <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
+              <div className="flex items-center gap-1">
+                <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent><p>Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır</p></TooltipContent>
+                </Tooltip>
+              </div>
               <p className="font-display text-lg text-primary">
                 {currentMuscleMass != null
                   ? `${(currentMuscleMass + progress * 4).toFixed(1)}kg`
@@ -356,7 +364,17 @@ const Profil = () => {
                   : "bg-secondary/50"
               }`}
             >
-              <p className="text-muted-foreground text-xs">{stat.label}</p>
+              <div className="flex items-center gap-1">
+                <p className="text-muted-foreground text-xs">{stat.label}</p>
+                {stat.tooltip && (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="w-3 h-3 text-muted-foreground cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent><p>{stat.tooltip}</p></TooltipContent>
+                  </Tooltip>
+                )}
+              </div>
               <p className={`font-display text-lg mt-1 ${
                 stat.highlight ? "text-primary" : "text-foreground"
               }`}>
