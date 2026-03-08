@@ -119,6 +119,13 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     toast.success("Kayıt başarılı! E-postanızı kontrol edin.");
   };
 
+  const refreshProfile = async () => {
+    if (user) {
+      const p = await fetchProfile(user.id);
+      setProfile(p);
+    }
+  };
+
   const signOut = async () => {
     const { error } = await supabase.auth.signOut();
     if (error) {
