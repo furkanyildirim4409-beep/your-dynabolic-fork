@@ -22,7 +22,7 @@ const biomarkers = [
   { name: "Vitamin D", value: 22, unit: "ng/mL", range: "30-100", status: "low" as const, change: -12 },
   { name: "Ferritin", value: 28, unit: "ng/mL", range: "30-400", status: "low" as const, change: -5 },
   { name: "TSH", value: 2.1, unit: "mIU/L", range: "0.4-4.0", status: "normal" as const, change: 0 },
-  { name: "Hemoglobin", value: 15.2, unit: "g/dL", range: "13.5-17.5", status: "normal" as const, change: 1.3 },
+  { name: "Hemoglobin", value: 15.2, unit: "g/dL", range: "13.5-17.5", status: "normal" as const, change: 1.3 } as const,
   { name: "CRP", value: 0.8, unit: "mg/L", range: "0-3", status: "normal" as const, change: -20 },
 ];
 
