@@ -32,7 +32,10 @@ export interface MeasurementInput {
 /** Navy Seal BF% formula (male), default height 175cm */
 export function calcNavyBodyFat(waist: number, neck: number, height = 175): number | null {
   if (waist <= neck || waist <= 0 || neck <= 0 || height <= 0) return null;
-  const bf = 86.010 * Math.log10(waist - neck) - 70.041 * Math.log10(height) + 36.76;
+  const diff = waist - neck;
+  if (diff <= 0) return null;
+  const bf = 86.010 * Math.log10(diff) - 70.041 * Math.log10(height) + 36.76;
+  if (bf <= 0 || bf > 60) return null; // unrealistic values
   return Math.round(bf * 10) / 10;
 }
 
