@@ -581,8 +581,10 @@ const FoodDetailWizard = ({
 
 // --- ANA SAYFA ---
 const Beslenme = () => {
+  const { user } = useAuth();
+  const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
   const [waterIntake, setWaterIntake] = useState(2.0);
-  const [meals, setMeals] = useState<Meal[]>(initialMealData);
+  const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [scannerMode, setScannerMode] = useState<ScannerMode>("meal");
@@ -601,6 +603,33 @@ const Beslenme = () => {
       icon: s.icon,
     }))
   );
+
+  // Sync DB logs into meal slots
+  useEffect(() => {
+    if (logsLoading) return;
+    const mealMap: Record<string, string> = {
+      "Kahvaltı": "kahvalti",
+      "Öğle Yemeği": "ogle",
+      "Ara Öğün": "ara",
+      "Akşam Yemeği": "aksam",
+    };
+    const slots = emptyMealSlots.map(s => ({ ...s, foods: [] as FoodItem[], totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 } }));
+    
+    logs.forEach((log) => {
+      const slotId = mealMap[log.meal_name] || "ara";
+      const slot = slots.find(s => s.id === slotId);
+      if (!slot) return;
+      log.foods.forEach((f) => {
+        slot.foods.push({ name: f.name, amount: f.amount, cal: f.cal, macros: f.macros, isEaten: f.isEaten ?? false });
+        slot.totalCal += f.cal;
+        slot.totalMacros.p += f.macros.p;
+        slot.totalMacros.c += f.macros.c;
+        slot.totalMacros.f += f.macros.f;
+      });
+      slot.isCompleted = slot.foods.length > 0 && slot.foods.every(fd => fd.isEaten);
+    });
+    setMeals(slots);
+  }, [logs, logsLoading]);
 
   const waterGoal = 3.5;
   const progress = (waterIntake / waterGoal) * 100;
