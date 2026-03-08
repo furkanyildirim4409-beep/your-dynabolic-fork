@@ -186,6 +186,56 @@ const Payments = () => {
         )}
       </div>
 
+      {/* Orders Section */}
+      <div className="space-y-3">
+        <h2 className="font-display text-lg text-foreground flex items-center gap-2">
+          <Package className="w-4 h-4 text-primary" />SİPARİŞLERİM
+        </h2>
+        {ordersLoading ? (
+          <div className="space-y-3">
+            {[1, 2, 3].map((i) => (
+              <div key={i} className="glass-card p-4 space-y-3">
+                <Skeleton className="h-4 w-3/4" />
+                <Skeleton className="h-3 w-1/2" />
+                <Skeleton className="h-5 w-1/4" />
+              </div>
+            ))}
+          </div>
+        ) : orders.length === 0 ? (
+          <div className="glass-card p-6 text-center">
+            <Package className="w-10 h-10 text-muted-foreground mx-auto mb-2" />
+            <p className="text-muted-foreground text-sm">Henüz bir siparişiniz bulunmuyor.</p>
+          </div>
+        ) : (
+          orders.map((order, index) => {
+            const status = orderStatusConfig[order.status || "pending"] || orderStatusConfig.pending;
+            return (
+              <motion.div key={order.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.1 + index * 0.05 }} className="glass-card p-4">
+                <div className="flex items-start justify-between">
+                  <div className="flex-1">
+                    <div className="flex items-center gap-2">
+                      <p className="font-medium text-foreground text-sm">{getOrderSummary(order.items)}</p>
+                      <span className={`px-2 py-0.5 rounded-full text-xs border ${status.className} flex items-center gap-1`}>
+                        {status.label}
+                      </span>
+                    </div>
+                    <p className="text-muted-foreground text-xs mt-1">{formatDate(order.created_at)}</p>
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {order.total_coins_used > 0 && (
+                      <span className="flex items-center gap-1 text-xs text-amber-400">
+                        <Coins className="w-3 h-3" />{order.total_coins_used}
+                      </span>
+                    )}
+                    <p className="font-display text-lg text-foreground">{formatCurrency(Number(order.total_price))}</p>
+                  </div>
+                </div>
+              </motion.div>
+            );
+          })
+        )}
+      </div>
+
       <PaymentModal isOpen={showPaymentModal} onClose={() => setShowPaymentModal(false)} payment={getPaymentDetails()} onPaymentSuccess={handlePaymentSuccess} />
       <PaymentReceiptModal isOpen={showReceiptModal} onClose={() => setShowReceiptModal(false)} invoice={selectedReceipt} />
     </div>
