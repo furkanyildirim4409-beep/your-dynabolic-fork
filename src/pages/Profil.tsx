@@ -17,7 +17,7 @@ import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip
 import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
-import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
+import { useBodyMeasurements, calcMuscleMass } from "@/hooks/useBodyMeasurements";
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);

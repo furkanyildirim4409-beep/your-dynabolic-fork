@@ -38,6 +38,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       if (latest) {
         const pre: Record<string, string> = {};
         fields.forEach(({ key }) => {
+          if (key === "muscle_mass_kg") return; // always recompute from weight + BF unless user enters manually
           const val = latest[key as keyof typeof latest];
           if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
             pre[key] = String(val);
