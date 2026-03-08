@@ -360,7 +360,11 @@ export type Database = {
           coach_id: string | null
           created_at: string | null
           current_weight: number | null
+          daily_carb_target: number | null
+          daily_fat_target: number | null
+          daily_protein_target: number | null
           email: string | null
+          fitness_goal: string | null
           full_name: string | null
           gender: string | null
           height_cm: number | null
@@ -380,7 +384,11 @@ export type Database = {
           coach_id?: string | null
           created_at?: string | null
           current_weight?: number | null
+          daily_carb_target?: number | null
+          daily_fat_target?: number | null
+          daily_protein_target?: number | null
           email?: string | null
+          fitness_goal?: string | null
           full_name?: string | null
           gender?: string | null
           height_cm?: number | null
@@ -400,7 +408,11 @@ export type Database = {
           coach_id?: string | null
           created_at?: string | null
           current_weight?: number | null
+          daily_carb_target?: number | null
+          daily_fat_target?: number | null
+          daily_protein_target?: number | null
           email?: string | null
+          fitness_goal?: string | null
           full_name?: string | null
           gender?: string | null
           height_cm?: number | null
