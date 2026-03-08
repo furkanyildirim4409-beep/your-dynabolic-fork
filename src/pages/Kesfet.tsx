@@ -128,6 +128,15 @@ const Kesfet = () => {
     if (isDiscountActive && user) {
       const newBalance = bioCoins - coinsNeeded;
       await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
+
+      // Log spend transaction
+      await supabase.from("bio_coin_transactions").insert({
+        user_id: user.id,
+        amount: -coinsNeeded,
+        type: "purchase",
+        description: `${product.title} indirimi`,
+      });
+
       await refreshProfile();
       setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
     }
