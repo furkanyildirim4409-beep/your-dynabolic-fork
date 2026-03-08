@@ -41,16 +41,23 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   };
 
   const handleLogWeight = () => {
+    setWeight(String(profile?.current_weight ?? 78.5));
     setShowWeightModal(true);
     setIsOpen(false);
   };
 
-  const handleSaveWeight = () => {
-    toast({
-      title: "Ağırlık Kaydedildi ⚖️",
-      description: `Güncel ağırlığın: ${weight} kg`,
-    });
-    setShowWeightModal(false);
+  const handleSaveWeight = async () => {
+    const kg = parseFloat(weight);
+    if (isNaN(kg) || kg <= 0) return;
+    setIsSaving(true);
+    const result = await logWeight(kg);
+    setIsSaving(false);
+    if (result?.error) {
+      toast({ title: "Hata", description: result.error, variant: "destructive" });
+    } else {
+      toast({ title: "Kilo kaydı başarıyla eklendi! ⚖️", description: `Güncel ağırlığın: ${kg} kg` });
+      setShowWeightModal(false);
+    }
   };
 
   const handleReportToCoach = () => {
