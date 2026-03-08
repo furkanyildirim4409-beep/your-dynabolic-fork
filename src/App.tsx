@@ -17,6 +17,14 @@ import OfflineBanner from "./components/OfflineBanner";
 import ProtectedRoute from "./components/ProtectedRoute";
 import Login from "./pages/Login";
 import Kokpit from "./pages/Kokpit";
+import Antrenman from "./pages/Antrenman";
+import Beslenme from "./pages/Beslenme";
+import Kesfet from "./pages/Kesfet";
+import Profil from "./pages/Profil";
+import Akademi from "./pages/Akademi";
+import Odemeler from "./pages/Odemeler";
+import CoachProfile from "./pages/CoachProfile";
+import Tarifler from "./pages/Tarifler";
 import NotFound from "./pages/NotFound";
 
 const queryClient = new QueryClient();
@@ -26,7 +34,7 @@ const AppPage = ({ children }: { children: React.ReactNode }) => (
 );
 
 const P = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute allowedRoles={["athlete"]}>{children}</ProtectedRoute>
+  <ProtectedRoute>{children}</ProtectedRoute>
 );
 
 const App = () => {
@@ -51,6 +59,14 @@ const App = () => {
                             <Route path="/login" element={<Login />} />
                             <Route path="/" element={<P><AppPage><Kokpit /></AppPage></P>} />
                             <Route path="/kokpit" element={<P><AppPage><Kokpit /></AppPage></P>} />
+                            <Route path="/antrenman" element={<P><AppPage><Antrenman /></AppPage></P>} />
+                            <Route path="/beslenme" element={<P><AppPage><Beslenme /></AppPage></P>} />
+                            <Route path="/kesfet" element={<P><AppPage><Kesfet /></AppPage></P>} />
+                            <Route path="/profil" element={<P><AppPage><Profil /></AppPage></P>} />
+                            <Route path="/akademi" element={<P><AppPage><Akademi /></AppPage></P>} />
+                            <Route path="/odemeler" element={<P><AppPage><Odemeler /></AppPage></P>} />
+                            <Route path="/tarifler" element={<P><AppPage><Tarifler /></AppPage></P>} />
+                            <Route path="/coach/:id" element={<P><AppPage><CoachProfile /></AppPage></P>} />
                             <Route path="/index" element={<Navigate to="/" replace />} />
                             <Route path="*" element={<NotFound />} />
                           </Routes>
