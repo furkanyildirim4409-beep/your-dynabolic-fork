@@ -109,7 +109,10 @@ const Beslenme = () => {
         <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium mb-3">Takviyeler</h2>
         <SupplementTracker
           supplements={supplements}
-          onToggle={(id) => setSupplements(prev => prev.map(s => s.id === id ? { ...s, takenToday: !s.takenToday } : s))}
+          onToggleTaken={(id) => setSupplements(prev => prev.map(s => s.id === id ? { ...s, takenToday: !s.takenToday } : s))}
+          onRefill={(id) => {
+            toast({ title: "Yeniden sipariş verildi", description: "Takviye siparişiniz oluşturuldu." });
+          }}
         />
       </div>
     </div>
