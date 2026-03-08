@@ -35,6 +35,12 @@ const activityOptions = [
   { value: "very_active", label: "Çok Aktif", desc: "Günde 2 antrenman" },
 ];
 
+const goalOptions = [
+  { value: "cut", label: "Kilo Ver", desc: "TDEE - 500 kcal" },
+  { value: "maintenance", label: "Koruma", desc: "TDEE" },
+  { value: "bulk", label: "Kas Yap", desc: "TDEE + 300 kcal" },
+];
+
 const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const { latest, saveMeasurement } = useBodyMeasurements();
   const { profile, refreshProfile, user } = useAuth();
