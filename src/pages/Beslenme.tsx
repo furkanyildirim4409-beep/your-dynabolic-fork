@@ -1,4 +1,4 @@
-import { useState, useMemo } from "react";
+import { useState, useMemo, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -24,6 +24,9 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SupplementTracker from "@/components/SupplementTracker";
 import { assignedSupplements as initialSupplements } from "@/lib/mockData";
 import type { Supplement } from "@/components/SupplementTracker";
+import { useNutritionLogs } from "@/hooks/useNutritionLogs";
+import { useAuth } from "@/context/AuthContext";
+import { Skeleton } from "@/components/ui/skeleton";
 
 // --- TİP TANIMLAMALARI ---
 interface FoodItem {
@@ -68,57 +71,11 @@ const foodDatabase = [
   { name: "Avokado", amount: "Yarım", cal: 120, macros: { p: 1, c: 6, f: 11 }, baseGrams: 75 },
 ];
 
-const initialMealData: Meal[] = [
-  {
-    id: "kahvalti",
-    title: "Kahvaltı",
-    time: "07:30",
-    totalCal: 480,
-    totalMacros: { p: 28, c: 45, f: 12 },
-    isCompleted: true,
-    icon: "☕",
-    color: "text-yellow-500",
-    foods: [
-      { name: "Yulaf Ezmesi", amount: "60g", cal: 220, macros: { p: 8, c: 35, f: 4 }, isEaten: true },
-      { name: "Yumurta (Haşlanmış)", amount: "3 Adet", cal: 210, macros: { p: 18, c: 1, f: 15 }, isEaten: true },
-    ],
-  },
-  {
-    id: "ogle",
-    title: "Öğle Yemeği",
-    time: "12:45",
-    totalCal: 720,
-    totalMacros: { p: 52, c: 60, f: 18 },
-    isCompleted: false,
-    icon: "☀️",
-    color: "text-orange-500",
-    foods: [
-      { name: "Izgara Tavuk Göğsü", amount: "200g", cal: 330, macros: { p: 46, c: 0, f: 6 }, isEaten: false },
-      { name: "Basmati Pirinç", amount: "250g", cal: 320, macros: { p: 6, c: 70, f: 1 }, isEaten: false },
-    ],
-  },
-  {
-    id: "ara",
-    title: "Ara Öğün",
-    time: "16:00",
-    totalCal: 0,
-    totalMacros: { p: 0, c: 0, f: 0 },
-    isCompleted: false,
-    icon: "🍏",
-    color: "text-green-500",
-    foods: [],
-  },
-  {
-    id: "aksam",
-    title: "Akşam Yemeği",
-    time: "19:30",
-    totalCal: 400,
-    totalMacros: { p: 42, c: 10, f: 20 },
-    isCompleted: false,
-    icon: "🌙",
-    color: "text-indigo-400",
-    foods: [{ name: "Somon Fileto", amount: "150g", cal: 310, macros: { p: 34, c: 0, f: 18 }, isEaten: false }],
-  },
+const emptyMealSlots: Meal[] = [
+  { id: "kahvalti", title: "Kahvaltı", time: "07:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☕", color: "text-yellow-500", foods: [] },
+  { id: "ogle", title: "Öğle Yemeği", time: "12:45", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☀️", color: "text-orange-500", foods: [] },
+  { id: "ara", title: "Ara Öğün", time: "16:00", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🍏", color: "text-green-500", foods: [] },
+  { id: "aksam", title: "Akşam Yemeği", time: "19:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🌙", color: "text-indigo-400", foods: [] },
 ];
 
 // --- MACRO DASHBOARD COMPONENT ---
@@ -624,8 +581,10 @@ const FoodDetailWizard = ({
 
 // --- ANA SAYFA ---
 const Beslenme = () => {
+  const { user } = useAuth();
+  const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
   const [waterIntake, setWaterIntake] = useState(2.0);
-  const [meals, setMeals] = useState<Meal[]>(initialMealData);
+  const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [scannerMode, setScannerMode] = useState<ScannerMode>("meal");
@@ -644,6 +603,33 @@ const Beslenme = () => {
       icon: s.icon,
     }))
   );
+
+  // Sync DB logs into meal slots
+  useEffect(() => {
+    if (logsLoading) return;
+    const mealMap: Record<string, string> = {
+      "Kahvaltı": "kahvalti",
+      "Öğle Yemeği": "ogle",
+      "Ara Öğün": "ara",
+      "Akşam Yemeği": "aksam",
+    };
+    const slots = emptyMealSlots.map(s => ({ ...s, foods: [] as FoodItem[], totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 } }));
+    
+    logs.forEach((log) => {
+      const slotId = mealMap[log.meal_name] || "ara";
+      const slot = slots.find(s => s.id === slotId);
+      if (!slot) return;
+      log.foods.forEach((f) => {
+        slot.foods.push({ name: f.name, amount: f.amount, cal: f.cal, macros: f.macros, isEaten: f.isEaten ?? false });
+        slot.totalCal += f.cal;
+        slot.totalMacros.p += f.macros.p;
+        slot.totalMacros.c += f.macros.c;
+        slot.totalMacros.f += f.macros.f;
+      });
+      slot.isCompleted = slot.foods.length > 0 && slot.foods.every(fd => fd.isEaten);
+    });
+    setMeals(slots);
+  }, [logs, logsLoading]);
 
   const waterGoal = 3.5;
   const progress = (waterIntake / waterGoal) * 100;
@@ -708,7 +694,7 @@ const Beslenme = () => {
     setSelectedFood(food);
   };
 
-  const handleConfirmAddFood = (targetMealId: string, grams: number) => {
+  const handleConfirmAddFood = async (targetMealId: string, grams: number) => {
     if (!selectedFood) return;
 
     const ratio = grams / selectedFood.baseGrams;
@@ -724,10 +710,10 @@ const Beslenme = () => {
       isEaten: false,
     };
 
+    // Update local state immediately
     setMeals((currentMeals) =>
       currentMeals.map((meal) => {
         if (meal.id !== targetMealId) return meal;
-
         return {
           ...meal,
           totalCal: meal.totalCal + newFood.cal,
@@ -742,10 +728,17 @@ const Beslenme = () => {
     );
 
     const targetMeal = meals.find((m) => m.id === targetMealId);
-    toast({
-      title: "Eklendi ✅",
-      description: `${selectedFood.name} ${targetMeal?.title || "öğüne"} eklendi.`,
-    });
+    const mealNameMap: Record<string, string> = { kahvalti: "Kahvaltı", ogle: "Öğle Yemeği", ara: "Ara Öğün", aksam: "Akşam Yemeği" };
+
+    // Persist to Supabase
+    try {
+      const updatedMeal = meals.find(m => m.id === targetMealId);
+      const allFoods = [...(updatedMeal?.foods || []), newFood];
+      await logMeal(mealNameMap[targetMealId] || "Ara Öğün", allFoods);
+      toast({ title: "Öğün başarıyla kaydedildi! ✅", description: `${selectedFood.name} ${targetMeal?.title || "öğüne"} eklendi.` });
+    } catch {
+      toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
+    }
 
     setSelectedFood(null);
     setShowManualAdd(false);
