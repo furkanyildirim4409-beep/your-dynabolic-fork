@@ -23,6 +23,7 @@ interface ProgramExercise {
 interface VisionAIExecutionProps {
   workoutTitle: string;
   exercises?: ProgramExercise[];
+  assignmentId?: string;
   onClose: () => void;
 }
 
