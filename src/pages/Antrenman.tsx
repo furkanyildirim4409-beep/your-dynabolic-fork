@@ -218,7 +218,7 @@ const Antrenman = () => {
                               {/* Previous performance */}
                               <div className="flex items-center gap-2 p-2 rounded-lg bg-secondary/50">
                                 <TrendingUp className="w-3 h-3 text-emerald-400" />
-                                <span className="text-muted-foreground text-[10px]">Önceki: {exercise.sets}x{exercise.targetReps} @ {exercise.weight}kg</span>
+                                <span className="text-muted-foreground text-[10px]">Önceki: {exercise.sets}x{exercise.targetReps}</span>
                               </div>
 
                               {/* Set tracking */}
