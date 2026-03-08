@@ -43,7 +43,8 @@ const getCategoryLabel = (category: ShopSupplement["category"]): string => {
 
 const SupplementShop = () => {
   const { addToCart } = useCart();
-  const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
+  const { profile, user, refreshProfile } = useAuth();
+  const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [selectedFlavors, setSelectedFlavors] = useState<Record<string, string>>({});
 
