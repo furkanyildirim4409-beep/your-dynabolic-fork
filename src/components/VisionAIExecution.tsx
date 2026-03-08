@@ -145,6 +145,16 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
   };
 
   const handleConfirmSet = () => {
+    // Track this completed set
+    if (!completedSetsRef.current[currentExerciseIndex]) {
+      completedSetsRef.current[currentExerciseIndex] = [];
+    }
+    completedSetsRef.current[currentExerciseIndex].push({
+      weight,
+      reps: reps || exercise.targetReps,
+      isFailure: false,
+    });
+
     setShowComplete(true);
     setIsRunning(false);
     playSound('confirm');
@@ -157,6 +167,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
         if (currentExerciseIndex < exercises.length - 1) {
           setShowExerciseRestTimer(true);
         } else {
+          saveWorkoutLog();
           setShowWorkoutSummary(true);
           triggerAchievement("workout_complete");
           if (new Date().getHours() < 6) triggerAchievement("early_workout");
@@ -166,6 +177,74 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
       }, 1500);
     } else {
       setTimeout(() => { setShowComplete(false); setShowRestTimer(true); }, 1000);
+    }
+  };
+
+  const calculateTotalTonnage = (): number => {
+    let total = 0;
+    Object.values(completedSetsRef.current).forEach(sets => {
+      sets.forEach(s => { total += s.weight * s.reps; });
+    });
+    return total;
+  };
+
+  const getTotalSetsCompleted = (): number => {
+    let total = 0;
+    Object.values(completedSetsRef.current).forEach(sets => { total += sets.length; });
+    return total;
+  };
+
+  const saveWorkoutLog = async () => {
+    if (!user?.id) return;
+    setIsSaving(true);
+    
+    const durationMinutes = Math.round((Date.now() - workoutStartTime.current) / 60000);
+    const tonnage = calculateTotalTonnage();
+    const bioCoinsEarned = 150;
+
+    const details = exercises.map((ex, idx) => ({
+      exerciseName: ex.name,
+      sets: (completedSetsRef.current[idx] ?? []).map(s => ({
+        weight: s.weight,
+        reps: s.reps,
+        isFailure: s.isFailure,
+      })),
+    }));
+
+    try {
+      const { error } = await supabase.from("workout_logs").insert({
+        user_id: user.id,
+        workout_name: workoutTitle,
+        duration_minutes: durationMinutes,
+        tonnage,
+        exercises_count: exercises.length,
+        bio_coins_earned: bioCoinsEarned,
+        completed: true,
+        details,
+      });
+
+      if (error) throw error;
+
+      // Award bio coins to profile
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("bio_coins")
+        .eq("id", user.id)
+        .single();
+
+      if (profile) {
+        await supabase
+          .from("profiles")
+          .update({ bio_coins: (profile.bio_coins ?? 0) + bioCoinsEarned })
+          .eq("id", user.id);
+      }
+
+      toast.success("Antrenman kaydedildi!");
+    } catch (err: any) {
+      console.error("Workout log save error:", err.message);
+      toast.error("Antrenman kaydedilemedi.");
+    } finally {
+      setIsSaving(false);
     }
   };
 
