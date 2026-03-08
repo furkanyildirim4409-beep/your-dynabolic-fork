@@ -24,7 +24,7 @@ const CoachProfile = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const coach = getCoachById(id || "1");
-  const { addItem } = useCart();
+  const { addToCart } = useCart();
   const [activeTab, setActiveTab] = useState<ActiveTab>("posts");
   const [isFollowing, setIsFollowing] = useState(false);
   const [showChat, setShowChat] = useState(false);
