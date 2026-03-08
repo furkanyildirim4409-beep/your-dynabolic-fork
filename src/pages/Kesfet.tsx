@@ -74,6 +74,7 @@ const Kesfet = () => {
   const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
+  const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
