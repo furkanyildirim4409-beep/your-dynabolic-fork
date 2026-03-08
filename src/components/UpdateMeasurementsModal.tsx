@@ -277,7 +277,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         </div>
 
         {/* Estimates */}
-        {(navyEstimate != null || muscleEstimate != null || previewBMR != null) && (
+        {(navyEstimate != null || muscleEstimate != null || previewBMR != null || previewMacros != null) && (
           <div className="mt-3 space-y-2">
             {navyEstimate != null && (
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
@@ -301,9 +301,25 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
                 <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  Bazal Metabolizma (BMR):{" "}
-                  <span className="font-display text-primary">{previewBMR.toLocaleString()} kcal</span>
+                  BMR: <span className="font-display text-primary">{previewBMR.toLocaleString()} kcal</span>
+                  {previewTDEE && <> → TDEE: <span className="font-display text-primary">{previewTDEE.toLocaleString()} kcal</span></>}
                 </p>
+              </div>
+            )}
+            {previewMacros != null && (
+              <div className="rounded-lg bg-primary/10 border border-primary/30 px-3 py-2 space-y-1">
+                <div className="flex items-center gap-2">
+                  <Target className="w-4 h-4 text-primary flex-shrink-0" />
+                  <p className="text-xs font-medium text-foreground">
+                    Hedef Kalori: <span className="font-display text-primary">{previewMacros.calories.toLocaleString()} kcal</span>
+                    <span className="text-muted-foreground ml-1">({goalOptions.find(g => g.value === fitnessGoal)?.label})</span>
+                  </p>
+                </div>
+                <div className="flex gap-3 pl-6 text-[11px]">
+                  <span className="text-foreground">P: <span className="font-display text-primary">{previewMacros.protein}g</span></span>
+                  <span className="text-foreground">K: <span className="font-display text-primary">{previewMacros.carbs}g</span></span>
+                  <span className="text-foreground">Y: <span className="font-display text-primary">{previewMacros.fat}g</span></span>
+                </div>
               </div>
             )}
           </div>

@@ -88,7 +88,7 @@ const emptyMealSlots: Meal[] = [
 ];
 
 // --- MACRO DASHBOARD COMPONENT ---
-const MacroDashboard = ({ meals }: { meals: Meal[] }) => {
+const MacroDashboard = ({ meals, macroGoals }: { meals: Meal[]; macroGoals: { protein: number; carbs: number; fat: number; calories: number } }) => {
   const totals = useMemo(() => {
     return meals.reduce(
       (acc, meal) => ({
