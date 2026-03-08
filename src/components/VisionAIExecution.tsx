@@ -48,7 +48,7 @@ const getRPEColor = (rpe: number): { bg: string; text: string; border: string } 
   return { bg: "bg-red-500/20", text: "text-red-400", border: "border-red-500/50" };
 };
 
-const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: VisionAIExecutionProps) => {
+const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentId, onClose }: VisionAIExecutionProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
   
