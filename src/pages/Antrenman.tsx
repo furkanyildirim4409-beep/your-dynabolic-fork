@@ -9,7 +9,7 @@ import { workoutHistory, WorkoutHistoryEntry } from "@/lib/mockData";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
+import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
 
 const Antrenman = () => {
   const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
