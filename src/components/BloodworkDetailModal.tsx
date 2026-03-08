@@ -5,6 +5,7 @@ import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianG
 interface BloodworkDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
+  report?: { id: string; date: string; lab: string; status: string; flaggedCount?: number; markers?: Array<{ name: string; value: number; unit: string; range: string; status: string }> } | null;
 }
 
 const hormoneTrends = [

@@ -434,16 +434,28 @@ const VisionAIExecution = ({ workoutTitle, onClose }: VisionAIExecutionProps) =>
       </motion.div>
 
       {/* Rest Timer Overlay (between sets) */}
-      <AnimatePresence>
-        {showRestTimer && <RestTimerOverlay duration={exercise.restDuration} onComplete={handleRestComplete} onSkip={handleSkipRest} setNumber={currentSet} totalSets={exercise.sets} />}
-      </AnimatePresence>
+      {showRestTimer && (
+        <RestTimerOverlay
+          isOpen={showRestTimer}
+          onClose={() => { setShowRestTimer(false); handleRestComplete(); }}
+          initialSeconds={exercise.restDuration}
+          exerciseName={exercise.name}
+          nextExercise={currentExerciseIndex < exercises.length - 1 ? exercises[currentExerciseIndex + 1].name : undefined}
+        />
+      )}
 
       {/* Exercise Rest Timer Overlay (between exercises) */}
-      <AnimatePresence>
-        {showExerciseRestTimer && currentExerciseIndex < exercises.length - 1 && (
-          <ExerciseRestTimerOverlay duration={90} onComplete={handleExerciseRestComplete} onSkip={handleExerciseRestSkip} completedExerciseName={exercise.name} nextExerciseName={exercises[currentExerciseIndex + 1].name} nextExerciseSets={exercises[currentExerciseIndex + 1].sets} nextExerciseReps={exercises[currentExerciseIndex + 1].targetReps} currentExerciseNumber={currentExerciseIndex + 1} totalExercises={exercises.length} />
-        )}
-      </AnimatePresence>
+      {showExerciseRestTimer && currentExerciseIndex < exercises.length - 1 && (
+        <ExerciseRestTimerOverlay
+          isOpen={showExerciseRestTimer}
+          onClose={() => { setShowExerciseRestTimer(false); handleExerciseRestComplete(); }}
+          duration={90}
+          currentExercise={exercise.name}
+          nextExercise={exercises[currentExerciseIndex + 1].name}
+          nextExerciseDetails={{ sets: exercises[currentExerciseIndex + 1].sets, reps: exercises[currentExerciseIndex + 1].targetReps }}
+          onSkip={() => { setShowExerciseRestTimer(false); handleExerciseRestSkip(); }}
+        />
+      )}
 
       <ExerciseHistoryModal exerciseName={exercise.name} isOpen={showExerciseHistory} onClose={() => setShowExerciseHistory(false)} />
     </>
