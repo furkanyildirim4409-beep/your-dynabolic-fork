@@ -89,7 +89,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         const v = form[key];
         (input as any)[key] = v ? Number(v) : null;
       });
-      await saveMeasurement(input);
+      await saveMeasurement(input, weightKg);
       toast({ title: "Ölçümler kaydedildi ✅" });
       onClose();
     } catch (e: any) {
