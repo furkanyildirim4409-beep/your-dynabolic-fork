@@ -355,11 +355,14 @@ export type Database = {
           avatar_url: string | null
           bio: string | null
           bio_coins: number | null
+          birth_date: string | null
           coach_id: string | null
           created_at: string | null
           current_weight: number | null
           email: string | null
           full_name: string | null
+          gender: string | null
+          height_cm: number | null
           id: string
           level: number | null
           readiness_score: number | null
@@ -371,11 +374,14 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           bio_coins?: number | null
+          birth_date?: string | null
           coach_id?: string | null
           created_at?: string | null
           current_weight?: number | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id: string
           level?: number | null
           readiness_score?: number | null
@@ -387,11 +393,14 @@ export type Database = {
           avatar_url?: string | null
           bio?: string | null
           bio_coins?: number | null
+          birth_date?: string | null
           coach_id?: string | null
           created_at?: string | null
           current_weight?: number | null
           email?: string | null
           full_name?: string | null
+          gender?: string | null
+          height_cm?: number | null
           id?: string
           level?: number | null
           readiness_score?: number | null
