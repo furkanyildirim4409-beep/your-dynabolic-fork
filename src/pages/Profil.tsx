@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -10,12 +10,14 @@ import WearableDeviceSync from "@/components/WearableDeviceSync";
 import TransformationTimeline from "@/components/profile/TransformationTimeline";
 import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
+import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
+import { useBodyMeasurements } from "@/hooks/useBodyMeasurements";
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
