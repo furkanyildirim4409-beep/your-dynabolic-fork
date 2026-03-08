@@ -30,15 +30,20 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
-    if (isOpen && latest) {
-      const pre: Record<string, string> = {};
-      fields.forEach(({ key }) => {
-        const val = latest[key as keyof typeof latest];
-        if (val != null) pre[key] = String(val);
-      });
-      setForm(pre);
-    } else if (isOpen) {
-      setForm({});
+    if (isOpen) {
+      if (latest) {
+        const pre: Record<string, string> = {};
+        fields.forEach(({ key }) => {
+          // Skip pre-filling body_fat_pct if it's negative (invalid)
+          const val = latest[key as keyof typeof latest];
+          if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
+            pre[key] = String(val);
+          }
+        });
+        setForm(pre);
+      } else {
+        setForm({});
+      }
     }
   }, [isOpen, latest]);
 
