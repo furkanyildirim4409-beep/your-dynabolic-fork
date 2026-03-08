@@ -195,8 +195,8 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
               />
               <span className="text-foreground font-display text-xl">kg</span>
             </div>
-            <Button onClick={handleSaveWeight} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display">
-              KAYDET
+            <Button onClick={handleSaveWeight} disabled={isSaving} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display">
+              {isSaving ? <><Loader2 className="w-4 h-4 mr-2 animate-spin" /> KAYDEDİLİYOR...</> : "KAYDET"}
             </Button>
           </div>
         </DialogContent>

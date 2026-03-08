@@ -29,7 +29,7 @@ const Profil = () => {
 
   const bodyStats = [
     { label: "Boy", value: "182 cm" },
-    { label: "Kilo", value: "78.5 kg" },
+    { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
     { label: "Yağ Oranı", value: "12.4%", highlight: true },
     { label: "Kas Kütlesi", value: "74 kg", highlight: true },
     { label: "BMI", value: "23.7" },
