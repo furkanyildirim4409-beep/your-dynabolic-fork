@@ -78,10 +78,10 @@ const CartView = ({ isOpen, onClose }: CartViewProps) => {
                   className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 flex gap-3"
                 >
                   <div className="w-16 h-16 rounded-lg overflow-hidden bg-secondary flex-shrink-0">
-                    <img src={item.image} alt={item.name} className="w-full h-full object-cover" />
+                    <img src={item.image} alt={item.title} className="w-full h-full object-cover" />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-foreground text-sm font-medium truncate">{item.name}</p>
+                    <p className="text-foreground text-sm font-medium truncate">{item.title}</p>
                     <p className="text-primary text-sm font-bold mt-1">₺{item.price}</p>
                     <div className="flex items-center gap-2 mt-2">
                       <button
