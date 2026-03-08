@@ -49,6 +49,7 @@ const getRPEColor = (rpe: number): { bg: string; text: string; border: string } 
 
 const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: VisionAIExecutionProps) => {
   const { triggerAchievement } = useAchievements();
+  const { user } = useAuth();
   
   const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
     id: ex.id,
@@ -81,6 +82,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, onClose }: 
   const [showRpeInfo, setShowRpeInfo] = useState(false);
   const [showHeartRateInfo, setShowHeartRateInfo] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
+  const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
+  const workoutStartTime = useRef(Date.now());
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
