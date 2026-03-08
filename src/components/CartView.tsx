@@ -10,7 +10,7 @@ interface CartViewProps {
 }
 
 const CartView = ({ isOpen, onClose }: CartViewProps) => {
-  const { items, removeFromCart, updateQuantity, totalPrice, totalItems, clearCart } = useCart();
+  const { items, removeFromCart, updateQuantity, cartTotal: totalPrice, cartCount: totalItems, clearCart } = useCart();
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
