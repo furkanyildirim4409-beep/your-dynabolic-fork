@@ -204,7 +204,7 @@ const Antrenman = () => {
                           duration={workout.duration}
                           intensity={workout.intensity}
                           coachNote={workout.coachNote}
-                          onStart={() => setActiveWorkout(workout.title)}
+                          onStart={() => setActiveWorkout(workout)}
                         />
                       </motion.div>
                     ))}
