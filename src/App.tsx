@@ -89,6 +89,7 @@ const App = () => {
                             <Route path="/saglik-trendleri" element={<P><SaglikTrendleri /></P>} />
                             <Route path="/achievements" element={<P><Achievements /></P>} />
                             <Route path="/leaderboard" element={<P><Leaderboard /></P>} />
+                            <Route path="/sporcularim" element={<P><CoachAthletes /></P>} />
 
                             <Route path="/index" element={<Navigate to="/" replace />} />
                             <Route path="*" element={<NotFound />} />
