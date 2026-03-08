@@ -135,6 +135,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           profileUpdate.daily_protein_target = previewMacros.protein;
           profileUpdate.daily_carb_target = previewMacros.carbs;
           profileUpdate.daily_fat_target = previewMacros.fat;
+          profileUpdate.daily_calorie_target = previewMacros.calories;
         }
 
         if (Object.keys(profileUpdate).length > 0) {

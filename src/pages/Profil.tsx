@@ -18,6 +18,7 @@ import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
+import { useMacros } from "@/hooks/useMacros";
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
@@ -28,6 +29,7 @@ const Profil = () => {
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
+  const macros = useMacros();
   
   // Base values from real data or defaults
   const hasRealBodyFat = latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0;
@@ -416,33 +418,38 @@ const Profil = () => {
               {profileAny.fitness_goal === "cut" ? "Kilo Ver" : profileAny.fitness_goal === "bulk" ? "Kas Yap" : "Koruma"}
             </span>
           )}
+          {macros.source !== "default" && (
+            <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
+              {macros.source === "coach" ? "Koç" : macros.source === "profile" ? "Manuel" : "Otomatik"}
+            </span>
+          )}
         </div>
 
-        {profile?.daily_protein_target ? (
+        {macros.source !== "default" ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-xl">
               <Flame className="w-5 h-5 text-primary flex-shrink-0" />
               <div>
                 <p className="text-muted-foreground text-[10px]">HEDEF KALORİ</p>
                 <p className="font-display text-xl text-primary">
-                  {(Number(profile.daily_protein_target) * 4 + Number(profile.daily_carb_target ?? 0) * 4 + Number(profile.daily_fat_target ?? 0) * 9).toLocaleString()} kcal
+                  {macros.calories.toLocaleString()} kcal
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Beef className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{profile.daily_protein_target}g</p>
+                <p className="font-display text-lg text-foreground">{macros.protein}g</p>
                 <p className="text-muted-foreground text-[10px]">PROTEİN</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Wheat className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{profile.daily_carb_target}g</p>
+                <p className="font-display text-lg text-foreground">{macros.carbs}g</p>
                 <p className="text-muted-foreground text-[10px]">KARBONHİDRAT</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Droplets className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{profile.daily_fat_target}g</p>
+                <p className="font-display text-lg text-foreground">{macros.fat}g</p>
                 <p className="text-muted-foreground text-[10px]">YAĞ</p>
               </div>
             </div>
