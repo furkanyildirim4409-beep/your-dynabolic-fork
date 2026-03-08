@@ -8,7 +8,7 @@ import { toast } from "@/hooks/use-toast";
 import { calcNavyBodyFat, calcMuscleMass, calcBMR, calcTDEE, calcMacroTargets, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Ruler, Calculator, UserCog } from "lucide-react";
+import { Ruler, Calculator, UserCog, Target } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
