@@ -38,6 +38,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       if (latest) {
         const pre: Record<string, string> = {};
         fields.forEach(({ key }) => {
+          if (key === "muscle_mass_kg") return; // always recompute from weight + BF unless user enters manually
           const val = latest[key as keyof typeof latest];
           if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
             pre[key] = String(val);
@@ -58,7 +59,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   // Estimate muscle mass from BF% + weight
   const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
   const muscleEstimate =
-    !form.muscle_mass_kg && effectiveBf && weightKg
+    effectiveBf != null && weightKg != null
       ? calcMuscleMass(weightKg, effectiveBf)
       : null;
 
