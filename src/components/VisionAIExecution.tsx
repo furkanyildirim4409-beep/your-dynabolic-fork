@@ -240,7 +240,15 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           .eq("id", user.id);
       }
 
-      toast.success("Antrenman kaydedildi!");
+      // Mark assignment as completed
+      if (assignmentId) {
+        await supabase
+          .from("assigned_workouts")
+          .update({ status: "completed" })
+          .eq("id", assignmentId);
+      }
+
+      toast.success("Antrenman başarıyla kaydedildi! +150 Bio-Coin kazandın.");
     } catch (err: any) {
       console.error("Workout log save error:", err.message);
       toast.error("Antrenman kaydedilemedi.");
