@@ -328,6 +328,7 @@ export interface ShopSupplement {
   servings: number;
   perServing: string;
   tags: string[];
+  flavors: string[];
 }
 
 export const shopSupplements: ShopSupplement[] = [
