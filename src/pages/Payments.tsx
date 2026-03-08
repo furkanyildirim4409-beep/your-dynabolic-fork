@@ -53,10 +53,28 @@ const fireConfetti = () => {
 };
 
 const Payments = () => {
+  const { user } = useAuth();
   const [invoices, setInvoices] = useState<Invoice[]>(initialInvoices);
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [selectedInvoice, setSelectedInvoice] = useState<Invoice | null>(null);
   const [showReceiptModal, setShowReceiptModal] = useState(false);
+  const [orders, setOrders] = useState<any[]>([]);
+  const [ordersLoading, setOrdersLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user) { setOrdersLoading(false); return; }
+    const fetchOrders = async () => {
+      setOrdersLoading(true);
+      const { data, error } = await supabase
+        .from("orders")
+        .select("*")
+        .eq("user_id", user.id)
+        .order("created_at", { ascending: false });
+      if (!error && data) setOrders(data);
+      setOrdersLoading(false);
+    };
+    fetchOrders();
+  }, [user]);
   const [selectedReceipt, setSelectedReceipt] = useState<Invoice | null>(null);
 
   const paidInvoices = invoices.filter((inv) => inv.status === "paid");
