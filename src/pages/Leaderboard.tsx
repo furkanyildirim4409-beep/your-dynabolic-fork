@@ -145,7 +145,7 @@ const Leaderboard = () => {
         </motion.div>
       )}
 
-      <ChallengeHistoryModal />
+      <ChallengeHistoryModal isOpen={false} onClose={() => {}} athlete={null} />
     </div>
   );
 };

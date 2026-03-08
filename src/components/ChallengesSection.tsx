@@ -113,7 +113,7 @@ const ChallengesSection = ({ athletes }: ChallengesSectionProps) => {
       </motion.div>
 
       <CreateChallengeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} athletes={athletes} />
-      <ChallengeDetailModal isOpen={!!selectedChallenge} onClose={() => setSelectedChallenge(null)} challenge={selectedChallenge} onAccept={handleAcceptChallenge} onDecline={handleDeclineChallenge} />
+      <ChallengeDetailModal isOpen={!!selectedChallenge} onClose={() => setSelectedChallenge(null)} challenge={selectedChallenge ? { id: selectedChallenge.id, title: selectedChallenge.exercise || selectedChallenge.type, type: selectedChallenge.type, target: String(selectedChallenge.targetValue), deadline: selectedChallenge.deadline, wager: selectedChallenge.bioCoinsReward, status: selectedChallenge.status === "active" ? "active" : selectedChallenge.status === "completed" ? "completed" : "pending" } : undefined} />
     </>
   );
 };

@@ -1,10 +1,12 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileText, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
+import type { BloodworkReport } from "@/types/shared-models";
 
 interface BloodworkDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
+  report?: BloodworkReport | null;
 }
 
 const hormoneTrends = [
