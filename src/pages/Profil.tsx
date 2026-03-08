@@ -52,7 +52,7 @@ const Profil = () => {
     { label: "Boy", value: "182 cm" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
     { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0 ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
-    { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true },
+    { label: "Kas Kütlesi", value: currentMuscleMass != null ? `${currentMuscleMass} kg` : "—", highlight: true, tooltip: "Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır" },
     { label: "BMI", value: "23.7" },
     { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];
