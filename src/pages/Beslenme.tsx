@@ -824,7 +824,7 @@ const Beslenme = () => {
         </div>
 
         {/* MACRO DASHBOARD */}
-        <MacroDashboard meals={meals} />
+        <MacroDashboard meals={meals} macroGoals={macroGoals} />
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
