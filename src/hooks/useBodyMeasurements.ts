@@ -111,14 +111,21 @@ export function useBodyMeasurements() {
     };
   }, [userId, fetchData]);
 
-  const saveMeasurement = async (input: MeasurementInput) => {
+  const saveMeasurement = async (input: MeasurementInput, weightKg?: number | null) => {
     if (!userId) throw new Error("Not authenticated");
 
     let bodyFat = input.body_fat_pct != null ? Number(input.body_fat_pct) : null;
 
-    // Auto-calculate if not provided
+    // Auto-calculate BF% if not provided
     if (bodyFat == null && input.waist && input.neck) {
       bodyFat = calcNavyBodyFat(Number(input.waist), Number(input.neck));
+    }
+
+    let muscleMass = input.muscle_mass_kg != null ? Number(input.muscle_mass_kg) : null;
+
+    // Auto-calculate muscle mass if not provided but we have BF% and weight
+    if (muscleMass == null && bodyFat != null && weightKg && weightKg > 0) {
+      muscleMass = calcMuscleMass(weightKg, bodyFat);
     }
 
     const row = {
@@ -131,7 +138,7 @@ export function useBodyMeasurements() {
       arm: input.arm != null ? Number(input.arm) : null,
       thigh: input.thigh != null ? Number(input.thigh) : null,
       body_fat_pct: bodyFat,
-      muscle_mass_kg: input.muscle_mass_kg != null ? Number(input.muscle_mass_kg) : null,
+      muscle_mass_kg: muscleMass,
     };
 
     const { error } = await supabase.from("body_measurements").insert(row);

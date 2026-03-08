@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "@/hooks/use-toast";
-import { calcNavyBodyFat, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { calcNavyBodyFat, calcMuscleMass, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { useAuth } from "@/context/AuthContext";
 import { Ruler, Calculator } from "lucide-react";
 
 interface Props {
