@@ -1,8 +1,11 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { ShoppingCart, Minus, Plus, Trash2, X, CreditCard, Tag, ChevronRight } from "lucide-react";
+import { ShoppingCart, Minus, Plus, Trash2, X, CreditCard, Tag, ChevronRight, Loader2 } from "lucide-react";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
+import { toast } from "@/hooks/use-toast";
 
 interface CartViewProps {
   isOpen: boolean;
@@ -11,9 +14,34 @@ interface CartViewProps {
 
 const CartView = ({ isOpen, onClose }: CartViewProps) => {
   const { items, removeFromCart, updateQuantity, cartTotal: totalPrice, cartCount: totalItems, clearCart } = useCart();
+  const { user } = useAuth();
   const [promoCode, setPromoCode] = useState("");
   const [discount, setDiscount] = useState(0);
   const [promoApplied, setPromoApplied] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+
+  const handleCheckout = async () => {
+    if (!user || isSubmitting) return;
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("orders").insert({
+        user_id: user.id,
+        items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
+        total_price: grandTotal,
+        total_coins_used: 0,
+        status: "pending",
+      });
+      if (error) {
+        toast({ title: "Sipariş kaydedilemedi", description: error.message, variant: "destructive" });
+        return;
+      }
+      clearCart();
+      onClose();
+      toast({ title: "Sipariş Tamamlandı! 🎉", description: "Siparişiniz başarıyla oluşturuldu." });
+    } finally {
+      setIsSubmitting(false);
+    }
+  };
 
   const applyPromo = () => {
     if (promoCode.toUpperCase() === "DYNABOLIC10") {
@@ -151,10 +179,14 @@ const CartView = ({ isOpen, onClose }: CartViewProps) => {
                 </div>
               </div>
 
-              <Button className="w-full" onClick={() => {}}>
-                <CreditCard className="w-4 h-4 mr-2" />
-                Ödemeye Geç
-                <ChevronRight className="w-4 h-4 ml-auto" />
+              <Button className="w-full" onClick={handleCheckout} disabled={isSubmitting}>
+                {isSubmitting ? (
+                  <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                ) : (
+                  <CreditCard className="w-4 h-4 mr-2" />
+                )}
+                {isSubmitting ? "İşleniyor..." : "Ödemeye Geç"}
+                {!isSubmitting && <ChevronRight className="w-4 h-4 ml-auto" />}
               </Button>
 
               <button onClick={clearCart} className="w-full text-center text-xs text-muted-foreground hover:text-destructive transition-colors">
