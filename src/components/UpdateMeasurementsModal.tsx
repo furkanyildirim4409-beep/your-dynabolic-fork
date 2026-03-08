@@ -52,7 +52,26 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       ? calcNavyBodyFat(Number(form.waist), Number(form.neck))
       : null;
 
+  // Validate ranges
+  const getValidationError = (key: string, value: string): string | null => {
+    if (!value) return null;
+    const field = fields.find(f => f.key === key);
+    if (!field || !field.min || !field.max) return null;
+    const num = Number(value);
+    if (num < field.min || num > field.max) return `${field.min}-${field.max} arası olmalı`;
+    return null;
+  };
+
+  const hasValidationErrors = fields.some(({ key }) => {
+    const v = form[key];
+    return v ? getValidationError(key, v) !== null : false;
+  });
+
   const handleSave = async () => {
+    if (hasValidationErrors) {
+      toast({ title: "Hata", description: "Ölçüm değerlerini kontrol edin", variant: "destructive" });
+      return;
+    }
     setSaving(true);
     try {
       const input: MeasurementInput = {};
