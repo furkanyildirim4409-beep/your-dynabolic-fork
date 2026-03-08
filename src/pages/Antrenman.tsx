@@ -12,7 +12,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 
 const Antrenman = () => {
-  const [activeWorkout, setActiveWorkout] = useState<string | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
