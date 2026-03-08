@@ -6,6 +6,8 @@ import confetti from "canvas-confetti";
 import { useState } from "react";
 import PaymentModal, { PaymentDetails } from "./PaymentModal";
 import { toast } from "@/hooks/use-toast";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 
 const fireConfetti = () => {
   const count = 200;
