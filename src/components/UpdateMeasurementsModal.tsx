@@ -98,6 +98,8 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
     weightKg && heightCm && previewAge
       ? calcBMR(weightKg, Number(heightCm), previewAge, gender as "male" | "female")
       : null;
+  const previewTDEE = previewBMR ? calcTDEE(previewBMR, activityLevel) : null;
+  const previewMacros = previewTDEE && weightKg ? calcMacroTargets(weightKg, previewTDEE, fitnessGoal) : null;
 
   const getValidationError = (key: string, value: string): string | null => {
     if (!value) return null;
