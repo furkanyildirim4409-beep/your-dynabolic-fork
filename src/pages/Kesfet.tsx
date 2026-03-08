@@ -451,6 +451,11 @@ const Kesfet = () => {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      <BioCoinTransactionHistory
+        isOpen={showTransactionHistory}
+        onClose={() => setShowTransactionHistory(false)}
+      />
     </>
   );
 };
