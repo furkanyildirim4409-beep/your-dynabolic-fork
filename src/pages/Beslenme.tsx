@@ -694,7 +694,7 @@ const Beslenme = () => {
     setSelectedFood(food);
   };
 
-  const handleConfirmAddFood = (targetMealId: string, grams: number) => {
+  const handleConfirmAddFood = async (targetMealId: string, grams: number) => {
     if (!selectedFood) return;
 
     const ratio = grams / selectedFood.baseGrams;
@@ -710,10 +710,10 @@ const Beslenme = () => {
       isEaten: false,
     };
 
+    // Update local state immediately
     setMeals((currentMeals) =>
       currentMeals.map((meal) => {
         if (meal.id !== targetMealId) return meal;
-
         return {
           ...meal,
           totalCal: meal.totalCal + newFood.cal,
@@ -728,10 +728,17 @@ const Beslenme = () => {
     );
 
     const targetMeal = meals.find((m) => m.id === targetMealId);
-    toast({
-      title: "Eklendi ✅",
-      description: `${selectedFood.name} ${targetMeal?.title || "öğüne"} eklendi.`,
-    });
+    const mealNameMap: Record<string, string> = { kahvalti: "Kahvaltı", ogle: "Öğle Yemeği", ara: "Ara Öğün", aksam: "Akşam Yemeği" };
+
+    // Persist to Supabase
+    try {
+      const updatedMeal = meals.find(m => m.id === targetMealId);
+      const allFoods = [...(updatedMeal?.foods || []), newFood];
+      await logMeal(mealNameMap[targetMealId] || "Ara Öğün", allFoods);
+      toast({ title: "Öğün başarıyla kaydedildi! ✅", description: `${selectedFood.name} ${targetMeal?.title || "öğüne"} eklendi.` });
+    } catch {
+      toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
+    }
 
     setSelectedFood(null);
     setShowManualAdd(false);

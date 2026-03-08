@@ -1,32 +1,47 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Calendar, ChevronLeft, ChevronRight, Flame, Beef, Wheat, Droplets } from "lucide-react";
-
-interface DayLog {
-  date: string;
-  dayLabel: string;
-  calories: number;
-  protein: number;
-  carbs: number;
-  fat: number;
-  meals: number;
-  adherence: number; // 0-100
-}
-
-const last7Days: DayLog[] = [
-  { date: "2026-01-27", dayLabel: "Pzt", calories: 2580, protein: 175, carbs: 290, fat: 72, meals: 5, adherence: 95 },
-  { date: "2026-01-26", dayLabel: "Paz", calories: 2100, protein: 140, carbs: 240, fat: 68, meals: 4, adherence: 78 },
-  { date: "2026-01-25", dayLabel: "Cmt", calories: 2750, protein: 180, carbs: 310, fat: 80, meals: 5, adherence: 100 },
-  { date: "2026-01-24", dayLabel: "Cum", calories: 2450, protein: 165, carbs: 270, fat: 70, meals: 5, adherence: 90 },
-  { date: "2026-01-23", dayLabel: "Per", calories: 2300, protein: 155, carbs: 250, fat: 65, meals: 4, adherence: 85 },
-  { date: "2026-01-22", dayLabel: "Çar", calories: 2650, protein: 178, carbs: 295, fat: 74, meals: 5, adherence: 98 },
-  { date: "2026-01-21", dayLabel: "Sal", calories: 2200, protein: 150, carbs: 245, fat: 62, meals: 4, adherence: 80 },
-];
+import { Calendar, Flame, Beef, Wheat, Droplets } from "lucide-react";
+import { useNutritionHistory } from "@/hooks/useNutritionLogs";
+import { Skeleton } from "@/components/ui/skeleton";
 
 const NutritionHistory = () => {
+  const { history, isLoading } = useNutritionHistory(7);
   const [selectedDay, setSelectedDay] = useState(0);
-  const day = last7Days[selectedDay];
-  const target = { calories: 2600, protein: 180, carbs: 300, fat: 75 };
+  const target = { calories: 2200, protein: 180, carbs: 250, fat: 70 };
+
+  if (isLoading) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Beslenme Geçmişi</h3>
+        </div>
+        <div className="flex gap-1.5">
+          {Array.from({ length: 7 }).map((_, i) => (
+            <Skeleton key={i} className="flex-1 h-12 rounded-lg" />
+          ))}
+        </div>
+        <Skeleton className="h-40 rounded-xl" />
+      </div>
+    );
+  }
+
+  if (history.length === 0) {
+    return (
+      <div className="space-y-4">
+        <div className="flex items-center gap-2">
+          <Calendar className="w-4 h-4 text-primary" />
+          <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Beslenme Geçmişi</h3>
+        </div>
+        <div className="text-center py-8">
+          <Flame className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+          <p className="text-muted-foreground text-sm">Henüz beslenme kaydı bulunmuyor.</p>
+        </div>
+      </div>
+    );
+  }
+
+  const day = history[selectedDay] || history[0];
 
   return (
     <div className="space-y-4">
@@ -37,7 +52,7 @@ const NutritionHistory = () => {
 
       {/* Day selector */}
       <div className="flex gap-1.5">
-        {last7Days.map((d, i) => (
+        {history.map((d, i) => (
           <button
             key={d.date}
             onClick={() => setSelectedDay(i)}
@@ -47,7 +62,7 @@ const NutritionHistory = () => {
           >
             <p className={`text-[10px] ${selectedDay === i ? "text-primary" : "text-muted-foreground"}`}>{d.dayLabel}</p>
             <div className={`w-1.5 h-1.5 rounded-full mx-auto mt-1 ${
-              d.adherence >= 90 ? "bg-green-400" : d.adherence >= 70 ? "bg-yellow-400" : "bg-red-400"
+              d.adherence >= 90 ? "bg-green-400" : d.adherence >= 70 ? "bg-yellow-400" : d.adherence > 0 ? "bg-red-400" : "bg-muted-foreground/20"
             }`} />
           </button>
         ))}
@@ -64,7 +79,8 @@ const NutritionHistory = () => {
           <p className="text-foreground text-sm font-medium">{day.date}</p>
           <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
             day.adherence >= 90 ? "bg-green-500/20 text-green-400" :
-            day.adherence >= 70 ? "bg-yellow-500/20 text-yellow-400" : "bg-red-500/20 text-red-400"
+            day.adherence >= 70 ? "bg-yellow-500/20 text-yellow-400" :
+            day.adherence > 0 ? "bg-red-500/20 text-red-400" : "bg-muted/20 text-muted-foreground"
           }`}>
             %{day.adherence} uyum
           </span>
@@ -78,7 +94,7 @@ const NutritionHistory = () => {
             { icon: Droplets, label: "Yağ", value: day.fat, target: target.fat, unit: "g", color: "text-yellow-400" },
           ].map((m) => {
             const Icon = m.icon;
-            const pct = Math.min((m.value / m.target) * 100, 100);
+            const pct = m.target > 0 ? Math.min((m.value / m.target) * 100, 100) : 0;
             return (
               <div key={m.label} className="text-center">
                 <Icon className={`w-3.5 h-3.5 ${m.color} mx-auto mb-1`} />
