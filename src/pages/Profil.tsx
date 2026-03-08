@@ -37,8 +37,8 @@ const Profil = () => {
   const bodyStats = [
     { label: "Boy", value: "182 cm" },
     { label: "Kilo", value: profile?.current_weight ? `${profile.current_weight} kg` : "—" },
-    { label: "Yağ Oranı", value: "12.4%", highlight: true },
-    { label: "Kas Kütlesi", value: "74 kg", highlight: true },
+    { label: "Yağ Oranı", value: latestMeasurement?.body_fat_pct ? `%${latestMeasurement.body_fat_pct}` : "—", highlight: true },
+    { label: "Kas Kütlesi", value: latestMeasurement?.muscle_mass_kg ? `${latestMeasurement.muscle_mass_kg} kg` : "—", highlight: true },
     { label: "BMI", value: "23.7" },
     { label: "Bazal Metabolizma", value: "1,890 kcal" },
   ];
