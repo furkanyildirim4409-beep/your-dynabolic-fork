@@ -9,10 +9,10 @@ import { workoutHistory, WorkoutHistoryEntry } from "@/lib/mockData";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
+import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
 
 const Antrenman = () => {
-  const [activeWorkout, setActiveWorkout] = useState<string | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -204,7 +204,7 @@ const Antrenman = () => {
                           duration={workout.duration}
                           intensity={workout.intensity}
                           coachNote={workout.coachNote}
-                          onStart={() => setActiveWorkout(workout.title)}
+                          onStart={() => setActiveWorkout(workout)}
                         />
                       </motion.div>
                     ))}
@@ -230,7 +230,8 @@ const Antrenman = () => {
       <AnimatePresence>
         {activeWorkout && (
           <VisionAIExecution
-            workoutTitle={activeWorkout}
+            workoutTitle={activeWorkout.title}
+            exercises={activeWorkout.programExercises}
             onClose={() => setActiveWorkout(null)}
           />
         )}
