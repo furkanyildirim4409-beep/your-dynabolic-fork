@@ -131,6 +131,15 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                   </div>
                   <Switch checked={notifications.communityAlerts} onCheckedChange={() => handleNotificationToggle("communityAlerts")} />
                 </div>
+                {pushSupported && (
+                  <div className="flex items-center justify-between p-4">
+                    <div className="flex items-center gap-3">
+                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center"><BellRing className="w-4 h-4 text-amber-400" /></div>
+                      <div><p className="text-foreground text-sm font-medium">Push Bildirimleri</p><p className="text-muted-foreground text-xs">Sipariş durumu güncellemeleri</p></div>
+                    </div>
+                    <Switch checked={pushSubscribed} onCheckedChange={handlePushToggle} />
+                  </div>
+                )}
               </div>
             </div>
 
