@@ -4,11 +4,13 @@ import { Star, Coins, ShoppingCart } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { shopSupplements, ShopSupplement } from "@/lib/mockData";
 import { useCart } from "@/context/CartContext";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
-const COIN_TO_TL_RATE = 0.1; // 1000 Bio-Coin = 100 TL
-const MAX_DISCOUNT_PERCENTAGE = 0.20; // 20% cap on all physical products
-const USER_BIO_COINS = 2450; // Mock user balance
+const COIN_TO_TL_RATE = 0.1;
+const MAX_DISCOUNT_PERCENTAGE = 0.20;
 
 const calculateMaxDiscount = (productPrice: number, userCoins: number): number => {
   const maxAllowedByPercentage = productPrice * MAX_DISCOUNT_PERCENTAGE;
