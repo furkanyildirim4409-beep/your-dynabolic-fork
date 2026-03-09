@@ -34,6 +34,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
+import { useAssignedWorkouts, groupByDate } from "@/hooks/useAssignedWorkouts";
 
 const Kokpit = () => {
   const navigate = useNavigate();

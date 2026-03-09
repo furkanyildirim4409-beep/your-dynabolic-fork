@@ -11,6 +11,36 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout, groupByDate } from "@/hooks/useAssignedWorkouts";
 
+const WorkoutGroup = ({ label, workouts, onSelect }: { label: string; workouts: TransformedWorkout[]; onSelect: (w: TransformedWorkout) => void }) => (
+  <div>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+      <h2 className="font-display text-xs text-muted-foreground uppercase tracking-widest">{label}</h2>
+      <span className="text-[10px] text-primary">{workouts.length}</span>
+    </div>
+    <div className="space-y-3">
+      {workouts.map((workout, index) => (
+        <motion.div
+          key={workout.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.08 }}
+        >
+          <WorkoutCard
+            title={workout.title}
+            day={workout.day}
+            exercises={workout.exercises}
+            duration={workout.duration}
+            intensity={workout.intensity}
+            coachNote={workout.coachNote}
+            onStart={() => onSelect(workout)}
+          />
+        </motion.div>
+      ))}
+    </div>
+  </div>
+);
+
 const Antrenman = () => {
   const [detailWorkout, setDetailWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
