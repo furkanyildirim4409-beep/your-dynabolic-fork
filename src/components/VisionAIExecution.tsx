@@ -155,6 +155,19 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     } catch (e) {}
   };
 
+  // Helper: find superset group boundaries
+  const getGroupBounds = (groupId: string) => {
+    let firstGroupIdx = -1;
+    let lastGroupIdx = -1;
+    for (let i = 0; i < exercises.length; i++) {
+      if (exercises[i].groupId === groupId) {
+        if (firstGroupIdx === -1) firstGroupIdx = i;
+        lastGroupIdx = i;
+      }
+    }
+    return { firstGroupIdx, lastGroupIdx };
+  };
+
   const handleConfirmSet = () => {
     // Track this completed set
     if (!completedSetsRef.current[currentExerciseIndex]) {
@@ -169,37 +182,69 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setShowComplete(true);
     setIsRunning(false);
     playSound('confirm');
-    if (currentSet >= exercise.sets) {
-      setExerciseComplete(true);
-      playSound('complete');
-      setTimeout(() => {
-        setShowComplete(false);
-        setExerciseComplete(false);
-        if (currentExerciseIndex < exercises.length - 1) {
-          const nextEx = exercises[currentExerciseIndex + 1];
-          const isSupersetTransition = exercise.groupId && nextEx?.groupId === exercise.groupId;
-          if (isSupersetTransition) {
-            setCurrentExerciseIndex(p => p + 1);
-            setCurrentSet(1);
-            setTimer(0);
-            setReps(0);
-            setWeight(60);
-            setIsRunning(true);
-            toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
-          } else {
+
+    if (exercise.groupId) {
+      // ── SUPERSET STATE MACHINE ──
+      const { firstGroupIdx, lastGroupIdx } = getGroupBounds(exercise.groupId);
+
+      if (currentExerciseIndex < lastGroupIdx) {
+        // CASE A — Mid-round: advance to next exercise in group, NO rest, keep currentSet
+        setTimeout(() => {
+          setShowComplete(false);
+          setCurrentExerciseIndex(p => p + 1);
+          setTimer(0);
+          setReps(0);
+          setIsRunning(true);
+          toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
+        }, 800);
+      } else if (currentExerciseIndex === lastGroupIdx && currentSet < exercise.sets) {
+        // CASE B — End of round, more sets remain: REST then loop back to first group exercise
+        setTimeout(() => {
+          setShowComplete(false);
+          setShowRestTimer(true);
+          // Rest handler will jump back to firstGroupIdx & increment set
+        }, 1000);
+      } else {
+        // CASE C — End of superset, all sets done
+        setExerciseComplete(true);
+        playSound('complete');
+        setTimeout(() => {
+          setShowComplete(false);
+          setExerciseComplete(false);
+          if (lastGroupIdx + 1 < exercises.length) {
             setShowExerciseRestTimer(true);
+          } else {
+            saveWorkoutLog();
+            setShowWorkoutSummary(true);
+            triggerAchievement("workout_complete");
+            if (new Date().getHours() < 6) triggerAchievement("early_workout");
+            if (visionAIActive) triggerAchievement("vision_ai_workout");
+            if (weight >= 100) triggerAchievement("heavy_lift_100kg");
           }
-        } else {
-          saveWorkoutLog();
-          setShowWorkoutSummary(true);
-          triggerAchievement("workout_complete");
-          if (new Date().getHours() < 6) triggerAchievement("early_workout");
-          if (visionAIActive) triggerAchievement("vision_ai_workout");
-          if (weight >= 100) triggerAchievement("heavy_lift_100kg");
-        }
-      }, 1500);
+        }, 1500);
+      }
     } else {
-      setTimeout(() => { setShowComplete(false); setShowRestTimer(true); }, 1000);
+      // ── STANDARD (non-superset) ──
+      if (currentSet >= exercise.sets) {
+        setExerciseComplete(true);
+        playSound('complete');
+        setTimeout(() => {
+          setShowComplete(false);
+          setExerciseComplete(false);
+          if (currentExerciseIndex < exercises.length - 1) {
+            setShowExerciseRestTimer(true);
+          } else {
+            saveWorkoutLog();
+            setShowWorkoutSummary(true);
+            triggerAchievement("workout_complete");
+            if (new Date().getHours() < 6) triggerAchievement("early_workout");
+            if (visionAIActive) triggerAchievement("vision_ai_workout");
+            if (weight >= 100) triggerAchievement("heavy_lift_100kg");
+          }
+        }, 1500);
+      } else {
+        setTimeout(() => { setShowComplete(false); setShowRestTimer(true); }, 1000);
+      }
     }
   };
 
