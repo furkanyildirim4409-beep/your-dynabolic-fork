@@ -6,7 +6,6 @@ import { TransformedWorkout, WorkoutExercise } from "@/hooks/useAssignedWorkouts
 interface WorkoutDetailSheetProps {
   workout: TransformedWorkout | null;
   onClose: () => void;
-  onStartWorkout?: (workout: TransformedWorkout) => void;
 }
 
 const ExerciseRow = ({ exercise, index }: { exercise: WorkoutExercise; index: number }) => (
@@ -60,7 +59,7 @@ const ExerciseRow = ({ exercise, index }: { exercise: WorkoutExercise; index: nu
   </motion.div>
 );
 
-const WorkoutDetailSheet = ({ workout, onClose, onStartWorkout }: WorkoutDetailSheetProps) => {
+const WorkoutDetailSheet = ({ workout, onClose }: WorkoutDetailSheetProps) => {
   if (!workout) return null;
 
   return (
@@ -138,11 +137,12 @@ const WorkoutDetailSheet = ({ workout, onClose, onStartWorkout }: WorkoutDetailS
           {/* Bottom CTA */}
           <div className="px-5 py-4 border-t border-white/[0.06]">
             <button
-              onClick={() => onStartWorkout?.(workout)}
-              className="w-full py-3.5 rounded-xl bg-primary font-display text-primary-foreground tracking-wider flex items-center justify-center gap-2 active:bg-primary/90 transition-colors"
+              disabled
+              className="w-full py-3.5 rounded-xl bg-muted/50 border border-white/[0.06] font-display text-muted-foreground tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
             >
-              <Dumbbell className="w-4 h-4" />
+              <Lock className="w-4 h-4" />
               ANTRENMANI BAŞLAT
+              <span className="text-[10px] ml-1 opacity-60">(Yakında)</span>
             </button>
           </div>
         </motion.div>
