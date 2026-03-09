@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
 import WorkoutCard from "@/components/WorkoutCard";
 import WorkoutDetailSheet from "@/components/WorkoutDetailSheet";
+import ActiveWorkoutEngine from "@/components/ActiveWorkoutEngine";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
 import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
@@ -43,6 +44,7 @@ const WorkoutGroup = ({ label, workouts, onSelect }: { label: string; workouts: 
 
 const Antrenman = () => {
   const [detailWorkout, setDetailWorkout] = useState<TransformedWorkout | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
@@ -241,7 +243,25 @@ const Antrenman = () => {
       </div>
 
       {/* Workout Detail Sheet */}
-      <WorkoutDetailSheet workout={detailWorkout} onClose={() => setDetailWorkout(null)} />
+      <WorkoutDetailSheet
+        workout={detailWorkout}
+        onClose={() => setDetailWorkout(null)}
+        onStartWorkout={(w) => {
+          setDetailWorkout(null);
+          setActiveWorkout(w);
+        }}
+      />
+
+      {/* Active Workout Engine */}
+      <AnimatePresence>
+        {activeWorkout && (
+          <ActiveWorkoutEngine
+            workout={activeWorkout}
+            onClose={() => setActiveWorkout(null)}
+            onComplete={() => setActiveWorkout(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Workout History Overlay */}
       <AnimatePresence>
