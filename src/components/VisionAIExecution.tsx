@@ -18,6 +18,9 @@ interface ProgramExercise {
   restTime: string;
   notes: string | null;
   videoUrl: string | null;
+  rir?: number;
+  rpe?: number;
+  failureSet?: boolean;
 }
 
 interface VisionAIExecutionProps {
