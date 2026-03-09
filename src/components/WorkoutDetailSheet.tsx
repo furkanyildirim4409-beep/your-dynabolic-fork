@@ -138,12 +138,11 @@ const WorkoutDetailSheet = ({ workout, onClose, onStartWorkout }: WorkoutDetailS
           {/* Bottom CTA */}
           <div className="px-5 py-4 border-t border-white/[0.06]">
             <button
-              disabled
-              className="w-full py-3.5 rounded-xl bg-muted/50 border border-white/[0.06] font-display text-muted-foreground tracking-wider flex items-center justify-center gap-2 cursor-not-allowed"
+              onClick={() => onStartWorkout?.(workout)}
+              className="w-full py-3.5 rounded-xl bg-primary font-display text-primary-foreground tracking-wider flex items-center justify-center gap-2 active:bg-primary/90 transition-colors"
             >
-              <Lock className="w-4 h-4" />
+              <Dumbbell className="w-4 h-4" />
               ANTRENMANI BAŞLAT
-              <span className="text-[10px] ml-1 opacity-60">(Yakında)</span>
             </button>
           </div>
         </motion.div>
