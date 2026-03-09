@@ -60,7 +60,7 @@ const ExerciseRow = ({ exercise, index }: { exercise: WorkoutExercise; index: nu
   </motion.div>
 );
 
-const WorkoutDetailSheet = ({ workout, onClose }: WorkoutDetailSheetProps) => {
+const WorkoutDetailSheet = ({ workout, onClose, onStartWorkout }: WorkoutDetailSheetProps) => {
   if (!workout) return null;
 
   return (
