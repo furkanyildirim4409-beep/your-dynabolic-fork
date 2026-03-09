@@ -435,7 +435,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    setCurrentExerciseIndex(index); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true);
+    setCurrentExerciseIndex(index); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
