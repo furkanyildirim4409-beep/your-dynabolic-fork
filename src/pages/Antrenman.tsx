@@ -12,11 +12,12 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout, groupByDate } from "@/hooks/useAssignedWorkouts";
 
 const Antrenman = () => {
-  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
+  const [detailWorkout, setDetailWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
+  const grouped = groupByDate(workouts);
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
 
   const weeklyStats = [
