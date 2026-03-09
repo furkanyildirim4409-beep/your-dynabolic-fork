@@ -777,6 +777,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 </div>
               </div>
             </div>
+            {exercise.failureSet && (
+              <label className="flex items-center gap-3 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20 cursor-pointer">
+                <input type="checkbox" checked={achievedFailure} onChange={e => setAchievedFailure(e.target.checked)} className="w-4 h-4 accent-destructive rounded" />
+                <span className="text-sm font-display text-destructive tracking-wide">🔥 Tükenişe Ulaştım</span>
+              </label>
+            )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
         </div>
