@@ -194,8 +194,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     completedSetsRef.current[currentExerciseIndex].push({
       weight,
       reps: reps || exercise.targetReps,
-      isFailure: false,
+      isFailure: achievedFailure || false,
     });
+    setAchievedFailure(false);
 
     setShowComplete(true);
     setIsRunning(false);
