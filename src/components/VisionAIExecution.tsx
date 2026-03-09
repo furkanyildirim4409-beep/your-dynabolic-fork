@@ -19,6 +19,7 @@ interface ProgramExercise {
   notes: string | null;
   videoUrl: string | null;
   rir?: number;
+  rirPerSet?: number[];
   rpe?: number;
   failureSet?: boolean;
   groupId?: string;
