@@ -62,6 +62,8 @@ const Kokpit = () => {
 
   // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
+  const { data: assignedWorkouts = [] } = useAssignedWorkouts();
+  const todayWorkout = groupByDate(assignedWorkouts).today[0];
 
   // Listen for coach chat open event from EliteDock
   useEffect(() => {
