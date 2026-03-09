@@ -542,6 +542,58 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   </motion.div>
                 );
               })()}
+
+              {/* Progressive Overload per Exercise */}
+              {(() => {
+                if (!previousWorkout?.details) return null;
+                const prevDetails = typeof previousWorkout.details === 'string'
+                  ? JSON.parse(previousWorkout.details)
+                  : previousWorkout.details;
+                if (!Array.isArray(prevDetails)) return null;
+
+                const overloadItems = exercises.map((ex, idx) => {
+                  const actualSets = completedSetsRef.current[idx] ?? [];
+                  if (actualSets.length === 0) return null;
+                  const prevEx = prevDetails.find((p: any) => p.exerciseName === ex.name);
+                  if (!prevEx?.sets?.length) return null;
+                  const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
+                  const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
+                  if (prevMax <= 0 || currentMax <= 0) return null;
+                  const diff = currentMax - prevMax;
+                  if (diff === 0) return null;
+                  return { name: ex.name, diff, currentMax, prevMax };
+                }).filter(Boolean) as { name: string; diff: number; currentMax: number; prevMax: number }[];
+
+                if (overloadItems.length === 0) return null;
+
+                return (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.6 }} className="w-full max-w-sm mb-4">
+                    <p className="text-[10px] font-display text-muted-foreground tracking-widest uppercase text-center mb-2">Progressive Overload</p>
+                    <div className="space-y-2">
+                      {overloadItems.map((item) => (
+                        <div key={item.name} className={`flex items-center gap-3 rounded-xl border px-4 py-3 ${
+                          item.diff > 0
+                            ? 'border-green-500/20 bg-green-500/5'
+                            : 'border-destructive/20 bg-destructive/5'
+                        }`}>
+                          <span className="text-lg">{item.diff > 0 ? '📈' : '📉'}</span>
+                          <div className="flex-1 min-w-0">
+                            <p className="font-display text-sm text-foreground truncate">{item.name}</p>
+                            <p className="text-[10px] text-muted-foreground">{item.prevMax}kg → {item.currentMax}kg</p>
+                          </div>
+                          <span className={`font-display text-sm px-2 py-0.5 rounded-full ${
+                            item.diff > 0
+                              ? 'bg-green-500/20 text-green-400'
+                              : 'bg-destructive/20 text-destructive'
+                          }`}>
+                            {item.diff > 0 ? '+' : ''}{item.diff}kg
+                          </span>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                );
+              })()}
               <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} disabled={isSaving} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow disabled:opacity-50">{isSaving ? "KAYDEDİLİYOR..." : "ANTRENMANI BİTİR"}</motion.button>
             </motion.div>
           )}
