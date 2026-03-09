@@ -4,6 +4,19 @@ import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
+export interface TransformedExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  restTime: string;
+  notes: string | null;
+  videoUrl: string | null;
+  rir?: number;
+  rpe?: number;
+  failureSet?: boolean;
+}
+
 export interface TransformedWorkout {
   id: string;
   title: string;
@@ -12,15 +25,7 @@ export interface TransformedWorkout {
   duration: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
   coachNote?: string;
-  programExercises: Array<{
-    id: string;
-    name: string;
-    sets: number;
-    reps: string;
-    restTime: string;
-    notes: string | null;
-    videoUrl: string | null;
-  }>;
+  programExercises: TransformedExercise[];
 }
 
 const mapDifficulty = (d: string | null): "Düşük" | "Orta" | "Yüksek" => {
@@ -50,8 +55,13 @@ export const useAssignedWorkouts = () => {
 
       return data.map((aw: any) => {
         const program = aw.programs;
-        const exercises = program?.exercises ?? [];
-        const exerciseCount = exercises.length;
+
+        // Prefer inline exercises JSONB; fall back to program.exercises
+        const inlineExercises = Array.isArray(aw.exercises) && aw.exercises.length > 0
+          ? aw.exercises
+          : null;
+        const rawExercises = inlineExercises ?? (program?.exercises ?? []);
+        const exerciseCount = rawExercises.length;
         const estimatedMinutes = exerciseCount * 10;
         const hours = Math.floor(estimatedMinutes / 60);
         const mins = estimatedMinutes % 60;
@@ -67,24 +77,32 @@ export const useAssignedWorkouts = () => {
           }
         }
 
+        // Prefer workout_name from assigned_workouts, fall back to program title
+        const title = aw.workout_name?.trim() ? aw.workout_name : (program?.title ?? "Antrenman");
+        // Prefer day_notes, fall back to program description
+        const coachNote = aw.day_notes?.trim() ? aw.day_notes : (program?.description || undefined);
+
         return {
           id: aw.id,
-          title: program?.title ?? "Antrenman",
+          title,
           day: dayLabel,
           exercises: exerciseCount,
           duration,
           intensity: mapDifficulty(program?.difficulty),
-          coachNote: program?.description || undefined,
-          programExercises: exercises
+          coachNote,
+          programExercises: rawExercises
             .sort((a: any, b: any) => (a.order_index ?? 0) - (b.order_index ?? 0))
             .map((ex: any) => ({
-              id: ex.id,
+              id: ex.id ?? crypto.randomUUID(),
               name: ex.name,
               sets: ex.sets ?? 3,
               reps: ex.reps ?? "10",
-              restTime: ex.rest_time ?? "60s",
-              notes: ex.notes,
-              videoUrl: ex.video_url,
+              restTime: ex.rest_time ?? ex.restTime ?? "60s",
+              notes: ex.notes ?? null,
+              videoUrl: ex.video_url ?? ex.videoUrl ?? null,
+              rir: typeof ex.rir === "number" ? ex.rir : undefined,
+              rpe: typeof ex.rpe === "number" ? ex.rpe : undefined,
+              failureSet: ex.failure_set === true || ex.failureSet === true,
             })),
         };
       });
