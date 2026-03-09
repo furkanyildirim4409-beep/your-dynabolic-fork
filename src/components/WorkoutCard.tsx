@@ -10,6 +10,7 @@ interface ExerciseDetail {
   rir?: number;
   rpe?: number;
   failureSet?: boolean;
+  groupId?: string;
 }
 
 interface WorkoutCardProps {
@@ -103,37 +104,66 @@ const WorkoutCard = ({
                 className="overflow-hidden"
               >
                 <div className="mt-2 space-y-1.5">
-                  {exerciseDetails.map((ex, i) => (
-                    <div
-                      key={i}
-                      className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2"
-                    >
-                      <div className="flex-1 min-w-0">
-                        <p className="text-sm text-foreground font-medium truncate">{ex.name}</p>
-                        <p className="text-xs text-muted-foreground">
-                          {ex.sets} × {ex.reps}
-                        </p>
-                      </div>
-                      <div className="flex items-center gap-1.5 flex-shrink-0">
-                        {ex.failureSet && (
-                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-0.5">
-                            <Flame className="w-3 h-3" />
-                            TÜKENİŞ
-                          </Badge>
-                        )}
-                        {!ex.failureSet && typeof ex.rir === "number" && (
-                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
-                            RIR: {ex.rir}
-                          </Badge>
-                        )}
-                        {typeof ex.rpe === "number" && (
-                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
-                            RPE: {ex.rpe}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                  ))}
+                  {(() => {
+                    // Group adjacent exercises by groupId
+                    const groups: { groupId: string | undefined; items: { ex: ExerciseDetail; idx: number }[] }[] = [];
+                    exerciseDetails.forEach((ex, i) => {
+                      const last = groups[groups.length - 1];
+                      if (ex.groupId && last?.groupId === ex.groupId) {
+                        last.items.push({ ex, idx: i });
+                      } else {
+                        groups.push({ groupId: ex.groupId, items: [{ ex, idx: i }] });
+                      }
+                    });
+
+                    return groups.map((group, gi) => {
+                      const isSuperset = !!group.groupId && group.items.length > 1;
+                      const rows = group.items.map(({ ex, idx }) => (
+                        <div
+                          key={idx}
+                          className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2"
+                        >
+                          <div className="flex-1 min-w-0">
+                            <p className="text-sm text-foreground font-medium truncate">{ex.name}</p>
+                            <p className="text-xs text-muted-foreground">
+                              {ex.sets} × {ex.reps}
+                            </p>
+                          </div>
+                          <div className="flex items-center gap-1.5 flex-shrink-0">
+                            {ex.failureSet && (
+                              <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-0.5">
+                                <Flame className="w-3 h-3" />
+                                TÜKENİŞ
+                              </Badge>
+                            )}
+                            {!ex.failureSet && typeof ex.rir === "number" && (
+                              <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                                RIR: {ex.rir}
+                              </Badge>
+                            )}
+                            {typeof ex.rpe === "number" && (
+                              <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                                RPE: {ex.rpe}
+                              </Badge>
+                            )}
+                          </div>
+                        </div>
+                      ));
+
+                      if (isSuperset) {
+                        return (
+                          <div key={gi} className="border-l-2 border-primary pl-2 space-y-1.5">
+                            <span className="text-[10px] font-semibold text-primary flex items-center gap-1">
+                              🔗 Süperset
+                            </span>
+                            {rows}
+                          </div>
+                        );
+                      }
+
+                      return <div key={gi}>{rows}</div>;
+                    });
+                  })()}
                 </div>
               </motion.div>
             )}
