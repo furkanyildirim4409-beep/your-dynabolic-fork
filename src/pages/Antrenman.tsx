@@ -210,17 +210,8 @@ const Antrenman = () => {
         </AnimatePresence>
       </div>
 
-      {/* Vision AI Execution Overlay */}
-      <AnimatePresence>
-        {activeWorkout && (
-          <VisionAIExecution
-            workoutTitle={activeWorkout.title}
-            exercises={activeWorkout.programExercises}
-            assignmentId={activeWorkout.id}
-            onClose={() => setActiveWorkout(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Workout Detail Sheet */}
+      <WorkoutDetailSheet workout={detailWorkout} onClose={() => setDetailWorkout(null)} />
 
       {/* Workout History Overlay */}
       <AnimatePresence>
