@@ -94,10 +94,28 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [showHeartRateInfo, setShowHeartRateInfo] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [achievedFailure, setAchievedFailure] = useState(false);
+  const [previousWorkout, setPreviousWorkout] = useState<any>(null);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
   const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
   const workoutStartTime = useRef(Date.now());
+
+  // Fetch previous workout for progressive overload
+  useEffect(() => {
+    if (!user?.id || !workoutTitle) return;
+    supabase
+      .from("workout_logs")
+      .select("details")
+      .eq("user_id", user.id)
+      .eq("workout_name", workoutTitle)
+      .eq("completed", true)
+      .order("logged_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setPreviousWorkout(data[0]);
+      });
+  }, [user?.id, workoutTitle]);
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
