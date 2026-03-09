@@ -382,7 +382,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const handleRestComplete = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0);
+    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
       // Superset Case B: jump back to first exercise in group, increment set
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
