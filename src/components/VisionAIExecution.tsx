@@ -73,6 +73,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     notes: ex.notes ?? undefined,
     videoUrl: ex.videoUrl ?? undefined,
     rir: ex.rir,
+    rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
     failureSet: ex.failureSet,
     groupId: ex.groupId,
   }));
