@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
 import WorkoutCard from "@/components/WorkoutCard";
 import WorkoutDetailSheet from "@/components/WorkoutDetailSheet";
+import ActiveWorkoutEngine from "@/components/ActiveWorkoutEngine";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
 import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
