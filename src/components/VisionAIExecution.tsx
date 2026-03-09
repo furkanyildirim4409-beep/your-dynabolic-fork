@@ -289,14 +289,44 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     const tonnage = calculateTotalTonnage();
     const bioCoinsEarned = 150;
 
-    const details = exercises.map((ex, idx) => ({
-      exerciseName: ex.name,
-      sets: (completedSetsRef.current[idx] ?? []).map(s => ({
-        weight: s.weight,
-        reps: s.reps,
-        isFailure: s.isFailure,
-      })),
-    }));
+    const details = exercises.map((ex, idx) => {
+      const actualSets = completedSetsRef.current[idx] ?? [];
+
+      // Progressive overload: compare max weight with previous session
+      let weightDiff: number | null = null;
+      if (previousWorkout?.details) {
+        const prevDetails = typeof previousWorkout.details === 'string'
+          ? JSON.parse(previousWorkout.details)
+          : previousWorkout.details;
+        if (Array.isArray(prevDetails)) {
+          const prevEx = prevDetails.find((p: any) => p.exerciseName === ex.name);
+          if (prevEx?.sets?.length > 0 && actualSets.length > 0) {
+            const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
+            const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
+            if (prevMax > 0 && currentMax > 0) weightDiff = currentMax - prevMax;
+          }
+        }
+      }
+
+      // RIR success: did they hit target reps on last set?
+      let rirSuccess: boolean | null = null;
+      if (ex.rir != null && actualSets.length > 0) {
+        const lastSet = actualSets[actualSets.length - 1];
+        rirSuccess = lastSet.reps >= Number(ex.reps);
+      }
+
+      return {
+        exerciseName: ex.name,
+        targetSets: ex.sets,
+        targetReps: ex.reps,
+        rir: ex.rir ?? null,
+        failure_set: ex.failureSet ?? false,
+        groupId: ex.groupId ?? null,
+        sets: actualSets.map(s => ({ weight: s.weight, reps: s.reps, isFailure: s.isFailure })),
+        weightDiff,
+        rirSuccess,
+      };
+    });
 
     try {
       const { error } = await supabase.from("workout_logs").insert({
