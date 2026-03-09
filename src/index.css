@@ -109,7 +109,7 @@
     @apply border-border;
   }
 
-  html, body, #root {
+  html, body {
     height: 100dvh;
     height: -webkit-fill-available;
     overflow: hidden;
@@ -122,23 +122,21 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
-    position: fixed;
     width: 100%;
     overscroll-behavior: none;
     -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
-    /* iOS safe areas - only horizontal + top, bottom handled by dock */
     padding-top: env(safe-area-inset-top);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
 
   #root {
-    height: 100%;
-    overflow-y: auto;
-    overflow-x: hidden;
-    overscroll-behavior-y: contain;
-    -webkit-overflow-scrolling: touch;
+    height: 100dvh;
+    height: -webkit-fill-available;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
   }
 
   h1, h2, h3, h4, h5, h6 {
