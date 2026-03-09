@@ -439,13 +439,60 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </motion.div>
               <motion.h2 initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.2 }} className="font-display text-3xl text-foreground mb-2">ANTRENMAN TAMAMLANDI!</motion.h2>
               <motion.p initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.3 }} className="text-muted-foreground text-center mb-8">Harika iş çıkardın! Tüm hareketleri başarıyla tamamladın.</motion.p>
-              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-6 w-full max-w-sm space-y-4 mb-8">
+              <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }} className="glass-card p-6 w-full max-w-sm space-y-4 mb-4">
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Hareket</span><span className="font-display text-lg text-foreground">{exercises.length}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{getTotalSetsCompleted()}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Süre</span><span className="font-display text-lg text-foreground">{Math.round((Date.now() - workoutStartTime.current) / 60000)} dk</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Tonnaj</span><span className="font-display text-lg text-foreground">{calculateTotalTonnage() >= 1000 ? `${(calculateTotalTonnage() / 1000).toFixed(1)} Ton` : `${calculateTotalTonnage()} kg`}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Kazanılan Bio-Coin</span><span className="font-display text-lg text-primary">+150</span></div>
               </motion.div>
+
+              {/* Hypertrophy Analytics */}
+              {(() => {
+                const failureCount = exercises.filter(e => e.failureSet).length;
+                const rirCount = exercises.filter(e => typeof e.rir === 'number').length;
+                const supersetGroupIds = new Set(exercises.filter(e => e.groupId).map(e => e.groupId));
+                const supersetCount = supersetGroupIds.size;
+                const hasAny = failureCount > 0 || rirCount > 0 || supersetCount > 0;
+                if (!hasAny) return null;
+                return (
+                  <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="w-full max-w-sm mb-4">
+                    <p className="text-[10px] font-display text-muted-foreground tracking-widest uppercase text-center mb-2">Hipertrofi Analizi</p>
+                    <div className="space-y-2">
+                      {failureCount > 0 && (
+                        <div className="flex items-center gap-3 rounded-xl border border-destructive/20 bg-destructive/5 px-4 py-3">
+                          <span className="text-lg">🔥</span>
+                          <div className="flex-1">
+                            <p className="font-display text-sm text-foreground">{failureCount} Tükeniş Seti</p>
+                            <p className="text-[10px] text-muted-foreground">Maksimum kas lifi aktive edildi</p>
+                          </div>
+                          <span className="font-display text-lg text-destructive">{failureCount}</span>
+                        </div>
+                      )}
+                      {rirCount > 0 && (
+                        <div className="flex items-center gap-3 rounded-xl border border-primary/20 bg-primary/5 px-4 py-3">
+                          <span className="text-lg">🎯</span>
+                          <div className="flex-1">
+                            <p className="font-display text-sm text-foreground">{rirCount} RIR Hedefli Set</p>
+                            <p className="text-[10px] text-muted-foreground">Hassas yoğunluk kontrolü</p>
+                          </div>
+                          <span className="font-display text-lg text-primary">{rirCount}</span>
+                        </div>
+                      )}
+                      {supersetCount > 0 && (
+                        <div className="flex items-center gap-3 rounded-xl border border-accent/20 bg-accent/5 px-4 py-3">
+                          <span className="text-lg">🔗</span>
+                          <div className="flex-1">
+                            <p className="font-display text-sm text-foreground">{supersetCount} Süperset</p>
+                            <p className="text-[10px] text-muted-foreground">Metabolik stres artırıldı</p>
+                          </div>
+                          <span className="font-display text-lg text-accent-foreground">{supersetCount}</span>
+                        </div>
+                      )}
+                    </div>
+                  </motion.div>
+                );
+              })()}
               <motion.button initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} whileTap={{ scale: 0.98 }} onClick={onClose} disabled={isSaving} className="w-full max-w-sm py-4 bg-primary text-primary-foreground font-display text-lg tracking-wider rounded-xl neon-glow disabled:opacity-50">{isSaving ? "KAYDEDİLİYOR..." : "ANTRENMANI BİTİR"}</motion.button>
             </motion.div>
           )}
