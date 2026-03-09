@@ -72,6 +72,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     videoUrl: ex.videoUrl ?? undefined,
     rir: ex.rir,
     failureSet: ex.failureSet,
+    groupId: ex.groupId,
   }));
   
   const [timer, setTimer] = useState(0);
