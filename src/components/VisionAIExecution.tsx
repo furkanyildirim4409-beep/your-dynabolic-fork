@@ -65,9 +65,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     reps: parseInt(ex.reps) || 10,
     tempo: "3-1-2",
     restDuration: parseInt(ex.restTime) || 60,
-    rpe: 7,
+    rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
     notes: ex.notes ?? undefined,
     videoUrl: ex.videoUrl ?? undefined,
+    rir: ex.rir,
+    failureSet: ex.failureSet,
   }));
   
   const [timer, setTimer] = useState(0);
