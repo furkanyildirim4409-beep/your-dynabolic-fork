@@ -176,7 +176,19 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         setShowComplete(false);
         setExerciseComplete(false);
         if (currentExerciseIndex < exercises.length - 1) {
-          setShowExerciseRestTimer(true);
+          const nextEx = exercises[currentExerciseIndex + 1];
+          const isSupersetTransition = exercise.groupId && nextEx?.groupId === exercise.groupId;
+          if (isSupersetTransition) {
+            setCurrentExerciseIndex(p => p + 1);
+            setCurrentSet(1);
+            setTimer(0);
+            setReps(0);
+            setWeight(60);
+            setIsRunning(true);
+            toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
+          } else {
+            setShowExerciseRestTimer(true);
+          }
         } else {
           saveWorkoutLog();
           setShowWorkoutSummary(true);
