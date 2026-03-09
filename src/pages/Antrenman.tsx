@@ -44,6 +44,7 @@ const WorkoutGroup = ({ label, workouts, onSelect }: { label: string; workouts: 
 
 const Antrenman = () => {
   const [detailWorkout, setDetailWorkout] = useState<TransformedWorkout | null>(null);
+  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
