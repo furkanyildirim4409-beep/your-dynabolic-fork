@@ -19,28 +19,37 @@ export type Database = {
           athlete_id: string | null
           coach_id: string | null
           created_at: string | null
+          day_notes: string | null
+          exercises: Json
           id: string
           program_id: string | null
           scheduled_date: string | null
           status: string | null
+          workout_name: string
         }
         Insert: {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string | null
+          day_notes?: string | null
+          exercises?: Json
           id?: string
           program_id?: string | null
           scheduled_date?: string | null
           status?: string | null
+          workout_name?: string
         }
         Update: {
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string | null
+          day_notes?: string | null
+          exercises?: Json
           id?: string
           program_id?: string | null
           scheduled_date?: string | null
           status?: string | null
+          workout_name?: string
         }
         Relationships: [
           {
@@ -204,6 +213,7 @@ export type Database = {
       exercises: {
         Row: {
           created_at: string | null
+          failure_set: boolean | null
           id: string
           name: string
           notes: string | null
@@ -211,11 +221,13 @@ export type Database = {
           program_id: string | null
           reps: string | null
           rest_time: string | null
+          rir: number | null
           sets: number | null
           video_url: string | null
         }
         Insert: {
           created_at?: string | null
+          failure_set?: boolean | null
           id?: string
           name: string
           notes?: string | null
@@ -223,11 +235,13 @@ export type Database = {
           program_id?: string | null
           reps?: string | null
           rest_time?: string | null
+          rir?: number | null
           sets?: number | null
           video_url?: string | null
         }
         Update: {
           created_at?: string | null
+          failure_set?: boolean | null
           id?: string
           name?: string
           notes?: string | null
@@ -235,6 +249,7 @@ export type Database = {
           program_id?: string | null
           reps?: string | null
           rest_time?: string | null
+          rir?: number | null
           sets?: number | null
           video_url?: string | null
         }
@@ -368,12 +383,18 @@ export type Database = {
           fitness_goal: string | null
           full_name: string | null
           gender: string | null
+          gym_name: string | null
           height_cm: number | null
           id: string
           level: number | null
+          notification_preferences: Json | null
+          notification_settings: Json | null
           readiness_score: number | null
           role: string | null
+          specialty: string | null
           streak: number | null
+          subscription_status: string | null
+          subscription_tier: string | null
           updated_at: string | null
         }
         Insert: {
@@ -393,12 +414,18 @@ export type Database = {
           fitness_goal?: string | null
           full_name?: string | null
           gender?: string | null
+          gym_name?: string | null
           height_cm?: number | null
           id: string
           level?: number | null
+          notification_preferences?: Json | null
+          notification_settings?: Json | null
           readiness_score?: number | null
           role?: string | null
+          specialty?: string | null
           streak?: number | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           updated_at?: string | null
         }
         Update: {
@@ -418,18 +445,25 @@ export type Database = {
           fitness_goal?: string | null
           full_name?: string | null
           gender?: string | null
+          gym_name?: string | null
           height_cm?: number | null
           id?: string
           level?: number | null
+          notification_preferences?: Json | null
+          notification_settings?: Json | null
           readiness_score?: number | null
           role?: string | null
+          specialty?: string | null
           streak?: number | null
+          subscription_status?: string | null
+          subscription_tier?: string | null
           updated_at?: string | null
         }
         Relationships: []
       }
       programs: {
         Row: {
+          automation_rules: Json | null
           coach_id: string | null
           created_at: string | null
           description: string | null
@@ -437,8 +471,10 @@ export type Database = {
           id: string
           target_goal: string | null
           title: string
+          week_config: Json | null
         }
         Insert: {
+          automation_rules?: Json | null
           coach_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -446,8 +482,10 @@ export type Database = {
           id?: string
           target_goal?: string | null
           title: string
+          week_config?: Json | null
         }
         Update: {
+          automation_rules?: Json | null
           coach_id?: string | null
           created_at?: string | null
           description?: string | null
@@ -455,6 +493,7 @@ export type Database = {
           id?: string
           target_goal?: string | null
           title?: string
+          week_config?: Json | null
         }
         Relationships: [
           {
@@ -589,6 +628,33 @@ export type Database = {
           tonnage?: number | null
           user_id?: string
           workout_name?: string
+        }
+        Relationships: []
+      }
+      workout_templates: {
+        Row: {
+          coach_id: string | null
+          created_at: string | null
+          description: string | null
+          id: string
+          name: string
+          routine_days: Json
+        }
+        Insert: {
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name: string
+          routine_days?: Json
+        }
+        Update: {
+          coach_id?: string | null
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          name?: string
+          routine_days?: Json
         }
         Relationships: []
       }
