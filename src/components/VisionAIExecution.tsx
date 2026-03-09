@@ -18,6 +18,9 @@ interface ProgramExercise {
   restTime: string;
   notes: string | null;
   videoUrl: string | null;
+  rir?: number;
+  rpe?: number;
+  failureSet?: boolean;
 }
 
 interface VisionAIExecutionProps {
@@ -39,6 +42,8 @@ interface Exercise {
   notes?: string;
   category?: string;
   videoUrl?: string;
+  rir?: number;
+  failureSet?: boolean;
 }
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
@@ -60,9 +65,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     reps: parseInt(ex.reps) || 10,
     tempo: "3-1-2",
     restDuration: parseInt(ex.restTime) || 60,
-    rpe: 7,
+    rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
     notes: ex.notes ?? undefined,
     videoUrl: ex.videoUrl ?? undefined,
+    rir: ex.rir,
+    failureSet: ex.failureSet,
   }));
   
   const [timer, setTimer] = useState(0);
@@ -440,6 +447,15 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <History className="w-4 h-4 text-primary" />
               </motion.button>
             </div>
+
+            {/* Hypertrophy Cues */}
+            {exercise.failureSet ? (
+              <div className="text-red-500 font-bold animate-pulse text-lg">🔥 BU SET TÜKENİŞE KADAR!</div>
+            ) : typeof exercise.rir === 'number' ? (
+              <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
+                Hedef RIR: {exercise.rir}
+              </div>
+            ) : null}
 
             <div className="flex gap-2">
               <div className={`flex-1 ${rpeColors.bg} ${rpeColors.border} border rounded-xl px-3 py-2`}>
