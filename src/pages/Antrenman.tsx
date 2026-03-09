@@ -2,14 +2,14 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
 import WorkoutCard from "@/components/WorkoutCard";
-import VisionAIExecution from "@/components/VisionAIExecution";
+import WorkoutDetailSheet from "@/components/WorkoutDetailSheet";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
 import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
+import { useAssignedWorkouts, TransformedWorkout, groupByDate } from "@/hooks/useAssignedWorkouts";
 
 const Antrenman = () => {
   const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
