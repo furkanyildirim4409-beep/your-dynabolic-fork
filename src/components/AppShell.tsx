@@ -3,7 +3,7 @@ import { motion } from "framer-motion";
 import EliteDock from "./EliteDock";
 
 const AppShell = ({ children }: { children: ReactNode }) => (
-  <div className="relative min-h-[100dvh] bg-background">
+  <div className="relative h-[100dvh] bg-background overflow-hidden">
     <div className="fixed inset-0 grid-pattern pointer-events-none" />
     <div className="relative mx-auto max-w-[430px] min-h-[100dvh]">
       <motion.main
