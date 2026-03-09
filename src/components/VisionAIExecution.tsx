@@ -659,7 +659,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         </div>
 
         {/* Vision Area */}
-        <motion.div className="h-[55%] relative bg-black overflow-hidden touch-pan-y" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2} onDragEnd={handleSwipeEnd}>
+        <motion.div className="flex-1 relative bg-black overflow-hidden touch-pan-y" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2} onDragEnd={handleSwipeEnd}>
           <AnimatePresence>
             {currentExerciseIndex > 0 && (
               <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 0.6, x: 0 }} exit={{ opacity: 0, x: -10 }} onClick={handlePrevExercise} className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/10"><ChevronLeft className="w-5 h-5 text-foreground" /></motion.button>
