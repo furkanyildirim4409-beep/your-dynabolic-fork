@@ -707,9 +707,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           onComplete={handleExerciseRestComplete}
           onSkip={handleExerciseRestSkip}
           completedExerciseName={exercise.name}
-          nextExerciseName={exercises[currentExerciseIndex + 1].name}
-          nextExerciseSets={exercises[currentExerciseIndex + 1].sets}
-          nextExerciseReps={exercises[currentExerciseIndex + 1].targetReps}
+          nextExerciseName={computedNextExercise?.name ?? "—"}
+          nextExerciseSets={computedNextExercise?.sets ?? 0}
+          nextExerciseReps={computedNextExercise?.targetReps ?? 0}
           currentExerciseNumber={currentExerciseIndex + 1}
           totalExercises={exercises.length}
         />
