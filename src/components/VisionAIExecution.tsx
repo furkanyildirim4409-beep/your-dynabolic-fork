@@ -755,9 +755,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <h2 className="font-display text-lg text-foreground tracking-wider leading-tight">{exercise.name}</h2>
                 <div className="flex items-center gap-2">
                   <p className="text-muted-foreground text-[10px]">{workoutTitle}</p>
-                  <span className="ml-2 px-2 py-0.5 rounded bg-white/10 border border-white/20 text-[10px] font-bold tracking-wider text-white/90 uppercase backdrop-blur-sm">
-                    {exercise.reps}x {exercise.failureSet ? 'FAILURE' : typeof exercise.rir === 'number' ? Array(Number(exercise.sets) || 1).fill(exercise.rir).join('-') + ' RIR' : ''}
-                  </span>
                 </div>
               </div>
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowExerciseHistory(true)} className="p-2 rounded-lg bg-secondary/50 border border-primary/30 hover:bg-primary/10 transition-colors">
@@ -765,12 +762,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </motion.button>
             </div>
 
-            {/* Hypertrophy Cues */}
+            {/* Koç Hedefi */}
             {exercise.failureSet ? (
-              <div className="text-red-500 font-bold animate-pulse text-lg">🔥 BU SET TÜKENİŞE KADAR!</div>
+              <div className="text-red-500 font-bold animate-pulse text-lg">🔥 {exercise.reps}x @ FAILURE</div>
             ) : typeof exercise.rir === 'number' ? (
               <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
-                Hedef RIR: {exercise.rir}
+                {exercise.reps}x @ {Array(Number(exercise.sets) || 1).fill(exercise.rir).join('-')} RIR
               </div>
             ) : null}
 
