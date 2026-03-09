@@ -469,11 +469,42 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         </div>
 
         {/* Exercise Progress Dots */}
-        <div className="flex-shrink-0 flex items-center justify-center gap-1.5 py-2 bg-card/50">
-          {exercises.map((_, index) => (
-            <motion.button key={index} onClick={() => { hapticLight(); setSwipeDirection(index > currentExerciseIndex ? 'left' : 'right'); goToExercise(index); }}
-              className={`h-1.5 rounded-full transition-all ${index === currentExerciseIndex ? 'w-6 bg-primary' : index < currentExerciseIndex ? 'w-1.5 bg-primary/50' : 'w-1.5 bg-muted-foreground/30'}`} />
-          ))}
+        <div className="flex-shrink-0 flex items-center justify-center gap-1 py-2 bg-card/50">
+          {exercises.map((ex, index) => {
+            const isGrouped = !!ex.groupId;
+            const isFirstInGroup = isGrouped && (index === 0 || exercises[index - 1].groupId !== ex.groupId);
+            const isLastInGroup = isGrouped && (index === exercises.length - 1 || exercises[index + 1].groupId !== ex.groupId);
+            const isCurrent = index === currentExerciseIndex;
+            const isDone = index < currentExerciseIndex;
+
+            return (
+              <div key={index} className="flex items-center">
+                {isFirstInGroup && (
+                  <div className="flex items-center mr-0.5">
+                    <div className="w-px h-3 bg-primary/40 rounded-full" />
+                  </div>
+                )}
+                <motion.button
+                  onClick={() => { hapticLight(); setSwipeDirection(index > currentExerciseIndex ? 'left' : 'right'); goToExercise(index); }}
+                  className={`h-1.5 rounded-full transition-all ${
+                    isCurrent
+                      ? isGrouped ? 'w-6 bg-primary ring-1 ring-primary/30 ring-offset-1 ring-offset-card' : 'w-6 bg-primary'
+                      : isDone
+                        ? isGrouped ? 'w-1.5 bg-primary/60' : 'w-1.5 bg-primary/50'
+                        : isGrouped ? 'w-1.5 bg-primary/25' : 'w-1.5 bg-muted-foreground/30'
+                  }`}
+                />
+                {isGrouped && !isLastInGroup && exercises[index + 1].groupId === ex.groupId && (
+                  <div className="w-2 h-[2px] bg-primary/30 rounded-full" />
+                )}
+                {isLastInGroup && (
+                  <div className="flex items-center ml-0.5">
+                    <div className="w-px h-3 bg-primary/40 rounded-full" />
+                  </div>
+                )}
+              </div>
+            );
+          })}
         </div>
 
         {/* Vision Area */}
