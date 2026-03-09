@@ -6,6 +6,7 @@ import { TransformedWorkout, WorkoutExercise } from "@/hooks/useAssignedWorkouts
 interface WorkoutDetailSheetProps {
   workout: TransformedWorkout | null;
   onClose: () => void;
+  onStartWorkout?: (workout: TransformedWorkout) => void;
 }
 
 const ExerciseRow = ({ exercise, index }: { exercise: WorkoutExercise; index: number }) => (
