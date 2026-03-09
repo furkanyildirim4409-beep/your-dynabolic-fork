@@ -696,7 +696,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           onClose={() => { setShowRestTimer(false); handleRestComplete(); }}
           initialSeconds={exercise.restDuration}
           exerciseName={exercise.name}
-          nextExercise={currentExerciseIndex < exercises.length - 1 ? exercises[currentExerciseIndex + 1].name : undefined}
+          nextExercise={computedNextExercise?.name}
         />
       )}
 
