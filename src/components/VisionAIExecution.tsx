@@ -751,7 +751,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         </motion.div>
 
         {/* Info Panel */}
-        <div className="h-[45%] bg-card border-t border-white/10 flex flex-col overflow-hidden">
+        <div className="flex-shrink-0 max-h-[45%] bg-card border-t border-border flex flex-col overflow-hidden">
           <div className="flex-1 p-3 space-y-2 overflow-hidden">
             <div className="flex items-center justify-between">
               <div>
