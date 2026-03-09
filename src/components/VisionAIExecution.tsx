@@ -405,7 +405,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setIsRunning(true);
   };
   const handleExerciseRestComplete = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1);
+    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
