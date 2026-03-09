@@ -829,11 +829,32 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 </div>
               </div>
             </div>
+            {(() => {
+              let prevMax = 0;
+              if (previousWorkout?.details) {
+                const prevDetails = typeof previousWorkout.details === 'string' ? JSON.parse(previousWorkout.details) : previousWorkout.details;
+                if (Array.isArray(prevDetails)) {
+                  const prevEx = prevDetails.find((p: any) => p.exerciseName === exercise.name);
+                  if (prevEx?.sets?.length > 0) {
+                    prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
+                  }
+                }
+              }
+              return prevMax > 0 ? (
+                <div className="text-center">
+                  <span className={`text-xs px-2 py-1 rounded-full border backdrop-blur-sm transition-colors ${weight > prevMax ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-white/50'}`}>
+                    Geçmiş Rekor: {prevMax} kg {weight > prevMax && `(🚀 +${weight - prevMax} kg)`}
+                  </span>
+                </div>
+              ) : null;
+            })()}
             {exercise.failureSet && (
-              <label className="flex items-center gap-3 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20 cursor-pointer">
-                <input type="checkbox" checked={achievedFailure} onChange={e => setAchievedFailure(e.target.checked)} className="w-4 h-4 accent-destructive rounded" />
-                <span className="text-sm font-display text-destructive tracking-wide">🔥 Tükenişe Ulaştım</span>
-              </label>
+              <button
+                onClick={() => setAchievedFailure(!achievedFailure)}
+                className={`w-full py-3 rounded-xl mb-1 font-bold tracking-wide transition-all duration-300 border backdrop-blur-md flex items-center justify-center gap-2 ${achievedFailure ? 'bg-red-600/40 border-red-400 text-white shadow-[0_0_20px_rgba(220,38,38,0.4)]' : 'bg-black/40 border-red-900/50 text-red-500/70 hover:bg-black/60'}`}
+              >
+                🔥 TÜKENİŞE ULAŞTIM {achievedFailure && '(ONAYLANDI)'}
+              </button>
             )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
