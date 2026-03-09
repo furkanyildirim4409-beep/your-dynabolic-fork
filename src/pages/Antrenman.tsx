@@ -243,7 +243,25 @@ const Antrenman = () => {
       </div>
 
       {/* Workout Detail Sheet */}
-      <WorkoutDetailSheet workout={detailWorkout} onClose={() => setDetailWorkout(null)} />
+      <WorkoutDetailSheet
+        workout={detailWorkout}
+        onClose={() => setDetailWorkout(null)}
+        onStartWorkout={(w) => {
+          setDetailWorkout(null);
+          setActiveWorkout(w);
+        }}
+      />
+
+      {/* Active Workout Engine */}
+      <AnimatePresence>
+        {activeWorkout && (
+          <ActiveWorkoutEngine
+            workout={activeWorkout}
+            onClose={() => setActiveWorkout(null)}
+            onComplete={() => setActiveWorkout(null)}
+          />
+        )}
+      </AnimatePresence>
 
       {/* Workout History Overlay */}
       <AnimatePresence>
