@@ -765,19 +765,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </motion.button>
             </div>
 
-            {/* Koç Hedefi */}
-            {exercise.failureSet ? (
-              <div className="text-red-500 font-bold animate-pulse text-lg">🔥 {exercise.reps}x @ FAILURE</div>
-            ) : (exercise.rirPerSet && exercise.rirPerSet.length > 0) ? (
-              <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
-                {exercise.reps}x @ {exercise.rirPerSet.join('-')} RIR
-              </div>
-            ) : typeof exercise.rir === 'number' ? (
-              <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
-                {exercise.reps}x @ {Array(Number(exercise.sets) || 1).fill(exercise.rir).join('-')} RIR
-              </div>
-            ) : null}
-
             <div className="flex gap-2">
               <div className={`flex-1 ${rpeColors.bg} ${rpeColors.border} border rounded-xl px-3 py-2`}>
                 <div className="flex items-center gap-2">
@@ -793,9 +780,26 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   <div className="w-1.5 h-1.5 rounded-full bg-primary" />
                   <span className="text-[9px] text-primary tracking-wider">KOÇ HEDEFİ</span>
                 </div>
-                <p className="text-primary font-display text-sm leading-tight">{exercise.targetReps}x @ {exercise.tempo}</p>
+                <p className="text-primary font-display text-sm leading-tight">
+                  {exercise.reps}x @ {exercise.failureSet 
+                    ? 'FAILURE' 
+                    : (exercise.rirPerSet && exercise.rirPerSet.length > 0) 
+                      ? exercise.rirPerSet.join('-') + ' RIR'
+                      : typeof exercise.rir === 'number' 
+                        ? Array(Number(exercise.sets) || 1).fill(exercise.rir).join('-') + ' RIR'
+                        : exercise.tempo}
+                </p>
               </div>
             </div>
+
+            {exercise.failureSet && (
+              <button
+                onClick={() => setAchievedFailure(!achievedFailure)}
+                className={`w-full py-3 rounded-xl font-bold tracking-wide transition-all duration-300 border backdrop-blur-md flex items-center justify-center gap-2 mt-2 mb-1 ${achievedFailure ? 'bg-red-500/30 border-red-400/60 text-red-300 shadow-[0_0_25px_rgba(239,68,68,0.35),inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'bg-red-950/40 border-red-800/30 text-red-400/80 hover:bg-red-900/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'}`}
+              >
+                🔥 TÜKENİŞE ULAŞTIM
+              </button>
+            )}
 
             {exercise.notes && (
               <div className="bg-amber-500/10 border border-amber-500/30 rounded-lg px-2.5 py-2 flex items-start gap-2">
@@ -854,14 +858,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 </div>
               ) : null;
             })()}
-            {exercise.failureSet && (
-              <button
-                onClick={() => setAchievedFailure(!achievedFailure)}
-                className={`w-full py-3 rounded-xl mb-1 font-bold tracking-wide transition-all duration-300 border backdrop-blur-md flex items-center justify-center gap-2 ${achievedFailure ? 'bg-red-500/30 border-red-400/60 text-red-300 shadow-[0_0_25px_rgba(239,68,68,0.35),inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'bg-red-950/40 border-red-800/30 text-red-400/80 hover:bg-red-900/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'}`}
-              >
-                🔥 TÜKENİŞE ULAŞTIM
-              </button>
-            )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
         </div>
