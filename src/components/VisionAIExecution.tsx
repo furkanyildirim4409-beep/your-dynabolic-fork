@@ -332,10 +332,49 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   };
 
-  const handleRestComplete = () => { setShowRestTimer(false); setTimer(0); setReps(0); setCurrentSet(p => p + 1); setIsRunning(true); };
-  const handleSkipRest = () => { setShowRestTimer(false); setTimer(0); setReps(0); setCurrentSet(p => p + 1); setIsRunning(true); };
-  const handleExerciseRestComplete = () => { setShowExerciseRestTimer(false); setCurrentExerciseIndex(p => p + 1); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true); };
-  const handleExerciseRestSkip = () => { setShowExerciseRestTimer(false); setCurrentExerciseIndex(p => p + 1); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true); };
+  const handleRestComplete = () => {
+    setShowRestTimer(false); setTimer(0); setReps(0);
+    if (exercise.groupId) {
+      // Superset Case B: jump back to first exercise in group, increment set
+      const { firstGroupIdx } = getGroupBounds(exercise.groupId);
+      setCurrentExerciseIndex(firstGroupIdx);
+      setCurrentSet(p => p + 1);
+    } else {
+      setCurrentSet(p => p + 1);
+    }
+    setIsRunning(true);
+  };
+  const handleSkipRest = () => {
+    setShowRestTimer(false); setTimer(0); setReps(0);
+    if (exercise.groupId) {
+      const { firstGroupIdx } = getGroupBounds(exercise.groupId);
+      setCurrentExerciseIndex(firstGroupIdx);
+      setCurrentSet(p => p + 1);
+    } else {
+      setCurrentSet(p => p + 1);
+    }
+    setIsRunning(true);
+  };
+  const handleExerciseRestComplete = () => {
+    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1);
+    if (exercise.groupId) {
+      const { lastGroupIdx } = getGroupBounds(exercise.groupId);
+      setCurrentExerciseIndex(lastGroupIdx + 1);
+    } else {
+      setCurrentExerciseIndex(p => p + 1);
+    }
+    setIsRunning(true);
+  };
+  const handleExerciseRestSkip = () => {
+    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1);
+    if (exercise.groupId) {
+      const { lastGroupIdx } = getGroupBounds(exercise.groupId);
+      setCurrentExerciseIndex(lastGroupIdx + 1);
+    } else {
+      setCurrentExerciseIndex(p => p + 1);
+    }
+    setIsRunning(true);
+  };
 
   const handleSwipeEnd = (_: any, info: PanInfo) => {
     const threshold = 80;
