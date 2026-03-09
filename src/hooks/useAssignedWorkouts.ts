@@ -4,6 +4,19 @@ import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
 
+export interface TransformedExercise {
+  id: string;
+  name: string;
+  sets: number;
+  reps: string;
+  restTime: string;
+  notes: string | null;
+  videoUrl: string | null;
+  rir?: number;
+  rpe?: number;
+  failureSet?: boolean;
+}
+
 export interface TransformedWorkout {
   id: string;
   title: string;
@@ -12,15 +25,7 @@ export interface TransformedWorkout {
   duration: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
   coachNote?: string;
-  programExercises: Array<{
-    id: string;
-    name: string;
-    sets: number;
-    reps: string;
-    restTime: string;
-    notes: string | null;
-    videoUrl: string | null;
-  }>;
+  programExercises: TransformedExercise[];
 }
 
 const mapDifficulty = (d: string | null): "Düşük" | "Orta" | "Yüksek" => {
