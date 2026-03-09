@@ -21,6 +21,7 @@ interface ProgramExercise {
   rir?: number;
   rpe?: number;
   failureSet?: boolean;
+  groupId?: string;
 }
 
 interface VisionAIExecutionProps {
