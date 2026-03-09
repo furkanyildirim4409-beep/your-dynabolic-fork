@@ -43,9 +43,10 @@ interface Exercise {
   notes?: string;
   category?: string;
   videoUrl?: string;
-  rir?: number;
-  failureSet?: boolean;
-}
+    rir?: number;
+    failureSet?: boolean;
+    groupId?: string;
+  }
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
   if (rpe <= 5) return { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/50" };
