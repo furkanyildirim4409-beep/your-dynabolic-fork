@@ -676,7 +676,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <div className="relative w-full h-full">
                 {exercise?.videoUrl ? (
                   <motion.div key={exercise.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="absolute inset-0">
-                    <img src={exercise.videoUrl} alt={exercise.name} className="w-full h-full object-cover" loading="eager" />
+                    <img src={exercise.videoUrl} alt={exercise.name} className="w-full h-full object-contain opacity-80 mix-blend-screen" loading="lazy" decoding="async" crossOrigin="anonymous" onError={(e) => { const img = e.currentTarget as HTMLImageElement; img.src = '/placeholder.svg'; img.className = 'w-1/2 h-1/2 mx-auto my-auto opacity-40 object-contain'; }} />
                   </motion.div>
                 ) : (
                   <motion.div className="absolute inset-0 flex items-center justify-center bg-secondary/20" animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }}>
