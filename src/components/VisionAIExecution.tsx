@@ -21,6 +21,7 @@ interface ProgramExercise {
   rir?: number;
   rpe?: number;
   failureSet?: boolean;
+  groupId?: string;
 }
 
 interface VisionAIExecutionProps {
@@ -42,9 +43,10 @@ interface Exercise {
   notes?: string;
   category?: string;
   videoUrl?: string;
-  rir?: number;
-  failureSet?: boolean;
-}
+    rir?: number;
+    failureSet?: boolean;
+    groupId?: string;
+  }
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
   if (rpe <= 5) return { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/50" };
@@ -70,6 +72,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     videoUrl: ex.videoUrl ?? undefined,
     rir: ex.rir,
     failureSet: ex.failureSet,
+    groupId: ex.groupId,
   }));
   
   const [timer, setTimer] = useState(0);
@@ -173,7 +176,19 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         setShowComplete(false);
         setExerciseComplete(false);
         if (currentExerciseIndex < exercises.length - 1) {
-          setShowExerciseRestTimer(true);
+          const nextEx = exercises[currentExerciseIndex + 1];
+          const isSupersetTransition = exercise.groupId && nextEx?.groupId === exercise.groupId;
+          if (isSupersetTransition) {
+            setCurrentExerciseIndex(p => p + 1);
+            setCurrentSet(1);
+            setTimer(0);
+            setReps(0);
+            setWeight(60);
+            setIsRunning(true);
+            toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
+          } else {
+            setShowExerciseRestTimer(true);
+          }
         } else {
           saveWorkoutLog();
           setShowWorkoutSummary(true);
