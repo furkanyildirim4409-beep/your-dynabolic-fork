@@ -19,6 +19,7 @@ interface ProgramExercise {
   notes: string | null;
   videoUrl: string | null;
   rir?: number;
+  rirPerSet?: number[];
   rpe?: number;
   failureSet?: boolean;
   groupId?: string;
@@ -43,10 +44,11 @@ interface Exercise {
   notes?: string;
   category?: string;
   videoUrl?: string;
-    rir?: number;
-    failureSet?: boolean;
-    groupId?: string;
-  }
+  rir?: number;
+  rirPerSet?: number[];
+  failureSet?: boolean;
+  groupId?: string;
+}
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
   if (rpe <= 5) return { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/50" };
@@ -71,6 +73,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     notes: ex.notes ?? undefined,
     videoUrl: ex.videoUrl ?? undefined,
     rir: ex.rir,
+    rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
     failureSet: ex.failureSet,
     groupId: ex.groupId,
   }));
@@ -765,6 +768,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             {/* Koç Hedefi */}
             {exercise.failureSet ? (
               <div className="text-red-500 font-bold animate-pulse text-lg">🔥 {exercise.reps}x @ FAILURE</div>
+            ) : (exercise.rirPerSet && exercise.rirPerSet.length > 0) ? (
+              <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
+                {exercise.reps}x @ {exercise.rirPerSet.join('-')} RIR
+              </div>
             ) : typeof exercise.rir === 'number' ? (
               <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
                 {exercise.reps}x @ {Array(Number(exercise.sets) || 1).fill(exercise.rir).join('-')} RIR

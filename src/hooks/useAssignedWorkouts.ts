@@ -102,6 +102,7 @@ export const useAssignedWorkouts = () => {
               notes: ex.notes ?? null,
               videoUrl: ex.video_url ?? ex.videoUrl ?? null,
               rir: typeof ex.rir === "number" ? ex.rir : undefined,
+              rirPerSet: Array.isArray(ex.rir_per_set ?? ex.rirPerSet) ? (ex.rir_per_set ?? ex.rirPerSet) : undefined,
               rpe: typeof ex.rpe === "number" ? ex.rpe : undefined,
               failureSet: ex.failure_set === true || ex.failureSet === true,
               groupId: ex.group_id ?? ex.groupId ?? undefined,
