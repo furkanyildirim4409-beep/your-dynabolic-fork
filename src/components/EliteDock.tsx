@@ -66,7 +66,7 @@ const EliteDock = () => {
 
   return (
     <>
-      <motion.div initial={{ y: 100, opacity: 0, x: "-50%" }} animate={{ y: 0, opacity: 1, x: "-50%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }} className="fixed left-1/2 z-[40] flex items-center gap-4 w-max pointer-events-none" style={{ bottom: 'max(16px, env(safe-area-inset-bottom))' }}>
+      <motion.div initial={{ y: 100, opacity: 0, x: "-50%" }} animate={{ y: 0, opacity: 1, x: "-50%" }} transition={{ type: "spring", bounce: 0, duration: 0.4 }} className="fixed left-1/2 bottom-0 z-[40] flex items-center gap-4 w-max pointer-events-none" style={{ paddingBottom: 'env(safe-area-inset-bottom)' }}>
         <nav className="pointer-events-auto relative bg-[#0a0a0a]/95 backdrop-blur-xl border border-white/10 rounded-full px-4 h-[68px] flex items-center gap-1 shadow-2xl shadow-black/50 overflow-hidden isolate">
           <LayoutGroup id="dock-nav">
             {navItems.map((item) => {
