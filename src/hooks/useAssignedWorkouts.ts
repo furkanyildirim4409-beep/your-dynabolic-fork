@@ -104,6 +104,7 @@ export const useAssignedWorkouts = () => {
               rir: typeof ex.rir === "number" ? ex.rir : undefined,
               rpe: typeof ex.rpe === "number" ? ex.rpe : undefined,
               failureSet: ex.failure_set === true || ex.failureSet === true,
+              groupId: ex.group_id ?? ex.groupId ?? undefined,
             })),
         };
       });

@@ -10,6 +10,7 @@ interface ExerciseDetail {
   rir?: number;
   rpe?: number;
   failureSet?: boolean;
+  groupId?: string;
 }
 
 interface WorkoutCardProps {
