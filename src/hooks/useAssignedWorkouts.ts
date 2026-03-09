@@ -15,6 +15,7 @@ export interface TransformedExercise {
   rir?: number;
   rpe?: number;
   failureSet?: boolean;
+  groupId?: string;
 }
 
 export interface TransformedWorkout {
