@@ -94,10 +94,28 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [showHeartRateInfo, setShowHeartRateInfo] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
+  const [achievedFailure, setAchievedFailure] = useState(false);
+  const [previousWorkout, setPreviousWorkout] = useState<any>(null);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
   const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
   const workoutStartTime = useRef(Date.now());
+
+  // Fetch previous workout for progressive overload
+  useEffect(() => {
+    if (!user?.id || !workoutTitle) return;
+    supabase
+      .from("workout_logs")
+      .select("details")
+      .eq("user_id", user.id)
+      .eq("workout_name", workoutTitle)
+      .eq("completed", true)
+      .order("logged_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) setPreviousWorkout(data[0]);
+      });
+  }, [user?.id, workoutTitle]);
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
@@ -176,8 +194,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     completedSetsRef.current[currentExerciseIndex].push({
       weight,
       reps: reps || exercise.targetReps,
-      isFailure: false,
+      isFailure: achievedFailure || false,
     });
+    setAchievedFailure(false);
 
     setShowComplete(true);
     setIsRunning(false);
@@ -270,14 +289,44 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     const tonnage = calculateTotalTonnage();
     const bioCoinsEarned = 150;
 
-    const details = exercises.map((ex, idx) => ({
-      exerciseName: ex.name,
-      sets: (completedSetsRef.current[idx] ?? []).map(s => ({
-        weight: s.weight,
-        reps: s.reps,
-        isFailure: s.isFailure,
-      })),
-    }));
+    const details = exercises.map((ex, idx) => {
+      const actualSets = completedSetsRef.current[idx] ?? [];
+
+      // Progressive overload: compare max weight with previous session
+      let weightDiff: number | null = null;
+      if (previousWorkout?.details) {
+        const prevDetails = typeof previousWorkout.details === 'string'
+          ? JSON.parse(previousWorkout.details)
+          : previousWorkout.details;
+        if (Array.isArray(prevDetails)) {
+          const prevEx = prevDetails.find((p: any) => p.exerciseName === ex.name);
+          if (prevEx?.sets?.length > 0 && actualSets.length > 0) {
+            const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
+            const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
+            if (prevMax > 0 && currentMax > 0) weightDiff = currentMax - prevMax;
+          }
+        }
+      }
+
+      // RIR success: did they hit target reps on last set?
+      let rirSuccess: boolean | null = null;
+      if (ex.rir != null && actualSets.length > 0) {
+        const lastSet = actualSets[actualSets.length - 1];
+        rirSuccess = lastSet.reps >= Number(ex.reps);
+      }
+
+      return {
+        exerciseName: ex.name,
+        targetSets: ex.sets,
+        targetReps: ex.reps,
+        rir: ex.rir ?? null,
+        failure_set: ex.failureSet ?? false,
+        groupId: ex.groupId ?? null,
+        sets: actualSets.map(s => ({ weight: s.weight, reps: s.reps, isFailure: s.isFailure })),
+        weightDiff,
+        rirSuccess,
+      };
+    });
 
     try {
       const { error } = await supabase.from("workout_logs").insert({
@@ -333,7 +382,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const handleRestComplete = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0);
+    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
       // Superset Case B: jump back to first exercise in group, increment set
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
@@ -345,7 +394,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setIsRunning(true);
   };
   const handleSkipRest = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0);
+    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(firstGroupIdx);
@@ -356,7 +405,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setIsRunning(true);
   };
   const handleExerciseRestComplete = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1);
+    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -366,7 +415,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setIsRunning(true);
   };
   const handleExerciseRestSkip = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1);
+    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -386,7 +435,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    setCurrentExerciseIndex(index); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true);
+    setCurrentExerciseIndex(index); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
@@ -652,7 +701,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             <div className="flex items-center justify-between">
               <div>
                 <h2 className="font-display text-lg text-foreground tracking-wider leading-tight">{exercise.name}</h2>
-                <p className="text-muted-foreground text-[10px]">{workoutTitle}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-muted-foreground text-[10px]">{workoutTitle}</p>
+                  <span className="text-[10px] font-display text-primary/80">Hedef: {exercise.sets}x{exercise.reps}</span>
+                </div>
               </div>
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowExerciseHistory(true)} className="p-2 rounded-lg bg-secondary/50 border border-primary/30 hover:bg-primary/10 transition-colors">
                 <History className="w-4 h-4 text-primary" />
@@ -725,6 +777,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 </div>
               </div>
             </div>
+            {exercise.failureSet && (
+              <label className="flex items-center gap-3 px-3 py-2 rounded-xl bg-destructive/10 border border-destructive/20 cursor-pointer">
+                <input type="checkbox" checked={achievedFailure} onChange={e => setAchievedFailure(e.target.checked)} className="w-4 h-4 accent-destructive rounded" />
+                <span className="text-sm font-display text-destructive tracking-wide">🔥 Tükenişe Ulaştım</span>
+              </label>
+            )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
         </div>
