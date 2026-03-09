@@ -1,5 +1,16 @@
-import { motion } from "framer-motion";
-import { Dumbbell, MessageSquare, ChevronRight } from "lucide-react";
+import { useState } from "react";
+import { motion, AnimatePresence } from "framer-motion";
+import { Dumbbell, MessageSquare, ChevronRight, ChevronDown, ChevronUp, Flame } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
+
+interface ExerciseDetail {
+  name: string;
+  sets: number;
+  reps: string;
+  rir?: number;
+  rpe?: number;
+  failureSet?: boolean;
+}
 
 interface WorkoutCardProps {
   title: string;
@@ -8,6 +19,7 @@ interface WorkoutCardProps {
   duration: string;
   coachNote?: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
+  exerciseDetails?: ExerciseDetail[];
   onStart: () => void;
 }
 
@@ -18,8 +30,11 @@ const WorkoutCard = ({
   duration,
   coachNote,
   intensity,
+  exerciseDetails,
   onStart,
 }: WorkoutCardProps) => {
+  const [expanded, setExpanded] = useState(false);
+
   const intensityColors = {
     Düşük: "bg-muted text-muted-foreground",
     Orta: "bg-stat-strain/20 text-stat-strain",
@@ -67,10 +82,69 @@ const WorkoutCard = ({
         </span>
       </div>
 
+      {/* Expandable Exercise List */}
+      {exerciseDetails && exerciseDetails.length > 0 && (
+        <div className="mb-3">
+          <button
+            onClick={() => setExpanded(!expanded)}
+            className="flex items-center gap-1.5 text-xs text-muted-foreground hover:text-foreground transition-colors w-full"
+          >
+            {expanded ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
+            <span className="font-medium">Hareketleri {expanded ? "Gizle" : "Göster"}</span>
+          </button>
+
+          <AnimatePresence>
+            {expanded && (
+              <motion.div
+                initial={{ height: 0, opacity: 0 }}
+                animate={{ height: "auto", opacity: 1 }}
+                exit={{ height: 0, opacity: 0 }}
+                transition={{ duration: 0.2 }}
+                className="overflow-hidden"
+              >
+                <div className="mt-2 space-y-1.5">
+                  {exerciseDetails.map((ex, i) => (
+                    <div
+                      key={i}
+                      className="flex items-center justify-between gap-2 rounded-lg bg-muted/40 px-3 py-2"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm text-foreground font-medium truncate">{ex.name}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {ex.sets} × {ex.reps}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-1.5 flex-shrink-0">
+                        {ex.failureSet && (
+                          <Badge variant="destructive" className="text-[10px] px-1.5 py-0 gap-0.5">
+                            <Flame className="w-3 h-3" />
+                            TÜKENİŞ
+                          </Badge>
+                        )}
+                        {!ex.failureSet && typeof ex.rir === "number" && (
+                          <Badge variant="secondary" className="text-[10px] px-1.5 py-0">
+                            RIR: {ex.rir}
+                          </Badge>
+                        )}
+                        {typeof ex.rpe === "number" && (
+                          <Badge variant="outline" className="text-[10px] px-1.5 py-0">
+                            RPE: {ex.rpe}
+                          </Badge>
+                        )}
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </div>
+      )}
+
       {/* Coach Note */}
       {coachNote && (
         <div className="bg-yellow-500/10 border border-yellow-500/30 rounded-lg p-3 mb-4">
-          <p className="text-yellow-500 text-xs font-medium mb-1">Koç Notu:</p>
+          <p className="text-yellow-500 text-xs font-medium mb-1">Koçun Notu:</p>
           <p className="text-foreground/80 text-sm">{coachNote}</p>
         </div>
       )}
