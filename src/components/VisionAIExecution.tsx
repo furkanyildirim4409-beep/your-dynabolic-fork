@@ -42,6 +42,8 @@ interface Exercise {
   notes?: string;
   category?: string;
   videoUrl?: string;
+  rir?: number;
+  failureSet?: boolean;
 }
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
