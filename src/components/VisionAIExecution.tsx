@@ -393,6 +393,28 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const handlePrevExercise = () => { if (currentExerciseIndex > 0) { hapticLight(); setSwipeDirection('right'); goToExercise(currentExerciseIndex - 1); } };
   const handleNextExercise = () => { if (currentExerciseIndex < exercises.length - 1) { hapticLight(); setSwipeDirection('left'); goToExercise(currentExerciseIndex + 1); } };
 
+  // Compute the correct "next exercise" for UI previews (superset-aware)
+  let computedNextExercise: typeof exercises[number] | undefined = exercises[currentExerciseIndex + 1];
+  const currentEx = exercises[currentExerciseIndex];
+  if (currentEx) {
+    if (currentEx.groupId) {
+      const { firstGroupIdx, lastGroupIdx } = getGroupBounds(currentEx.groupId);
+      if (currentExerciseIndex < lastGroupIdx) {
+        computedNextExercise = exercises[currentExerciseIndex + 1];
+      } else if (currentExerciseIndex === lastGroupIdx && currentSet < currentEx.sets) {
+        computedNextExercise = exercises[firstGroupIdx];
+      } else if (currentExerciseIndex === lastGroupIdx && currentSet >= currentEx.sets) {
+        computedNextExercise = exercises[lastGroupIdx + 1];
+      }
+    } else {
+      if (currentSet < currentEx.sets) {
+        computedNextExercise = currentEx;
+      } else {
+        computedNextExercise = exercises[currentExerciseIndex + 1];
+      }
+    }
+  }
+
   return (
     <>
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden touch-none">
