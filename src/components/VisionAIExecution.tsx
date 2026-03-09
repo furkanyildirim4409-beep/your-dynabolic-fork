@@ -755,7 +755,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <h2 className="font-display text-lg text-foreground tracking-wider leading-tight">{exercise.name}</h2>
                 <div className="flex items-center gap-2">
                   <p className="text-muted-foreground text-[10px]">{workoutTitle}</p>
-                  <span className="text-[10px] font-display text-primary/80">Hedef: {exercise.sets}x{exercise.reps}</span>
+                  <span className="ml-2 px-2 py-0.5 rounded bg-white/10 border border-white/20 text-[10px] font-bold tracking-wider text-white/90 uppercase backdrop-blur-sm">Hedef: {exercise.reps} Tekrar</span>
                 </div>
               </div>
               <motion.button whileTap={{ scale: 0.95 }} onClick={() => setShowExerciseHistory(true)} className="p-2 rounded-lg bg-secondary/50 border border-primary/30 hover:bg-primary/10 transition-colors">
