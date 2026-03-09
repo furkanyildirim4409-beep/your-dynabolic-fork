@@ -2,21 +2,52 @@ import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
 import WorkoutCard from "@/components/WorkoutCard";
-import VisionAIExecution from "@/components/VisionAIExecution";
+import WorkoutDetailSheet from "@/components/WorkoutDetailSheet";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
 import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
+import { useAssignedWorkouts, TransformedWorkout, groupByDate } from "@/hooks/useAssignedWorkouts";
+
+const WorkoutGroup = ({ label, workouts, onSelect }: { label: string; workouts: TransformedWorkout[]; onSelect: (w: TransformedWorkout) => void }) => (
+  <div>
+    <div className="flex items-center gap-2 mb-3">
+      <div className="w-1.5 h-1.5 rounded-full bg-primary" />
+      <h2 className="font-display text-xs text-muted-foreground uppercase tracking-widest">{label}</h2>
+      <span className="text-[10px] text-primary">{workouts.length}</span>
+    </div>
+    <div className="space-y-3">
+      {workouts.map((workout, index) => (
+        <motion.div
+          key={workout.id}
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          transition={{ delay: index * 0.08 }}
+        >
+          <WorkoutCard
+            title={workout.title}
+            day={workout.day}
+            exercises={workout.exercises}
+            duration={workout.duration}
+            intensity={workout.intensity}
+            coachNote={workout.coachNote}
+            onStart={() => onSelect(workout)}
+          />
+        </motion.div>
+      ))}
+    </div>
+  </div>
+);
 
 const Antrenman = () => {
-  const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
+  const [detailWorkout, setDetailWorkout] = useState<TransformedWorkout | null>(null);
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
+  const grouped = groupByDate(workouts);
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
 
   const weeklyStats = [
@@ -143,15 +174,8 @@ const Antrenman = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Assigned Workouts */}
-              <div>
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="font-display text-lg text-foreground tracking-wide">
-                    ATANAN ANTRENMANLAR
-                  </h2>
-                  <span className="text-xs text-primary">{workouts.length} Görev</span>
-                </div>
-                
+              {/* Assigned Workouts - Grouped by Date */}
+              <div className="space-y-6">
                 {isLoading ? (
                   <div className="space-y-4">
                     {[1, 2, 3].map((i) => (
@@ -162,11 +186,6 @@ const Antrenman = () => {
                             <Skeleton className="h-5 w-3/4" />
                             <Skeleton className="h-3 w-1/3" />
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-3 w-16" />
-                          <Skeleton className="h-3 w-12" />
-                          <Skeleton className="h-5 w-14 rounded-full" />
                         </div>
                         <Skeleton className="h-12 w-full rounded-xl" />
                       </div>
@@ -190,26 +209,20 @@ const Antrenman = () => {
                     </p>
                   </motion.div>
                 ) : (
-                  <div className="space-y-4">
-                    {workouts.map((workout, index) => (
-                      <motion.div
-                        key={workout.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + index * 0.1 }}
-                      >
-                        <WorkoutCard
-                          title={workout.title}
-                          day={workout.day}
-                          exercises={workout.exercises}
-                          duration={workout.duration}
-                          intensity={workout.intensity}
-                          coachNote={workout.coachNote}
-                          onStart={() => setActiveWorkout(workout)}
-                        />
-                      </motion.div>
-                    ))}
-                  </div>
+                  <>
+                    {/* Today */}
+                    {grouped.today.length > 0 && (
+                      <WorkoutGroup label="BUGÜN" workouts={grouped.today} onSelect={setDetailWorkout} />
+                    )}
+                    {/* Tomorrow */}
+                    {grouped.tomorrow.length > 0 && (
+                      <WorkoutGroup label="YARIN" workouts={grouped.tomorrow} onSelect={setDetailWorkout} />
+                    )}
+                    {/* Upcoming */}
+                    {grouped.upcoming.length > 0 && (
+                      <WorkoutGroup label="YAKLAŞAN" workouts={grouped.upcoming} onSelect={setDetailWorkout} />
+                    )}
+                  </>
                 )}
               </div>
             </motion.div>
@@ -227,17 +240,8 @@ const Antrenman = () => {
         </AnimatePresence>
       </div>
 
-      {/* Vision AI Execution Overlay */}
-      <AnimatePresence>
-        {activeWorkout && (
-          <VisionAIExecution
-            workoutTitle={activeWorkout.title}
-            exercises={activeWorkout.programExercises}
-            assignmentId={activeWorkout.id}
-            onClose={() => setActiveWorkout(null)}
-          />
-        )}
-      </AnimatePresence>
+      {/* Workout Detail Sheet */}
+      <WorkoutDetailSheet workout={detailWorkout} onClose={() => setDetailWorkout(null)} />
 
       {/* Workout History Overlay */}
       <AnimatePresence>
