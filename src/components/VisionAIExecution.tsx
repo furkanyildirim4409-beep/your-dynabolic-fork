@@ -469,7 +469,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
 
   return (
     <>
-      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden touch-none h-[100dvh]" style={{ paddingTop: 'env(safe-area-inset-top)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
+      <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background flex flex-col overflow-hidden touch-none">
         {/* Complete Flash */}
         <AnimatePresence>
           {showComplete && (
@@ -659,7 +659,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         </div>
 
         {/* Vision Area */}
-        <motion.div className="flex-1 relative bg-black overflow-hidden touch-pan-y" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2} onDragEnd={handleSwipeEnd}>
+        <motion.div className="h-[55%] relative bg-black overflow-hidden touch-pan-y" drag="x" dragConstraints={{ left: 0, right: 0 }} dragElastic={0.2} onDragEnd={handleSwipeEnd}>
           <AnimatePresence>
             {currentExerciseIndex > 0 && (
               <motion.button initial={{ opacity: 0, x: -10 }} animate={{ opacity: 0.6, x: 0 }} exit={{ opacity: 0, x: -10 }} onClick={handlePrevExercise} className="absolute left-2 top-1/2 -translate-y-1/2 z-10 p-2 rounded-full bg-black/50 backdrop-blur-sm border border-white/10"><ChevronLeft className="w-5 h-5 text-foreground" /></motion.button>
@@ -676,7 +676,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <div className="relative w-full h-full">
                 {exercise?.videoUrl ? (
                   <motion.div key={exercise.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="absolute inset-0">
-                    <img src={exercise.videoUrl} alt={exercise.name} className="w-full h-full object-contain opacity-90 mix-blend-screen transition-opacity duration-500" loading="lazy" decoding="async" crossOrigin="anonymous" onError={(e) => { const img = e.currentTarget as HTMLImageElement; img.src = '/placeholder.svg'; img.className = 'w-1/2 h-1/2 mx-auto my-auto opacity-40 object-contain'; }} />
+                    <img src={exercise.videoUrl} alt={exercise.name} className="w-full h-full object-contain opacity-80 mix-blend-screen" loading="lazy" decoding="async" crossOrigin="anonymous" onError={(e) => { const img = e.currentTarget as HTMLImageElement; img.src = '/placeholder.svg'; img.className = 'w-1/2 h-1/2 mx-auto my-auto opacity-40 object-contain'; }} />
                   </motion.div>
                 ) : (
                   <motion.div className="absolute inset-0 flex items-center justify-center bg-secondary/20" animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }}>
@@ -751,7 +751,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         </motion.div>
 
         {/* Info Panel */}
-        <div className="flex-shrink-0 max-h-[45%] bg-card border-t border-border flex flex-col overflow-hidden">
+        <div className="h-[45%] bg-card border-t border-white/10 flex flex-col overflow-hidden">
           <div className="flex-1 p-3 space-y-2 overflow-hidden">
             <div className="flex items-center justify-between">
               <div>
