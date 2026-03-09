@@ -858,14 +858,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 </div>
               ) : null;
             })()}
-            {exercise.failureSet && (
-              <button
-                onClick={() => setAchievedFailure(!achievedFailure)}
-                className={`w-full py-3 rounded-xl mb-1 font-bold tracking-wide transition-all duration-300 border backdrop-blur-md flex items-center justify-center gap-2 ${achievedFailure ? 'bg-red-500/30 border-red-400/60 text-red-300 shadow-[0_0_25px_rgba(239,68,68,0.35),inset_0_1px_1px_rgba(255,255,255,0.1)]' : 'bg-red-950/40 border-red-800/30 text-red-400/80 hover:bg-red-900/30 shadow-[inset_0_1px_1px_rgba(255,255,255,0.05)]'}`}
-              >
-                🔥 TÜKENİŞE ULAŞTIM
-              </button>
-            )}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
         </div>
