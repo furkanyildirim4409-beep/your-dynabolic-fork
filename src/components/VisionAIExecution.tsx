@@ -553,6 +553,18 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <span className="text-[9px] text-muted-foreground uppercase block">Set</span>
               <p className="font-display text-base text-foreground leading-none">{currentSet}/{exercise.sets}</p>
             </div>
+            {exercise.groupId && (() => {
+              const { firstGroupIdx, lastGroupIdx } = getGroupBounds(exercise.groupId);
+              const groupSize = lastGroupIdx - firstGroupIdx + 1;
+              const posInGroup = currentExerciseIndex - firstGroupIdx + 1;
+              return (
+                <div className="bg-primary/20 backdrop-blur-sm border border-primary/30 rounded-lg px-2.5 py-1.5 text-center">
+                  <span className="text-[9px] text-primary uppercase block tracking-wider">Süperset</span>
+                  <p className="font-display text-base text-primary leading-none">{posInGroup}/{groupSize}</p>
+                  <span className="text-[8px] text-primary/60 block">Tur {currentSet}/{exercise.sets}</span>
+                </div>
+              );
+            })()}
           </div>
         </motion.div>
 
