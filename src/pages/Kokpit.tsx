@@ -34,7 +34,6 @@ import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
-import { useAssignedWorkouts, groupByDate } from "@/hooks/useAssignedWorkouts";
 
 const Kokpit = () => {
   const navigate = useNavigate();
@@ -62,8 +61,6 @@ const Kokpit = () => {
 
   // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
-  const { data: assignedWorkouts = [] } = useAssignedWorkouts();
-  const todayWorkout = groupByDate(assignedWorkouts).today[0];
 
   // Listen for coach chat open event from EliteDock
   useEffect(() => {
@@ -183,23 +180,7 @@ const Kokpit = () => {
       </motion.div>
 
       {/* Next Mission Card */}
-      {/* Next Mission Card - Dynamic */}
-      {todayWorkout ? (
-        <NextMissionCard
-          title={todayWorkout.title}
-          duration={todayWorkout.duration}
-          calories={`${todayWorkout.exercises * 50} kcal`}
-        />
-      ) : (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.4 }}
-          className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 text-center"
-        >
-          <p className="text-muted-foreground text-sm">🧘 Bugün dinlenme günü</p>
-        </motion.div>
-      )}
+      <NextMissionCard title="GÖĞÜS & SIRT" duration="45 dk" calories="350 kcal" coach="Koç Serdar" />
 
       {/* Quick Stats Row */}
       <QuickStatsRow onStatClick={(stat) => setSelectedStat(stat)} />
