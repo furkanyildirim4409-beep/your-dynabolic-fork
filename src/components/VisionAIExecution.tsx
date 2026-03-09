@@ -448,6 +448,15 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </motion.button>
             </div>
 
+            {/* Hypertrophy Cues */}
+            {exercise.failureSet ? (
+              <div className="text-red-500 font-bold animate-pulse text-lg">🔥 BU SET TÜKENİŞE KADAR!</div>
+            ) : typeof exercise.rir === 'number' ? (
+              <div className="inline-block bg-orange-500/20 text-orange-400 px-2.5 py-1 rounded-full text-sm font-medium border border-orange-500/30">
+                Hedef RIR: {exercise.rir}
+              </div>
+            ) : null}
+
             <div className="flex gap-2">
               <div className={`flex-1 ${rpeColors.bg} ${rpeColors.border} border rounded-xl px-3 py-2`}>
                 <div className="flex items-center gap-2">
