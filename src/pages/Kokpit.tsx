@@ -18,7 +18,7 @@ import NextMissionCard from "@/components/NextMissionCard";
 import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
 import WeeklyActivityChart from "@/components/WeeklyActivityChart";
 import StatDetailModal from "@/components/StatDetailModal";
-import CoachChat from "@/components/CoachChat";
+import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
 import BentoStats, { BentoStatType } from "@/components/BentoStats";
 import BentoStatDetailModal from "@/components/BentoStatDetailModal";
