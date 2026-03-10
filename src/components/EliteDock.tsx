@@ -73,10 +73,16 @@ const EliteDock = () => {
           <LayoutGroup id="dock-nav">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
+              const showBadge = item.id === "kokpit" && unreadCount > 0;
               return (
                 <button key={item.id} onClick={() => navigate(item.path)} className={cn("relative z-10 flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-200", isActive ? "text-[#ccff00]" : "text-zinc-400 hover:text-zinc-100")}>
                   {isActive && <motion.div layoutId="active-bubble" className="absolute inset-0 bg-white/10 rounded-full z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                   <motion.div animate={{ scale: isActive ? 1.1 : 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>{item.icon}</motion.div>
+                  {showBadge && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </button>
               );
             })}
