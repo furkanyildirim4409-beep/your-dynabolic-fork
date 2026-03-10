@@ -11,7 +11,7 @@ interface CoachInfo {
   avatar_url: string | null;
 }
 
-export function useRealtimeChat() {
+export function useRealtimeChat(isOpen?: boolean) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -60,14 +60,18 @@ export function useRealtimeChat() {
         if (!error && data) setMessages(data);
         setIsLoading(false);
       });
+  }, [user]);
 
+  // Mark messages as read only when chat is opened
+  useEffect(() => {
+    if (!user || !isOpen) return;
     supabase
       .from("messages")
       .update({ is_read: true })
       .eq("receiver_id", user.id)
       .eq("is_read", false)
       .then(() => {});
-  }, [user]);
+  }, [user, isOpen]);
 
   // Realtime subscription
   useEffect(() => {
@@ -91,11 +95,6 @@ export function useRealtimeChat() {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          supabase
-            .from("messages")
-            .update({ is_read: true })
-            .eq("id", newMsg.id)
-            .then(() => {});
         }
       )
       .subscribe();
