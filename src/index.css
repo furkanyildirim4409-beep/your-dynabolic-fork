@@ -217,22 +217,14 @@
   scrollbar-width: none;
 }
 
-/* Scrollbar styling for non-hidden scrollbars */
-::-webkit-scrollbar {
-  width: 4px;
+/* Hide all scrollbars globally */
+* {
+  scrollbar-width: none;
+  -ms-overflow-style: none;
 }
 
-::-webkit-scrollbar-track {
-  background: hsl(var(--void-black));
-}
-
-::-webkit-scrollbar-thumb {
-  background: hsl(var(--muted));
-  border-radius: 2px;
-}
-
-::-webkit-scrollbar-thumb:hover {
-  background: hsl(var(--neon-lime) / 0.5);
+*::-webkit-scrollbar {
+  display: none;
 }
 
 /* Hide scrollbar on horizontal scroll containers */
