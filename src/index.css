@@ -252,18 +252,3 @@
   padding-left: env(safe-area-inset-left);
   padding-right: env(safe-area-inset-right);
 }
-
-/* iOS standalone mode fixes - handled in base styles */
-
-/* Prevent iOS rubber-band scrolling on fixed elements */
-.fixed {
-  -webkit-transform: translateZ(0);
-  transform: translateZ(0);
-}
-
-/* iOS 26+ dynamic island support */
-@supports (padding-top: env(safe-area-inset-top)) {
-  .dynamic-island-aware {
-    padding-top: max(env(safe-area-inset-top), 59px);
-  }
-}
