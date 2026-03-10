@@ -69,7 +69,7 @@ const Login = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center p-4 relative overflow-hidden">
+    <div className="min-h-screen bg-background flex items-center justify-center px-4 py-6 relative overflow-hidden safe-area-inset">
       {/* 3D Icosahedron Background */}
       <IcosahedronBackground />
 
@@ -77,21 +77,21 @@ const Login = () => {
       <div className="absolute inset-0 grid-pattern" />
 
       {/* Ambient glow */}
-      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[600px] h-[600px] bg-primary/5 rounded-full blur-[120px] pointer-events-none" />
+      <div className="absolute top-1/4 left-1/2 -translate-x-1/2 w-[400px] h-[400px] sm:w-[600px] sm:h-[600px] bg-primary/5 rounded-full blur-[100px] sm:blur-[120px] pointer-events-none" />
 
       <motion.div
         initial={{ opacity: 0, y: 30 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ duration: 0.6 }}
-        className="w-full max-w-md relative z-10"
+        className="w-full max-w-[400px] relative z-10"
       >
         {/* Logo */}
-        <div className="text-center mb-8">
+        <div className="text-center mb-6 sm:mb-8">
           <motion.h1
             initial={{ opacity: 0, y: -20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.8, delay: 0.2 }}
-            className="font-display text-5xl text-primary tracking-[0.3em] text-neon-glow"
+            className="font-display text-4xl sm:text-5xl text-primary tracking-[0.2em] sm:tracking-[0.3em] text-neon-glow"
           >
             DYNABOLIC
           </motion.h1>
@@ -99,14 +99,14 @@ const Login = () => {
             initial={{ opacity: 0 }}
             animate={{ opacity: 1 }}
             transition={{ duration: 0.8, delay: 0.4 }}
-            className="text-muted-foreground text-xs tracking-[0.3em] mt-2 uppercase"
+            className="text-muted-foreground text-[10px] sm:text-xs tracking-[0.2em] sm:tracking-[0.3em] mt-1.5 sm:mt-2 uppercase"
           >
             Elit Sporcu Sistemi
           </motion.p>
         </div>
 
         {/* Card */}
-        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-8 shadow-2xl">
+        <div className="bg-black/40 backdrop-blur-xl border border-white/10 rounded-2xl p-5 sm:p-8 shadow-2xl">
           {/* Forgot Password View */}
           {view === "forgot" ? (
             <motion.div
@@ -152,7 +152,7 @@ const Login = () => {
           ) : (
             <>
               {/* Toggle */}
-              <div className="flex mb-8 bg-secondary/30 rounded-xl p-1">
+              <div className="flex mb-6 sm:mb-8 bg-secondary/30 rounded-xl p-1">
                 <button
                   type="button"
                   onClick={() => setView("login")}
@@ -259,10 +259,10 @@ const Login = () => {
       </motion.div>
 
       {/* Corner decorations */}
-      <div className="absolute top-8 left-8 w-12 h-12 border-l-2 border-t-2 border-primary/30" />
-      <div className="absolute top-8 right-8 w-12 h-12 border-r-2 border-t-2 border-primary/30" />
-      <div className="absolute bottom-8 left-8 w-12 h-12 border-l-2 border-b-2 border-primary/30" />
-      <div className="absolute bottom-8 right-8 w-12 h-12 border-r-2 border-b-2 border-primary/30" />
+      <div className="absolute top-4 left-4 sm:top-8 sm:left-8 w-8 h-8 sm:w-12 sm:h-12 border-l-2 border-t-2 border-primary/30" />
+      <div className="absolute top-4 right-4 sm:top-8 sm:right-8 w-8 h-8 sm:w-12 sm:h-12 border-r-2 border-t-2 border-primary/30" />
+      <div className="absolute bottom-4 left-4 sm:bottom-8 sm:left-8 w-8 h-8 sm:w-12 sm:h-12 border-l-2 border-b-2 border-primary/30" />
+      <div className="absolute bottom-4 right-4 sm:bottom-8 sm:right-8 w-8 h-8 sm:w-12 sm:h-12 border-r-2 border-b-2 border-primary/30" />
     </div>
   );
 };
