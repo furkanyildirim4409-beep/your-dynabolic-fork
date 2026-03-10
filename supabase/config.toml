@@ -2,3 +2,6 @@ project_id = "fsbhbfltathfcpvcjfzt"
 
 [functions.send-order-push]
 verify_jwt = false
+
+[functions.send-chat-push]
+verify_jwt = false
