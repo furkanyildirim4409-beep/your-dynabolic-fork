@@ -11,7 +11,7 @@ interface CoachInfo {
   avatar_url: string | null;
 }
 
-export function useRealtimeChat() {
+export function useRealtimeChat(isOpen?: boolean) {
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
