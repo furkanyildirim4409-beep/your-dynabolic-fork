@@ -280,12 +280,7 @@
   padding-right: env(safe-area-inset-right);
 }
 
-/* iOS standalone mode fixes */
-@supports (padding-top: env(safe-area-inset-top)) {
-  body {
-    padding-top: env(safe-area-inset-top);
-  }
-}
+/* iOS standalone mode fixes - handled in base styles */
 
 /* Prevent iOS rubber-band scrolling on fixed elements */
 .fixed {
