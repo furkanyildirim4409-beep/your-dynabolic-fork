@@ -95,11 +95,6 @@ export function useRealtimeChat(isOpen?: boolean) {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
-          supabase
-            .from("messages")
-            .update({ is_read: true })
-            .eq("id", newMsg.id)
-            .then(() => {});
         }
       )
       .subscribe();
