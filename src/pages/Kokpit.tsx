@@ -293,7 +293,7 @@ const Kokpit = () => {
       </motion.div>
 
       {/* Coach Chat */}
-      <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} />
+      <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
 
       {/* Daily Check-In Modal */}
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
