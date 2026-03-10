@@ -39,6 +39,15 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 const Kokpit = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+
+  // Auto-open chat from push notification click routing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openChat') === 'true') {
+      setShowChat(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
