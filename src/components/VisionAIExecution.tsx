@@ -420,14 +420,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     resumeTimer();
   };
   const handleExerciseRestSkip = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
     } else {
       setCurrentExerciseIndex(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
 
   const handleSwipeEnd = (_: any, info: PanInfo) => {
