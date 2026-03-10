@@ -24,6 +24,11 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const coachName = coachInfo?.full_name || "Koç";
   const coachAvatar = coachInfo?.avatar_url || "";
 
+  // Sync muted state when resolvedCoachId becomes available
+  useEffect(() => {
+    if (resolvedCoachId) setCoachMuted(isMuted(resolvedCoachId));
+  }, [resolvedCoachId, isMuted]);
+
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
