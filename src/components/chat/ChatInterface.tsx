@@ -13,7 +13,7 @@ interface ChatInterfaceProps {
 
 const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat();
+  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat(isOpen);
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
