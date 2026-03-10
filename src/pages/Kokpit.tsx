@@ -39,6 +39,8 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 const Kokpit = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
+  const [showNotifications, setShowNotifications] = useState(false);
+  const [showChat, setShowChat] = useState(false);
 
   // Auto-open chat from push notification click routing
   useEffect(() => {
@@ -48,8 +50,6 @@ const Kokpit = () => {
       window.history.replaceState({}, document.title, window.location.pathname);
     }
   }, []);
-  const [showNotifications, setShowNotifications] = useState(false);
-  const [showChat, setShowChat] = useState(false);
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
