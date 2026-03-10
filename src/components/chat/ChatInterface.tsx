@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, MessageCircleOff } from "lucide-react";
+import { X, Send, Loader2, MessageCircleOff, Bell, BellOff } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useAuth } from "@/context/AuthContext";
+import { useMutedChats } from "@/hooks/useMutedChats";
 
 interface ChatInterfaceProps {
   isOpen: boolean;
@@ -13,7 +14,8 @@ interface ChatInterfaceProps {
 
 const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat(isOpen);
+  const { isMuted, toggleMute } = useMutedChats();
+  const coachMuted = resolvedCoachId ? isMuted(resolvedCoachId) : false;
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
