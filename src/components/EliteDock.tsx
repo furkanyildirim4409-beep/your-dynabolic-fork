@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWeightTracking } from "@/hooks/useWeightTracking";
 import { useAuth } from "@/context/AuthContext";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const navItems = [
   { id: "kokpit", label: "Kokpit", icon: <LayoutGrid className="w-6 h-6" />, path: "/kokpit" },
@@ -23,6 +24,7 @@ const EliteDock = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { logWeight } = useWeightTracking();
+  const { unreadCount } = useUnreadMessages();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);
@@ -59,7 +61,7 @@ const EliteDock = () => {
   const fabActions = [
     { id: "water", label: "Su Ekle", icon: <Droplets className="w-5 h-5" />, onClick: () => { setShowWaterModal(true); setIsFabOpen(false); } },
     { id: "weight", label: "Ağırlık Gir", icon: <Scale className="w-5 h-5" />, onClick: handleOpenWeight },
-    { id: "coach", label: "Koça Raporla", icon: <MessageSquare className="w-5 h-5" />, onClick: () => { setIsFabOpen(false); if (location.pathname !== "/kokpit") navigate("/kokpit"); setTimeout(() => window.dispatchEvent(new CustomEvent('openCoachChat')), 150); } },
+    { id: "coach", label: unreadCount > 0 ? `Koça Raporla (${unreadCount})` : "Koça Raporla", icon: <div className="relative"><MessageSquare className="w-5 h-5" />{unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive" />}</div>, onClick: () => { setIsFabOpen(false); if (location.pathname !== "/kokpit") navigate("/kokpit"); setTimeout(() => window.dispatchEvent(new CustomEvent('openCoachChat')), 150); } },
     { id: "payments", label: "Ödemeler", icon: <CreditCard className="w-5 h-5" />, onClick: () => { navigate("/odemeler"); setIsFabOpen(false); } },
     { id: "academy", label: "Akademi", icon: <BookOpen className="w-5 h-5" />, onClick: () => { navigate("/akademi"); setIsFabOpen(false); } },
   ];
@@ -71,10 +73,16 @@ const EliteDock = () => {
           <LayoutGroup id="dock-nav">
             {navItems.map((item) => {
               const isActive = currentPath === item.path;
+              const showBadge = item.id === "kokpit" && unreadCount > 0;
               return (
                 <button key={item.id} onClick={() => navigate(item.path)} className={cn("relative z-10 flex items-center justify-center w-12 h-12 rounded-full transition-colors duration-200", isActive ? "text-[#ccff00]" : "text-zinc-400 hover:text-zinc-100")}>
                   {isActive && <motion.div layoutId="active-bubble" className="absolute inset-0 bg-white/10 rounded-full z-[-1]" transition={{ type: "spring", bounce: 0.2, duration: 0.6 }} />}
                   <motion.div animate={{ scale: isActive ? 1.1 : 1 }} transition={{ type: "spring", stiffness: 300, damping: 20 }}>{item.icon}</motion.div>
+                  {showBadge && (
+                    <span className="absolute top-1 right-1 min-w-[18px] h-[18px] rounded-full bg-destructive text-destructive-foreground text-[10px] font-bold flex items-center justify-center px-1">
+                      {unreadCount > 9 ? "9+" : unreadCount}
+                    </span>
+                  )}
                 </button>
               );
             })}

@@ -11,7 +11,13 @@ interface CoachInfo {
   avatar_url: string | null;
 }
 
-export function useRealtimeChat(isOpen?: boolean) {
+interface RealtimeChatOptions {
+  isOpen?: boolean;
+  isMuted?: boolean;
+}
+
+export function useRealtimeChat(options: RealtimeChatOptions = {}) {
+  const { isOpen, isMuted } = options;
   const { user } = useAuth();
   const [messages, setMessages] = useState<Message[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -73,6 +79,21 @@ export function useRealtimeChat(isOpen?: boolean) {
       .then(() => {});
   }, [user, isOpen]);
 
+  // Request notification permission once
+  useEffect(() => {
+    if ("Notification" in window && Notification.permission === "default") {
+      Notification.requestPermission();
+    }
+  }, []);
+
+  // Refs to access latest values inside realtime callback
+  const isOpenRef = useRef(isOpen);
+  const isMutedRef = useRef(isMuted);
+  const coachInfoRef = useRef(coachInfo);
+  useEffect(() => { isOpenRef.current = isOpen; }, [isOpen]);
+  useEffect(() => { isMutedRef.current = isMuted; }, [isMuted]);
+  useEffect(() => { coachInfoRef.current = coachInfo; }, [coachInfo]);
+
   // Realtime subscription
   useEffect(() => {
     if (!user || subscribedRef.current) return;
@@ -89,12 +110,26 @@ export function useRealtimeChat(isOpen?: boolean) {
           filter: `receiver_id=eq.${user.id}`,
         },
         (payload) => {
-          console.log("Realtime event received:", payload);
           const newMsg = payload.new as Message;
           setMessages((prev) => {
             if (prev.some((m) => m.id === newMsg.id)) return prev;
             return [...prev, newMsg];
           });
+
+          // Browser notification: only if chat closed & not muted
+          if (
+            newMsg.sender_id !== user.id &&
+            !isOpenRef.current &&
+            !isMutedRef.current &&
+            "Notification" in window &&
+            Notification.permission === "granted"
+          ) {
+            const senderName = coachInfoRef.current?.full_name || "Koç";
+            new Notification(`Yeni Mesaj: ${senderName}`, {
+              body: newMsg.content,
+              icon: "/favicon.ico",
+            });
+          }
         }
       )
       .subscribe();

@@ -1,10 +1,11 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, MessageCircleOff } from "lucide-react";
+import { X, Send, Loader2, MessageCircleOff, Bell, BellOff } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
 import { useAuth } from "@/context/AuthContext";
+import { useMutedChats } from "@/hooks/useMutedChats";
 
 interface ChatInterfaceProps {
   isOpen: boolean;
@@ -13,13 +14,20 @@ interface ChatInterfaceProps {
 
 const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat(isOpen);
+  const { isMuted, toggleMute } = useMutedChats();
+  const [coachMuted, setCoachMuted] = useState(false);
+  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat({ isOpen, isMuted: coachMuted });
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
 
   const coachName = coachInfo?.full_name || "Koç";
   const coachAvatar = coachInfo?.avatar_url || "";
+
+  // Sync muted state when resolvedCoachId becomes available
+  useEffect(() => {
+    if (resolvedCoachId) setCoachMuted(isMuted(resolvedCoachId));
+  }, [resolvedCoachId, isMuted]);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -80,9 +88,24 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               </div>
               <div>
                 <h2 className="font-display text-foreground">{coachName}</h2>
-                <p className="text-green-500 text-xs">Koç ile Mesajlaşma</p>
+                <p className="text-emerald-500 text-xs">Koç ile Mesajlaşma</p>
               </div>
             </div>
+
+            {resolvedCoachId && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  toggleMute(resolvedCoachId);
+                  setCoachMuted(!coachMuted);
+                }}
+                className="p-2 text-muted-foreground hover:text-foreground"
+                title={coachMuted ? "Bildirimleri Aç" : "Bildirimleri Sustur"}
+              >
+                {coachMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+              </motion.button>
+            )}
           </div>
 
           {/* Messages */}
