@@ -57,6 +57,9 @@ const Kokpit = () => {
   // Payment reminders hook - triggers toast notifications on mount
   const { reminders } = usePaymentReminders();
 
+  // Unread messages hook
+  const { unreadCount: unreadMsgCount, markAllRead: markMsgsRead } = useUnreadMessages();
+
   // Weekly recap hook
   const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
 
