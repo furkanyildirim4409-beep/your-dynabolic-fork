@@ -80,8 +80,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     groupId: ex.groupId,
   }));
   
-  const [timer, setTimer] = useState(0);
-  const [isRunning, setIsRunning] = useState(true);
+  const { seconds: timer, isRunning, pause: pauseTimer, resume: resumeTimer, toggle: toggleTimer, reset: resetTimer } = useStableTimer({ mode: "up", autoStart: true });
+  useWakeLock();
   const [weight, setWeight] = useState(60);
   const [reps, setReps] = useState(0);
   const [showComplete, setShowComplete] = useState(false);
