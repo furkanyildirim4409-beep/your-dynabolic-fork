@@ -9,6 +9,8 @@ import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useStableTimer } from "@/hooks/useStableTimer";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 interface ProgramExercise {
   id: string;
@@ -78,8 +80,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     groupId: ex.groupId,
   }));
   
-  const [timer, setTimer] = useState(0);
-  const [isRunning, setIsRunning] = useState(true);
+  const { seconds: timer, isRunning, pause: pauseTimer, resume: resumeTimer, toggle: toggleTimer, reset: resetTimer } = useStableTimer({ mode: "up", autoStart: true });
+  useWakeLock();
   const [weight, setWeight] = useState(60);
   const [reps, setReps] = useState(0);
   const [showComplete, setShowComplete] = useState(false);
@@ -136,13 +138,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     return () => clearInterval(interval);
   }, [isRunning, exercise.rpe, currentSet]);
 
+  // Pause the stable timer when rest overlay is showing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRunning && !showRestTimer) {
-      interval = setInterval(() => setTimer((prev) => prev + 1), 1000);
+    if (showRestTimer || showExerciseRestTimer) {
+      pauseTimer();
+    } else if (!showRestTimer && !showExerciseRestTimer && !showComplete) {
+      resumeTimer();
     }
-    return () => clearInterval(interval);
-  }, [isRunning, showRestTimer]);
+  }, [showRestTimer, showExerciseRestTimer, showComplete, pauseTimer, resumeTimer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);
@@ -202,7 +205,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setAchievedFailure(false);
 
     setShowComplete(true);
-    setIsRunning(false);
+    pauseTimer();
     playSound('confirm');
 
     if (exercise.groupId) {
@@ -214,9 +217,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         setTimeout(() => {
           setShowComplete(false);
           setCurrentExerciseIndex(p => p + 1);
-          setTimer(0);
+          resetTimer();
           setReps(0);
-          setIsRunning(true);
+          resumeTimer();
           toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
         }, 800);
       } else if (currentExerciseIndex === lastGroupIdx && currentSet < exercise.sets) {
@@ -385,19 +388,18 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const handleRestComplete = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
+    setShowRestTimer(false); resetTimer(); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
-      // Superset Case B: jump back to first exercise in group, increment set
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(firstGroupIdx);
       setCurrentSet(p => p + 1);
     } else {
       setCurrentSet(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
   const handleSkipRest = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
+    setShowRestTimer(false); resetTimer(); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(firstGroupIdx);
@@ -405,27 +407,27 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     } else {
       setCurrentSet(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
   const handleExerciseRestComplete = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
     } else {
       setCurrentExerciseIndex(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
   const handleExerciseRestSkip = () => {
-    setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
     } else {
       setCurrentExerciseIndex(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
 
   const handleSwipeEnd = (_: any, info: PanInfo) => {
@@ -438,7 +440,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    setCurrentExerciseIndex(index); setCurrentSet(1); setTimer(0); setReps(0); setWeight(60); setIsRunning(true); setAchievedFailure(false);
+    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(60); resumeTimer(); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
@@ -823,11 +825,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <div className="flex flex-col items-center">
                 <p className="text-muted-foreground text-[9px] mb-1">SÜRE</p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setIsRunning(!isRunning)} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                  <button onClick={toggleTimer} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
                     {isRunning ? <Pause className="w-3 h-3 text-foreground" /> : <Play className="w-3 h-3 text-foreground" />}
                   </button>
                   <p className="font-display text-base text-foreground tracking-wider">{formatTime(timer)}</p>
-                  <button onClick={() => setTimer(0)} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><RotateCcw className="w-3 h-3 text-muted-foreground" /></button>
+                  <button onClick={() => resetTimer()} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><RotateCcw className="w-3 h-3 text-muted-foreground" /></button>
                 </div>
               </div>
               <div className="flex flex-col items-center">

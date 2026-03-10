@@ -1,8 +1,9 @@
-import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
 import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-react";
 import { hapticLight } from "@/lib/haptics";
 import { toast } from "sonner";
+import { useStableTimer } from "@/hooks/useStableTimer";
+import { useEffect, useRef } from "react";
 
 interface ExerciseRestTimerOverlayProps {
   duration: number;
@@ -27,29 +28,24 @@ const ExerciseRestTimerOverlay = ({
   currentExerciseNumber,
   totalExercises,
 }: ExerciseRestTimerOverlayProps) => {
-  const [timeLeft, setTimeLeft] = useState(duration);
-  const [totalDuration, setTotalDuration] = useState(duration);
+  const { seconds: timeLeft, addTime } = useStableTimer({
+    mode: "down",
+    initialSeconds: duration,
+    autoStart: true,
+    onComplete,
+  });
+
+  const totalDuration = duration;
   const progress = ((totalDuration - timeLeft) / totalDuration) * 100;
 
+  // Sound effects for countdown
+  const lastPlayedRef = useRef<number>(-1);
   useEffect(() => {
-    if (timeLeft <= 0) {
-      playSound(880, 0.2);
-      setTimeout(() => playSound(1100, 0.15), 100);
-      onComplete();
-      return;
+    if (timeLeft <= 3 && timeLeft > 0 && timeLeft !== lastPlayedRef.current) {
+      lastPlayedRef.current = timeLeft;
+      playSound(600, 0.1);
     }
-
-    const timer = setInterval(() => {
-      setTimeLeft((prev) => {
-        if (prev <= 4 && prev > 1) {
-          playSound(600, 0.1);
-        }
-        return prev - 1;
-      });
-    }, 1000);
-
-    return () => clearInterval(timer);
-  }, [timeLeft, onComplete]);
+  }, [timeLeft]);
 
   const playSound = (frequency: number, dur: number) => {
     try {
@@ -79,8 +75,7 @@ const ExerciseRestTimerOverlay = ({
 
   const handleAdd30Seconds = () => {
     hapticLight();
-    setTimeLeft((prev) => prev + 30);
-    setTotalDuration((prev) => prev + 30);
+    addTime(30);
     toast.success("+30 saniye eklendi", { duration: 1500 });
   };
 
