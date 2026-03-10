@@ -159,7 +159,23 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                           : "bg-secondary text-foreground rounded-bl-md"
                       }`}
                     >
-                      <p className="text-sm">{message.content}</p>
+                      {message.media_type === "image" && message.media_url && (
+                        <img
+                          src={message.media_url}
+                          alt="Paylaşılan görsel"
+                          className="rounded-lg max-w-full max-h-60 object-cover mb-1.5"
+                          loading="lazy"
+                        />
+                      )}
+                      {message.media_type === "audio" && message.media_url && (
+                        <audio
+                          controls
+                          src={message.media_url}
+                          className="max-w-full mb-1.5"
+                          preload="metadata"
+                        />
+                      )}
+                      {message.content && <p className="text-sm">{message.content}</p>}
                       <p
                         className={`text-[10px] mt-1 ${
                           isOwn ? "text-primary-foreground/60" : "text-muted-foreground"

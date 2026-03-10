@@ -156,6 +156,8 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
         content: content.trim(),
         created_at: new Date().toISOString(),
         is_read: false,
+        media_type: null,
+        media_url: null,
       };
 
       setMessages((prev) => [...prev, optimisticMsg]);
