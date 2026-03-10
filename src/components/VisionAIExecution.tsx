@@ -205,7 +205,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     setAchievedFailure(false);
 
     setShowComplete(true);
-    setIsRunning(false);
+    pauseTimer();
     playSound('confirm');
 
     if (exercise.groupId) {
