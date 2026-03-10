@@ -118,12 +118,11 @@
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
-    min-height: 100dvh;
-    min-height: -webkit-fill-available;
+    height: 100dvh;
+    height: -webkit-fill-available;
     margin: 0;
     overflow: hidden;
     overscroll-behavior: none;
-    -webkit-overflow-scrolling: touch;
     -webkit-tap-highlight-color: transparent;
     /* iOS safe areas */
     padding-top: env(safe-area-inset-top);
@@ -133,8 +132,7 @@
   }
 
   #root {
-    height: 100dvh;
-    height: -webkit-fill-available;
+    height: 100%;
     overflow-y: auto;
     overflow-x: hidden;
     overscroll-behavior-y: contain;
