@@ -13,7 +13,7 @@ interface ChatInterfaceProps {
 
 const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const { user } = useAuth();
-  const { messages, isLoading, sendMessage, coachInfo, coachId } = useRealtimeChat();
+  const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat();
   const [inputValue, setInputValue] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
@@ -87,7 +87,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
           {/* Messages */}
           <div className="absolute top-[72px] bottom-[80px] left-0 right-0 overflow-y-auto p-4 space-y-4">
-            {!coachId && (
+            {!resolvedCoachId && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-4">
                 <MessageCircleOff className="w-12 h-12 text-muted-foreground/50" />
                 <div>
@@ -97,13 +97,13 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               </div>
             )}
 
-            {coachId && isLoading && (
+            {resolvedCoachId && isLoading && (
               <div className="flex items-center justify-center h-full">
                 <Loader2 className="w-6 h-6 text-primary animate-spin" />
               </div>
             )}
 
-            {coachId && !isLoading && messages.length === 0 && (
+            {resolvedCoachId && !isLoading && messages.length === 0 && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-3">
                 <p className="text-muted-foreground text-sm">Henüz mesaj yok. İlk mesajı siz gönderin! 💬</p>
               </div>
@@ -159,15 +159,15 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder={coachId ? "Mesaj yaz..." : "Koç atanmamış"}
-                disabled={!coachId}
+                placeholder={resolvedCoachId ? "Mesaj yaz..." : "Bağlantı Bekleniyor..."}
+                disabled={!resolvedCoachId}
                 className="flex-1 bg-secondary/50 border-border rounded-full px-4"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSend}
-                disabled={!inputValue.trim() || !coachId || isSending}
+                disabled={!inputValue.trim() || !resolvedCoachId || isSending}
                 className="p-3 bg-primary rounded-full text-primary-foreground disabled:opacity-50"
               >
                 {isSending ? (
