@@ -18,7 +18,7 @@ import NextMissionCard from "@/components/NextMissionCard";
 import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
 import WeeklyActivityChart from "@/components/WeeklyActivityChart";
 import StatDetailModal from "@/components/StatDetailModal";
-import CoachChat from "@/components/CoachChat";
+import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
 import BentoStats, { BentoStatType } from "@/components/BentoStats";
 import BentoStatDetailModal from "@/components/BentoStatDetailModal";
@@ -293,7 +293,7 @@ const Kokpit = () => {
       </motion.div>
 
       {/* Coach Chat */}
-      <CoachChat isOpen={showChat} onClose={() => setShowChat(false)} />
+      <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
 
       {/* Daily Check-In Modal */}
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
