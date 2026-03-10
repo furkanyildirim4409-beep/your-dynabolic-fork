@@ -152,7 +152,7 @@ const Login = () => {
           ) : (
             <>
               {/* Toggle */}
-              <div className="flex mb-8 bg-secondary/30 rounded-xl p-1">
+              <div className="flex mb-6 sm:mb-8 bg-secondary/30 rounded-xl p-1">
                 <button
                   type="button"
                   onClick={() => setView("login")}
