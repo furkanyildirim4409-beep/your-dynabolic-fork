@@ -60,14 +60,18 @@ export function useRealtimeChat(isOpen?: boolean) {
         if (!error && data) setMessages(data);
         setIsLoading(false);
       });
+  }, [user]);
 
+  // Mark messages as read only when chat is opened
+  useEffect(() => {
+    if (!user || !isOpen) return;
     supabase
       .from("messages")
       .update({ is_read: true })
       .eq("receiver_id", user.id)
       .eq("is_read", false)
       .then(() => {});
-  }, [user]);
+  }, [user, isOpen]);
 
   // Realtime subscription
   useEffect(() => {
