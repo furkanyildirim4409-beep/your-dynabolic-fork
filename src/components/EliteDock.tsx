@@ -24,6 +24,7 @@ const EliteDock = () => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { logWeight } = useWeightTracking();
+  const { unreadCount } = useUnreadMessages();
   const [isFabOpen, setIsFabOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [showWaterModal, setShowWaterModal] = useState(false);

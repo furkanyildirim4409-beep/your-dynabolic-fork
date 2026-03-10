@@ -106,6 +106,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 {coachMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
               </motion.button>
             )}
+          </div>
 
           {/* Messages */}
           <div className="absolute top-[72px] bottom-[80px] left-0 right-0 overflow-y-auto p-4 space-y-4">
