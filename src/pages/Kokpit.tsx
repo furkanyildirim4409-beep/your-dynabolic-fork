@@ -34,6 +34,7 @@ import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const Kokpit = () => {
   const navigate = useNavigate();
@@ -55,6 +56,9 @@ const Kokpit = () => {
 
   // Payment reminders hook - triggers toast notifications on mount
   const { reminders } = usePaymentReminders();
+
+  // Unread messages hook
+  const { unreadCount: unreadMsgCount, markAllRead: markMsgsRead } = useUnreadMessages();
 
   // Weekly recap hook
   const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
@@ -116,10 +120,15 @@ const Kokpit = () => {
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            onClick={() => setShowChat(true)}
+            onClick={() => { setShowChat(true); markMsgsRead(); }}
             className="relative p-2.5 rounded-full bg-white/[0.03] border border-white/[0.05]"
           >
             <MessageCircle className="w-4 h-4 text-muted-foreground" />
+            {unreadMsgCount > 0 && (
+              <div className="absolute -top-0.5 -right-0.5 w-4 h-4 rounded-full bg-primary flex items-center justify-center">
+                <span className="text-primary-foreground text-[9px] font-bold">{unreadMsgCount}</span>
+              </div>
+            )}
           </motion.button>
 
           {/* Notifications Bell */}
