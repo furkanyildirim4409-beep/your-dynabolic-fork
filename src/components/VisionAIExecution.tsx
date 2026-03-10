@@ -825,11 +825,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <div className="flex flex-col items-center">
                 <p className="text-muted-foreground text-[9px] mb-1">SÜRE</p>
                 <div className="flex items-center gap-1">
-                  <button onClick={() => setIsRunning(!isRunning)} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
+                  <button onClick={toggleTimer} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center">
                     {isRunning ? <Pause className="w-3 h-3 text-foreground" /> : <Play className="w-3 h-3 text-foreground" />}
                   </button>
                   <p className="font-display text-base text-foreground tracking-wider">{formatTime(timer)}</p>
-                  <button onClick={() => setTimer(0)} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><RotateCcw className="w-3 h-3 text-muted-foreground" /></button>
+                  <button onClick={() => resetTimer()} className="w-7 h-7 rounded-lg bg-secondary flex items-center justify-center"><RotateCcw className="w-3 h-3 text-muted-foreground" /></button>
                 </div>
               </div>
               <div className="flex flex-col items-center">
