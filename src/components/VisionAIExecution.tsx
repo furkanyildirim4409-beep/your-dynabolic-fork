@@ -217,9 +217,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         setTimeout(() => {
           setShowComplete(false);
           setCurrentExerciseIndex(p => p + 1);
-          setTimer(0);
+          resetTimer();
           setReps(0);
-          setIsRunning(true);
+          resumeTimer();
           toast.info("🔗 Süperset: Dinlenmeden sıradaki harekete geç!");
         }, 800);
       } else if (currentExerciseIndex === lastGroupIdx && currentSet < exercise.sets) {
