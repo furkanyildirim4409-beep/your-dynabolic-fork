@@ -61,7 +61,7 @@ const EliteDock = () => {
   const fabActions = [
     { id: "water", label: "Su Ekle", icon: <Droplets className="w-5 h-5" />, onClick: () => { setShowWaterModal(true); setIsFabOpen(false); } },
     { id: "weight", label: "Ağırlık Gir", icon: <Scale className="w-5 h-5" />, onClick: handleOpenWeight },
-    { id: "coach", label: "Koça Raporla", icon: <MessageSquare className="w-5 h-5" />, onClick: () => { setIsFabOpen(false); if (location.pathname !== "/kokpit") navigate("/kokpit"); setTimeout(() => window.dispatchEvent(new CustomEvent('openCoachChat')), 150); } },
+    { id: "coach", label: unreadCount > 0 ? `Koça Raporla (${unreadCount})` : "Koça Raporla", icon: <div className="relative"><MessageSquare className="w-5 h-5" />{unreadCount > 0 && <span className="absolute -top-1 -right-1 w-2.5 h-2.5 rounded-full bg-destructive" />}</div>, onClick: () => { setIsFabOpen(false); if (location.pathname !== "/kokpit") navigate("/kokpit"); setTimeout(() => window.dispatchEvent(new CustomEvent('openCoachChat')), 150); } },
     { id: "payments", label: "Ödemeler", icon: <CreditCard className="w-5 h-5" />, onClick: () => { navigate("/odemeler"); setIsFabOpen(false); } },
     { id: "academy", label: "Akademi", icon: <BookOpen className="w-5 h-5" />, onClick: () => { navigate("/akademi"); setIsFabOpen(false); } },
   ];
