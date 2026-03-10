@@ -88,10 +88,24 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               </div>
               <div>
                 <h2 className="font-display text-foreground">{coachName}</h2>
-                <p className="text-green-500 text-xs">Koç ile Mesajlaşma</p>
+                <p className="text-emerald-500 text-xs">Koç ile Mesajlaşma</p>
               </div>
             </div>
-          </div>
+
+            {resolvedCoachId && (
+              <motion.button
+                whileHover={{ scale: 1.1 }}
+                whileTap={{ scale: 0.9 }}
+                onClick={() => {
+                  toggleMute(resolvedCoachId);
+                  setCoachMuted(!coachMuted);
+                }}
+                className="p-2 text-muted-foreground hover:text-foreground"
+                title={coachMuted ? "Bildirimleri Aç" : "Bildirimleri Sustur"}
+              >
+                {coachMuted ? <BellOff className="w-5 h-5" /> : <Bell className="w-5 h-5" />}
+              </motion.button>
+            )}
 
           {/* Messages */}
           <div className="absolute top-[72px] bottom-[80px] left-0 right-0 overflow-y-auto p-4 space-y-4">

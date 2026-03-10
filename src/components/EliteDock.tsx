@@ -9,6 +9,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWeightTracking } from "@/hooks/useWeightTracking";
 import { useAuth } from "@/context/AuthContext";
+import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const navItems = [
   { id: "kokpit", label: "Kokpit", icon: <LayoutGrid className="w-6 h-6" />, path: "/kokpit" },
