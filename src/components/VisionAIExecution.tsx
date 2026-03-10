@@ -399,7 +399,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     resumeTimer();
   };
   const handleSkipRest = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
+    setShowRestTimer(false); resetTimer(); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(firstGroupIdx);
@@ -407,7 +407,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     } else {
       setCurrentSet(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
   const handleExerciseRestComplete = () => {
     setShowExerciseRestTimer(false); setTimer(0); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
