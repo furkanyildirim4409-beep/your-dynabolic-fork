@@ -138,13 +138,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     return () => clearInterval(interval);
   }, [isRunning, exercise.rpe, currentSet]);
 
+  // Pause the stable timer when rest overlay is showing
   useEffect(() => {
-    let interval: NodeJS.Timeout;
-    if (isRunning && !showRestTimer) {
-      interval = setInterval(() => setTimer((prev) => prev + 1), 1000);
+    if (showRestTimer || showExerciseRestTimer) {
+      pauseTimer();
+    } else if (!showRestTimer && !showExerciseRestTimer && !showComplete) {
+      resumeTimer();
     }
-    return () => clearInterval(interval);
-  }, [isRunning, showRestTimer]);
+  }, [showRestTimer, showExerciseRestTimer, showComplete, pauseTimer, resumeTimer]);
 
   const formatTime = (seconds: number) => {
     const mins = Math.floor(seconds / 60);

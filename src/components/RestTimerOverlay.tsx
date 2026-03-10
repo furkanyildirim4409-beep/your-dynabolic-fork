@@ -1,6 +1,8 @@
-import { useState, useEffect, useCallback, useRef } from "react";
+import { useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, RotateCcw, Plus, Minus, X, Volume2, VolumeX } from "lucide-react";
+import { useStableTimer } from "@/hooks/useStableTimer";
+import { useState } from "react";
 
 interface RestTimerOverlayProps {
   isOpen: boolean;
@@ -11,44 +13,15 @@ interface RestTimerOverlayProps {
 }
 
 const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, nextExercise }: RestTimerOverlayProps) => {
-  const [totalSeconds, setTotalSeconds] = useState(initialSeconds);
-  const [secondsLeft, setSecondsLeft] = useState(initialSeconds);
-  const [isRunning, setIsRunning] = useState(false);
   const [soundEnabled, setSoundEnabled] = useState(true);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
 
-  useEffect(() => {
-    if (isOpen) {
-      setTotalSeconds(initialSeconds);
-      setSecondsLeft(initialSeconds);
-      setIsRunning(true);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isOpen, initialSeconds]);
+  const { seconds: secondsLeft, isRunning, toggle, reset, addTime, setInitial } = useStableTimer({
+    mode: "down",
+    initialSeconds,
+    autoStart: isOpen,
+  });
 
-  useEffect(() => {
-    if (isRunning && secondsLeft > 0) {
-      intervalRef.current = setInterval(() => {
-        setSecondsLeft((s) => {
-          if (s <= 1) {
-            setIsRunning(false);
-            if (intervalRef.current) clearInterval(intervalRef.current);
-            return 0;
-          }
-          return s - 1;
-        });
-      }, 1000);
-    }
-    return () => { if (intervalRef.current) clearInterval(intervalRef.current); };
-  }, [isRunning, secondsLeft]);
-
-  const togglePause = useCallback(() => setIsRunning((r) => !r), []);
-  const reset = useCallback(() => { setSecondsLeft(totalSeconds); setIsRunning(true); }, [totalSeconds]);
-  const addTime = useCallback((s: number) => {
-    setTotalSeconds((t) => Math.max(10, t + s));
-    setSecondsLeft((l) => Math.max(0, l + s));
-  }, []);
-
+  const totalSeconds = initialSeconds;
   const progress = totalSeconds > 0 ? ((totalSeconds - secondsLeft) / totalSeconds) * 100 : 0;
   const minutes = Math.floor(secondsLeft / 60);
   const seconds = secondsLeft % 60;
@@ -127,7 +100,7 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           </motion.button>
           <motion.button
             whileTap={{ scale: 0.9 }}
-            onClick={togglePause}
+            onClick={toggle}
             className="w-16 h-16 rounded-full bg-primary flex items-center justify-center"
           >
             {isRunning ? <Pause className="w-7 h-7 text-primary-foreground" /> : <Play className="w-7 h-7 text-primary-foreground ml-0.5" />}
@@ -146,7 +119,7 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           {[60, 90, 120, 180].map((sec) => (
             <button
               key={sec}
-              onClick={() => { setTotalSeconds(sec); setSecondsLeft(sec); setIsRunning(true); }}
+              onClick={() => setInitial(sec)}
               className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-all ${
                 totalSeconds === sec ? "bg-primary text-primary-foreground" : "bg-secondary text-muted-foreground"
               }`}
@@ -156,7 +129,7 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
           ))}
         </div>
 
-        <button onClick={reset} className="flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors">
+        <button onClick={() => reset()} className="flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors">
           <RotateCcw className="w-4 h-4" />
           Sıfırla
         </button>
