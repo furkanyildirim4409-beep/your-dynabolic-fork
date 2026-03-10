@@ -1,4 +1,4 @@
-// Service Worker for Push Notifications
+// v1.1 — Push Notification Service Worker
 
 self.addEventListener("push", (event) => {
   let data = { title: "Bildirim", body: "", data: {} };
@@ -21,13 +21,16 @@ self.addEventListener("push", (event) => {
 
 self.addEventListener("notificationclick", (event) => {
   event.notification.close();
-  const url = event.notification.data?.athleteUrl || event.notification.data?.url || "/";
+  const urlToOpen = event.notification.data?.athleteUrl || event.notification.data?.url || "/";
+
   event.waitUntil(
-    clients.matchAll({ type: "window" }).then((clientList) => {
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
       for (const client of clientList) {
-        if (client.url.includes(url) && "focus" in client) return client.focus();
+        if ("navigate" in client) {
+          return client.navigate(urlToOpen).then((c) => c?.focus());
+        }
       }
-      return clients.openWindow(url);
+      return clients.openWindow(urlToOpen);
     })
   );
 });

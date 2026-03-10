@@ -41,15 +41,6 @@ const Kokpit = () => {
   const { profile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
-
-  // Auto-open chat from push notification click routing
-  useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('openChat') === 'true') {
-      setShowChat(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
-    }
-  }, []);
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
@@ -74,6 +65,15 @@ const Kokpit = () => {
 
   // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
+
+  // Auto-open chat from push notification click routing
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openChat') === 'true') {
+      setShowChat(true);
+      window.history.replaceState({}, document.title, window.location.pathname);
+    }
+  }, []);
 
   // Listen for coach chat open event from EliteDock
   useEffect(() => {
