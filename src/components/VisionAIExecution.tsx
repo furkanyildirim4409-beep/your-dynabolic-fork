@@ -9,6 +9,8 @@ import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { useStableTimer } from "@/hooks/useStableTimer";
+import { useWakeLock } from "@/hooks/useWakeLock";
 
 interface ProgramExercise {
   id: string;
