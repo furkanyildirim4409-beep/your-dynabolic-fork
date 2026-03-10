@@ -388,16 +388,15 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const handleRestComplete = () => {
-    setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
+    setShowRestTimer(false); resetTimer(); setReps(0); setAchievedFailure(false);
     if (exercise.groupId) {
-      // Superset Case B: jump back to first exercise in group, increment set
       const { firstGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(firstGroupIdx);
       setCurrentSet(p => p + 1);
     } else {
       setCurrentSet(p => p + 1);
     }
-    setIsRunning(true);
+    resumeTimer();
   };
   const handleSkipRest = () => {
     setShowRestTimer(false); setTimer(0); setReps(0); setAchievedFailure(false);
