@@ -523,23 +523,18 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
 
               {/* Progressive Overload per Exercise */}
               {(() => {
-                if (!previousWorkout?.details) return null;
-                const prevDetails = typeof previousWorkout.details === 'string'
-                  ? JSON.parse(previousWorkout.details)
-                  : previousWorkout.details;
-                if (!Array.isArray(prevDetails)) return null;
+                if (!globalPRMap || globalPRMap.size === 0) return null;
 
                 const overloadItems = exercises.map((ex, idx) => {
                   const actualSets = completedSetsRef.current[idx] ?? [];
                   if (actualSets.length === 0) return null;
-                  const prevEx = prevDetails.find((p: any) => p.exerciseName === ex.name);
-                  if (!prevEx?.sets?.length) return null;
+                  const pr = globalPRMap.get(ex.name);
+                  if (!pr || pr.maxWeight <= 0) return null;
                   const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
-                  const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
-                  if (prevMax <= 0 || currentMax <= 0) return null;
-                  const diff = currentMax - prevMax;
+                  if (currentMax <= 0) return null;
+                  const diff = currentMax - pr.maxWeight;
                   if (diff === 0) return null;
-                  return { name: ex.name, diff, currentMax, prevMax };
+                  return { name: ex.name, diff, currentMax, prevMax: pr.maxWeight };
                 }).filter(Boolean) as { name: string; diff: number; currentMax: number; prevMax: number }[];
 
                 if (overloadItems.length === 0) return null;
