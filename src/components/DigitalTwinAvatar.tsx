@@ -1,6 +1,6 @@
 import { useState, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { RotateCcw, ZoomIn, ZoomOut, Hand, Maximize2, Activity, ChevronDown } from "lucide-react";
+import { RotateCcw, ZoomIn, ZoomOut, Hand, Maximize2, Activity } from "lucide-react";
 
 interface MuscleGroup {
   id: string;
@@ -28,24 +28,36 @@ const DigitalTwinAvatar = () => {
 
   const handleZoomIn = useCallback(() => setZoom((z) => Math.min(z + 0.2, 2)), []);
   const handleZoomOut = useCallback(() => setZoom((z) => Math.max(z - 0.2, 0.6)), []);
-  const handleReset = useCallback(() => { setZoom(1); setRotation(0); setSelectedMuscle(null); }, []);
+  const handleReset = useCallback(() => {
+    setZoom(1);
+    setRotation(0);
+    setSelectedMuscle(null);
+  }, []);
   const handleRotate = useCallback(() => setRotation((r) => r + 45), []);
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case "recovered": return "text-green-400 bg-green-400/20";
-      case "fatigued": return "text-yellow-400 bg-yellow-400/20";
-      case "sore": return "text-red-400 bg-red-400/20";
-      default: return "text-muted-foreground bg-secondary";
+      case "recovered":
+        return "text-green-400 bg-green-400/20";
+      case "fatigued":
+        return "text-yellow-400 bg-yellow-400/20";
+      case "sore":
+        return "text-red-400 bg-red-400/20";
+      default:
+        return "text-muted-foreground bg-secondary";
     }
   };
 
   const getStatusLabel = (status: string) => {
     switch (status) {
-      case "recovered": return "Toparlandı";
-      case "fatigued": return "Yorgun";
-      case "sore": return "Ağrılı";
-      default: return status;
+      case "recovered":
+        return "Toparlandı";
+      case "fatigued":
+        return "Yorgun";
+      case "sore":
+        return "Ağrılı";
+      default:
+        return status;
     }
   };
 
@@ -53,7 +65,9 @@ const DigitalTwinAvatar = () => {
     <div className="relative">
       <div className="flex items-center gap-2 mb-3">
         <Activity className="w-4 h-4 text-primary" />
-        <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Dijital İkiz</h3>
+        <h3 className="text-xs text-muted-foreground uppercase tracking-widest font-medium">
+          Dijital İkiz (Özel Beden Profilin)
+        </h3>
       </div>
 
       <div
@@ -62,84 +76,195 @@ const DigitalTwinAvatar = () => {
         style={{ minHeight: 360 }}
         onClick={() => setShowGestureHint(false)}
       >
-        {/* Body Visualization */}
-        <div className="relative flex items-center justify-center py-8" style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: "transform 0.3s ease" }}>
+        <div
+          className="relative flex items-center justify-center py-8"
+          style={{ transform: `scale(${zoom}) rotate(${rotation}deg)`, transition: "transform 0.3s ease" }}
+        >
           <svg viewBox="0 0 200 400" className="w-40 h-80">
-            {/* Head */}
+            {/* Head - Yüz oranlarına uyumlu hafif geniş profil */}
             <circle cx="100" cy="40" r="25" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1" />
-            {/* Torso */}
-            <rect x="65" y="65" width="70" height="100" rx="10" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1" />
-            {/* Chest overlay */}
+
+            {/* Torso - Daha geniş sırt, beli çevreleyen hacim ve kalın yapı analiz edilerek güncellendi (Genişletildi ve eğimlendi) */}
+            <path
+              d="M 60,65 L 140,65 Q 155,115 146,170 L 54,170 Q 45,115 60,65 Z"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
+
+            {/* Chest - Daha belirgin göğüs hattı */}
             <motion.rect
-              x="70" y="70" width="60" height="40" rx="8"
+              x="58"
+              y="70"
+              width="84"
+              height="42"
+              rx="12"
               className="cursor-pointer"
-              fill={selectedMuscle?.id === "chest" ? "hsl(68 100% 50% / 0.3)" : muscleGroups[0].status === "fatigued" ? "hsl(45 100% 50% / 0.15)" : "transparent"}
+              fill={
+                selectedMuscle?.id === "chest"
+                  ? "hsl(68 100% 50% / 0.3)"
+                  : muscleGroups[0].status === "fatigued"
+                    ? "hsl(45 100% 50% / 0.15)"
+                    : "transparent"
+              }
               stroke={selectedMuscle?.id === "chest" ? "hsl(68 100% 50%)" : "transparent"}
               strokeWidth="2"
               whileHover={{ fill: "hsl(68 100% 50% / 0.2)" }}
               onClick={() => setSelectedMuscle(muscleGroups[0])}
             />
+
             {/* Back area */}
             <motion.rect
-              x="70" y="110" width="60" height="30" rx="5"
+              x="57"
+              y="115"
+              width="86"
+              height="35"
+              rx="8"
               className="cursor-pointer"
-              fill={selectedMuscle?.id === "back" ? "hsl(68 100% 50% / 0.3)" : muscleGroups[1].status === "fatigued" ? "hsl(45 100% 50% / 0.15)" : "transparent"}
+              fill={
+                selectedMuscle?.id === "back"
+                  ? "hsl(68 100% 50% / 0.3)"
+                  : muscleGroups[1].status === "fatigued"
+                    ? "hsl(45 100% 50% / 0.15)"
+                    : "transparent"
+              }
               stroke={selectedMuscle?.id === "back" ? "hsl(68 100% 50%)" : "transparent"}
               strokeWidth="2"
               whileHover={{ fill: "hsl(68 100% 50% / 0.2)" }}
               onClick={() => setSelectedMuscle(muscleGroups[1])}
             />
-            {/* Arms */}
-            <motion.rect x="35" y="70" width="25" height="80" rx="10" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1"
+
+            {/* Arms - Daha etli / kalın ve vücuttan bir tık ayrık yapılı kollar */}
+            <motion.rect
+              x="20"
+              y="70"
+              width="34"
+              height="85"
+              rx="15"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
               className="cursor-pointer"
               onClick={() => setSelectedMuscle(muscleGroups[3])}
             />
-            <motion.rect x="140" y="70" width="25" height="80" rx="10" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1"
+            <motion.rect
+              x="146"
+              y="70"
+              width="34"
+              height="85"
+              rx="15"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
               className="cursor-pointer"
               onClick={() => setSelectedMuscle(muscleGroups[3])}
             />
-            {/* Shoulders */}
-            <motion.circle cx="67" cy="72" r="12" fill={muscleGroups[2].recoveryPercent > 80 ? "hsl(142 71% 45% / 0.2)" : "hsl(45 100% 50% / 0.15)"}
-              className="cursor-pointer" onClick={() => setSelectedMuscle(muscleGroups[2])}
+
+            {/* Shoulders - Düşük, kalın ama hafif omuz başları */}
+            <motion.circle
+              cx="48"
+              cy="72"
+              r="16"
+              fill={muscleGroups[2].recoveryPercent > 80 ? "hsl(142 71% 45% / 0.2)" : "hsl(45 100% 50% / 0.15)"}
+              className="cursor-pointer"
+              onClick={() => setSelectedMuscle(muscleGroups[2])}
             />
-            <motion.circle cx="133" cy="72" r="12" fill={muscleGroups[2].recoveryPercent > 80 ? "hsl(142 71% 45% / 0.2)" : "hsl(45 100% 50% / 0.15)"}
-              className="cursor-pointer" onClick={() => setSelectedMuscle(muscleGroups[2])}
+            <motion.circle
+              cx="152"
+              cy="72"
+              r="16"
+              fill={muscleGroups[2].recoveryPercent > 80 ? "hsl(142 71% 45% / 0.2)" : "hsl(45 100% 50% / 0.15)"}
+              className="cursor-pointer"
+              onClick={() => setSelectedMuscle(muscleGroups[2])}
             />
-            {/* Legs */}
-            <motion.rect x="65" y="170" width="30" height="110" rx="12" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1"
-              className="cursor-pointer" onClick={() => setSelectedMuscle(muscleGroups[4])}
+
+            {/* Legs - Üst bacaktaki kalınlığı hesaba katan genişlik */}
+            <motion.rect
+              x="54"
+              y="170"
+              width="44"
+              height="110"
+              rx="14"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+              className="cursor-pointer"
+              onClick={() => setSelectedMuscle(muscleGroups[4])}
             />
-            <motion.rect x="105" y="170" width="30" height="110" rx="12" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1"
-              className="cursor-pointer" onClick={() => setSelectedMuscle(muscleGroups[4])}
+            <motion.rect
+              x="102"
+              y="170"
+              width="44"
+              height="110"
+              rx="14"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+              className="cursor-pointer"
+              onClick={() => setSelectedMuscle(muscleGroups[4])}
             />
-            {/* Core */}
-            <motion.rect x="75" y="140" width="50" height="25" rx="5"
+
+            {/* Core (Karın Bölgesi) - Love handle kısımlarına uyum sağlayan ve profilden öne doğru çıkan alan taranması */}
+            <motion.path
+              d="M 55,145 L 145,145 C 145,175 55,175 55,145 Z"
               fill={muscleGroups[5].recoveryPercent > 80 ? "hsl(142 71% 45% / 0.15)" : "hsl(45 100% 50% / 0.15)"}
-              className="cursor-pointer" onClick={() => setSelectedMuscle(muscleGroups[5])}
+              className="cursor-pointer hover:opacity-50"
+              onClick={() => setSelectedMuscle(muscleGroups[5])}
             />
+
             {/* Feet */}
-            <ellipse cx="80" cy="290" rx="15" ry="8" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1" />
-            <ellipse cx="120" cy="290" rx="15" ry="8" fill="hsl(var(--secondary))" stroke="hsl(var(--border))" strokeWidth="1" />
+            <ellipse
+              cx="76"
+              cy="290"
+              rx="16"
+              ry="9"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
+            <ellipse
+              cx="124"
+              cy="290"
+              rx="16"
+              ry="9"
+              fill="hsl(var(--secondary))"
+              stroke="hsl(var(--border))"
+              strokeWidth="1"
+            />
           </svg>
         </div>
 
-        {/* Controls */}
         <div className="absolute top-3 right-3 flex flex-col gap-1.5">
-          <motion.button whileTap={{ scale: 0.9 }} onClick={handleZoomIn} className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleZoomIn}
+            className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border"
+          >
             <ZoomIn className="w-4 h-4 text-muted-foreground" />
           </motion.button>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={handleZoomOut} className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleZoomOut}
+            className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border"
+          >
             <ZoomOut className="w-4 h-4 text-muted-foreground" />
           </motion.button>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={handleRotate} className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleRotate}
+            className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border"
+          >
             <RotateCcw className="w-4 h-4 text-muted-foreground" />
           </motion.button>
-          <motion.button whileTap={{ scale: 0.9 }} onClick={handleReset} className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border">
+          <motion.button
+            whileTap={{ scale: 0.9 }}
+            onClick={handleReset}
+            className="p-2 rounded-lg bg-secondary/80 backdrop-blur-sm border border-border"
+          >
             <Maximize2 className="w-4 h-4 text-muted-foreground" />
           </motion.button>
         </div>
 
-        {/* Gesture Hint */}
         <AnimatePresence>
           {showGestureHint && (
             <motion.div
@@ -155,7 +280,6 @@ const DigitalTwinAvatar = () => {
         </AnimatePresence>
       </div>
 
-      {/* Muscle Detail Panel */}
       <AnimatePresence>
         {selectedMuscle && (
           <motion.div
@@ -185,8 +309,11 @@ const DigitalTwinAvatar = () => {
                     initial={{ width: 0 }}
                     animate={{ width: `${selectedMuscle.recoveryPercent}%` }}
                     className={`h-full rounded-full ${
-                      selectedMuscle.recoveryPercent > 80 ? "bg-green-500" :
-                      selectedMuscle.recoveryPercent > 50 ? "bg-yellow-500" : "bg-red-500"
+                      selectedMuscle.recoveryPercent > 80
+                        ? "bg-green-500"
+                        : selectedMuscle.recoveryPercent > 50
+                          ? "bg-yellow-500"
+                          : "bg-red-500"
                     }`}
                   />
                 </div>
@@ -196,7 +323,6 @@ const DigitalTwinAvatar = () => {
         )}
       </AnimatePresence>
 
-      {/* Quick Legend */}
       <div className="flex items-center justify-center gap-4 mt-3">
         {[
           { color: "bg-green-400", label: "Hazır" },
