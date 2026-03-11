@@ -225,45 +225,72 @@ const Antrenman = () => {
                   <div className="space-y-5">
                     {groupedByDay.map(({ day, workouts: dayWorkouts }, gi) => {
                       const isToday = day === todayTR;
-                      return (
-                        <div key={day}>
-                          {/* Day Header */}
-                          <div className={`flex items-center gap-2 mb-3 px-1 ${isToday ? "" : ""}`}>
-                            <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
-                            <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                              {day.toUpperCase()}
-                            </h3>
-                            {isToday && (
-                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
-                                BUGÜN
-                              </span>
-                            )}
-                          </div>
 
-                          {/* Day Workouts */}
-                          <div className="space-y-3">
-                            {dayWorkouts.map((workout, index) => (
-                              <motion.div
-                                key={workout.id}
-                                initial={{ opacity: 0, y: 20 }}
-                                animate={{ opacity: 1, y: 0 }}
-                                transition={{ delay: 0.1 + gi * 0.05 + index * 0.05 }}
-                              >
-                                <WorkoutCard
-                                  title={workout.title}
-                                  day={workout.day}
-                                  exercises={workout.exercises}
-                                  duration={workout.duration}
-                                  intensity={workout.intensity}
-                                  coachNote={workout.coachNote}
-                                  exerciseDetails={workout.programExercises}
-                                  completedToday={workout.completedToday}
-                                  onStart={() => setActiveWorkout(workout)}
-                                />
-                              </motion.div>
-                            ))}
-                          </div>
+                      const dayHeader = (
+                        <div className={`flex items-center gap-2 ${isToday ? "mb-3" : ""} px-1`}>
+                          <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
+                          <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                            {day.toUpperCase()}
+                          </h3>
+                          {isToday && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                              BUGÜN
+                            </span>
+                          )}
+                          {!isToday && (
+                            <>
+                              <span className="text-[10px] text-muted-foreground/60 ml-auto mr-1">
+                                {dayWorkouts.length} antrenman
+                              </span>
+                              <ChevronDown className="w-3.5 h-3.5 text-muted-foreground/40 transition-transform group-data-[state=open]:rotate-180" />
+                            </>
+                          )}
                         </div>
+                      );
+
+                      const workoutCards = (
+                        <div className="space-y-3">
+                          {dayWorkouts.map((workout, index) => (
+                            <motion.div
+                              key={workout.id}
+                              initial={{ opacity: 0, y: 20 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.1 + gi * 0.05 + index * 0.05 }}
+                            >
+                              <WorkoutCard
+                                title={workout.title}
+                                day={workout.day}
+                                exercises={workout.exercises}
+                                duration={workout.duration}
+                                intensity={workout.intensity}
+                                coachNote={workout.coachNote}
+                                exerciseDetails={workout.programExercises}
+                                completedToday={workout.completedToday}
+                                onStart={() => setActiveWorkout(workout)}
+                              />
+                            </motion.div>
+                          ))}
+                        </div>
+                      );
+
+                      if (isToday) {
+                        return (
+                          <div key={day}>
+                            {dayHeader}
+                            {workoutCards}
+                          </div>
+                        );
+                      }
+
+                      return (
+                        <Collapsible key={day} className="group">
+                          <CollapsibleTrigger className="w-full py-2">
+                            {dayHeader}
+                          </CollapsibleTrigger>
+                          <CollapsibleContent className="mt-3">
+                            {workoutCards}
+                          </CollapsibleContent>
+                        </Collapsible>
                       );
                     })}
                   </div>
