@@ -30,8 +30,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
 import { useMacros } from "@/hooks/useMacros";
 import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
-import { useWeeklyNutrition } from "@/hooks/useWeeklyNutrition";
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
+import { DialogTrigger } from "@/components/ui/dialog";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {

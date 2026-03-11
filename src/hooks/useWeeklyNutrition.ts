@@ -12,19 +12,37 @@ export interface DailyNutritionSummary {
 }
 
 const DAY_LABELS = ["Paz", "Pzt", "Sal", "Çar", "Per", "Cum", "Cmt"];
+const MONTH_NAMES = ["Oca", "Şub", "Mar", "Nis", "May", "Haz", "Tem", "Ağu", "Eyl", "Eki", "Kas", "Ara"];
 
-export function useWeeklyNutrition() {
+export function useWeeklyNutrition(weekOffset = 0) {
   const { user } = useAuth();
   const [data, setData] = useState<DailyNutritionSummary[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [dateRange, setDateRange] = useState({ start: "", end: "" });
 
   const fetchWeek = useCallback(async () => {
     if (!user) return;
+    setIsLoading(true);
 
     const now = new Date();
-    // Start from 6 days ago at local midnight
-    const startDate = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6);
-    const endDate = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
+    const todayLocal = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+
+    // End date: today minus (weekOffset * 7) days
+    const endDay = new Date(todayLocal);
+    endDay.setDate(endDay.getDate() - weekOffset * 7);
+
+    // Start date: 6 days before endDay
+    const startDay = new Date(endDay);
+    startDay.setDate(startDay.getDate() - 6);
+
+    const startDate = new Date(startDay.getFullYear(), startDay.getMonth(), startDay.getDate());
+    const endDate = new Date(endDay.getFullYear(), endDay.getMonth(), endDay.getDate(), 23, 59, 59, 999);
+
+    // Format date range for display
+    setDateRange({
+      start: `${startDay.getDate()} ${MONTH_NAMES[startDay.getMonth()]}`,
+      end: `${endDay.getDate()} ${MONTH_NAMES[endDay.getMonth()]}`,
+    });
 
     const { data: rows, error } = await supabase
       .from("consumed_foods")
@@ -39,10 +57,11 @@ export function useWeeklyNutrition() {
       return;
     }
 
-    // Build 7-day buckets using local dates
+    // Build 7-day buckets
     const buckets: Record<string, DailyNutritionSummary> = {};
     for (let i = 0; i < 7; i++) {
-      const d = new Date(now.getFullYear(), now.getMonth(), now.getDate() - 6 + i);
+      const d = new Date(startDay);
+      d.setDate(d.getDate() + i);
       const key = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, "0")}-${String(d.getDate()).padStart(2, "0")}`;
       buckets[key] = {
         date: key,
@@ -54,7 +73,6 @@ export function useWeeklyNutrition() {
       };
     }
 
-    // Aggregate rows into local-date buckets
     (rows || []).forEach((r) => {
       if (!r.logged_at) return;
       const local = new Date(r.logged_at);
@@ -69,11 +87,11 @@ export function useWeeklyNutrition() {
 
     setData(Object.values(buckets));
     setIsLoading(false);
-  }, [user]);
+  }, [user, weekOffset]);
 
   useEffect(() => {
     fetchWeek();
   }, [fetchWeek]);
 
-  return { data, isLoading, refetch: fetchWeek };
+  return { data, isLoading, dateRange, refetch: fetchWeek };
 }
