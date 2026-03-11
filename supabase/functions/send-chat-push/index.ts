@@ -1,4 +1,5 @@
 import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
+import webpush from "npm:web-push@3.6.7";
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -56,7 +57,7 @@ Deno.serve(async (req) => {
     if (error || !subs || subs.length === 0) {
       return new Response(
         JSON.stringify({ skipped: true, reason: "no subscriptions" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
       );
     }
 
@@ -68,16 +69,18 @@ Deno.serve(async (req) => {
       throw new Error("VAPID keys not configured");
     }
 
-    const { default: webpush } = await import("https://esm.sh/web-push@3.6.7");
     webpush.setVapidDetails(
       "mailto:noreply@dynabolic.app",
       vapidPublicKey,
-      vapidPrivateKey
+      vapidPrivateKey,
     );
 
     const payload = JSON.stringify({
       title: `💬 ${senderName} sana yeni bir mesaj gönderdi`,
-      body: previewText.length > 100 ? previewText.substring(0, 100) + "…" : previewText,
+      body:
+        previewText.length > 100
+          ? previewText.substring(0, 100) + "…"
+          : previewText,
       data: {
         url: "/",
         coachUrl: `/messages?athleteId=${sender_id}`,
@@ -93,14 +96,18 @@ Deno.serve(async (req) => {
             endpoint: sub.endpoint,
             keys: { p256dh: sub.p256dh, auth: sub.auth },
           },
-          payload
+          payload,
         )
-      )
+      ),
     );
 
     // Clean up expired endpoints
     const expiredEndpoints = results
-      .map((r, i) => (r.status === "rejected" && r.reason?.statusCode === 410 ? subs[i].endpoint : null))
+      .map((r, i) =>
+        r.status === "rejected" && r.reason?.statusCode === 410
+          ? subs[i].endpoint
+          : null
+      )
       .filter(Boolean);
 
     if (expiredEndpoints.length > 0) {
@@ -110,13 +117,18 @@ Deno.serve(async (req) => {
         .in("endpoint", expiredEndpoints);
     }
 
+    console.log("Push sent successfully:", {
+      sent: results.filter((r) => r.status === "fulfilled").length,
+      failed: results.filter((r) => r.status === "rejected").length,
+    });
+
     return new Response(
       JSON.stringify({
         sent: results.filter((r) => r.status === "fulfilled").length,
         failed: results.filter((r) => r.status === "rejected").length,
         cleaned: expiredEndpoints.length,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
   } catch (err: any) {
     console.error("Chat push error:", err);
