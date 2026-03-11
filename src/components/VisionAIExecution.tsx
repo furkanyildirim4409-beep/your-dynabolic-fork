@@ -284,19 +284,13 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     const details = exercises.map((ex, idx) => {
       const actualSets = completedSetsRef.current[idx] ?? [];
 
-      // Progressive overload: compare max weight with previous session
+      // Progressive overload: compare max weight with global PR
       let weightDiff: number | null = null;
-      if (previousWorkout?.details) {
-        const prevDetails = typeof previousWorkout.details === 'string'
-          ? JSON.parse(previousWorkout.details)
-          : previousWorkout.details;
-        if (Array.isArray(prevDetails)) {
-          const prevEx = prevDetails.find((p: any) => p.exerciseName === ex.name);
-          if (prevEx?.sets?.length > 0 && actualSets.length > 0) {
-            const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
-            const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
-            if (prevMax > 0 && currentMax > 0) weightDiff = currentMax - prevMax;
-          }
+      if (globalPRMap && actualSets.length > 0) {
+        const pr = globalPRMap.get(ex.name);
+        if (pr && pr.maxWeight > 0) {
+          const currentMax = Math.max(...actualSets.map(s => Number(s.weight) || 0));
+          if (currentMax > 0) weightDiff = currentMax - pr.maxWeight;
         }
       }
 
