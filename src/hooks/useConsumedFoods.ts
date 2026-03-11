@@ -49,15 +49,17 @@ export function useConsumedFoods() {
   // Fetch today's consumed foods
   const fetchToday = useCallback(async () => {
     if (!user) return;
-    const todayStart = format(new Date(), "yyyy-MM-dd") + "T00:00:00";
-    const todayEnd = format(new Date(), "yyyy-MM-dd") + "T23:59:59";
+
+    const now = new Date();
+    const startOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const endOfDay = new Date(now.getFullYear(), now.getMonth(), now.getDate(), 23, 59, 59, 999);
 
     const { data, error } = await supabase
       .from("consumed_foods")
       .select("*")
       .eq("athlete_id", user.id)
-      .gte("logged_at", todayStart)
-      .lte("logged_at", todayEnd)
+      .gte("logged_at", startOfDay.toISOString())
+      .lte("logged_at", endOfDay.toISOString())
       .order("logged_at", { ascending: true });
 
     if (!error && data) {
