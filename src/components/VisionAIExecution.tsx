@@ -11,6 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useWakeLock } from "@/hooks/useWakeLock";
+import { useExerciseHistory } from "@/hooks/useExerciseHistory";
 
 interface ProgramExercise {
   id: string;
