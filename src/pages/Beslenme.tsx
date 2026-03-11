@@ -577,7 +577,7 @@ const Beslenme = () => {
       setShowManualAdd(false);
       setSearchTerm("");
       setSearchResults([]);
-      refetchWeekly();
+      // Weekly chart self-manages its data
     } catch {
       toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
     }
