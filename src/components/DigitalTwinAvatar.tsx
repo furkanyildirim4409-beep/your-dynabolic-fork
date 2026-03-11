@@ -94,8 +94,8 @@ const DigitalTwinAvatar = () => {
 
             {/* Chest - Daha belirgin göğüs hattı */}
             <motion.rect
-              x="58"
-              y="70"
+              x="508"
+              y="700"
               width="84"
               height="42"
               rx="12"
