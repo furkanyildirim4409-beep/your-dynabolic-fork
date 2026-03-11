@@ -494,7 +494,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const macroGoals = useMacros();
-  const { data: weeklyData, isLoading: weeklyLoading, refetch: refetchWeekly } = useWeeklyNutrition();
+  const [chartOpen, setChartOpen] = useState(false);
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const {
     isLoading: foodsLoading,
