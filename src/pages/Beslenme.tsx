@@ -577,6 +577,7 @@ const Beslenme = () => {
       setShowManualAdd(false);
       setSearchTerm("");
       setSearchResults([]);
+      refetchWeekly();
     } catch {
       toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
     }
