@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, MessageSquare, ChevronRight, ChevronDown, ChevronUp, Flame } from "lucide-react";
+import { Dumbbell, MessageSquare, ChevronRight, ChevronDown, ChevronUp, Flame, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ExerciseDetail {
@@ -21,6 +21,7 @@ interface WorkoutCardProps {
   coachNote?: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
   exerciseDetails?: ExerciseDetail[];
+  completedToday?: boolean;
   onStart: () => void;
 }
 
@@ -32,6 +33,7 @@ const WorkoutCard = ({
   coachNote,
   intensity,
   exerciseDetails,
+  completedToday,
   onStart,
 }: WorkoutCardProps) => {
   const [expanded, setExpanded] = useState(false);
@@ -179,15 +181,36 @@ const WorkoutCard = ({
         </div>
       )}
 
+      {/* Completed Today Badge */}
+      {completedToday && (
+        <div className="flex items-center gap-2 bg-primary/10 border border-primary/30 rounded-lg px-3 py-2 mb-3">
+          <CheckCircle2 className="w-4 h-4 text-primary" />
+          <span className="text-primary text-xs font-medium">Bugün Tamamlandı</span>
+        </div>
+      )}
+
       {/* Start Button */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}
         onClick={onStart}
-        className="w-full py-3 bg-primary/10 border border-primary/50 rounded-xl font-display text-primary tracking-wider hover:bg-primary/20 transition-all neon-glow-sm flex items-center justify-center gap-2"
+        className={`w-full py-3 rounded-xl font-display tracking-wider transition-all flex items-center justify-center gap-2 ${
+          completedToday
+            ? "bg-muted border border-muted-foreground/20 text-muted-foreground hover:bg-muted/80"
+            : "bg-primary/10 border border-primary/50 text-primary hover:bg-primary/20 neon-glow-sm"
+        }`}
       >
-        GÖREVİ BAŞLAT
-        <ChevronRight className="w-4 h-4" />
+        {completedToday ? (
+          <>
+            TEKRAR BAŞLAT
+            <RotateCcw className="w-4 h-4" />
+          </>
+        ) : (
+          <>
+            GÖREVİ BAŞLAT
+            <ChevronRight className="w-4 h-4" />
+          </>
+        )}
       </motion.button>
     </motion.div>
   );

@@ -344,7 +344,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         bio_coins_earned: bioCoinsEarned,
         completed: true,
         details,
-      });
+        assigned_workout_id: assignmentId ?? null,
+      } as any);
 
       if (error) throw error;
 
@@ -369,14 +370,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         type: "workout",
         description: `${workoutTitle} tamamlandı`,
       });
-
-      // Mark assignment as completed
-      if (assignmentId) {
-        await supabase
-          .from("assigned_workouts")
-          .update({ status: "completed" })
-          .eq("id", assignmentId);
-      }
 
       toast.success("Antrenman başarıyla kaydedildi! +150 Bio-Coin kazandın.");
     } catch (err: any) {

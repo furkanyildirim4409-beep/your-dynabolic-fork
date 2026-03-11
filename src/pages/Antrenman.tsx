@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
 import WorkoutCard from "@/components/WorkoutCard";
@@ -18,6 +18,37 @@ const Antrenman = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
+
+  // Turkish day names and today detection
+  const DAYS_TR = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+  const jsDay = new Date().getDay(); // 0=Sun
+  const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
+
+  // Group workouts by day_of_week
+  const groupedByDay = useMemo(() => {
+    const groups: { day: string; workouts: TransformedWorkout[] }[] = [];
+    const dayMap = new Map<string, TransformedWorkout[]>();
+
+    for (const w of workouts) {
+      const key = w.dayOfWeek ?? "Diğer";
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push(w);
+    }
+
+    // Sort by fixed day order
+    for (const day of DAYS_TR) {
+      if (dayMap.has(day)) {
+        groups.push({ day, workouts: dayMap.get(day)! });
+        dayMap.delete(day);
+      }
+    }
+    // Any remaining (no day_of_week)
+    for (const [day, wList] of dayMap) {
+      groups.push({ day, workouts: wList });
+    }
+
+    return groups;
+  }, [workouts]);
 
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
@@ -143,13 +174,13 @@ const Antrenman = () => {
               exit={{ opacity: 0, x: -20 }}
               transition={{ duration: 0.2 }}
             >
-              {/* Assigned Workouts */}
+              {/* Weekly Workout Schedule */}
               <div>
                 <div className="flex items-center justify-between mb-4">
                   <h2 className="font-display text-lg text-foreground tracking-wide">
-                    ATANAN ANTRENMANLAR
+                    HAFTALIK PROGRAM
                   </h2>
-                  <span className="text-xs text-primary">{workouts.length} Görev</span>
+                  <span className="text-xs text-primary">{workouts.length} Antrenman</span>
                 </div>
                 
                 {isLoading ? (
@@ -162,11 +193,6 @@ const Antrenman = () => {
                             <Skeleton className="h-5 w-3/4" />
                             <Skeleton className="h-3 w-1/3" />
                           </div>
-                        </div>
-                        <div className="flex items-center gap-4">
-                          <Skeleton className="h-3 w-16" />
-                          <Skeleton className="h-3 w-12" />
-                          <Skeleton className="h-5 w-14 rounded-full" />
                         </div>
                         <Skeleton className="h-12 w-full rounded-xl" />
                       </div>
@@ -183,33 +209,57 @@ const Antrenman = () => {
                     </div>
                     <h3 className="font-display text-lg text-foreground mb-2">DİNLENME GÜNÜ</h3>
                     <p className="text-muted-foreground text-sm mb-1">
-                      Bugün için atanmış antrenman yok.
+                      Henüz atanmış antrenman yok.
                     </p>
                     <p className="text-muted-foreground/60 text-xs">
                       Koçun yeni bir program atadığında burada görünecek.
                     </p>
                   </motion.div>
                 ) : (
-                  <div className="space-y-4">
-                    {workouts.map((workout, index) => (
-                      <motion.div
-                        key={workout.id}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: 0.2 + index * 0.1 }}
-                      >
-                        <WorkoutCard
-                          title={workout.title}
-                          day={workout.day}
-                          exercises={workout.exercises}
-                          duration={workout.duration}
-                          intensity={workout.intensity}
-                          coachNote={workout.coachNote}
-                          exerciseDetails={workout.programExercises}
-                          onStart={() => setActiveWorkout(workout)}
-                        />
-                      </motion.div>
-                    ))}
+                  <div className="space-y-5">
+                    {groupedByDay.map(({ day, workouts: dayWorkouts }, gi) => {
+                      const isToday = day === todayTR;
+                      return (
+                        <div key={day}>
+                          {/* Day Header */}
+                          <div className={`flex items-center gap-2 mb-3 px-1 ${isToday ? "" : ""}`}>
+                            <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
+                            <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                              {day.toUpperCase()}
+                            </h3>
+                            {isToday && (
+                              <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
+                                BUGÜN
+                              </span>
+                            )}
+                          </div>
+
+                          {/* Day Workouts */}
+                          <div className="space-y-3">
+                            {dayWorkouts.map((workout, index) => (
+                              <motion.div
+                                key={workout.id}
+                                initial={{ opacity: 0, y: 20 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                transition={{ delay: 0.1 + gi * 0.05 + index * 0.05 }}
+                              >
+                                <WorkoutCard
+                                  title={workout.title}
+                                  day={workout.day}
+                                  exercises={workout.exercises}
+                                  duration={workout.duration}
+                                  intensity={workout.intensity}
+                                  coachNote={workout.coachNote}
+                                  exerciseDetails={workout.programExercises}
+                                  completedToday={workout.completedToday}
+                                  onStart={() => setActiveWorkout(workout)}
+                                />
+                              </motion.div>
+                            ))}
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 )}
               </div>
