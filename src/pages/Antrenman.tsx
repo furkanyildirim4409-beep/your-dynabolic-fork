@@ -553,19 +553,52 @@ const Antrenman = () => {
                 <h3 className="font-display text-sm text-muted-foreground mb-3 tracking-wider">HAREKETLER</h3>
                 
                 <Accordion type="single" collapsible className="space-y-2">
-                  {selectedWorkout.details.map((exercise, index) => (
+                  {selectedWorkout.details.map((exercise, index) => {
+                    // Calculate max weight in this session for the exercise
+                    const sessionMaxWeight = Math.max(...exercise.sets.map(s => s.weight || 0), 0);
+
+                    // Find previous occurrence of same exercise in older logs
+                    const currentWorkoutIdx = workoutHistory.findIndex(w => w.id === selectedWorkout.id);
+                    const olderLogs = currentWorkoutIdx >= 0 ? workoutHistory.slice(currentWorkoutIdx + 1) : workoutHistory.slice(1);
+                    let prevMaxWeight = 0;
+                    for (const log of olderLogs) {
+                      const prevEx = log.details.find(d => d.exerciseName === exercise.exerciseName);
+                      if (prevEx) {
+                        prevMaxWeight = Math.max(...prevEx.sets.map(s => s.weight || 0), 0);
+                        break;
+                      }
+                    }
+
+                    // Global PR check
+                    const globalPR = globalPRMap?.get(exercise.exerciseName);
+                    const isGlobalPR = globalPR && sessionMaxWeight > 0 && sessionMaxWeight >= globalPR.maxWeight;
+                    const weightDiff = prevMaxWeight > 0 && sessionMaxWeight > prevMaxWeight ? sessionMaxWeight - prevMaxWeight : 0;
+
+                    return (
                     <AccordionItem 
                       key={index} 
                       value={`exercise-${index}`}
                       className="glass-card border-white/10 rounded-xl overflow-hidden"
                     >
                       <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-white/5">
-                        <div className="flex items-center gap-3 text-left">
+                        <div className="flex items-center gap-3 text-left flex-1">
                           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-display text-sm">
                             {index + 1}
                           </div>
-                          <div>
-                            <p className="text-foreground text-sm font-medium">{exercise.exerciseName}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-foreground text-sm font-medium">{exercise.exerciseName}</p>
+                              {isGlobalPR && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-0.5">
+                                  <Trophy className="w-2.5 h-2.5" /> YENİ REKOR
+                                </span>
+                              )}
+                              {!isGlobalPR && weightDiff > 0 && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
+                                  +{weightDiff} kg
+                                </span>
+                              )}
+                            </div>
                             <p className="text-muted-foreground text-[10px]">{exercise.sets.length} set</p>
                           </div>
                         </div>
@@ -598,6 +631,8 @@ const Antrenman = () => {
                         </div>
                       </AccordionContent>
                     </AccordionItem>
+                    );
+                  })}
                   ))}
                 </Accordion>
               </div>
