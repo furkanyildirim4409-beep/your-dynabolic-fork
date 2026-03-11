@@ -226,8 +226,8 @@ const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAv
         <HumanBody waistScale={waistScale} />
         <OrbitControls
           enableZoom={true}
-          maxDistance={5.5}
-          minDistance={3.5}
+          maxDistance={7}
+          minDistance={4}
           enablePan={false}
           minPolarAngle={Math.PI / 4} // Üstten aşırı kamerayı kesmek için ayarladık
           maxPolarAngle={Math.PI / 1.5}
