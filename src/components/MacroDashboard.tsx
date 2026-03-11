@@ -1,5 +1,6 @@
 import { motion } from "framer-motion";
-import { Flame, Beef, Wheat, Droplets } from "lucide-react";
+import { Flame, Beef, Wheat, Droplets, Zap, BarChart3 } from "lucide-react";
+import { useNutritionStreak } from "@/hooks/useNutritionStreak";
 
 interface MacroData {
   calories: { current: number; target: number };
@@ -20,6 +21,8 @@ const defaultData: MacroData = {
 };
 
 const MacroDashboard = ({ data = defaultData }: MacroDashboardProps) => {
+  const { streak } = useNutritionStreak(data.calories.target);
+
   const macros = [
     { key: "protein", label: "Protein", icon: Beef, current: data.protein.current, target: data.protein.target, unit: "g", color: "text-blue-400", bgColor: "bg-blue-400", trackColor: "bg-blue-400/20" },
     { key: "carbs", label: "Karbonhidrat", icon: Wheat, current: data.carbs.current, target: data.carbs.target, unit: "g", color: "text-orange-400", bgColor: "bg-orange-400", trackColor: "bg-orange-400/20" },
@@ -57,7 +60,22 @@ const MacroDashboard = ({ data = defaultData }: MacroDashboardProps) => {
             </div>
           </div>
           <div className="flex-1">
-            <p className="text-foreground font-display text-sm tracking-wide">KALORİ</p>
+            <div className="flex items-center justify-between">
+              <p className="text-foreground font-display text-sm tracking-wide">KALORİ</p>
+              <div className="flex items-center gap-2">
+                {streak > 0 && (
+                  <motion.div
+                    initial={{ scale: 0 }}
+                    animate={{ scale: 1 }}
+                    className="flex items-center gap-1 bg-green-500/15 text-green-500 px-2 py-0.5 rounded-full"
+                  >
+                    <Zap className="w-3 h-3" />
+                    <span className="text-[11px] font-bold">{streak} gün seri</span>
+                  </motion.div>
+                )}
+                <BarChart3 className="w-4 h-4 text-muted-foreground" />
+              </div>
+            </div>
             <div className="flex items-baseline gap-1 mt-0.5">
               <span className="text-2xl font-bold text-primary">{data.calories.current.toLocaleString()}</span>
               <span className="text-muted-foreground text-xs">/ {data.calories.target.toLocaleString()} kcal</span>
