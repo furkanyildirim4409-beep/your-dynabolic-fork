@@ -23,6 +23,7 @@ export interface TransformedWorkout {
   title: string;
   day: string;
   dayOfWeek: string | null;
+  scheduledDate: string | null;
   exercises: number;
   duration: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
@@ -100,11 +101,11 @@ export const useAssignedWorkouts = () => {
         const mins = estimatedMinutes % 60;
         const duration = hours > 0 ? `${hours}sa ${mins}dk` : `${mins}dk`;
 
-        // Use day_of_week as primary label
+        // Use scheduled_date as primary label when available
         let dayLabel = aw.day_of_week ?? "Bugün";
-        if (!aw.day_of_week && aw.scheduled_date) {
+        if (aw.scheduled_date) {
           try {
-            dayLabel = format(new Date(aw.scheduled_date), "EEEE, d MMMM", { locale: tr });
+            dayLabel = format(new Date(aw.scheduled_date + "T00:00:00"), "d MMMM EEEE", { locale: tr });
             dayLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
           } catch {
             dayLabel = aw.scheduled_date;
@@ -122,6 +123,7 @@ export const useAssignedWorkouts = () => {
           title,
           day: dayLabel,
           dayOfWeek: aw.day_of_week ?? null,
+          scheduledDate: aw.scheduled_date ?? null,
           exercises: exerciseCount,
           duration,
           intensity: mapDifficulty(program?.difficulty),
@@ -146,8 +148,13 @@ export const useAssignedWorkouts = () => {
         };
       });
 
-      // Sort by day_of_week order
+      // Sort by scheduled_date first (ascending), then by day_of_week order
       workouts.sort((a, b) => {
+        if (a.scheduledDate && b.scheduledDate) {
+          return a.scheduledDate.localeCompare(b.scheduledDate);
+        }
+        if (a.scheduledDate && !b.scheduledDate) return -1;
+        if (!a.scheduledDate && b.scheduledDate) return 1;
         const orderA = a.dayOfWeek ? (DAY_ORDER[a.dayOfWeek.toLowerCase()] ?? 99) : 99;
         const orderB = b.dayOfWeek ? (DAY_ORDER[b.dayOfWeek.toLowerCase()] ?? 99) : 99;
         return orderA - orderB;

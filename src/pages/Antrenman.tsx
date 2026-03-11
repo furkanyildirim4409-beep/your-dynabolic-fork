@@ -1,16 +1,18 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee } from "lucide-react";
+import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee, Trophy } from "lucide-react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import WorkoutCard from "@/components/WorkoutCard";
 import VisionAIExecution from "@/components/VisionAIExecution";
 import WorkoutCalendar from "@/components/WorkoutCalendar";
 import ExerciseGoalsSection from "@/components/ExerciseGoalsSection";
 import { useWorkoutHistory, WorkoutHistoryEntry } from "@/hooks/useWorkoutHistory";
+import { useExerciseHistory } from "@/hooks/useExerciseHistory";
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/components/ui/accordion";
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
+import { format } from "date-fns";
 
 const Antrenman = () => {
   const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
@@ -19,42 +21,55 @@ const Antrenman = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
+  const { data: globalPRMap } = useExerciseHistory();
 
-  // Turkish day names and today detection
+  // Today's date string for comparison
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+
+  // Turkish day names for fallback
   const DAYS_TR = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-  const jsDay = new Date().getDay(); // 0=Sun
+  const jsDay = new Date().getDay();
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
-  // Group workouts by day_of_week, today first
+  // Group workouts: by scheduledDate when available, else by dayOfWeek
   const groupedByDay = useMemo(() => {
-    const dayMap = new Map<string, TransformedWorkout[]>();
+    const groupMap = new Map<string, { label: string; isToday: boolean; workouts: TransformedWorkout[] }>();
 
     for (const w of workouts) {
-      const key = w.dayOfWeek ?? "Diğer";
-      if (!dayMap.has(key)) dayMap.set(key, []);
-      dayMap.get(key)!.push(w);
-    }
+      let key: string;
+      let label: string;
+      let isToday = false;
 
-    const allGroups: { day: string; workouts: TransformedWorkout[] }[] = [];
-    for (const day of DAYS_TR) {
-      if (dayMap.has(day)) {
-        allGroups.push({ day, workouts: dayMap.get(day)! });
-        dayMap.delete(day);
+      if (w.scheduledDate) {
+        key = w.scheduledDate;
+        label = w.day; // already formatted as "d MMMM EEEE"
+        isToday = w.scheduledDate === todayStr;
+      } else {
+        key = `dow-${w.dayOfWeek ?? "Diğer"}`;
+        label = w.dayOfWeek ?? "Diğer";
+        isToday = (w.dayOfWeek ?? "") === todayTR;
       }
-    }
-    for (const [day, wList] of dayMap) {
-      allGroups.push({ day, workouts: wList });
+
+      if (!groupMap.has(key)) {
+        groupMap.set(key, { label, isToday, workouts: [] });
+      }
+      groupMap.get(key)!.workouts.push(w);
     }
 
-    // Move today to front
-    const todayIdx = allGroups.findIndex((g) => g.day === todayTR);
+    const allGroups = Array.from(groupMap.entries()).map(([key, val]) => ({
+      key,
+      ...val,
+    }));
+
+    // Move today's group to front
+    const todayIdx = allGroups.findIndex((g) => g.isToday);
     if (todayIdx > 0) {
       const [todayGroup] = allGroups.splice(todayIdx, 1);
       allGroups.unshift(todayGroup);
     }
 
     return allGroups;
-  }, [workouts, todayTR]);
+  }, [workouts, todayStr, todayTR]);
 
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
@@ -223,14 +238,12 @@ const Antrenman = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-5">
-                    {groupedByDay.map(({ day, workouts: dayWorkouts }, gi) => {
-                      const isToday = day === todayTR;
-
+                    {groupedByDay.map(({ key, label, isToday, workouts: dayWorkouts }, gi) => {
                       const dayHeader = (
                         <div className={`flex items-center gap-2 ${isToday ? "mb-3" : ""} px-1`}>
                           <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
                           <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                            {day.toUpperCase()}
+                            {label.toUpperCase()}
                           </h3>
                           {isToday && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
@@ -275,7 +288,7 @@ const Antrenman = () => {
 
                       if (isToday) {
                         return (
-                          <div key={day}>
+                          <div key={key}>
                             {dayHeader}
                             {workoutCards}
                           </div>
@@ -283,7 +296,7 @@ const Antrenman = () => {
                       }
 
                       return (
-                        <Collapsible key={day} className="group">
+                        <Collapsible key={key} className="group">
                           <CollapsibleTrigger className="w-full py-2">
                             {dayHeader}
                           </CollapsibleTrigger>
@@ -540,19 +553,52 @@ const Antrenman = () => {
                 <h3 className="font-display text-sm text-muted-foreground mb-3 tracking-wider">HAREKETLER</h3>
                 
                 <Accordion type="single" collapsible className="space-y-2">
-                  {selectedWorkout.details.map((exercise, index) => (
+                  {selectedWorkout.details.map((exercise, index) => {
+                    // Calculate max weight in this session for the exercise
+                    const sessionMaxWeight = Math.max(...exercise.sets.map(s => s.weight || 0), 0);
+
+                    // Find previous occurrence of same exercise in older logs
+                    const currentWorkoutIdx = workoutHistory.findIndex(w => w.id === selectedWorkout.id);
+                    const olderLogs = currentWorkoutIdx >= 0 ? workoutHistory.slice(currentWorkoutIdx + 1) : workoutHistory.slice(1);
+                    let prevMaxWeight = 0;
+                    for (const log of olderLogs) {
+                      const prevEx = log.details.find(d => d.exerciseName === exercise.exerciseName);
+                      if (prevEx) {
+                        prevMaxWeight = Math.max(...prevEx.sets.map(s => s.weight || 0), 0);
+                        break;
+                      }
+                    }
+
+                    // Global PR check
+                    const globalPR = globalPRMap?.get(exercise.exerciseName);
+                    const isGlobalPR = globalPR && sessionMaxWeight > 0 && sessionMaxWeight >= globalPR.maxWeight;
+                    const weightDiff = prevMaxWeight > 0 && sessionMaxWeight > prevMaxWeight ? sessionMaxWeight - prevMaxWeight : 0;
+
+                    return (
                     <AccordionItem 
                       key={index} 
                       value={`exercise-${index}`}
                       className="glass-card border-white/10 rounded-xl overflow-hidden"
                     >
                       <AccordionTrigger className="px-4 py-3 hover:no-underline hover:bg-white/5">
-                        <div className="flex items-center gap-3 text-left">
+                        <div className="flex items-center gap-3 text-left flex-1">
                           <div className="w-8 h-8 rounded-lg bg-primary/20 flex items-center justify-center text-primary font-display text-sm">
                             {index + 1}
                           </div>
-                          <div>
-                            <p className="text-foreground text-sm font-medium">{exercise.exerciseName}</p>
+                          <div className="flex-1 min-w-0">
+                            <div className="flex items-center gap-2 flex-wrap">
+                              <p className="text-foreground text-sm font-medium">{exercise.exerciseName}</p>
+                              {isGlobalPR && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-primary/20 text-primary font-medium flex items-center gap-0.5">
+                                  <Trophy className="w-2.5 h-2.5" /> YENİ REKOR
+                                </span>
+                              )}
+                              {!isGlobalPR && weightDiff > 0 && (
+                                <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400 font-medium">
+                                  +{weightDiff} kg
+                                </span>
+                              )}
+                            </div>
                             <p className="text-muted-foreground text-[10px]">{exercise.sets.length} set</p>
                           </div>
                         </div>
@@ -585,7 +631,8 @@ const Antrenman = () => {
                         </div>
                       </AccordionContent>
                     </AccordionItem>
-                  ))}
+                    );
+                  })}
                 </Accordion>
               </div>
 
