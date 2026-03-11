@@ -821,24 +821,23 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </div>
             </div>
             {(() => {
-              if (!previousWorkout?.details) return null;
-              const prevDetails = typeof previousWorkout.details === 'string' ? JSON.parse(previousWorkout.details) : previousWorkout.details;
-              if (!Array.isArray(prevDetails)) return null;
-              const prevEx = prevDetails.find((p: any) => (p.exerciseName ?? p.exercise_name) === exercise.name);
-              if (!prevEx?.sets?.length) return null;
-              const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
-              const topSet = prevEx.sets.reduce((best: any, s: any) => (Number(s.weight) || 0) > (Number(best.weight) || 0) ? s : best, prevEx.sets[0]);
-              const topWeight = Number(topSet.weight) || 0;
-              const topReps = Number(topSet.reps) || 0;
-              const totalSets = prevEx.sets.length;
-              const isBeating = weight > prevMax;
+              const pr = globalPRMap?.get(exercise.name);
+              if (!pr) return null;
+              const isNewRecord = weight > pr.maxWeight;
               return (
                 <div className="text-center space-y-1">
-                  <div className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border backdrop-blur-sm transition-colors ${isBeating ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-accent/30 border-accent/50 text-accent-foreground/70'}`}>
-                    🎯 Geçen Hafta: {topWeight} kg × {topReps} tekrar ({totalSets} set)
-                  </div>
-                  {isBeating && (
-                    <p className="text-emerald-400 text-[10px] font-medium">🚀 +{weight - prevMax} kg üzerinde!</p>
+                  {isNewRecord ? (
+                    <motion.div
+                      initial={{ scale: 0.8, opacity: 0 }}
+                      animate={{ scale: 1, opacity: 1 }}
+                      className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border backdrop-blur-sm bg-amber-500/20 border-amber-500/50 text-amber-300 font-semibold"
+                    >
+                      🔥 YENİ REKOR! +{weight - pr.maxWeight} kg
+                    </motion.div>
+                  ) : (
+                    <div className="inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border backdrop-blur-sm bg-accent/30 border-accent/50 text-accent-foreground/70">
+                      🏆 Kişisel Rekor: {pr.maxWeight} kg × {pr.repsAtMax} tekrar
+                    </div>
                   )}
                 </div>
               );
