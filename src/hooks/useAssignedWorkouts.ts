@@ -23,6 +23,7 @@ export interface TransformedWorkout {
   title: string;
   day: string;
   dayOfWeek: string | null;
+  scheduledDate: string | null;
   exercises: number;
   duration: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
