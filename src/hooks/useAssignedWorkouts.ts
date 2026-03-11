@@ -101,11 +101,11 @@ export const useAssignedWorkouts = () => {
         const mins = estimatedMinutes % 60;
         const duration = hours > 0 ? `${hours}sa ${mins}dk` : `${mins}dk`;
 
-        // Use day_of_week as primary label
+        // Use scheduled_date as primary label when available
         let dayLabel = aw.day_of_week ?? "Bugün";
-        if (!aw.day_of_week && aw.scheduled_date) {
+        if (aw.scheduled_date) {
           try {
-            dayLabel = format(new Date(aw.scheduled_date), "EEEE, d MMMM", { locale: tr });
+            dayLabel = format(new Date(aw.scheduled_date + "T00:00:00"), "d MMMM EEEE", { locale: tr });
             dayLabel = dayLabel.charAt(0).toUpperCase() + dayLabel.slice(1);
           } catch {
             dayLabel = aw.scheduled_date;
