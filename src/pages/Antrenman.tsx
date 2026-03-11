@@ -238,14 +238,12 @@ const Antrenman = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-5">
-                    {groupedByDay.map(({ day, workouts: dayWorkouts }, gi) => {
-                      const isToday = day === todayTR;
-
+                    {groupedByDay.map(({ key, label, isToday, workouts: dayWorkouts }, gi) => {
                       const dayHeader = (
                         <div className={`flex items-center gap-2 ${isToday ? "mb-3" : ""} px-1`}>
                           <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
                           <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
-                            {day.toUpperCase()}
+                            {label.toUpperCase()}
                           </h3>
                           {isToday && (
                             <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium">
@@ -290,7 +288,7 @@ const Antrenman = () => {
 
                       if (isToday) {
                         return (
-                          <div key={day}>
+                          <div key={key}>
                             {dayHeader}
                             {workoutCards}
                           </div>
@@ -298,7 +296,7 @@ const Antrenman = () => {
                       }
 
                       return (
-                        <Collapsible key={day} className="group">
+                        <Collapsible key={key} className="group">
                           <CollapsibleTrigger className="w-full py-2">
                             {dayHeader}
                           </CollapsibleTrigger>
