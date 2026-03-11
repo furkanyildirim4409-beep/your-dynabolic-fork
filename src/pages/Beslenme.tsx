@@ -631,15 +631,20 @@ const Beslenme = () => {
           </div>
         </div>
 
-        {/* MACRO DASHBOARD */}
-        <MacroDashboard totals={totals} macroGoals={macroGoals} />
-
-        {/* WEEKLY ADHERENCE CHART */}
-        <WeeklyNutritionChart
-          data={weeklyData}
-          calorieTarget={macroGoals.calories}
-          isLoading={weeklyLoading}
-        />
+        {/* MACRO DASHBOARD - clickable to open weekly chart */}
+        <Dialog open={chartOpen} onOpenChange={setChartOpen}>
+          <DialogTrigger asChild>
+            <div className="cursor-pointer hover:opacity-80 transition-opacity">
+              <MacroDashboard totals={totals} macroGoals={macroGoals} />
+            </div>
+          </DialogTrigger>
+          <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle>Haftalık Beslenme Uyumu</DialogTitle>
+            </DialogHeader>
+            <WeeklyNutritionChart calorieTarget={macroGoals.calories} />
+          </DialogContent>
+        </Dialog>
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
