@@ -33,6 +33,7 @@ const WorkoutCard = ({
   coachNote,
   intensity,
   exerciseDetails,
+  completedToday,
   onStart,
 }: WorkoutCardProps) => {
   const [expanded, setExpanded] = useState(false);
