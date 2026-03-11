@@ -24,9 +24,8 @@ const Antrenman = () => {
   const jsDay = new Date().getDay(); // 0=Sun
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
-  // Group workouts by day_of_week
+  // Group workouts by day_of_week, today first
   const groupedByDay = useMemo(() => {
-    const groups: { day: string; workouts: TransformedWorkout[] }[] = [];
     const dayMap = new Map<string, TransformedWorkout[]>();
 
     for (const w of workouts) {
@@ -35,20 +34,26 @@ const Antrenman = () => {
       dayMap.get(key)!.push(w);
     }
 
-    // Sort by fixed day order
+    const allGroups: { day: string; workouts: TransformedWorkout[] }[] = [];
     for (const day of DAYS_TR) {
       if (dayMap.has(day)) {
-        groups.push({ day, workouts: dayMap.get(day)! });
+        allGroups.push({ day, workouts: dayMap.get(day)! });
         dayMap.delete(day);
       }
     }
-    // Any remaining (no day_of_week)
     for (const [day, wList] of dayMap) {
-      groups.push({ day, workouts: wList });
+      allGroups.push({ day, workouts: wList });
     }
 
-    return groups;
-  }, [workouts]);
+    // Move today to front
+    const todayIdx = allGroups.findIndex((g) => g.day === todayTR);
+    if (todayIdx > 0) {
+      const [todayGroup] = allGroups.splice(todayIdx, 1);
+      allGroups.unshift(todayGroup);
+    }
+
+    return allGroups;
+  }, [workouts, todayTR]);
 
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
