@@ -371,14 +371,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         description: `${workoutTitle} tamamlandı`,
       });
 
-      // Mark assignment as completed
-      if (assignmentId) {
-        await supabase
-          .from("assigned_workouts")
-          .update({ status: "completed" })
-          .eq("id", assignmentId);
-      }
-
       toast.success("Antrenman başarıyla kaydedildi! +150 Bio-Coin kazandın.");
     } catch (err: any) {
       console.error("Workout log save error:", err.message);

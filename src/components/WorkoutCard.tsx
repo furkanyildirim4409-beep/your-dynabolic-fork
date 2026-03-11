@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, MessageSquare, ChevronRight, ChevronDown, ChevronUp, Flame } from "lucide-react";
+import { Dumbbell, MessageSquare, ChevronRight, ChevronDown, ChevronUp, Flame, CheckCircle2, RotateCcw } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 
 interface ExerciseDetail {
