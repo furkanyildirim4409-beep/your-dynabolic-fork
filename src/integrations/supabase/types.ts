@@ -20,6 +20,7 @@ export type Database = {
           coach_id: string | null
           created_at: string | null
           day_notes: string | null
+          day_of_week: string | null
           exercises: Json
           id: string
           program_id: string | null
@@ -32,6 +33,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string | null
           day_notes?: string | null
+          day_of_week?: string | null
           exercises?: Json
           id?: string
           program_id?: string | null
@@ -44,6 +46,7 @@ export type Database = {
           coach_id?: string | null
           created_at?: string | null
           day_notes?: string | null
+          day_of_week?: string | null
           exercises?: Json
           id?: string
           program_id?: string | null
@@ -427,6 +430,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          active_program_id: string | null
           activity_level: string | null
           avatar_url: string | null
           bio: string | null
@@ -458,6 +462,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          active_program_id?: string | null
           activity_level?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -489,6 +494,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          active_program_id?: string | null
           activity_level?: string | null
           avatar_url?: string | null
           bio?: string | null
@@ -519,7 +525,15 @@ export type Database = {
           subscription_tier?: string | null
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "profiles_active_program_id_fkey"
+            columns: ["active_program_id"]
+            isOneToOne: false
+            referencedRelation: "programs"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       programs: {
         Row: {
