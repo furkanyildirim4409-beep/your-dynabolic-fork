@@ -20,7 +20,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { sender_id, receiver_id, content } = record;
+    const { sender_id, receiver_id, content, media_type } = record;
     if (!sender_id || !receiver_id || !content) {
       return new Response(JSON.stringify({ error: "missing fields" }), {
         status: 400,
@@ -28,22 +28,27 @@ Deno.serve(async (req) => {
       });
     }
 
-    const supabase = createClient(
+    const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
       Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!,
     );
 
     // Get sender name
-    const { data: profile } = await supabase
+    const { data: profile } = await supabaseAdmin
       .from("profiles")
       .select("full_name")
       .eq("id", sender_id)
       .single();
 
-    const senderName = profile?.full_name || "Eğitmen";
+    const senderName = profile?.full_name || "Sistem";
 
-    // Get receiver's push subscriptions
-    const { data: subs, error } = await supabase
+    // Build preview text for media
+    let previewText = content;
+    if (media_type === "image") previewText = "📷 Fotoğraf gönderdi";
+    else if (media_type === "audio") previewText = "🎤 Ses kaydı gönderdi";
+
+    // Get push subscriptions
+    const { data: subs, error } = await supabaseAdmin
       .from("push_subscriptions")
       .select("endpoint, p256dh, auth")
       .eq("user_id", receiver_id);
@@ -51,23 +56,28 @@ Deno.serve(async (req) => {
     if (error || !subs || subs.length === 0) {
       return new Response(
         JSON.stringify({ skipped: true, reason: "no subscriptions" }),
-        { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        { headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
-    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY")!;
-    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY")!;
+    const vapidPublicKey = Deno.env.get("VAPID_PUBLIC_KEY");
+    const vapidPrivateKey = Deno.env.get("VAPID_PRIVATE_KEY");
 
-    const webpush = await import("npm:web-push@3.6.7");
+    if (!vapidPublicKey || !vapidPrivateKey) {
+      console.error("VAPID keys missing in edge function environment!");
+      throw new Error("VAPID keys not configured");
+    }
+
+    const { default: webpush } = await import("https://esm.sh/web-push@3.6.7");
     webpush.setVapidDetails(
-      "mailto:noreply@lovable.app",
+      "mailto:noreply@dynabolic.app",
       vapidPublicKey,
-      vapidPrivateKey,
+      vapidPrivateKey
     );
 
     const payload = JSON.stringify({
       title: `💬 ${senderName} sana yeni bir mesaj gönderdi`,
-      body: content.length > 100 ? content.substring(0, 100) + "…" : content,
+      body: previewText.length > 100 ? previewText.substring(0, 100) + "…" : previewText,
       data: {
         url: "/",
         coachUrl: `/messages?athleteId=${sender_id}`,
@@ -83,21 +93,34 @@ Deno.serve(async (req) => {
             endpoint: sub.endpoint,
             keys: { p256dh: sub.p256dh, auth: sub.auth },
           },
-          payload,
+          payload
         )
-      ),
+      )
     );
+
+    // Clean up expired endpoints
+    const expiredEndpoints = results
+      .map((r, i) => (r.status === "rejected" && r.reason?.statusCode === 410 ? subs[i].endpoint : null))
+      .filter(Boolean);
+
+    if (expiredEndpoints.length > 0) {
+      await supabaseAdmin
+        .from("push_subscriptions")
+        .delete()
+        .in("endpoint", expiredEndpoints);
+    }
 
     return new Response(
       JSON.stringify({
         sent: results.filter((r) => r.status === "fulfilled").length,
         failed: results.filter((r) => r.status === "rejected").length,
+        cleaned: expiredEndpoints.length,
       }),
-      { headers: { ...corsHeaders, "Content-Type": "application/json" } },
+      { headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
-  } catch (err) {
+  } catch (err: any) {
     console.error("Chat push error:", err);
-    return new Response(JSON.stringify({ error: String(err) }), {
+    return new Response(JSON.stringify({ error: err.message || String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
