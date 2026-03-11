@@ -55,29 +55,49 @@ const MacroDashboard = ({
   totals: { protein: number; carbs: number; fat: number; calories: number };
   macroGoals: { protein: number; carbs: number; fat: number; calories: number };
 }) => {
+  const safeGoals = {
+    protein: macroGoals.protein > 0 ? macroGoals.protein : 150,
+    carbs: macroGoals.carbs > 0 ? macroGoals.carbs : 250,
+    fat: macroGoals.fat > 0 ? macroGoals.fat : 70,
+    calories: macroGoals.calories > 0 ? macroGoals.calories : 2000,
+  };
+
   const macros = [
-    { label: "PROTEİN", current: Math.round(totals.protein), goal: macroGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
-    { label: "KARBONHİDRAT", current: Math.round(totals.carbs), goal: macroGoals.carbs, color: "bg-blue-500", textColor: "text-blue-500" },
-    { label: "YAĞ", current: Math.round(totals.fat), goal: macroGoals.fat, color: "bg-orange-500", textColor: "text-orange-500" },
+    { label: "PROTEİN", current: Math.round(totals.protein), goal: safeGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
+    { label: "KARBONHİDRAT", current: Math.round(totals.carbs), goal: safeGoals.carbs, color: "bg-blue-500", textColor: "text-blue-500" },
+    { label: "YAĞ", current: Math.round(totals.fat), goal: safeGoals.fat, color: "bg-orange-500", textColor: "text-orange-500" },
   ];
+
+  const calPercentage = Math.min((totals.calories / safeGoals.calories) * 100, 100);
 
   return (
     <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-3">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">MAKRO ÖZETİ</h2>
         <div className="flex items-baseline gap-1">
           <span className="text-xl font-display font-bold text-primary">{Math.round(totals.calories)}</span>
-          <span className="text-muted-foreground text-sm">/ {macroGoals.calories} kcal</span>
+          <span className="text-muted-foreground text-sm">/ {safeGoals.calories} kcal</span>
         </div>
+      </div>
+      {/* Calorie progress bar */}
+      <div className="h-2 w-full bg-white/5 rounded-full mb-4 overflow-hidden">
+        <motion.div
+          key={`cal-${Math.round(totals.calories)}`}
+          initial={{ width: 0 }}
+          animate={{ width: `${calPercentage}%` }}
+          transition={{ duration: 0.8, ease: "easeOut" }}
+          className="h-full rounded-full bg-primary"
+        />
       </div>
       <div className="grid grid-cols-3 gap-3">
         {macros.map((macro) => {
-          const percentage = Math.min((macro.current / macro.goal) * 100, 100);
+          const percentage = macro.goal > 0 ? Math.min((macro.current / macro.goal) * 100, 100) : 0;
           return (
             <div key={macro.label} className="bg-secondary/50 rounded-xl p-3">
               <p className="text-[10px] font-bold text-muted-foreground mb-2 tracking-wide">{macro.label}</p>
               <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
                 <motion.div
+                  key={`${macro.label}-${macro.current}`}
                   initial={{ width: 0 }}
                   animate={{ width: `${percentage}%` }}
                   transition={{ duration: 0.8, ease: "easeOut" }}
