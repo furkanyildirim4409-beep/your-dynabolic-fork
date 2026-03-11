@@ -30,6 +30,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
 import { useMacros } from "@/hooks/useMacros";
 import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
+import { useWeeklyNutrition } from "@/hooks/useWeeklyNutrition";
+import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
@@ -492,6 +494,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const macroGoals = useMacros();
+  const { data: weeklyData, isLoading: weeklyLoading, refetch: refetchWeekly } = useWeeklyNutrition();
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const {
     isLoading: foodsLoading,
@@ -574,6 +577,7 @@ const Beslenme = () => {
       setShowManualAdd(false);
       setSearchTerm("");
       setSearchResults([]);
+      refetchWeekly();
     } catch {
       toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
     }
@@ -629,6 +633,13 @@ const Beslenme = () => {
 
         {/* MACRO DASHBOARD */}
         <MacroDashboard totals={totals} macroGoals={macroGoals} />
+
+        {/* WEEKLY ADHERENCE CHART */}
+        <WeeklyNutritionChart
+          data={weeklyData}
+          calorieTarget={macroGoals.calories}
+          isLoading={weeklyLoading}
+        />
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
