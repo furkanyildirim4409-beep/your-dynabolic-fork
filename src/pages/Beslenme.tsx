@@ -633,6 +633,13 @@ const Beslenme = () => {
         {/* MACRO DASHBOARD */}
         <MacroDashboard totals={totals} macroGoals={macroGoals} />
 
+        {/* WEEKLY ADHERENCE CHART */}
+        <WeeklyNutritionChart
+          data={weeklyData}
+          calorieTarget={macroGoals.calories}
+          isLoading={weeklyLoading}
+        />
+
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-white/[0.03] border border-white/5 p-1 h-12">
