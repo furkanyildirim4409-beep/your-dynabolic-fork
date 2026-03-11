@@ -75,6 +75,7 @@ export const useWorkoutHistory = () => {
           exercises: log.exercises_count ?? details.length,
           bioCoins: log.bio_coins_earned ?? 0,
           completed: log.completed ?? true,
+          tonnageRaw: tonnageKg,
           details,
         };
       });
