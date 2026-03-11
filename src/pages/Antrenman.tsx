@@ -21,42 +21,55 @@ const Antrenman = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
+  const { data: globalPRMap } = useExerciseHistory();
 
-  // Turkish day names and today detection
+  // Today's date string for comparison
+  const todayStr = format(new Date(), "yyyy-MM-dd");
+
+  // Turkish day names for fallback
   const DAYS_TR = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
-  const jsDay = new Date().getDay(); // 0=Sun
+  const jsDay = new Date().getDay();
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
-  // Group workouts by day_of_week, today first
+  // Group workouts: by scheduledDate when available, else by dayOfWeek
   const groupedByDay = useMemo(() => {
-    const dayMap = new Map<string, TransformedWorkout[]>();
+    const groupMap = new Map<string, { label: string; isToday: boolean; workouts: TransformedWorkout[] }>();
 
     for (const w of workouts) {
-      const key = w.dayOfWeek ?? "Diğer";
-      if (!dayMap.has(key)) dayMap.set(key, []);
-      dayMap.get(key)!.push(w);
-    }
+      let key: string;
+      let label: string;
+      let isToday = false;
 
-    const allGroups: { day: string; workouts: TransformedWorkout[] }[] = [];
-    for (const day of DAYS_TR) {
-      if (dayMap.has(day)) {
-        allGroups.push({ day, workouts: dayMap.get(day)! });
-        dayMap.delete(day);
+      if (w.scheduledDate) {
+        key = w.scheduledDate;
+        label = w.day; // already formatted as "d MMMM EEEE"
+        isToday = w.scheduledDate === todayStr;
+      } else {
+        key = `dow-${w.dayOfWeek ?? "Diğer"}`;
+        label = w.dayOfWeek ?? "Diğer";
+        isToday = (w.dayOfWeek ?? "") === todayTR;
       }
-    }
-    for (const [day, wList] of dayMap) {
-      allGroups.push({ day, workouts: wList });
+
+      if (!groupMap.has(key)) {
+        groupMap.set(key, { label, isToday, workouts: [] });
+      }
+      groupMap.get(key)!.workouts.push(w);
     }
 
-    // Move today to front
-    const todayIdx = allGroups.findIndex((g) => g.day === todayTR);
+    const allGroups = Array.from(groupMap.entries()).map(([key, val]) => ({
+      key,
+      ...val,
+    }));
+
+    // Move today's group to front
+    const todayIdx = allGroups.findIndex((g) => g.isToday);
     if (todayIdx > 0) {
       const [todayGroup] = allGroups.splice(todayIdx, 1);
       allGroups.unshift(todayGroup);
     }
 
     return allGroups;
-  }, [workouts, todayTR]);
+  }, [workouts, todayStr, todayTR]);
 
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
