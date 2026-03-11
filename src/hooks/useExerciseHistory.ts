@@ -2,65 +2,64 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
-export interface ExerciseLastSession {
-  exerciseName: string;
-  sets: { weight: number; reps: number; isFailure?: boolean }[];
+export interface ExerciseGlobalPR {
   maxWeight: number;
+  repsAtMax: number;
   date: string;
 }
 
 /**
- * Fetches last-session data for every exercise in the given workout
- * by scanning the most recent completed workout_log with matching workout_name.
+ * Fetches the global all-time Personal Record for every exercise
+ * across ALL workout logs (not filtered by workout name).
  * Returns a Map keyed by exercise name.
  */
-export const useExerciseHistory = (workoutName: string | undefined) => {
+export const useExerciseHistory = () => {
   const { user } = useAuth();
 
   return useQuery({
-    queryKey: ["exercise-history", user?.id, workoutName],
-    queryFn: async (): Promise<Map<string, ExerciseLastSession>> => {
-      const map = new Map<string, ExerciseLastSession>();
-      if (!user?.id || !workoutName) return map;
+    queryKey: ["exercise-global-pr", user?.id],
+    queryFn: async (): Promise<Map<string, ExerciseGlobalPR>> => {
+      const map = new Map<string, ExerciseGlobalPR>();
+      if (!user?.id) return map;
 
       const { data, error } = await supabase
         .from("workout_logs")
         .select("details, logged_at")
         .eq("user_id", user.id)
-        .eq("workout_name", workoutName)
         .eq("completed", true)
-        .order("logged_at", { ascending: false })
-        .limit(1);
+        .order("logged_at", { ascending: false });
 
-      if (error || !data || data.length === 0) return map;
+      if (error || !data) return map;
 
-      const log = data[0];
-      const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
+      for (const log of data) {
+        const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
+        if (!Array.isArray(details)) continue;
 
-      if (Array.isArray(details)) {
         for (const d of details as any[]) {
           const name = d.exerciseName ?? d.exercise_name ?? "";
           if (!name) continue;
-          const sets = Array.isArray(d.sets)
-            ? d.sets.map((s: any) => ({
-                weight: Number(s.weight) || 0,
-                reps: Number(s.reps) || 0,
-                isFailure: s.isFailure ?? s.is_failure ?? false,
-              }))
-            : [];
-          const maxWeight = sets.length > 0 ? Math.max(...sets.map((s: any) => s.weight)) : 0;
-          map.set(name, {
-            exerciseName: name,
-            sets,
-            maxWeight,
-            date: log.logged_at ?? "",
-          });
+          const sets = Array.isArray(d.sets) ? d.sets : [];
+
+          for (const s of sets) {
+            const w = Number(s.weight) || 0;
+            const r = Number(s.reps) || 0;
+            if (w <= 0) continue;
+
+            const existing = map.get(name);
+            if (!existing || w > existing.maxWeight || (w === existing.maxWeight && r > existing.repsAtMax)) {
+              map.set(name, {
+                maxWeight: w,
+                repsAtMax: r,
+                date: log.logged_at ?? "",
+              });
+            }
+          }
         }
       }
 
       return map;
     },
-    enabled: !!user?.id && !!workoutName,
+    enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,
   });
 };
