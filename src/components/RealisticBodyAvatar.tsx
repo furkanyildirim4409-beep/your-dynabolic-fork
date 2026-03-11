@@ -142,10 +142,14 @@ const HumanBody = ({ waistScale = 1 }: HumanBodyProps) => {
       <BodyMesh position={[-0.26, -0.2, 0]} scale={[0.35, 0.55, 0.32]} geometry="capsule" />
       <BodyMesh position={[-0.26, -0.75, 0]} scale={[0.28, 0.55, 0.26]} geometry="capsule" />
       <BodyMesh position={[-0.26, -1.25, 0]} scale={[0.22, 0.4, 0.2]} />
+      {/* Left Foot */}
+      <BodyMesh position={[-0.26, -1.55, 0.05]} scale={[0.18, 0.15, 0.28]} />
       {/* Right Leg */}
       <BodyMesh position={[0.26, -0.2, 0]} scale={[0.35, 0.55, 0.32]} geometry="capsule" />
       <BodyMesh position={[0.26, -0.75, 0]} scale={[0.28, 0.55, 0.26]} geometry="capsule" />
       <BodyMesh position={[0.26, -1.25, 0]} scale={[0.22, 0.4, 0.2]} />
+      {/* Right Foot */}
+      <BodyMesh position={[0.26, -1.55, 0.05]} scale={[0.18, 0.15, 0.28]} />
       {/* Orta Beden/Omurga Core Enerji Teli Gösterimi */}
       <lineSegments position={[0, 1.0, 0.1]}>
         <bufferGeometry>
