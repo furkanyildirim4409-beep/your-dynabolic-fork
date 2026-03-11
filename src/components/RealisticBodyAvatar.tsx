@@ -207,7 +207,7 @@ const MeasurementLabel = ({ value, label, className }: { value?: number | null; 
 const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAvatarProps) => {
   return (
     // Arkasındaki ızgara (Grid) / Teknoloji hissini verecek Arka Plan UI Elementi eklendi.
-    <div className="w-full h-[450px] relative bg-[#060e14] bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:15px_15px] border border-cyan-900/40 rounded-3xl overflow-hidden inner-shadow">
+    <div className="w-full h-[520px] relative bg-[#060e14] bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:15px_15px] border border-cyan-900/40 rounded-3xl overflow-hidden inner-shadow">
       <div className="absolute top-4 left-5 flex flex-col pointer-events-none z-10">
         <h3 className="text-[10px] text-cyan-500 font-black tracking-[0.2em] uppercase leading-none mb-1">
           Volumetrik
