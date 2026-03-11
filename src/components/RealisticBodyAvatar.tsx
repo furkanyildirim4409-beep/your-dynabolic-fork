@@ -217,7 +217,7 @@ const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAv
         </span>
       </div>
 
-      <Canvas camera={{ position: [0, 0.3, 16], fov: 15 }}>
+      <Canvas camera={{ position: [0, 0.3, 7], fov: 50 }}>
         {/* Lights - Cilt dokusu ışıkları (warm) iptal edildi; Siber Tarama ışıkları eklendi */}
         <ambientLight intensity={0.5} color="#052031" />
         <directionalLight position={[2, 5, 2]} intensity={2.0} color="#06b6d4" /> {/* Core Cyan Spotlight */}
