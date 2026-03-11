@@ -69,9 +69,9 @@ Deno.serve(async (req) => {
       title: `💬 ${senderName} sana yeni bir mesaj gönderdi`,
       body: content.length > 100 ? content.substring(0, 100) + "…" : content,
       data: {
-        url: "/kokpit",
+        url: "/",
         coachUrl: `/messages?athleteId=${sender_id}`,
-        athleteUrl: `/kokpit?openChat=true&coachId=${sender_id}`,
+        athleteUrl: `/?openChat=true&coachId=${sender_id}`,
         senderId: sender_id,
       },
     });
