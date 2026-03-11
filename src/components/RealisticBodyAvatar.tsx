@@ -142,10 +142,14 @@ const HumanBody = ({ waistScale = 1 }: HumanBodyProps) => {
       <BodyMesh position={[-0.26, -0.2, 0]} scale={[0.35, 0.55, 0.32]} geometry="capsule" />
       <BodyMesh position={[-0.26, -0.75, 0]} scale={[0.28, 0.55, 0.26]} geometry="capsule" />
       <BodyMesh position={[-0.26, -1.25, 0]} scale={[0.22, 0.4, 0.2]} />
+      {/* Left Foot */}
+      <BodyMesh position={[-0.26, -1.55, 0.05]} scale={[0.18, 0.15, 0.28]} />
       {/* Right Leg */}
       <BodyMesh position={[0.26, -0.2, 0]} scale={[0.35, 0.55, 0.32]} geometry="capsule" />
       <BodyMesh position={[0.26, -0.75, 0]} scale={[0.28, 0.55, 0.26]} geometry="capsule" />
       <BodyMesh position={[0.26, -1.25, 0]} scale={[0.22, 0.4, 0.2]} />
+      {/* Right Foot */}
+      <BodyMesh position={[0.26, -1.55, 0.05]} scale={[0.18, 0.15, 0.28]} />
       {/* Orta Beden/Omurga Core Enerji Teli Gösterimi */}
       <lineSegments position={[0, 1.0, 0.1]}>
         <bufferGeometry>
@@ -203,7 +207,7 @@ const MeasurementLabel = ({ value, label, className }: { value?: number | null; 
 const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAvatarProps) => {
   return (
     // Arkasındaki ızgara (Grid) / Teknoloji hissini verecek Arka Plan UI Elementi eklendi.
-    <div className="w-full h-[450px] relative bg-[#060e14] bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:15px_15px] border border-cyan-900/40 rounded-3xl overflow-hidden inner-shadow">
+    <div className="w-full h-[520px] relative bg-[#060e14] bg-[linear-gradient(rgba(34,211,238,0.05)_1px,transparent_1px),linear-gradient(90deg,rgba(34,211,238,0.05)_1px,transparent_1px)] bg-[size:15px_15px] border border-cyan-900/40 rounded-3xl overflow-hidden inner-shadow">
       <div className="absolute top-4 left-5 flex flex-col pointer-events-none z-10">
         <h3 className="text-[10px] text-cyan-500 font-black tracking-[0.2em] uppercase leading-none mb-1">
           Volumetrik
@@ -213,7 +217,7 @@ const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAv
         </span>
       </div>
 
-      <Canvas camera={{ position: [0, 0.4, 4.6], fov: 42 }}>
+      <Canvas camera={{ position: [0, 0.35, 5.5], fov: 48 }}>
         {/* Lights - Cilt dokusu ışıkları (warm) iptal edildi; Siber Tarama ışıkları eklendi */}
         <ambientLight intensity={0.5} color="#052031" />
         <directionalLight position={[2, 5, 2]} intensity={2.0} color="#06b6d4" /> {/* Core Cyan Spotlight */}
@@ -222,8 +226,8 @@ const RealisticBodyAvatar = ({ waistScale = 1.0, measurements }: RealisticBodyAv
         <HumanBody waistScale={waistScale} />
         <OrbitControls
           enableZoom={true}
-          maxDistance={5.5}
-          minDistance={3.5}
+          maxDistance={7}
+          minDistance={4}
           enablePan={false}
           minPolarAngle={Math.PI / 4} // Üstten aşırı kamerayı kesmek için ayarladık
           maxPolarAngle={Math.PI / 1.5}
