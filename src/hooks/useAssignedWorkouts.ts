@@ -148,8 +148,13 @@ export const useAssignedWorkouts = () => {
         };
       });
 
-      // Sort by day_of_week order
+      // Sort by scheduled_date first (ascending), then by day_of_week order
       workouts.sort((a, b) => {
+        if (a.scheduledDate && b.scheduledDate) {
+          return a.scheduledDate.localeCompare(b.scheduledDate);
+        }
+        if (a.scheduledDate && !b.scheduledDate) return -1;
+        if (!a.scheduledDate && b.scheduledDate) return 1;
         const orderA = a.dayOfWeek ? (DAY_ORDER[a.dayOfWeek.toLowerCase()] ?? 99) : 99;
         const orderB = b.dayOfWeek ? (DAY_ORDER[b.dayOfWeek.toLowerCase()] ?? 99) : 99;
         return orderA - orderB;
