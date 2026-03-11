@@ -123,6 +123,7 @@ export const useAssignedWorkouts = () => {
           title,
           day: dayLabel,
           dayOfWeek: aw.day_of_week ?? null,
+          scheduledDate: aw.scheduled_date ?? null,
           exercises: exerciseCount,
           duration,
           intensity: mapDifficulty(program?.difficulty),
