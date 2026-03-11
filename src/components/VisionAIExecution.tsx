@@ -835,23 +835,27 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </div>
             </div>
             {(() => {
-              let prevMax = 0;
-              if (previousWorkout?.details) {
-                const prevDetails = typeof previousWorkout.details === 'string' ? JSON.parse(previousWorkout.details) : previousWorkout.details;
-                if (Array.isArray(prevDetails)) {
-                  const prevEx = prevDetails.find((p: any) => p.exerciseName === exercise.name);
-                  if (prevEx?.sets?.length > 0) {
-                    prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
-                  }
-                }
-              }
-              return prevMax > 0 ? (
-                <div className="text-center">
-                  <span className={`text-xs px-2 py-1 rounded-full border backdrop-blur-sm transition-colors ${weight > prevMax ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-white/5 border-white/10 text-white/50'}`}>
-                    Geçmiş Rekor: {prevMax} kg {weight > prevMax && `(🚀 +${weight - prevMax} kg)`}
-                  </span>
+              if (!previousWorkout?.details) return null;
+              const prevDetails = typeof previousWorkout.details === 'string' ? JSON.parse(previousWorkout.details) : previousWorkout.details;
+              if (!Array.isArray(prevDetails)) return null;
+              const prevEx = prevDetails.find((p: any) => (p.exerciseName ?? p.exercise_name) === exercise.name);
+              if (!prevEx?.sets?.length) return null;
+              const prevMax = Math.max(...prevEx.sets.map((s: any) => Number(s.weight) || 0));
+              const topSet = prevEx.sets.reduce((best: any, s: any) => (Number(s.weight) || 0) > (Number(best.weight) || 0) ? s : best, prevEx.sets[0]);
+              const topWeight = Number(topSet.weight) || 0;
+              const topReps = Number(topSet.reps) || 0;
+              const totalSets = prevEx.sets.length;
+              const isBeating = weight > prevMax;
+              return (
+                <div className="text-center space-y-1">
+                  <div className={`inline-flex items-center gap-1.5 text-xs px-3 py-1.5 rounded-full border backdrop-blur-sm transition-colors ${isBeating ? 'bg-emerald-500/20 border-emerald-500/50 text-emerald-400' : 'bg-accent/30 border-accent/50 text-accent-foreground/70'}`}>
+                    🎯 Geçen Hafta: {topWeight} kg × {topReps} tekrar ({totalSets} set)
+                  </div>
+                  {isBeating && (
+                    <p className="text-emerald-400 text-[10px] font-medium">🚀 +{weight - prevMax} kg üzerinde!</p>
+                  )}
                 </div>
-              ) : null;
+              );
             })()}
             <motion.button whileTap={{ scale: 0.98 }} onClick={handleConfirmSet} disabled={reps === 0} className="w-full py-3.5 bg-primary text-primary-foreground font-display text-base tracking-wider rounded-xl neon-glow disabled:opacity-50 disabled:cursor-not-allowed">SETİ ONAYLA</motion.button>
           </div>
