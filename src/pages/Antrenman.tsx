@@ -633,7 +633,6 @@ const Antrenman = () => {
                     </AccordionItem>
                     );
                   })}
-                  ))}
                 </Accordion>
               </div>
 
