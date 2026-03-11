@@ -21,6 +21,7 @@ interface WorkoutCardProps {
   coachNote?: string;
   intensity: "Düşük" | "Orta" | "Yüksek";
   exerciseDetails?: ExerciseDetail[];
+  completedToday?: boolean;
   onStart: () => void;
 }
 
