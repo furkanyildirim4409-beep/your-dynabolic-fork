@@ -96,9 +96,9 @@ const DigitalTwinAvatar = () => {
             <motion.rect
               x="508"
               y="700"
-              width="84"
-              height="42"
-              rx="12"
+              width="150"
+              height="90"
+              rx="20"
               className="cursor-pointer"
               fill={
                 selectedMuscle?.id === "chest"
