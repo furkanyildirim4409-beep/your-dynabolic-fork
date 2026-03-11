@@ -349,59 +349,92 @@ const Antrenman = () => {
 
               {/* History List */}
               <div className="space-y-3 pb-8">
-                {workoutHistory.map((workout, index) => (
-                  <motion.button
-                    key={workout.id}
-                    initial={{ opacity: 0, x: -20 }}
-                    animate={{ opacity: 1, x: 0 }}
-                    transition={{ delay: index * 0.05 }}
-                    onClick={() => handleWorkoutClick(workout)}
-                    className="w-full glass-card p-4 flex items-center gap-4 text-left hover:bg-white/5 transition-colors"
-                  >
-                    {/* Date */}
-                    <div className="w-14 text-center flex-shrink-0">
-                      <p className="font-display text-lg text-foreground leading-tight">
-                        {workout.dateShort.split(" ")[0]}
-                      </p>
-                      <p className="text-muted-foreground text-[10px] uppercase">
-                        {workout.dateShort.split(" ")[1]}
-                      </p>
-                    </div>
+                {workoutHistory.map((workout, index) => {
+                  // Volume comparison: find previous session with the same workout_name
+                  let volumeBadge: React.ReactNode = null;
+                  const prevSameWorkout = workoutHistory
+                    .slice(index + 1)
+                    .find((w) => w.name === workout.name);
 
-                    {/* Divider */}
-                    <div className="w-px h-12 bg-white/10" />
-
-                    {/* Workout Info */}
-                    <div className="flex-1 min-w-0">
-                      <div className="flex items-center gap-2">
-                        <p className="text-foreground font-medium text-sm truncate">{workout.name}</p>
-                        <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[9px] rounded-full font-medium flex-shrink-0">
-                          TAMAMLANDI
+                  if (!prevSameWorkout) {
+                    volumeBadge = (
+                      <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-muted text-muted-foreground">
+                        İlk Kayıt
+                      </span>
+                    );
+                  } else if (prevSameWorkout.tonnageRaw > 0) {
+                    const pct = ((workout.tonnageRaw - prevSameWorkout.tonnageRaw) / prevSameWorkout.tonnageRaw) * 100;
+                    const rounded = Math.abs(Math.round(pct));
+                    if (pct > 0) {
+                      volumeBadge = (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-emerald-500/20 text-emerald-400">
+                          ↑ +%{rounded} Hacim
                         </span>
-                      </div>
-                      <div className="flex items-center gap-3 mt-1">
-                        <span className="text-muted-foreground text-[10px] flex items-center gap-1">
-                          <Timer className="w-3 h-3" />
-                          {workout.duration}
+                      );
+                    } else if (pct < 0) {
+                      volumeBadge = (
+                        <span className="text-[9px] px-1.5 py-0.5 rounded-full bg-destructive/20 text-destructive">
+                          ↓ -%{rounded} Hacim
                         </span>
-                        <span className="text-muted-foreground text-[10px]">
-                          {workout.exercises} hareket
-                        </span>
-                      </div>
-                    </div>
+                      );
+                    }
+                  }
 
-                    {/* Stats */}
-                    <div className="text-right flex-shrink-0">
-                      <p className="text-foreground font-display text-sm">{workout.tonnage}</p>
-                      <div className="flex items-center gap-1 justify-end text-primary text-[10px]">
-                        <Flame className="w-3 h-3" />
-                        <span>+{workout.bioCoins}</span>
+                  return (
+                    <motion.button
+                      key={workout.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: index * 0.05 }}
+                      onClick={() => handleWorkoutClick(workout)}
+                      className="w-full glass-card p-4 flex items-center gap-4 text-left hover:bg-white/5 transition-colors"
+                    >
+                      {/* Date */}
+                      <div className="w-14 text-center flex-shrink-0">
+                        <p className="font-display text-lg text-foreground leading-tight">
+                          {workout.dateShort.split(" ")[0]}
+                        </p>
+                        <p className="text-muted-foreground text-[10px] uppercase">
+                          {workout.dateShort.split(" ")[1]}
+                        </p>
                       </div>
-                    </div>
 
-                    <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                  </motion.button>
-                ))}
+                      {/* Divider */}
+                      <div className="w-px h-12 bg-white/10" />
+
+                      {/* Workout Info */}
+                      <div className="flex-1 min-w-0">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <p className="text-foreground font-medium text-sm truncate">{workout.name}</p>
+                          <span className="px-1.5 py-0.5 bg-primary/20 text-primary text-[9px] rounded-full font-medium flex-shrink-0">
+                            TAMAMLANDI
+                          </span>
+                          {volumeBadge}
+                        </div>
+                        <div className="flex items-center gap-3 mt-1">
+                          <span className="text-muted-foreground text-[10px] flex items-center gap-1">
+                            <Timer className="w-3 h-3" />
+                            {workout.duration}
+                          </span>
+                          <span className="text-muted-foreground text-[10px]">
+                            {workout.exercises} hareket
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* Stats */}
+                      <div className="text-right flex-shrink-0">
+                        <p className="text-foreground font-display text-sm">{workout.tonnage}</p>
+                        <div className="flex items-center gap-1 justify-end text-primary text-[10px]">
+                          <Flame className="w-3 h-3" />
+                          <span>+{workout.bioCoins}</span>
+                        </div>
+                      </div>
+
+                      <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    </motion.button>
+                  );
+                })}
               </div>
             </div>
           </motion.div>

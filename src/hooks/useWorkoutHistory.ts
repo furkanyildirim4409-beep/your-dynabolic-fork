@@ -14,6 +14,7 @@ export interface WorkoutHistoryEntry {
   exercises: number;
   bioCoins: number;
   completed: boolean;
+  tonnageRaw: number;
   details: {
     exerciseName: string;
     sets: { weight: number; reps: number; isFailure?: boolean }[];
@@ -74,6 +75,7 @@ export const useWorkoutHistory = () => {
           exercises: log.exercises_count ?? details.length,
           bioCoins: log.bio_coins_earned ?? 0,
           completed: log.completed ?? true,
+          tonnageRaw: tonnageKg,
           details,
         };
       });
