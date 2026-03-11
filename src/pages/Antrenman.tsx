@@ -19,6 +19,37 @@ const Antrenman = () => {
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
 
+  // Turkish day names and today detection
+  const DAYS_TR = ["Pazartesi", "Salı", "Çarşamba", "Perşembe", "Cuma", "Cumartesi", "Pazar"];
+  const jsDay = new Date().getDay(); // 0=Sun
+  const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
+
+  // Group workouts by day_of_week
+  const groupedByDay = useMemo(() => {
+    const groups: { day: string; workouts: TransformedWorkout[] }[] = [];
+    const dayMap = new Map<string, TransformedWorkout[]>();
+
+    for (const w of workouts) {
+      const key = w.dayOfWeek ?? "Diğer";
+      if (!dayMap.has(key)) dayMap.set(key, []);
+      dayMap.get(key)!.push(w);
+    }
+
+    // Sort by fixed day order
+    for (const day of DAYS_TR) {
+      if (dayMap.has(day)) {
+        groups.push({ day, workouts: dayMap.get(day)! });
+        dayMap.delete(day);
+      }
+    }
+    // Any remaining (no day_of_week)
+    for (const [day, wList] of dayMap) {
+      groups.push({ day, workouts: wList });
+    }
+
+    return groups;
+  }, [workouts]);
+
   const weeklyStats = [
     { label: "Tamamlanan", value: "5", icon: Target },
     { label: "Toplam Süre", value: "4.2sa", icon: Clock },
