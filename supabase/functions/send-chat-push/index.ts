@@ -71,7 +71,7 @@ Deno.serve(async (req) => {
       data: {
         url: "/kokpit",
         coachUrl: `/messages?athleteId=${sender_id}`,
-        athleteUrl: `/?openChat=true&coachId=${sender_id}`,
+        athleteUrl: `/kokpit?openChat=true&coachId=${sender_id}`,
         senderId: sender_id,
       },
     });
