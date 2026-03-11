@@ -1,4 +1,4 @@
-import { useState, useMemo, useEffect } from "react";
+import { useState, useMemo, useEffect, useRef, useCallback } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import {
   ChevronDown,
@@ -14,6 +14,7 @@ import {
   Trash2,
   Utensils,
   Pill,
+  Loader2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -25,106 +26,50 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import SupplementTracker from "@/components/SupplementTracker";
 import { assignedSupplements as initialSupplements } from "@/lib/mockData";
 import type { Supplement } from "@/components/SupplementTracker";
-import { useNutritionLogs } from "@/hooks/useNutritionLogs";
 import { useAuth } from "@/context/AuthContext";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
 import { useMacros } from "@/hooks/useMacros";
-import { Skeleton } from "@/components/ui/skeleton";
+import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
 
 // --- TİP TANIMLAMALARI ---
-interface FoodItem {
-  name: string;
-  amount: string;
-  cal: number;
-  macros: { p: number; c: number; f: number };
-  isEaten: boolean;
-}
-
-interface Meal {
+interface MealSlot {
   id: string;
   title: string;
   time: string;
-  totalCal: number;
-  totalMacros: { p: number; c: number; f: number };
-  isCompleted: boolean;
   icon: string;
   color: string;
-  foods: FoodItem[];
 }
 
-// macroGoals now resolved via useMacros hook inside component
-
-// --- ÖRNEK YİYECEK VERİTABANI ---
-const foodDatabase = [
-  { name: "Muz (Orta Boy)", amount: "1 Adet", cal: 105, macros: { p: 1, c: 27, f: 0 }, baseGrams: 120 },
-  { name: "Haşlanmış Pirinç", amount: "100g", cal: 130, macros: { p: 2, c: 28, f: 0 }, baseGrams: 100 },
-  { name: "Izgara Tavuk", amount: "100g", cal: 165, macros: { p: 31, c: 0, f: 3 }, baseGrams: 100 },
-  { name: "Tam Buğday Ekmeği", amount: "1 Dilim", cal: 69, macros: { p: 3, c: 12, f: 1 }, baseGrams: 30 },
-  { name: "Fıstık Ezmesi", amount: "1 Tatlı Kaşığı", cal: 94, macros: { p: 4, c: 3, f: 8 }, baseGrams: 16 },
-  { name: "Yoğurt (Yarım Yağlı)", amount: "1 Kase", cal: 100, macros: { p: 6, c: 8, f: 4 }, baseGrams: 150 },
-  { name: "Ton Balığı", amount: "80g (Süzülmüş)", cal: 90, macros: { p: 20, c: 0, f: 1 }, baseGrams: 80 },
-  { name: "Yumurta", amount: "1 Adet", cal: 70, macros: { p: 6, c: 0, f: 5 }, baseGrams: 50 },
-  { name: "Yulaf Ezmesi", amount: "40g", cal: 150, macros: { p: 5, c: 27, f: 3 }, baseGrams: 40 },
-  { name: "Avokado", amount: "Yarım", cal: 120, macros: { p: 1, c: 6, f: 11 }, baseGrams: 75 },
-];
-
-const emptyMealSlots: Meal[] = [
-  { id: "kahvalti", title: "Kahvaltı", time: "07:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☕", color: "text-yellow-500", foods: [] },
-  { id: "ogle", title: "Öğle Yemeği", time: "12:45", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "☀️", color: "text-orange-500", foods: [] },
-  { id: "ara", title: "Ara Öğün", time: "16:00", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🍏", color: "text-green-500", foods: [] },
-  { id: "aksam", title: "Akşam Yemeği", time: "19:30", totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 }, isCompleted: false, icon: "🌙", color: "text-indigo-400", foods: [] },
+const mealSlots: MealSlot[] = [
+  { id: "kahvalti", title: "Kahvaltı", time: "07:30", icon: "☕", color: "text-yellow-500" },
+  { id: "ogle", title: "Öğle Yemeği", time: "12:45", icon: "☀️", color: "text-orange-500" },
+  { id: "ara", title: "Ara Öğün", time: "16:00", icon: "🍏", color: "text-green-500" },
+  { id: "aksam", title: "Akşam Yemeği", time: "19:30", icon: "🌙", color: "text-indigo-400" },
 ];
 
 // --- MACRO DASHBOARD COMPONENT ---
-const MacroDashboard = ({ meals, macroGoals }: { meals: Meal[]; macroGoals: { protein: number; carbs: number; fat: number; calories: number } }) => {
-  const totals = useMemo(() => {
-    return meals.reduce(
-      (acc, meal) => ({
-        protein: acc.protein + meal.totalMacros.p,
-        carbs: acc.carbs + meal.totalMacros.c,
-        fat: acc.fat + meal.totalMacros.f,
-        calories: acc.calories + meal.totalCal,
-      }),
-      { protein: 0, carbs: 0, fat: 0, calories: 0 },
-    );
-  }, [meals]);
-
+const MacroDashboard = ({
+  totals,
+  macroGoals,
+}: {
+  totals: { protein: number; carbs: number; fat: number; calories: number };
+  macroGoals: { protein: number; carbs: number; fat: number; calories: number };
+}) => {
   const macros = [
-    {
-      label: "PROTEİN",
-      current: totals.protein,
-      goal: macroGoals.protein,
-      color: "bg-yellow-500",
-      textColor: "text-yellow-500",
-    },
-    {
-      label: "KARBONHİDRAT",
-      current: totals.carbs,
-      goal: macroGoals.carbs,
-      color: "bg-blue-500",
-      textColor: "text-blue-500",
-    },
-    {
-      label: "YAĞ",
-      current: totals.fat,
-      goal: macroGoals.fat,
-      color: "bg-orange-500",
-      textColor: "text-orange-500",
-    },
+    { label: "PROTEİN", current: Math.round(totals.protein), goal: macroGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
+    { label: "KARBONHİDRAT", current: Math.round(totals.carbs), goal: macroGoals.carbs, color: "bg-blue-500", textColor: "text-blue-500" },
+    { label: "YAĞ", current: Math.round(totals.fat), goal: macroGoals.fat, color: "bg-orange-500", textColor: "text-orange-500" },
   ];
 
   return (
     <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
-      {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">MAKRO ÖZETİ</h2>
         <div className="flex items-baseline gap-1">
-          <span className="text-xl font-display font-bold text-primary">{totals.calories}</span>
+          <span className="text-xl font-display font-bold text-primary">{Math.round(totals.calories)}</span>
           <span className="text-muted-foreground text-sm">/ {macroGoals.calories} kcal</span>
         </div>
       </div>
-
-      {/* Macro Grid */}
       <div className="grid grid-cols-3 gap-3">
         {macros.map((macro) => {
           const percentage = Math.min((macro.current / macro.goal) * 100, 100);
@@ -194,7 +139,6 @@ const CameraScanner = ({
           exit={{ opacity: 0 }}
           className="fixed inset-0 z-50 bg-black"
         >
-          {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4 flex items-center justify-between">
             <div className="flex items-center gap-2">
               <motion.div
@@ -216,7 +160,6 @@ const CameraScanner = ({
 
           {phase === "camera" && (
             <>
-              {/* Mock Camera Feed */}
               <div className="absolute inset-0 bg-gradient-to-b from-zinc-900 to-black">
                 <div
                   className="absolute inset-0 opacity-10"
@@ -226,8 +169,6 @@ const CameraScanner = ({
                     backgroundSize: "40px 40px",
                   }}
                 />
-
-                {/* Focus Frame */}
                 <div className="absolute inset-0 flex items-center justify-center">
                   <motion.div
                     initial={{ scale: 0.9, opacity: 0 }}
@@ -238,7 +179,6 @@ const CameraScanner = ({
                     <div className="absolute top-0 right-0 w-12 h-12 border-t-2 border-r-2 border-primary rounded-tr-lg" />
                     <div className="absolute bottom-0 left-0 w-12 h-12 border-b-2 border-l-2 border-primary rounded-bl-lg" />
                     <div className="absolute bottom-0 right-0 w-12 h-12 border-b-2 border-r-2 border-primary rounded-br-lg" />
-
                     <div className="absolute inset-0 flex items-center justify-center">
                       {mode === "barcode" ? (
                         <ScanBarcode className="w-12 h-12 text-primary/30" />
@@ -246,7 +186,6 @@ const CameraScanner = ({
                         <Focus className="w-12 h-12 text-primary/30" />
                       )}
                     </div>
-
                     <motion.div
                       className="absolute inset-0 border-2 border-primary/20 rounded-xl"
                       animate={{ scale: [1, 1.02, 1], opacity: [0.5, 0.8, 0.5] }}
@@ -254,13 +193,10 @@ const CameraScanner = ({
                     />
                   </motion.div>
                 </div>
-
                 <div className="absolute bottom-40 left-0 right-0 text-center">
                   <p className="text-muted-foreground text-sm">{instructionText}</p>
                 </div>
               </div>
-
-              {/* Shutter Button */}
               <div className="absolute bottom-12 left-0 right-0 flex justify-center">
                 <motion.button
                   whileHover={{ scale: 1.05 }}
@@ -302,7 +238,6 @@ const CameraScanner = ({
                     )}
                   </motion.div>
                 </div>
-
                 <motion.div
                   className="absolute left-0 right-0 h-0.5 bg-gradient-to-r from-transparent via-primary to-transparent"
                   initial={{ top: "0%" }}
@@ -310,7 +245,6 @@ const CameraScanner = ({
                   transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
                 />
               </div>
-
               <motion.p
                 className="font-display text-lg text-primary tracking-widest"
                 animate={{ opacity: [1, 0.5, 1] }}
@@ -329,45 +263,25 @@ const CameraScanner = ({
   );
 };
 
-// --- FOOD ITEM ROW COMPONENT ---
-const FoodItemRow = ({ food, onToggle, onRemove }: { food: FoodItem; onToggle: () => void; onRemove: () => void }) => {
+// --- CONSUMED FOOD ROW ---
+const ConsumedFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () => void }) => {
   return (
-    <div
-      className={cn(
-        "flex items-center justify-between p-3 rounded-xl border border-white/5 transition-all group",
-        food.isEaten ? "bg-primary/5 border-primary/20" : "bg-secondary/30",
-      )}
-    >
+    <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
       <div className="flex items-center gap-3">
-        <button
-          onClick={onToggle}
-          className={cn(
-            "w-6 h-6 rounded-full flex items-center justify-center border transition-all flex-shrink-0",
-            food.isEaten
-              ? "bg-primary border-primary text-primary-foreground"
-              : "border-muted-foreground/30 text-transparent hover:border-muted-foreground/50",
-          )}
-        >
+        <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
           <Check size={14} strokeWidth={3} />
-        </button>
+        </div>
         <div>
-          <p
-            className={cn(
-              "text-sm font-medium transition-colors",
-              food.isEaten ? "text-muted-foreground line-through" : "text-foreground",
-            )}
-          >
-            {food.name}
-          </p>
-          <p className="text-xs text-muted-foreground">{food.amount}</p>
+          <p className="text-sm font-medium text-foreground">{food.food_name}</p>
+          <p className="text-xs text-muted-foreground">{food.serving_size || "100g"}</p>
         </div>
       </div>
       <div className="flex items-center gap-3">
         <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold text-foreground">{food.cal} kcal</p>
+          <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
           <div className="flex gap-2 text-[10px] text-muted-foreground justify-end">
-            <span className="text-yellow-500/80">P:{food.macros.p}</span>
-            <span className="text-blue-500/80">K:{food.macros.c}</span>
+            <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
+            <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
           </div>
         </div>
         <button
@@ -384,25 +298,25 @@ const FoodItemRow = ({ food, onToggle, onRemove }: { food: FoodItem; onToggle: (
   );
 };
 
-// --- EXPANDABLE MEAL CARD COMPONENT ---
+// --- EXPANDABLE MEAL CARD ---
 const ExpandableMealCard = ({
-  meal,
-  onUpdateFood,
+  slot,
+  foods,
   onRemoveFood,
 }: {
-  meal: Meal;
-  onUpdateFood: (mealId: string, foodIndex: number) => void;
-  onRemoveFood: (mealId: string, foodIndex: number) => void;
+  slot: MealSlot;
+  foods: ConsumedFood[];
+  onRemoveFood: (id: string) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const allEaten = meal.foods.length > 0 && meal.foods.every((f) => f.isEaten);
+  const totalCal = foods.reduce((a, f) => a + (f.calories || 0), 0);
 
   return (
     <motion.div
       layout
       className={cn(
         "border rounded-2xl overflow-hidden mb-3 transition-colors",
-        allEaten ? "bg-card border-primary/20" : "bg-card border-white/5",
+        foods.length > 0 ? "bg-card border-primary/20" : "bg-card border-white/5",
       )}
     >
       <button
@@ -410,33 +324,25 @@ const ExpandableMealCard = ({
         className="w-full flex items-center justify-between p-4 bg-card hover:bg-secondary/30 transition-colors"
       >
         <div className="flex items-center gap-4">
-          <div
-            className={cn(
-              "w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xl relative flex-shrink-0",
-              meal.color,
-            )}
-          >
-            {meal.icon}
-            {allEaten && (
+          <div className={cn("w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xl relative flex-shrink-0", slot.color)}>
+            {slot.icon}
+            {foods.length > 0 && (
               <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5 border-2 border-card">
                 <Check size={10} className="text-primary-foreground" />
               </div>
             )}
           </div>
           <div className="text-left">
-            <h3 className={cn("font-bold text-sm", allEaten ? "text-primary" : "text-foreground")}>{meal.title}</h3>
-            <p className="text-muted-foreground text-xs">{meal.time}</p>
+            <h3 className={cn("font-bold text-sm", foods.length > 0 ? "text-primary" : "text-foreground")}>{slot.title}</h3>
+            <p className="text-muted-foreground text-xs">{slot.time}</p>
           </div>
         </div>
-
         <div className="flex items-center gap-3">
           <div className="text-right">
-            <div className="text-foreground font-display font-bold text-lg">{meal.totalCal}</div>
+            <div className="text-foreground font-display font-bold text-lg">{totalCal}</div>
             <div className="text-xs text-muted-foreground">kcal</div>
           </div>
-          <ChevronDown
-            className={cn("text-muted-foreground w-5 h-5 transition-transform duration-300", isOpen && "rotate-180")}
-          />
+          <ChevronDown className={cn("text-muted-foreground w-5 h-5 transition-transform duration-300", isOpen && "rotate-180")} />
         </div>
       </button>
 
@@ -450,16 +356,11 @@ const ExpandableMealCard = ({
             className="border-t border-white/5 bg-secondary/10"
           >
             <div className="p-3 space-y-2">
-              {meal.foods.length === 0 ? (
+              {foods.length === 0 ? (
                 <p className="text-xs text-muted-foreground text-center py-2">Bu öğünde henüz yiyecek yok.</p>
               ) : (
-                meal.foods.map((food, idx) => (
-                  <FoodItemRow
-                    key={idx}
-                    food={food}
-                    onToggle={() => onUpdateFood(meal.id, idx)}
-                    onRemove={() => onRemoveFood(meal.id, idx)}
-                  />
+                foods.map((food) => (
+                  <ConsumedFoodRow key={food.id} food={food} onRemove={() => onRemoveFood(food.id)} />
                 ))
               )}
             </div>
@@ -470,37 +371,27 @@ const ExpandableMealCard = ({
   );
 };
 
-// --- FOOD DETAIL WIZARD (for Manual Add) ---
-interface SelectedFood {
-  name: string;
-  amount: string;
-  cal: number;
-  macros: { p: number; c: number; f: number };
-  baseGrams: number;
-}
-
+// --- FOOD DETAIL WIZARD (for API food items) ---
 const FoodDetailWizard = ({
   food,
-  meals,
   onConfirm,
   onBack,
 }: {
-  food: SelectedFood;
-  meals: Meal[];
-  onConfirm: (mealId: string, grams: number) => void;
+  food: ApiFoodItem;
+  onConfirm: (mealSlotId: string, grams: number) => void;
   onBack: () => void;
 }) => {
   const [targetMeal, setTargetMeal] = useState("ogle");
-  const [grams, setGrams] = useState(food.baseGrams.toString());
+  const [grams, setGrams] = useState("100");
 
   const gramsNum = parseInt(grams) || 0;
-  const ratio = gramsNum / food.baseGrams;
+  const multiplier = gramsNum / 100;
 
   const calculatedValues = {
-    cal: Math.round(food.cal * ratio),
-    protein: Math.round(food.macros.p * ratio),
-    carbs: Math.round(food.macros.c * ratio),
-    fat: Math.round(food.macros.f * ratio),
+    cal: Math.round(food.calories * multiplier),
+    protein: Math.round(food.protein * multiplier),
+    carbs: Math.round(food.carbs * multiplier),
+    fat: Math.round(food.fat * multiplier),
   };
 
   return (
@@ -514,7 +405,7 @@ const FoodDetailWizard = ({
         </button>
         <div>
           <h3 className="font-bold text-foreground">{food.name}</h3>
-          <p className="text-xs text-muted-foreground">Detayları Düzenle</p>
+          {food.brand && <p className="text-xs text-muted-foreground">{food.brand}</p>}
         </div>
       </div>
 
@@ -535,9 +426,9 @@ const FoodDetailWizard = ({
             <SelectValue />
           </SelectTrigger>
           <SelectContent className="bg-background border-border">
-            {meals.map((meal) => (
-              <SelectItem key={meal.id} value={meal.id} className="text-foreground hover:bg-secondary/50">
-                {meal.icon} {meal.title}
+            {mealSlots.map((slot) => (
+              <SelectItem key={slot.id} value={slot.id} className="text-foreground hover:bg-secondary/50">
+                {slot.icon} {slot.title}
               </SelectItem>
             ))}
           </SelectContent>
@@ -568,6 +459,7 @@ const FoodDetailWizard = ({
 
       <Button
         onClick={() => onConfirm(targetMeal, gramsNum)}
+        disabled={gramsNum <= 0}
         className="w-full h-12 bg-primary text-primary-foreground font-display text-lg tracking-wider hover:bg-primary/90"
       >
         ÖĞÜNE EKLE
@@ -580,17 +472,27 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const macroGoals = useMacros();
-  const { logs, isLoading: logsLoading, logMeal } = useNutritionLogs();
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
-  const [meals, setMeals] = useState<Meal[]>(emptyMealSlots);
+  const {
+    isLoading: foodsLoading,
+    searchResults,
+    isSearching,
+    searchFood,
+    addFood,
+    removeFood,
+    groupedByMeal,
+    totals,
+    setSearchResults,
+  } = useConsumedFoods();
+
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
   const [scannerMode, setScannerMode] = useState<ScannerMode>("meal");
   const [searchTerm, setSearchTerm] = useState("");
-  const [selectedFood, setSelectedFood] = useState<SelectedFood | null>(null);
+  const [selectedFood, setSelectedFood] = useState<ApiFoodItem | null>(null);
   const [activeTab, setActiveTab] = useState("meals");
   const [supplements, setSupplements] = useState<Supplement[]>(
-    initialSupplements.map(s => ({
+    initialSupplements.map((s) => ({
       id: s.id,
       name: s.name,
       dosage: s.dosage,
@@ -599,35 +501,25 @@ const Beslenme = () => {
       totalServings: s.totalServings,
       takenToday: s.takenToday,
       icon: s.icon,
-    }))
+    })),
   );
 
-  // Sync DB logs into meal slots
-  useEffect(() => {
-    if (logsLoading) return;
-    const mealMap: Record<string, string> = {
-      "Kahvaltı": "kahvalti",
-      "Öğle Yemeği": "ogle",
-      "Ara Öğün": "ara",
-      "Akşam Yemeği": "aksam",
-    };
-    const slots = emptyMealSlots.map(s => ({ ...s, foods: [] as FoodItem[], totalCal: 0, totalMacros: { p: 0, c: 0, f: 0 } }));
-    
-    logs.forEach((log) => {
-      const slotId = mealMap[log.meal_name] || "ara";
-      const slot = slots.find(s => s.id === slotId);
-      if (!slot) return;
-      log.foods.forEach((f) => {
-        slot.foods.push({ name: f.name, amount: f.amount, cal: f.cal, macros: f.macros, isEaten: f.isEaten ?? false });
-        slot.totalCal += f.cal;
-        slot.totalMacros.p += f.macros.p;
-        slot.totalMacros.c += f.macros.c;
-        slot.totalMacros.f += f.macros.f;
-      });
-      slot.isCompleted = slot.foods.length > 0 && slot.foods.every(fd => fd.isEaten);
-    });
-    setMeals(slots);
-  }, [logs, logsLoading]);
+  // Debounced search
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+  const handleSearchChange = useCallback(
+    (value: string) => {
+      setSearchTerm(value);
+      if (debounceRef.current) clearTimeout(debounceRef.current);
+      if (!value.trim()) {
+        setSearchResults([]);
+        return;
+      }
+      debounceRef.current = setTimeout(() => {
+        searchFood(value);
+      }, 300);
+    },
+    [searchFood, setSearchResults],
+  );
 
   const waterGoal = 3.5;
   const waterIntake = totalMl / 1000;
@@ -643,131 +535,43 @@ const Beslenme = () => {
     setShowCamera(true);
   };
 
-  const handleToggleFood = (mealId: string, foodIndex: number) => {
-    setMeals((currentMeals) =>
-      currentMeals.map((meal) => {
-        if (meal.id !== mealId) return meal;
-
-        const newFoods = [...meal.foods];
-        const food = newFoods[foodIndex];
-        food.isEaten = !food.isEaten;
-
-        if (food.isEaten) {
-          toast({ title: "Afiyet olsun! 💪", description: `${food.name} sisteme işlendi.` });
-        }
-
-        return { ...meal, foods: newFoods };
-      }),
-    );
-  };
-
-  const handleRemoveFood = (mealId: string, foodIndex: number) => {
-    setMeals((currentMeals) =>
-      currentMeals.map((meal) => {
-        if (meal.id !== mealId) return meal;
-
-        const newFoods = meal.foods.filter((_, idx) => idx !== foodIndex);
-
-        const newTotalCal = newFoods.reduce((acc, f) => acc + f.cal, 0);
-        const newTotalMacros = newFoods.reduce(
-          (acc, f) => ({
-            p: acc.p + f.macros.p,
-            c: acc.c + f.macros.c,
-            f: acc.f + f.macros.f,
-          }),
-          { p: 0, c: 0, f: 0 },
-        );
-
-        return {
-          ...meal,
-          foods: newFoods,
-          totalCal: newTotalCal,
-          totalMacros: newTotalMacros,
-        };
-      }),
-    );
-    toast({ title: "Silindi 🗑️", description: "Yiyecek listeden kaldırıldı ve değerler güncellendi." });
-  };
-
-  const handleSelectFood = (food: (typeof foodDatabase)[0]) => {
-    setSelectedFood(food);
+  const handleRemoveFood = async (id: string) => {
+    try {
+      await removeFood(id);
+      toast({ title: "Silindi 🗑️", description: "Yiyecek listeden kaldırıldı." });
+    } catch {
+      toast({ title: "Hata", description: "Silme sırasında bir hata oluştu.", variant: "destructive" });
+    }
   };
 
   const handleConfirmAddFood = async (targetMealId: string, grams: number) => {
     if (!selectedFood) return;
-
-    const ratio = grams / selectedFood.baseGrams;
-    const newFood: FoodItem = {
-      name: selectedFood.name,
-      amount: `${grams}g`,
-      cal: Math.round(selectedFood.cal * ratio),
-      macros: {
-        p: Math.round(selectedFood.macros.p * ratio),
-        c: Math.round(selectedFood.macros.c * ratio),
-        f: Math.round(selectedFood.macros.f * ratio),
-      },
-      isEaten: false,
-    };
-
-    // Update local state immediately
-    setMeals((currentMeals) =>
-      currentMeals.map((meal) => {
-        if (meal.id !== targetMealId) return meal;
-        return {
-          ...meal,
-          totalCal: meal.totalCal + newFood.cal,
-          totalMacros: {
-            p: meal.totalMacros.p + newFood.macros.p,
-            c: meal.totalMacros.c + newFood.macros.c,
-            f: meal.totalMacros.f + newFood.macros.f,
-          },
-          foods: [...meal.foods, newFood],
-        };
-      }),
-    );
-
-    const targetMeal = meals.find((m) => m.id === targetMealId);
-    const mealNameMap: Record<string, string> = { kahvalti: "Kahvaltı", ogle: "Öğle Yemeği", ara: "Ara Öğün", aksam: "Akşam Yemeği" };
-
-    // Persist to Supabase
     try {
-      const updatedMeal = meals.find(m => m.id === targetMealId);
-      const allFoods = [...(updatedMeal?.foods || []), newFood];
-      await logMeal(mealNameMap[targetMealId] || "Ara Öğün", allFoods);
-      toast({ title: "Öğün başarıyla kaydedildi! ✅", description: `${selectedFood.name} ${targetMeal?.title || "öğüne"} eklendi.` });
+      await addFood(selectedFood, targetMealId, grams);
+      const slotTitle = mealSlots.find((s) => s.id === targetMealId)?.title || "öğün";
+      toast({ title: "Eklendi ✅", description: `${selectedFood.name} ${slotTitle} öğününe eklendi.` });
+      setSelectedFood(null);
+      setShowManualAdd(false);
+      setSearchTerm("");
+      setSearchResults([]);
     } catch {
       toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
     }
-
-    setSelectedFood(null);
-    setShowManualAdd(false);
   };
-
-  const filteredFoods = foodDatabase.filter((f) => f.name.toLowerCase().includes(searchTerm.toLowerCase()));
 
   const handleToggleSupplement = (id: string) => {
     setSupplements((current) =>
       current.map((sup) => {
         if (sup.id !== id) return sup;
-        
         const newTakenToday = !sup.takenToday;
-        const newServingsLeft = newTakenToday 
-          ? Math.max(0, sup.servingsLeft - 1) 
+        const newServingsLeft = newTakenToday
+          ? Math.max(0, sup.servingsLeft - 1)
           : Math.min(sup.totalServings, sup.servingsLeft + 1);
-
         if (newTakenToday) {
-          toast({
-            title: "Alındı ✓",
-            description: `${sup.name} işaretlendi.`,
-          });
+          toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
         }
-
-        return {
-          ...sup,
-          takenToday: newTakenToday,
-          servingsLeft: newServingsLeft,
-        };
-      })
+        return { ...sup, takenToday: newTakenToday, servingsLeft: newServingsLeft };
+      }),
     );
   };
 
@@ -775,17 +579,9 @@ const Beslenme = () => {
     setSupplements((current) =>
       current.map((sup) => {
         if (sup.id !== id) return sup;
-        
-        toast({
-          title: "Stok Yenilendi 📦",
-          description: `${sup.name} stoğu yenilendi.`,
-        });
-
-        return {
-          ...sup,
-          servingsLeft: sup.totalServings,
-        };
-      })
+        toast({ title: "Stok Yenilendi 📦", description: `${sup.name} stoğu yenilendi.` });
+        return { ...sup, servingsLeft: sup.totalServings };
+      }),
     );
   };
 
@@ -797,7 +593,7 @@ const Beslenme = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground uppercase font-display">Beslenme Planı</h1>
             <p className="text-muted-foreground text-sm">
-              Hedefine {Math.max(0, macroGoals.calories - meals.reduce((acc, m) => acc + m.totalCal, 0))} kcal kaldı
+              Hedefine {Math.max(0, Math.round(macroGoals.calories - totals.calories))} kcal kaldı
             </p>
           </div>
           <div className="flex gap-2">
@@ -812,20 +608,20 @@ const Beslenme = () => {
         </div>
 
         {/* MACRO DASHBOARD */}
-        <MacroDashboard meals={meals} macroGoals={macroGoals} />
+        <MacroDashboard totals={totals} macroGoals={macroGoals} />
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-white/[0.03] border border-white/5 p-1 h-12">
-            <TabsTrigger 
-              value="meals" 
+            <TabsTrigger
+              value="meals"
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium gap-2 text-sm"
             >
               <Utensils className="w-4 h-4" />
               ÖĞÜNLER
             </TabsTrigger>
-            <TabsTrigger 
-              value="supplements" 
+            <TabsTrigger
+              value="supplements"
               className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground font-medium gap-2 text-sm"
             >
               <Pill className="w-4 h-4" />
@@ -921,11 +717,11 @@ const Beslenme = () => {
                 <h2 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">BUGÜNKÜ ÖĞÜNLER</h2>
               </div>
               <div className="space-y-3">
-                {meals.map((meal) => (
+                {mealSlots.map((slot) => (
                   <ExpandableMealCard
-                    key={meal.id}
-                    meal={meal}
-                    onUpdateFood={handleToggleFood}
+                    key={slot.id}
+                    slot={slot}
+                    foods={groupedByMeal[slot.id] || []}
                     onRemoveFood={handleRemoveFood}
                   />
                 ))}
@@ -952,7 +748,11 @@ const Beslenme = () => {
         open={showManualAdd}
         onOpenChange={(open) => {
           setShowManualAdd(open);
-          if (!open) setSelectedFood(null);
+          if (!open) {
+            setSelectedFood(null);
+            setSearchTerm("");
+            setSearchResults([]);
+          }
         }}
       >
         <DialogContent className="bg-background border-border text-foreground max-w-sm max-h-[80vh] overflow-hidden flex flex-col">
@@ -965,37 +765,63 @@ const Beslenme = () => {
               <div className="relative mb-4">
                 <Search className="absolute left-3 top-3 w-4 h-4 text-muted-foreground" />
                 <Input
-                  placeholder="Yiyecek ara..."
+                  placeholder="Yiyecek ara... (ör: elma, tavuk, pilav)"
                   value={searchTerm}
-                  onChange={(e) => setSearchTerm(e.target.value)}
+                  onChange={(e) => handleSearchChange(e.target.value)}
                   className="bg-secondary/30 border-border pl-10 text-foreground"
                 />
               </div>
 
               <div className="flex-1 overflow-y-auto space-y-2 pr-2">
-                {filteredFoods.map((food, idx) => (
-                  <button
-                    key={idx}
-                    onClick={() => handleSelectFood(food)}
-                    className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-white/5 hover:bg-secondary/50 transition-colors text-left group"
-                  >
-                    <div>
-                      <p className="font-medium text-sm text-foreground">{food.name}</p>
-                      <p className="text-xs text-muted-foreground">
-                        {food.amount} • {food.cal} kcal
-                      </p>
-                    </div>
-                    <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors">
-                      <Plus className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
-                    </div>
-                  </button>
-                ))}
+                {isSearching && (
+                  <div className="flex items-center justify-center py-8 gap-2 text-muted-foreground">
+                    <Loader2 className="w-5 h-5 animate-spin" />
+                    <span className="text-sm">Aranıyor...</span>
+                  </div>
+                )}
+
+                {!isSearching && searchTerm.trim().length > 0 && searchResults.length === 0 && (
+                  <div className="text-center py-8">
+                    <p className="text-muted-foreground text-sm">Sonuç bulunamadı</p>
+                    <p className="text-muted-foreground/60 text-xs mt-1">Farklı bir arama terimi deneyin</p>
+                  </div>
+                )}
+
+                {!isSearching && searchTerm.trim().length === 0 && (
+                  <div className="text-center py-8">
+                    <Search className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
+                    <p className="text-muted-foreground text-sm">Yiyecek aramak için yazın</p>
+                  </div>
+                )}
+
+                {!isSearching &&
+                  searchResults.map((food) => (
+                    <button
+                      key={food.id}
+                      onClick={() => setSelectedFood(food)}
+                      className="w-full flex items-center justify-between p-3 rounded-xl bg-secondary/30 border border-white/5 hover:bg-secondary/50 transition-colors text-left group"
+                    >
+                      <div className="flex-1 min-w-0">
+                        <p className="font-medium text-sm text-foreground truncate">{food.name}</p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {food.brand ? `${food.brand} • ` : ""}100g • {food.calories} kcal
+                        </p>
+                        <div className="flex gap-2 text-[10px] text-muted-foreground mt-0.5">
+                          <span className="text-yellow-500/80">P:{food.protein}g</span>
+                          <span className="text-blue-500/80">K:{food.carbs}g</span>
+                          <span className="text-orange-500/80">Y:{food.fat}g</span>
+                        </div>
+                      </div>
+                      <div className="h-8 w-8 rounded-full bg-primary/10 flex items-center justify-center group-hover:bg-primary transition-colors flex-shrink-0 ml-2">
+                        <Plus className="w-4 h-4 text-primary group-hover:text-primary-foreground" />
+                      </div>
+                    </button>
+                  ))}
               </div>
             </>
           ) : (
             <FoodDetailWizard
               food={selectedFood}
-              meals={meals}
               onConfirm={handleConfirmAddFood}
               onBack={() => setSelectedFood(null)}
             />
