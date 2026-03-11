@@ -344,7 +344,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         bio_coins_earned: bioCoinsEarned,
         completed: true,
         details,
-      });
+        assigned_workout_id: assignmentId ?? null,
+      } as any);
 
       if (error) throw error;
 
