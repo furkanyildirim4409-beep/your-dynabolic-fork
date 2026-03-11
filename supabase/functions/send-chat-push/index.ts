@@ -66,9 +66,14 @@ Deno.serve(async (req) => {
     );
 
     const payload = JSON.stringify({
-      title: `Yeni Mesaj: ${senderName}`,
+      title: `💬 ${senderName} sana yeni bir mesaj gönderdi`,
       body: content.length > 100 ? content.substring(0, 100) + "…" : content,
-      data: { url: "/kokpit" },
+      data: {
+        url: "/kokpit",
+        coachUrl: `/messages?athleteId=${sender_id}`,
+        athleteUrl: `/?openChat=true&coachId=${sender_id}`,
+        senderId: sender_id,
+      },
     });
 
     const results = await Promise.allSettled(
