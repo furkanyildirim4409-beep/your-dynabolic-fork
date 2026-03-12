@@ -356,29 +356,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
 
       if (error) throw error;
 
-      // Award bio coins to profile
-      const { data: currentProfile } = await supabase
-        .from("profiles")
-        .select("bio_coins")
-        .eq("id", user.id)
-        .single();
+      // Award bio coins via centralized hook
+      await awardCoins(bioCoinsEarned, "workout", `${workoutTitle} tamamlandı`);
 
-      if (currentProfile) {
-        await supabase
-          .from("profiles")
-          .update({ bio_coins: (currentProfile.bio_coins ?? 0) + bioCoinsEarned })
-          .eq("id", user.id);
-      }
-
-      // Log transaction
-      await supabase.from("bio_coin_transactions").insert({
-        user_id: user.id,
-        amount: bioCoinsEarned,
-        type: "workout",
-        description: `${workoutTitle} tamamlandı`,
-      });
-
-      toast.success("Antrenman başarıyla kaydedildi! +150 Bio-Coin kazandın.");
+      toast.success("Antrenman başarıyla kaydedildi!");
     } catch (err: any) {
       console.error("Workout log save error:", err.message);
       toast.error("Antrenman kaydedilemedi.");
