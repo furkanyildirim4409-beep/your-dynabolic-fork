@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
+import { useBioCoin } from "@/hooks/useBioCoin";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
