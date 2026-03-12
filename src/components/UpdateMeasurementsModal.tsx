@@ -46,7 +46,6 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState("male");
   const [activityLevel, setActivityLevel] = useState("moderate");
-  const [fitnessGoal, setFitnessGoal] = useState("maintenance");
 
   useEffect(() => {
     if (isOpen) {
