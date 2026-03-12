@@ -666,11 +666,12 @@ const FoodDetailWizard = ({
 // --- ANA SAYFA ---
 const Beslenme = () => {
   const { user } = useAuth();
-  const staticMacros = useMacros();
+  const dbMacros = useMacros();
   const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading } = useDietPlan();
+  // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
-    ? { ...dynamicTargets, source: "coach" as const }
-    : staticMacros;
+    ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
+    : dbMacros;
   const [chartOpen, setChartOpen] = useState(false);
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const {
