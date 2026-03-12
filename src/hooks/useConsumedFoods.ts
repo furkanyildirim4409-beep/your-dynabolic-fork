@@ -23,6 +23,7 @@ export interface ConsumedFood {
   fat: number;
   serving_size: string | null;
   logged_at: string | null;
+  planned_food_id: string | null;
 }
 
 const MEAL_TYPE_MAP: Record<string, string> = {
@@ -35,7 +36,7 @@ const MEAL_TYPE_MAP: Record<string, string> = {
 const MEAL_TYPE_REVERSE: Record<string, string> = {
   breakfast: "kahvalti",
   lunch: "ogle",
-  snack: "snack",
+  snack: "ara",
   dinner: "aksam",
 };
 
@@ -125,12 +126,69 @@ export function useConsumedFoods() {
     [user],
   );
 
+  // Check a planned food (insert into consumed_foods with planned_food_id)
+  const checkPlannedFood = useCallback(
+    async (planned: {
+      id: string;
+      food_name: string;
+      meal_type: string;
+      calories: number;
+      protein: number;
+      carbs: number;
+      fat: number;
+      serving_size: string | null;
+    }) => {
+      if (!user) return;
+
+      const row = {
+        athlete_id: user.id,
+        food_name: planned.food_name,
+        meal_type: planned.meal_type,
+        calories: planned.calories,
+        protein: planned.protein,
+        carbs: planned.carbs,
+        fat: planned.fat,
+        serving_size: planned.serving_size,
+        planned_food_id: planned.id,
+      };
+
+      const { data, error } = await supabase
+        .from("consumed_foods")
+        .insert(row)
+        .select()
+        .single();
+
+      if (error) throw error;
+      if (data) setFoods((prev) => [...prev, data as ConsumedFood]);
+      return data;
+    },
+    [user],
+  );
+
+  // Uncheck a planned food (delete the consumed_foods row by its id)
+  const uncheckPlannedFood = useCallback(async (consumedFoodId: string) => {
+    const { error } = await supabase.from("consumed_foods").delete().eq("id", consumedFoodId);
+    if (error) throw error;
+    setFoods((prev) => prev.filter((f) => f.id !== consumedFoodId));
+  }, []);
+
   // Remove food
   const removeFood = useCallback(async (id: string) => {
     const { error } = await supabase.from("consumed_foods").delete().eq("id", id);
     if (error) throw error;
     setFoods((prev) => prev.filter((f) => f.id !== id));
   }, []);
+
+  // Set of consumed planned_food_ids for quick lookup
+  const consumedPlannedIds = useMemo(() => {
+    const map = new Map<string, string>();
+    foods.forEach((f) => {
+      if (f.planned_food_id) {
+        map.set(f.planned_food_id, f.id);
+      }
+    });
+    return map;
+  }, [foods]);
 
   // Group by meal slot id
   const groupedByMeal = useMemo(() => {
@@ -168,6 +226,9 @@ export function useConsumedFoods() {
     searchFood,
     addFood,
     removeFood,
+    checkPlannedFood,
+    uncheckPlannedFood,
+    consumedPlannedIds,
     groupedByMeal,
     totals,
     setSearchResults,
