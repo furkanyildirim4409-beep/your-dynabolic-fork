@@ -6,11 +6,19 @@ import { Slider } from "@/components/ui/slider";
 import { useTransformationStats } from "@/hooks/useTransformationStats";
 import { useProgressPhotos, ProgressPhoto } from "@/hooks/useProgressPhotos";
 import UploadProgressPhotoModal from "./UploadProgressPhotoModal";
+import {
+  Dialog,
+  DialogContent,
+  DialogHeader,
+  DialogTitle,
+  DialogDescription,
+  DialogFooter,
+} from "@/components/ui/dialog";
 
 type CompareMode = "slider" | "sideBySide" | "overlay";
 
 const TransformationTimeline = () => {
-  const { photos, loading: photosLoading, uploadPhoto, deletePhoto } = useProgressPhotos();
+  const { photos, loading: photosLoading, uploadPhotos, deletePhoto } = useProgressPhotos();
   const [selectedIndex, setSelectedIndex] = useState(0);
   const [compareMode, setCompareMode] = useState<CompareMode>("slider");
   const [compareLeftIndex, setCompareLeftIndex] = useState(0);
@@ -21,12 +29,12 @@ const TransformationTimeline = () => {
   const [showFullscreen, setShowFullscreen] = useState(false);
   const [overlayOpacity, setOverlayOpacity] = useState(50);
   const [showUploadModal, setShowUploadModal] = useState(false);
+  const [deleteConfirm, setDeleteConfirm] = useState<ProgressPhoto | null>(null);
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
   const { weightDiff, fatDiff, timeElapsed, hasEnoughData, loading: statsLoading } = useTransformationStats();
 
-  // Keep compareRightIndex in sync with photos length
   useEffect(() => {
     if (photos.length > 0) {
       setCompareRightIndex(photos.length - 1);
@@ -61,6 +69,12 @@ const TransformationTimeline = () => {
       window.removeEventListener("touchend", handleUp);
     };
   }, [handleSliderDrag]);
+
+  const handleDeleteConfirm = async () => {
+    if (!deleteConfirm) return;
+    await deletePhoto(deleteConfirm.id, deleteConfirm.photo_url);
+    setDeleteConfirm(null);
+  };
 
   const selectedPhoto = photos[selectedIndex] as ProgressPhoto | undefined;
   const leftPhoto = photos[compareLeftIndex] as ProgressPhoto | undefined;
@@ -135,7 +149,6 @@ const TransformationTimeline = () => {
       {photosLoading ? (
         <div className="aspect-[3/4] rounded-2xl bg-secondary animate-pulse" />
       ) : photos.length === 0 ? (
-        /* Empty state */
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -147,14 +160,13 @@ const TransformationTimeline = () => {
           </div>
           <div className="text-center px-6">
             <p className="text-foreground font-display text-sm">İlk gelişim fotoğrafınızı yükleyin</p>
-            <p className="text-muted-foreground text-xs mt-1">Dönüşümünüzü takip etmek için fotoğraf ekleyin</p>
+            <p className="text-muted-foreground text-xs mt-1">3 açıdan fotoğraf çekerek dönüşümünüzü takip edin</p>
           </div>
           <Button size="sm" variant="outline" className="border-border gap-1">
             <Plus className="w-3.5 h-3.5" /> Fotoğraf Ekle
           </Button>
         </motion.div>
       ) : !showCompare ? (
-        /* Timeline view */
         <div className="space-y-3">
           {selectedPhoto && (
             <motion.div
@@ -166,7 +178,14 @@ const TransformationTimeline = () => {
             >
               <img src={selectedPhoto.photo_url} alt={selectedPhoto.note ?? ""} className="w-full h-full object-cover" />
               <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent p-4">
-                <p className="text-foreground font-display text-sm">{selectedPhoto.note || formatDate(selectedPhoto.date)}</p>
+                <div className="flex items-center gap-2">
+                  <p className="text-foreground font-display text-sm">{selectedPhoto.note || formatDate(selectedPhoto.date)}</p>
+                  {selectedPhoto.view && selectedPhoto.view !== "front" && (
+                    <span className="px-1.5 py-0.5 rounded bg-secondary/80 text-muted-foreground text-[9px] font-display uppercase">
+                      {selectedPhoto.view === "side" ? "Yan" : selectedPhoto.view === "back" ? "Arka" : "Ön"}
+                    </span>
+                  )}
+                </div>
                 <div className="flex items-center gap-3 mt-1">
                   <span className="text-muted-foreground text-xs">{formatDate(selectedPhoto.date)}</span>
                   {selectedPhoto.weight && <span className="text-primary text-xs font-medium">{selectedPhoto.weight}kg</span>}
@@ -176,7 +195,7 @@ const TransformationTimeline = () => {
               <div className="absolute top-3 right-3 flex gap-2">
                 <button
                   className="p-2 rounded-full bg-background/50 backdrop-blur-sm"
-                  onClick={(e) => { e.stopPropagation(); deletePhoto(selectedPhoto.id, selectedPhoto.photo_url); }}
+                  onClick={(e) => { e.stopPropagation(); setDeleteConfirm(selectedPhoto); }}
                 >
                   <Trash2 className="w-4 h-4 text-destructive" />
                 </button>
@@ -206,10 +225,8 @@ const TransformationTimeline = () => {
           </div>
         </div>
       ) : (
-        /* Compare mode */
         leftPhoto && rightPhoto && (
           <div className="space-y-3">
-            {/* Mode tabs */}
             <div className="flex gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
               {([["slider", "Slider"], ["sideBySide", "Yan Yana"], ["overlay", "Üst Üste"]] as [CompareMode, string][]).map(([mode, label]) => (
                 <button
@@ -224,7 +241,6 @@ const TransformationTimeline = () => {
               ))}
             </div>
 
-            {/* Compare view */}
             <div className="relative rounded-2xl overflow-hidden bg-secondary aspect-[3/4]" style={{ transform: `scale(${zoom})`, transformOrigin: "center" }}>
               {compareMode === "slider" && (
                 <div ref={sliderRef} className="relative w-full h-full">
@@ -283,7 +299,6 @@ const TransformationTimeline = () => {
               )}
             </div>
 
-            {/* Photo selectors */}
             <div className="grid grid-cols-2 gap-3">
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1.5">Önce</p>
@@ -307,7 +322,6 @@ const TransformationTimeline = () => {
               </div>
             </div>
 
-            {/* Zoom controls */}
             <div className="flex items-center justify-center gap-3">
               <button onClick={() => setZoom(z => Math.max(1, z - 0.25))} className="p-2 rounded-full bg-secondary">
                 <ZoomOut className="w-4 h-4 text-muted-foreground" />
@@ -335,11 +349,27 @@ const TransformationTimeline = () => {
         )}
       </AnimatePresence>
 
+      {/* Delete confirmation dialog */}
+      <Dialog open={!!deleteConfirm} onOpenChange={(v) => { if (!v) setDeleteConfirm(null); }}>
+        <DialogContent className="max-w-xs bg-card border-border">
+          <DialogHeader>
+            <DialogTitle className="font-display text-foreground">Fotoğrafı Sil</DialogTitle>
+            <DialogDescription className="text-muted-foreground text-sm">
+              Bu fotoğrafı silmek istediğinize emin misiniz? Bu işlem geri alınamaz.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter className="flex gap-2">
+            <Button variant="outline" onClick={() => setDeleteConfirm(null)} className="flex-1">İptal</Button>
+            <Button variant="destructive" onClick={handleDeleteConfirm} className="flex-1">Sil</Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Upload modal */}
       <UploadProgressPhotoModal
         open={showUploadModal}
         onOpenChange={setShowUploadModal}
-        onUpload={uploadPhoto}
+        onUpload={uploadPhotos}
       />
     </div>
   );
