@@ -23,6 +23,7 @@ export interface DailyCheckIn {
   sleep: number;
   soreness: number;
   stress: number;
+  digestion: number;
   notes: string;
 }
 
