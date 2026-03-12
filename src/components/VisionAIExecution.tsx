@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
