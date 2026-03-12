@@ -1,37 +1,39 @@
 import { motion, AnimatePresence } from "framer-motion";
 import { X, FileText, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
-import type { BloodworkReport } from "@/types/shared-models";
+import type { BloodTestBiomarker, BloodTest } from "@/hooks/useBloodTests";
 
 interface BloodworkDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
-  report?: BloodworkReport | null;
+  extractedData: BloodTestBiomarker[];
+  coachNotes?: string | null;
+  testDate?: string;
+  allTests: BloodTest[];
 }
 
-const hormoneTrends = [
-  { month: "Ağu", testosterone: 580, cortisol: 18 },
-  { month: "Eyl", testosterone: 610, cortisol: 16 },
-  { month: "Eki", testosterone: 640, cortisol: 15 },
-  { month: "Kas", testosterone: 620, cortisol: 17 },
-  { month: "Ara", testosterone: 660, cortisol: 14 },
-  { month: "Oca", testosterone: 680, cortisol: 13 },
-];
-
-const biomarkers: { name: string; value: number; unit: string; range: string; status: "normal" | "low" | "high"; change: number }[] = [
-  { name: "Testosteron", value: 680, unit: "ng/dL", range: "300-1000", status: "normal", change: 3.1 },
-  { name: "Kortizol", value: 13, unit: "µg/dL", range: "6-23", status: "normal", change: -7.1 },
-  { name: "Vitamin D", value: 22, unit: "ng/mL", range: "30-100", status: "low", change: -12 },
-  { name: "Ferritin", value: 28, unit: "ng/mL", range: "30-400", status: "low", change: -5 },
-  { name: "TSH", value: 2.1, unit: "mIU/L", range: "0.4-4.0", status: "normal", change: 0 },
-  { name: "Hemoglobin", value: 15.2, unit: "g/dL", range: "13.5-17.5", status: "normal" as const, change: 1.3 } as const,
-  { name: "CRP", value: 0.8, unit: "mg/L", range: "0-3", status: "normal" as const, change: -20 },
-];
-
-const BloodworkDetailModal = ({ isOpen, onClose }: BloodworkDetailModalProps) => {
+const BloodworkDetailModal = ({ isOpen, onClose, extractedData, coachNotes, allTests }: BloodworkDetailModalProps) => {
   if (!isOpen) return null;
 
+  const biomarkers = extractedData || [];
   const flagged = biomarkers.filter((b) => b.status === "low" || b.status === "high");
+
+  // Build hormone trend from all tests (sorted by date ascending)
+  const sortedTests = [...allTests]
+    .filter((t) => t.status === "analyzed" && t.extracted_data?.length > 0)
+    .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
+    .slice(-6);
+
+  const hormoneTrends = sortedTests.map((t) => {
+    const testo = t.extracted_data.find((b) => b.name === "Testosteron");
+    const cortisol = t.extracted_data.find((b) => b.name === "Kortizol");
+    const month = new Date(t.date).toLocaleDateString("tr-TR", { month: "short" });
+    return {
+      month,
+      testosterone: testo?.value || 0,
+      cortisol: cortisol?.value || 0,
+    };
+  });
 
   return (
     <AnimatePresence>
@@ -75,26 +77,28 @@ const BloodworkDetailModal = ({ isOpen, onClose }: BloodworkDetailModalProps) =>
           )}
 
           {/* Hormone Trends Chart */}
-          <div className="mx-4 mb-6">
-            <h3 className="text-foreground text-sm font-medium mb-3">Hormon Trendi (6 Ay)</h3>
-            <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-4">
-              <ResponsiveContainer width="100%" height={200}>
-                <LineChart data={hormoneTrends}>
-                  <CartesianGrid strokeDasharray="3 3" stroke="hsl(240 4% 15%)" />
-                  <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "hsl(0 0% 60%)", fontSize: 10 }} />
-                  <YAxis yAxisId="left" hide />
-                  <YAxis yAxisId="right" orientation="right" hide />
-                  <Tooltip contentStyle={{ background: "hsl(240 6% 4%)", border: "1px solid hsl(240 4% 15%)", borderRadius: 8, fontSize: 12 }} />
-                  <Line yAxisId="left" type="monotone" dataKey="testosterone" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} name="Testosteron" />
-                  <Line yAxisId="right" type="monotone" dataKey="cortisol" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} name="Kortizol" />
-                </LineChart>
-              </ResponsiveContainer>
-              <div className="flex items-center justify-center gap-4 mt-2">
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-0.5 bg-blue-500 rounded" /><span className="text-xs text-muted-foreground">Testosteron</span></div>
-                <div className="flex items-center gap-1.5"><div className="w-2.5 h-0.5 bg-amber-500 rounded" /><span className="text-xs text-muted-foreground">Kortizol</span></div>
+          {hormoneTrends.length > 1 && (
+            <div className="mx-4 mb-6">
+              <h3 className="text-foreground text-sm font-medium mb-3">Hormon Trendi</h3>
+              <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-4">
+                <ResponsiveContainer width="100%" height={200}>
+                  <LineChart data={hormoneTrends}>
+                    <CartesianGrid strokeDasharray="3 3" stroke="hsl(240 4% 15%)" />
+                    <XAxis dataKey="month" axisLine={false} tickLine={false} tick={{ fill: "hsl(0 0% 60%)", fontSize: 10 }} />
+                    <YAxis yAxisId="left" hide />
+                    <YAxis yAxisId="right" orientation="right" hide />
+                    <Tooltip contentStyle={{ background: "hsl(240 6% 4%)", border: "1px solid hsl(240 4% 15%)", borderRadius: 8, fontSize: 12 }} />
+                    <Line yAxisId="left" type="monotone" dataKey="testosterone" stroke="#3b82f6" strokeWidth={2} dot={{ fill: "#3b82f6", r: 3 }} name="Testosteron" />
+                    <Line yAxisId="right" type="monotone" dataKey="cortisol" stroke="#f59e0b" strokeWidth={2} dot={{ fill: "#f59e0b", r: 3 }} name="Kortizol" />
+                  </LineChart>
+                </ResponsiveContainer>
+                <div className="flex items-center justify-center gap-4 mt-2">
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-0.5 bg-blue-500 rounded" /><span className="text-xs text-muted-foreground">Testosteron</span></div>
+                  <div className="flex items-center gap-1.5"><div className="w-2.5 h-0.5 bg-amber-500 rounded" /><span className="text-xs text-muted-foreground">Kortizol</span></div>
+                </div>
               </div>
             </div>
-          </div>
+          )}
 
           {/* Biomarker List */}
           <div className="mx-4">
@@ -111,8 +115,10 @@ const BloodworkDetailModal = ({ isOpen, onClose }: BloodworkDetailModalProps) =>
                     <div className="flex items-center gap-2">
                       {marker.status === "normal" ? (
                         <CheckCircle className="w-4 h-4 text-green-400" />
+                      ) : marker.status === "low" ? (
+                        <TrendingDown className="w-4 h-4 text-yellow-400" />
                       ) : (
-                        <AlertTriangle className="w-4 h-4 text-yellow-400" />
+                        <TrendingUp className="w-4 h-4 text-red-400" />
                       )}
                       <span className="text-foreground text-sm font-medium">{marker.name}</span>
                     </div>
@@ -123,29 +129,32 @@ const BloodworkDetailModal = ({ isOpen, onClose }: BloodworkDetailModalProps) =>
                     </div>
                   </div>
                   <div className="flex items-center justify-between mt-1.5">
-                    <span className="text-muted-foreground text-xs">Referans: {marker.range}</span>
-                    {marker.change !== 0 && (
-                      <div className={`flex items-center gap-0.5 text-xs ${marker.change > 0 ? "text-green-400" : "text-red-400"}`}>
-                        {marker.change > 0 ? <TrendingUp className="w-3 h-3" /> : <TrendingDown className="w-3 h-3" />}
-                        {marker.change > 0 ? "+" : ""}{marker.change}%
-                      </div>
-                    )}
+                    <span className="text-muted-foreground text-xs">Referans: {marker.ref}</span>
+                    <span className={`text-xs px-1.5 py-0.5 rounded ${
+                      marker.status === "normal" ? "bg-green-500/10 text-green-400" :
+                      marker.status === "low" ? "bg-yellow-500/10 text-yellow-400" :
+                      "bg-red-500/10 text-red-400"
+                    }`}>
+                      {marker.status === "normal" ? "Normal" : marker.status === "low" ? "Düşük" : "Yüksek"}
+                    </span>
                   </div>
                 </div>
               ))}
+              {biomarkers.length === 0 && (
+                <p className="text-muted-foreground text-sm text-center py-4">Henüz biyobelirteç verisi yok.</p>
+              )}
             </div>
           </div>
 
           {/* Coach Notes */}
-          <div className="mx-4 mt-6">
-            <div className="backdrop-blur-xl bg-card border border-primary/20 rounded-xl p-4">
-              <p className="text-primary text-xs font-medium mb-1">Koç Notu</p>
-              <p className="text-muted-foreground text-sm">
-                Vitamin D ve Ferritin değerleri düşük. Günlük 4000 IU D vitamini ve demir takviyesi öneriyorum. 
-                3 ay sonra kontrol tahlili yaptıralım.
-              </p>
+          {coachNotes && (
+            <div className="mx-4 mt-6">
+              <div className="backdrop-blur-xl bg-card border border-primary/20 rounded-xl p-4">
+                <p className="text-primary text-xs font-medium mb-1">Koç Notu</p>
+                <p className="text-muted-foreground text-sm">{coachNotes}</p>
+              </div>
             </div>
-          </div>
+          )}
         </motion.div>
       </motion.div>
     </AnimatePresence>
