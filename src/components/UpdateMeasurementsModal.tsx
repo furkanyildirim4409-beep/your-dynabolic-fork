@@ -128,6 +128,14 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         }
       }
 
+      // Auto-log weight to weight_logs if provided
+      if (weightNum && weightNum > 0 && user) {
+        const { error: wErr } = await supabase
+          .from("weight_logs")
+          .insert({ user_id: user.id, weight_kg: weightNum });
+        if (wErr) console.error("Weight log insert error:", wErr.message);
+      }
+
       const input: MeasurementInput = {};
       tapeFields.forEach(({ key }) => {
         const v = form[key];
