@@ -73,6 +73,16 @@ export const useWorkoutHistory = () => {
           }));
         }
 
+        // Calorie calculation (MET-based + EPOC)
+        let failureSets = 0;
+        for (const d of details) {
+          for (const s of d.sets) {
+            if (s.isFailure) failureSets++;
+          }
+        }
+        const baseBurn = (durationMin / 60) * weightKg * 5.0;
+        const calories = Math.round(baseBurn + failureSets * 15);
+
         return {
           id: log.id,
           date: format(loggedAt, "d MMMM yyyy", { locale: tr }),
@@ -86,6 +96,8 @@ export const useWorkoutHistory = () => {
           bioCoins: log.bio_coins_earned ?? 0,
           completed: log.completed ?? true,
           tonnageRaw: tonnageKg,
+          calories,
+          durationMinutes: durationMin,
           details,
         };
       });
