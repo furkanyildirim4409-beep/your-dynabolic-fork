@@ -29,13 +29,29 @@ export interface MeasurementInput {
   muscle_mass_kg?: number | null;
 }
 
-/** Navy Seal BF% formula (male), default height 175cm */
-export function calcNavyBodyFat(waist: number, neck: number, height = 175): number | null {
+/** U.S. Navy BF% formula — gender-aware, default height 175cm */
+export function calcNavyBodyFat(
+  waist: number,
+  neck: number,
+  height = 175,
+  gender: "male" | "female" = "male",
+  hips?: number | null,
+): number | null {
   if (waist <= 0 || neck <= 0 || height <= 0) return null;
-  const diff = waist - neck;
-  if (diff <= 0) return null;
 
-  const denominator = 1.0324 - 0.19077 * Math.log10(diff) + 0.15456 * Math.log10(height);
+  let denominator: number;
+
+  if (gender === "female") {
+    if (!hips || hips <= 0) return null;
+    const sum = waist + hips - neck;
+    if (sum <= 0) return null;
+    denominator = 1.29579 - 0.35004 * Math.log10(sum) + 0.221 * Math.log10(height);
+  } else {
+    const diff = waist - neck;
+    if (diff <= 0) return null;
+    denominator = 1.0324 - 0.19077 * Math.log10(diff) + 0.15456 * Math.log10(height);
+  }
+
   if (denominator <= 0) return null;
 
   const bf = 495 / denominator - 450;
