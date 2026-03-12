@@ -830,7 +830,7 @@ const Beslenme = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground uppercase font-display">Beslenme Planı</h1>
             <p className="text-muted-foreground text-sm">
-              Hedefine {Math.max(0, Math.round(macroGoals.calories - totals.calories))} kcal kaldı
+              {macroGoals ? `Hedefine ${Math.max(0, Math.round(macroGoals.calories - totals.calories))} kcal kaldı` : "Koç henüz hedef belirlemedi"}
             </p>
           </div>
           <div className="flex gap-2">
