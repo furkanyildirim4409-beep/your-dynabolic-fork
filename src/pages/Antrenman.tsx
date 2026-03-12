@@ -14,6 +14,7 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from "@/
 import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
+import { useWeeklyWorkoutStats } from "@/hooks/useWeeklyWorkoutStats";
 import { format } from "date-fns";
 // Note: eachDayOfInterval, startOfWeek, endOfWeek, fnsFormat imported at top
 
