@@ -826,6 +826,42 @@ export type Database = {
           },
         ]
       }
+      progress_photos: {
+        Row: {
+          body_fat_pct: number | null
+          created_at: string
+          date: string
+          id: string
+          note: string | null
+          photo_url: string
+          user_id: string
+          view: string | null
+          weight: number | null
+        }
+        Insert: {
+          body_fat_pct?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          photo_url: string
+          user_id: string
+          view?: string | null
+          weight?: number | null
+        }
+        Update: {
+          body_fat_pct?: number | null
+          created_at?: string
+          date?: string
+          id?: string
+          note?: string | null
+          photo_url?: string
+          user_id?: string
+          view?: string | null
+          weight?: number | null
+        }
+        Relationships: []
+      }
       push_subscriptions: {
         Row: {
           auth: string
