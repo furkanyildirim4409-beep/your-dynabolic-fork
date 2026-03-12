@@ -88,15 +88,6 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       ? calcMuscleMass(weightNum, navyEstimate)
       : null;
 
-  const previewAge = birthDate
-    ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
-    : null;
-  const previewBMR =
-    weightNum && heightNum && previewAge
-      ? calcBMR(weightNum, heightNum, previewAge, gender as "male" | "female")
-      : null;
-  const previewTDEE = previewBMR ? calcTDEE(previewBMR, activityLevel) : null;
-  const previewMacros = previewTDEE && weightNum ? calcMacroTargets(weightNum, previewTDEE, fitnessGoal) : null;
 
   const getValidationError = (key: string, value: string): string | null => {
     if (!value) return null;
