@@ -8,6 +8,7 @@ import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
+import { useBioCoin } from "@/hooks/useBioCoin";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useStableTimer } from "@/hooks/useStableTimer";
