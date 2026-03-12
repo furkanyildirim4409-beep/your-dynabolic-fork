@@ -389,7 +389,7 @@ const TransformationTimeline = () => {
             <img src={selectedPhoto.photo_url} alt={selectedPhoto.note ?? ""} className="max-w-full max-h-full object-contain" />
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
               <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.max(0, i - 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronLeft className="w-5 h-5 text-foreground" /></button>
-              <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.min(photos.length - 1, i + 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronRight className="w-5 h-5 text-foreground" /></button>
+              <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.min(filteredPhotos.length - 1, i + 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronRight className="w-5 h-5 text-foreground" /></button>
             </div>
           </motion.div>
         )}
