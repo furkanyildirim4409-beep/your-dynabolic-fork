@@ -15,6 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
 import { format } from "date-fns";
+// Note: eachDayOfInterval, startOfWeek, endOfWeek, fnsFormat imported at top
 
 const Antrenman = () => {
   const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
