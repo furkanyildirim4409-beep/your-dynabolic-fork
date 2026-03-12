@@ -244,6 +244,14 @@ const CoachAthletes = () => {
         athlete={selectedAthlete}
         onSaved={fetchAthletes}
       />
+
+      {/* Coach Bloodwork Modal */}
+      <CoachBloodworkModal
+        isOpen={showBloodworkModal}
+        onClose={() => { setShowBloodworkModal(false); setBloodworkAthlete(null); }}
+        athleteId={bloodworkAthlete?.id || ""}
+        athleteName={bloodworkAthlete?.full_name || "Sporcu"}
+      />
     </div>
   );
 };
