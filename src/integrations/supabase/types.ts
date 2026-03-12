@@ -182,6 +182,41 @@ export type Database = {
         }
         Relationships: []
       }
+      checkin_edit_logs: {
+        Row: {
+          checkin_id: string
+          edited_at: string
+          id: string
+          new_values: Json
+          previous_values: Json
+          user_id: string
+        }
+        Insert: {
+          checkin_id: string
+          edited_at?: string
+          id?: string
+          new_values: Json
+          previous_values: Json
+          user_id: string
+        }
+        Update: {
+          checkin_id?: string
+          edited_at?: string
+          id?: string
+          new_values?: Json
+          previous_values?: Json
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "checkin_edit_logs_checkin_id_fkey"
+            columns: ["checkin_id"]
+            isOneToOne: false
+            referencedRelation: "daily_checkins"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       coach_invites: {
         Row: {
           coach_id: string
@@ -271,6 +306,7 @@ export type Database = {
       daily_checkins: {
         Row: {
           created_at: string | null
+          digestion: number | null
           id: string
           mood: number | null
           notes: string | null
@@ -281,6 +317,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string | null
+          digestion?: number | null
           id?: string
           mood?: number | null
           notes?: string | null
@@ -291,6 +328,7 @@ export type Database = {
         }
         Update: {
           created_at?: string | null
+          digestion?: number | null
           id?: string
           mood?: number | null
           notes?: string | null
