@@ -82,6 +82,7 @@ function calculateReadiness(v: Record<SliderKey, number>): number {
 const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
+  const { awardCoins } = useBioCoin();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
