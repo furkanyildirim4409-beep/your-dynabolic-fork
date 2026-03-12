@@ -1,76 +1,54 @@
-import { useMemo } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
-import { useBodyMeasurements, calcBMR, calcTDEE, calcMacroTargets, type MacroTargets } from "@/hooks/useBodyMeasurements";
 
-export interface ResolvedMacros extends MacroTargets {
-  source: "coach" | "profile" | "auto" | "default";
+export interface ResolvedMacros {
+  calories: number;
+  protein: number;
+  carbs: number;
+  fat: number;
+  source: "coach" | "none";
 }
 
-const DEFAULT_MACROS: ResolvedMacros = {
-  calories: 2200,
-  protein: 180,
-  carbs: 250,
-  fat: 70,
-  source: "default",
-};
-
 /**
- * Centralized macro target resolution with priority:
- * 1. Coach-set targets (coach_id present + targets filled) → source: "coach"
- * 2. User-set targets (no coach_id + targets filled)      → source: "profile"
- * 3. Auto-calculated from TDEE + goal                     → source: "auto"
- * 4. Hardcoded defaults                                   → source: "default"
+ * Fetches macro targets ONLY from nutrition_targets table (coach-assigned).
+ * Returns null if no coach-assigned targets exist.
  */
-export function useMacros(): ResolvedMacros {
-  const { profile } = useAuth();
-  const { latest } = useBodyMeasurements();
+export function useMacros(): ResolvedMacros | null {
+  const { user } = useAuth();
+  const [targets, setTargets] = useState<ResolvedMacros | null>(null);
 
-  return useMemo(() => {
-    if (!profile) return DEFAULT_MACROS;
-
-    const p = profile as Record<string, unknown>;
-    const hasDbTargets =
-      p.daily_protein_target != null &&
-      p.daily_carb_target != null &&
-      p.daily_fat_target != null;
-
-    // Priority 1 & 2: DB targets exist (coach-set or user-set)
-    if (hasDbTargets) {
-      const protein = Number(p.daily_protein_target);
-      const carbs = Number(p.daily_carb_target);
-      const fat = Number(p.daily_fat_target);
-      const calories = p.daily_calorie_target
-        ? Number(p.daily_calorie_target)
-        : protein * 4 + carbs * 4 + fat * 9;
-      const source = p.coach_id ? "coach" : "profile";
-      return { calories, protein, carbs, fat, source } as ResolvedMacros;
+  useEffect(() => {
+    if (!user) {
+      setTargets(null);
+      return;
     }
 
-    // Priority 3: Auto-calculate from TDEE + goal
-    const weightKg = p.current_weight ? Number(p.current_weight) : null;
-    const heightCm = p.height_cm ? Number(p.height_cm) : null;
-    const gender = (p.gender as "male" | "female") ?? "male";
-    const birthDate = p.birth_date ? String(p.birth_date) : null;
-    const activityLevel = (p.activity_level as string) ?? "moderate";
-    const fitnessGoal = (p.fitness_goal as string) ?? "maintenance";
+    const fetch = async () => {
+      const { data, error } = await supabase
+        .from("nutrition_targets")
+        .select("daily_calories, protein_g, carbs_g, fat_g")
+        .eq("athlete_id", user.id)
+        .order("updated_at", { ascending: false })
+        .limit(1)
+        .maybeSingle();
 
-    if (weightKg && heightCm && birthDate) {
-      const age = Math.floor(
-        (Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000)
-      );
-      const bmr = calcBMR(weightKg, heightCm, age, gender);
-      if (bmr) {
-        const tdee = calcTDEE(bmr, activityLevel);
-        if (tdee) {
-          const macros = calcMacroTargets(weightKg, tdee, fitnessGoal);
-          if (macros) {
-            return { ...macros, source: "auto" as const };
-          }
-        }
+      if (error || !data) {
+        setTargets(null);
+        return;
       }
-    }
 
-    // Priority 4: Defaults
-    return DEFAULT_MACROS;
-  }, [profile, latest]);
+      setTargets({
+        calories: data.daily_calories,
+        protein: data.protein_g,
+        carbs: data.carbs_g,
+        fat: data.fat_g,
+        source: "coach",
+      });
+    };
+
+    fetch();
+  }, [user]);
+
+  return targets;
 }

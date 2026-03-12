@@ -72,14 +72,20 @@ const MacroDashboard = ({
   macroGoals,
 }: {
   totals: { protein: number; carbs: number; fat: number; calories: number };
-  macroGoals: { protein: number; carbs: number; fat: number; calories: number };
+  macroGoals: { protein: number; carbs: number; fat: number; calories: number } | null;
 }) => {
-  const safeGoals = {
-    protein: macroGoals.protein > 0 ? macroGoals.protein : 150,
-    carbs: macroGoals.carbs > 0 ? macroGoals.carbs : 250,
-    fat: macroGoals.fat > 0 ? macroGoals.fat : 70,
-    calories: macroGoals.calories > 0 ? macroGoals.calories : 2000,
-  };
+  // No fallbacks — only show coach-assigned targets
+  if (!macroGoals || macroGoals.calories === 0) {
+    return (
+      <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
+        <p className="text-muted-foreground text-sm text-center py-4">
+          Henüz koçunuz tarafından makro hedefi belirlenmedi.
+        </p>
+      </div>
+    );
+  }
+
+  const safeGoals = macroGoals;
 
   const macros = [
     { label: "PROTEİN", current: Math.round(totals.protein), goal: safeGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
@@ -660,11 +666,12 @@ const FoodDetailWizard = ({
 // --- ANA SAYFA ---
 const Beslenme = () => {
   const { user } = useAuth();
-  const staticMacros = useMacros();
+  const dbMacros = useMacros();
   const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading } = useDietPlan();
+  // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
-    ? { ...dynamicTargets, source: "coach" as const }
-    : staticMacros;
+    ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
+    : dbMacros;
   const [chartOpen, setChartOpen] = useState(false);
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const {
@@ -823,7 +830,7 @@ const Beslenme = () => {
           <div>
             <h1 className="text-2xl font-bold text-foreground uppercase font-display">Beslenme Planı</h1>
             <p className="text-muted-foreground text-sm">
-              Hedefine {Math.max(0, Math.round(macroGoals.calories - totals.calories))} kcal kaldı
+              {macroGoals ? `Hedefine ${Math.max(0, Math.round(macroGoals.calories - totals.calories))} kcal kaldı` : "Koç henüz hedef belirlemedi"}
             </p>
           </div>
           <div className="flex gap-2">
@@ -848,7 +855,7 @@ const Beslenme = () => {
             <DialogHeader>
               <DialogTitle>Haftalık Beslenme Uyumu</DialogTitle>
             </DialogHeader>
-            <WeeklyNutritionChart calorieTarget={macroGoals.calories} />
+            <WeeklyNutritionChart calorieTarget={macroGoals?.calories ?? 0} />
           </DialogContent>
         </Dialog>
 

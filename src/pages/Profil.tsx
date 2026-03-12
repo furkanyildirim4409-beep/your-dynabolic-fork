@@ -423,38 +423,37 @@ const Profil = () => {
               {profileAny.fitness_goal === "cut" ? "Kilo Ver" : profileAny.fitness_goal === "bulk" ? "Kas Yap" : "Koruma"}
             </span>
           )}
-          {macros.source !== "default" && (
+          {macros && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-              {macros.source === "coach" ? "Koç" : macros.source === "profile" ? "Manuel" : "Otomatik"}
+              Koç
             </span>
           )}
         </div>
 
-        {macros.source !== "default" ? (
+        {macros ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-xl">
               <Flame className="w-5 h-5 text-primary flex-shrink-0" />
               <div>
-                <p className="text-muted-foreground text-[10px]">HEDEF KALORİ</p>
                 <p className="font-display text-xl text-primary">
-                  {macros.calories.toLocaleString()} kcal
+                  {macros!.calories.toLocaleString()} kcal
                 </p>
               </div>
             </div>
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Beef className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.protein}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.protein}g</p>
                 <p className="text-muted-foreground text-[10px]">PROTEİN</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Wheat className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.carbs}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.carbs}g</p>
                 <p className="text-muted-foreground text-[10px]">KARBONHİDRAT</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Droplets className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.fat}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.fat}g</p>
                 <p className="text-muted-foreground text-[10px]">YAĞ</p>
               </div>
             </div>
