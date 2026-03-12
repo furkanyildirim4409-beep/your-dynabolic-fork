@@ -72,7 +72,7 @@ const MacroDashboard = ({
   macroGoals,
 }: {
   totals: { protein: number; carbs: number; fat: number; calories: number };
-  macroGoals: { protein: number; carbs: number; fat: number; calories: number };
+  macroGoals: { protein: number; carbs: number; fat: number; calories: number } | null;
 }) => {
   // No fallbacks — only show coach-assigned targets
   if (!macroGoals || macroGoals.calories === 0) {
