@@ -79,6 +79,12 @@ const CoachAthletes = () => {
     setShowMacroModal(true);
   };
 
+  const handleOpenBloodwork = (athlete: AthleteRow) => {
+    hapticLight();
+    setBloodworkAthlete(athlete);
+    setShowBloodworkModal(true);
+  };
+
   return (
     <div className="min-h-screen bg-background pb-24">
       {/* Header */}
