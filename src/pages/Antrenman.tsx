@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee, Trophy } from "lucide-react";
+import { eachDayOfInterval, startOfWeek, endOfWeek, format as fnsFormat, isSameDay } from "date-fns";
+import { tr } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import WorkoutCard from "@/components/WorkoutCard";
 import VisionAIExecution from "@/components/VisionAIExecution";
@@ -13,6 +15,7 @@ import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useAssignedWorkouts, TransformedWorkout } from "@/hooks/useAssignedWorkouts";
 import { format } from "date-fns";
+// Note: eachDayOfInterval, startOfWeek, endOfWeek, fnsFormat imported at top
 
 const Antrenman = () => {
   const [activeWorkout, setActiveWorkout] = useState<TransformedWorkout | null>(null);
@@ -57,18 +60,41 @@ const Antrenman = () => {
       groupMap.get(key)!.workouts.push(w);
     }
 
-    // Add rest days for missing days of the week (only when using day_of_week mode)
+    // Add rest days for missing days
     const hasScheduledDates = workouts.some(w => w.scheduledDate);
-    if (!hasScheduledDates && workouts.length > 0) {
-      for (const day of DAYS_TR) {
-        const key = `dow-${day}`;
-        if (!groupMap.has(key)) {
-          groupMap.set(key, {
-            label: day,
-            isToday: day === todayTR,
-            isRest: true,
-            workouts: [],
-          });
+    if (workouts.length > 0) {
+      if (hasScheduledDates) {
+        // Scheduled date mode: fill missing days within the current week
+        const now = new Date();
+        const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+        const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+        const allDaysInWeek = eachDayOfInterval({ start: weekStart, end: weekEnd });
+
+        for (const day of allDaysInWeek) {
+          const dateStr = fnsFormat(day, "yyyy-MM-dd");
+          if (!groupMap.has(dateStr)) {
+            const label = fnsFormat(day, "d MMMM EEEE", { locale: tr });
+            const capitalizedLabel = label.charAt(0).toUpperCase() + label.slice(1);
+            groupMap.set(dateStr, {
+              label: capitalizedLabel,
+              isToday: dateStr === todayStr,
+              isRest: true,
+              workouts: [],
+            });
+          }
+        }
+      } else {
+        // Day of week mode: fill missing day names
+        for (const day of DAYS_TR) {
+          const key = `dow-${day}`;
+          if (!groupMap.has(key)) {
+            groupMap.set(key, {
+              label: day,
+              isToday: day === todayTR,
+              isRest: true,
+              workouts: [],
+            });
+          }
         }
       }
     }
@@ -78,13 +104,17 @@ const Antrenman = () => {
       ...val,
     }));
 
-    // Sort by DAYS_TR order
-    const dayOrder = new Map(DAYS_TR.map((d, i) => [d.toLowerCase(), i]));
-    allGroups.sort((a, b) => {
-      const orderA = dayOrder.get(a.label.toLowerCase()) ?? 99;
-      const orderB = dayOrder.get(b.label.toLowerCase()) ?? 99;
-      return orderA - orderB;
-    });
+    // Sort: scheduled dates by date string, day_of_week by DAYS_TR order
+    if (hasScheduledDates) {
+      allGroups.sort((a, b) => a.key.localeCompare(b.key));
+    } else {
+      const dayOrder = new Map(DAYS_TR.map((d, i) => [d.toLowerCase(), i]));
+      allGroups.sort((a, b) => {
+        const orderA = dayOrder.get(a.label.toLowerCase()) ?? 99;
+        const orderB = dayOrder.get(b.label.toLowerCase()) ?? 99;
+        return orderA - orderB;
+      });
+    }
 
     // Move today's group to front
     const todayIdx = allGroups.findIndex((g) => g.isToday);
