@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/dialog";
 
 type CompareMode = "slider" | "sideBySide" | "overlay";
+type ViewFilter = "all" | "front" | "side" | "back";
+
+const VIEW_FILTER_LABELS: Record<ViewFilter, string> = {
+  all: "Tümü",
+  front: "Ön",
+  side: "Yan",
+  back: "Arka",
+};
 
 const TransformationTimeline = () => {
   const { photos, loading: photosLoading, uploadPhotos, deletePhoto } = useProgressPhotos();
