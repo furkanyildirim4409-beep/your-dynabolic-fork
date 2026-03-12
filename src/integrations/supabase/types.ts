@@ -137,6 +137,42 @@ export type Database = {
         }
         Relationships: []
       }
+      blood_tests: {
+        Row: {
+          coach_notes: string | null
+          created_at: string
+          date: string
+          document_url: string
+          extracted_data: Json | null
+          file_name: string
+          id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          coach_notes?: string | null
+          created_at?: string
+          date?: string
+          document_url: string
+          extracted_data?: Json | null
+          file_name: string
+          id?: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          coach_notes?: string | null
+          created_at?: string
+          date?: string
+          document_url?: string
+          extracted_data?: Json | null
+          file_name?: string
+          id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       body_measurements: {
         Row: {
           arm: number | null
