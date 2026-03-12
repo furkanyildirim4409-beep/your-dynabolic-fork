@@ -652,6 +652,55 @@ const Beslenme = () => {
           </DialogContent>
         </Dialog>
 
+        {/* TODAY'S DIET PLAN */}
+        {hasTemplate && plannedMeals.length > 0 && (
+          <div className="bg-card border border-border rounded-2xl p-4 mb-2">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
+                <CalendarDays className="w-4 h-4 text-primary" />
+              </div>
+              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">BUGÜNÜN PLANI</h2>
+            </div>
+            <div className="space-y-3">
+              {plannedMeals.map(([mealType, foods]) => (
+                <div key={mealType}>
+                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5 pl-1">
+                    {MEAL_LABELS[mealType] || mealType}
+                  </p>
+                  <div className="space-y-1.5">
+                    {foods.map((food) => (
+                      <div
+                        key={food.id}
+                        className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary/40 border border-border"
+                      >
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-foreground truncate">{food.food_name}</p>
+                          {food.serving_size && (
+                            <p className="text-[10px] text-muted-foreground">{food.serving_size}</p>
+                          )}
+                        </div>
+                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
+                          <div className="flex gap-1.5 text-[10px]">
+                            <span className="text-primary font-semibold">{food.calories}</span>
+                            <span className="text-yellow-500/80">P:{Math.round(food.protein)}</span>
+                            <span className="text-blue-500/80">K:{Math.round(food.carbs)}</span>
+                            <span className="text-orange-500/80">Y:{Math.round(food.fat)}</span>
+                          </div>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+        {!dietLoading && !hasTemplate && (
+          <div className="text-center py-2 mb-2">
+            <p className="text-muted-foreground text-xs">Atanmış bir beslenme programı bulunmuyor.</p>
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-white/[0.03] border border-white/5 p-1 h-12">
