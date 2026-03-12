@@ -495,7 +495,11 @@ const FoodDetailWizard = ({
 // --- ANA SAYFA ---
 const Beslenme = () => {
   const { user } = useAuth();
-  const macroGoals = useMacros();
+  const staticMacros = useMacros();
+  const { dynamicTargets, groupedByMeal: plannedMeals, hasTemplate, isLoading: dietLoading, MEAL_LABELS } = useDietPlan();
+  const macroGoals = dynamicTargets
+    ? { ...dynamicTargets, source: "coach" as const }
+    : staticMacros;
   const [chartOpen, setChartOpen] = useState(false);
   const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
   const {
