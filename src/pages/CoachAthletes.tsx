@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog } from "lucide-react";
+import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
