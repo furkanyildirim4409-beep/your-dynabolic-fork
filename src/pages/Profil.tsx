@@ -357,57 +357,6 @@ const Profil = () => {
         <WeightHistoryChart />
       </motion.div>
 
-      {/* My Body Metrics Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.24 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" />
-            <h2 className="font-display text-lg text-foreground tracking-wide">VÜCUT VERİLERİM</h2>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowMetricsEditor(true)}
-            className="text-xs gap-1.5"
-          >
-            <Ruler className="w-3.5 h-3.5" />
-            Düzenle
-          </Button>
-        </div>
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">CİNSİYET</p>
-            <p className="font-display text-sm text-foreground mt-0.5">
-              {profileGender === "male" ? "Erkek" : profileGender === "female" ? "Kadın" : "Diğer"}
-            </p>
-          </div>
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">YAŞ</p>
-            <p className="font-display text-sm text-foreground mt-0.5">{profileAge ?? "—"}</p>
-          </div>
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">AKTİVİTE</p>
-            <p className="font-display text-sm text-foreground mt-0.5 truncate">
-              {profileActivityLevel === "sedentary" ? "Düşük" : profileActivityLevel === "light" ? "Hafif" : profileActivityLevel === "moderate" ? "Aktif" : "Çok Aktif"}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="text-center p-2 bg-primary/10 border border-primary/30 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">BOY</p>
-            <p className="font-display text-sm text-primary mt-0.5">{profileHeight ? `${profileHeight} cm` : "—"}</p>
-          </div>
-          <div className="text-center p-2 bg-primary/10 border border-primary/30 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">KİLO</p>
-            <p className="font-display text-sm text-primary mt-0.5">{profileWeight ? `${profileWeight} kg` : "—"}</p>
-          </div>
-        </div>
-      </motion.div>
 
       {/* Body Stats */}
       <motion.div
