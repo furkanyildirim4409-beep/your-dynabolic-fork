@@ -32,6 +32,8 @@ import { useMacros } from "@/hooks/useMacros";
 import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
 import { DialogTrigger } from "@/components/ui/dialog";
+import { useDietPlan } from "@/hooks/useDietPlan";
+import { Beef, Wheat, Droplets as DropletIcon, Flame, CalendarDays } from "lucide-react";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
