@@ -1,8 +1,9 @@
 import { useState, useRef, useCallback, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Camera, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, X, Calendar, TrendingDown, Scale, Ruler, GripVertical } from "lucide-react";
+import { Camera, ChevronLeft, ChevronRight, ZoomIn, ZoomOut, Maximize2, X, Calendar, TrendingDown, Scale, Ruler, GripVertical, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Slider } from "@/components/ui/slider";
+import { useTransformationStats } from "@/hooks/useTransformationStats";
 
 interface TransformationPhoto {
   id: string;
@@ -39,6 +40,8 @@ const TransformationTimeline = () => {
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
+  const { weightDiff, fatDiff, timeElapsed, hasEnoughData, loading } = useTransformationStats();
+
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
 
   const handleSliderDrag = useCallback((clientX: number) => {
@@ -71,45 +74,68 @@ const TransformationTimeline = () => {
   const leftPhoto = photos[compareLeftIndex];
   const rightPhoto = photos[compareRightIndex];
 
-  const totalWeightLoss = photos[0].weight - photos[photos.length - 1].weight;
-  const totalFatLoss = (photos[0].bodyFat || 0) - (photos[photos.length - 1].bodyFat || 0);
-
   return (
     <div className="space-y-4">
       {/* Header */}
       <div className="flex items-center justify-between">
         <div>
           <h3 className="font-display text-foreground text-base tracking-wide">DÖNÜŞÜM</h3>
-          <p className="text-muted-foreground text-xs">{photos.length} fotoğraf • {totalWeightLoss}kg kayıp</p>
+          <p className="text-muted-foreground text-xs">
+            {hasEnoughData
+              ? `${weightDiff ?? "—"} • ${timeElapsed ?? ""}`
+              : `${photos.length} fotoğraf`}
+          </p>
         </div>
         <Button size="sm" variant="outline" onClick={() => setShowCompare(!showCompare)} className="h-8 text-xs border-border">
           {showCompare ? "Zaman Çizelgesi" : "Karşılaştır"}
         </Button>
       </div>
 
-      {/* Stats row */}
-      <div className="grid grid-cols-3 gap-2">
-        <div className="p-3 rounded-xl bg-card border border-border text-center">
-          <Scale className="w-4 h-4 text-primary mx-auto mb-1" />
-          <p className="text-foreground font-display text-sm">-{totalWeightLoss}kg</p>
-          <p className="text-muted-foreground text-[9px]">KİLO</p>
+      {/* Stats row — real data or empty state */}
+      {loading ? (
+        <div className="grid grid-cols-3 gap-2">
+          {[0, 1, 2].map(i => (
+            <div key={i} className="p-3 rounded-xl bg-card border border-border animate-pulse h-16" />
+          ))}
         </div>
-        <div className="p-3 rounded-xl bg-card border border-border text-center">
-          <TrendingDown className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
-          <p className="text-foreground font-display text-sm">-{totalFatLoss}%</p>
-          <p className="text-muted-foreground text-[9px]">YAĞ</p>
+      ) : hasEnoughData ? (
+        <div className="grid grid-cols-3 gap-2">
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <Scale className="w-4 h-4 text-primary mx-auto mb-1" />
+            <p className="text-foreground font-display text-sm">{weightDiff ?? "—"}</p>
+            <p className="text-muted-foreground text-[9px]">KİLO</p>
+          </div>
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <TrendingDown className="w-4 h-4 text-emerald-400 mx-auto mb-1" />
+            <p className="text-foreground font-display text-sm">{fatDiff ?? "—"}</p>
+            <p className="text-muted-foreground text-[9px]">YAĞ</p>
+          </div>
+          <div className="p-3 rounded-xl bg-card border border-border text-center">
+            <Calendar className="w-4 h-4 text-amber-400 mx-auto mb-1" />
+            <p className="text-foreground font-display text-sm">{timeElapsed ?? "—"}</p>
+            <p className="text-muted-foreground text-[9px]">SÜRE</p>
+          </div>
         </div>
-        <div className="p-3 rounded-xl bg-card border border-border text-center">
-          <Calendar className="w-4 h-4 text-amber-400 mx-auto mb-1" />
-          <p className="text-foreground font-display text-sm">8 Ay</p>
-          <p className="text-muted-foreground text-[9px]">SÜRE</p>
-        </div>
-      </div>
+      ) : (
+        <motion.div
+          initial={{ opacity: 0, y: 8 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="p-4 rounded-2xl bg-card/60 backdrop-blur-md border border-border/50 flex items-start gap-3"
+        >
+          <Info className="w-5 h-5 text-primary shrink-0 mt-0.5" />
+          <div>
+            <p className="text-foreground text-sm font-medium">Henüz yeterli veri yok</p>
+            <p className="text-muted-foreground text-xs mt-0.5">
+              Dönüşümünüzü analiz etmek için en az 2 farklı tarihte vücut ölçümünüzü kaydetmelisiniz.
+            </p>
+          </div>
+        </motion.div>
+      )}
 
       {!showCompare ? (
         /* Timeline view */
         <div className="space-y-3">
-          {/* Main photo */}
+          {/* Main photo with watermark */}
           <motion.div
             key={selectedIndex}
             initial={{ opacity: 0, scale: 0.95 }}
@@ -118,6 +144,12 @@ const TransformationTimeline = () => {
             onClick={() => setShowFullscreen(true)}
           >
             <img src={selectedPhoto.url} alt={selectedPhoto.note} className="w-full h-full object-cover" />
+            {/* Watermark overlay */}
+            <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+              <span className="text-foreground/10 font-display text-lg tracking-widest rotate-[-25deg] select-none uppercase">
+                Gerçek fotoğraflar yakında
+              </span>
+            </div>
             <div className="absolute bottom-0 inset-x-0 bg-gradient-to-t from-background/90 via-background/40 to-transparent p-4">
               <p className="text-foreground font-display text-sm">{selectedPhoto.note}</p>
               <div className="flex items-center gap-3 mt-1">
