@@ -41,6 +41,8 @@ const CoachAthletes = () => {
   const [search, setSearch] = useState("");
   const [selectedAthlete, setSelectedAthlete] = useState<AthleteRow | null>(null);
   const [showMacroModal, setShowMacroModal] = useState(false);
+  const [bloodworkAthlete, setBloodworkAthlete] = useState<AthleteRow | null>(null);
+  const [showBloodworkModal, setShowBloodworkModal] = useState(false);
 
   const fetchAthletes = useCallback(async () => {
     if (!user) return;
