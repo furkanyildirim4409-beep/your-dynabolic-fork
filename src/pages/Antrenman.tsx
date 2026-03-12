@@ -32,8 +32,9 @@ const Antrenman = () => {
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
   // Group workouts: by scheduledDate when available, else by dayOfWeek
+  // Also inject rest days for days without workouts
   const groupedByDay = useMemo(() => {
-    const groupMap = new Map<string, { label: string; isToday: boolean; workouts: TransformedWorkout[] }>();
+    const groupMap = new Map<string, { label: string; isToday: boolean; isRest: boolean; workouts: TransformedWorkout[] }>();
 
     for (const w of workouts) {
       let key: string;
@@ -51,15 +52,39 @@ const Antrenman = () => {
       }
 
       if (!groupMap.has(key)) {
-        groupMap.set(key, { label, isToday, workouts: [] });
+        groupMap.set(key, { label, isToday, isRest: false, workouts: [] });
       }
       groupMap.get(key)!.workouts.push(w);
+    }
+
+    // Add rest days for missing days of the week (only when using day_of_week mode)
+    const hasScheduledDates = workouts.some(w => w.scheduledDate);
+    if (!hasScheduledDates && workouts.length > 0) {
+      for (const day of DAYS_TR) {
+        const key = `dow-${day}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            label: day,
+            isToday: day === todayTR,
+            isRest: true,
+            workouts: [],
+          });
+        }
+      }
     }
 
     const allGroups = Array.from(groupMap.entries()).map(([key, val]) => ({
       key,
       ...val,
     }));
+
+    // Sort by DAYS_TR order
+    const dayOrder = new Map(DAYS_TR.map((d, i) => [d.toLowerCase(), i]));
+    allGroups.sort((a, b) => {
+      const orderA = dayOrder.get(a.label.toLowerCase()) ?? 99;
+      const orderB = dayOrder.get(b.label.toLowerCase()) ?? 99;
+      return orderA - orderB;
+    });
 
     // Move today's group to front
     const todayIdx = allGroups.findIndex((g) => g.isToday);
