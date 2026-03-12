@@ -119,6 +119,30 @@ const TransformationTimeline = () => {
         </div>
       </div>
 
+      {/* View filter tabs */}
+      {photos.length > 0 && hasMultipleViews && (
+        <div className="flex gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
+          {(["all", "front", "side", "back"] as ViewFilter[]).map((v) => {
+            const count = v === "all" ? photos.length : photos.filter((p) => p.view === v).length;
+            if (v !== "all" && count === 0) return null;
+            return (
+              <button
+                key={v}
+                onClick={() => { setViewFilter(v); setSelectedIndex(0); }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-display transition-all ${
+                  viewFilter === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {VIEW_FILTER_LABELS[v]}
+                <span className={`ml-1 text-[10px] ${viewFilter === v ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
+
       {/* Stats row */}
       {statsLoading ? (
         <div className="grid grid-cols-3 gap-2">
