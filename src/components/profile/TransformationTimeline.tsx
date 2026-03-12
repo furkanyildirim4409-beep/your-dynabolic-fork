@@ -16,6 +16,14 @@ import {
 } from "@/components/ui/dialog";
 
 type CompareMode = "slider" | "sideBySide" | "overlay";
+type ViewFilter = "all" | "front" | "side" | "back";
+
+const VIEW_FILTER_LABELS: Record<ViewFilter, string> = {
+  all: "Tümü",
+  front: "Ön",
+  side: "Yan",
+  back: "Arka",
+};
 
 const TransformationTimeline = () => {
   const { photos, loading: photosLoading, uploadPhotos, deletePhoto } = useProgressPhotos();
@@ -30,17 +38,24 @@ const TransformationTimeline = () => {
   const [overlayOpacity, setOverlayOpacity] = useState(50);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ProgressPhoto | null>(null);
+  const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
   const { weightDiff, fatDiff, timeElapsed, hasEnoughData, loading: statsLoading } = useTransformationStats();
 
+  const filteredPhotos = viewFilter === "all" ? photos : photos.filter((p) => p.view === viewFilter);
+
+  // Unique views present in photos for showing filter only when relevant
+  const availableViews = [...new Set(photos.map((p) => p.view))];
+  const hasMultipleViews = availableViews.length > 1;
+
   useEffect(() => {
-    if (photos.length > 0) {
-      setCompareRightIndex(photos.length - 1);
-      if (selectedIndex >= photos.length) setSelectedIndex(photos.length - 1);
+    if (filteredPhotos.length > 0) {
+      setCompareRightIndex(filteredPhotos.length - 1);
+      if (selectedIndex >= filteredPhotos.length) setSelectedIndex(filteredPhotos.length - 1);
     }
-  }, [photos.length, selectedIndex]);
+  }, [filteredPhotos.length, selectedIndex]);
 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
 
@@ -76,9 +91,9 @@ const TransformationTimeline = () => {
     setDeleteConfirm(null);
   };
 
-  const selectedPhoto = photos[selectedIndex] as ProgressPhoto | undefined;
-  const leftPhoto = photos[compareLeftIndex] as ProgressPhoto | undefined;
-  const rightPhoto = photos[compareRightIndex] as ProgressPhoto | undefined;
+  const selectedPhoto = filteredPhotos[selectedIndex] as ProgressPhoto | undefined;
+  const leftPhoto = filteredPhotos[compareLeftIndex] as ProgressPhoto | undefined;
+  const rightPhoto = filteredPhotos[compareRightIndex] as ProgressPhoto | undefined;
 
   return (
     <div className="space-y-4">
@@ -103,6 +118,30 @@ const TransformationTimeline = () => {
           )}
         </div>
       </div>
+
+      {/* View filter tabs */}
+      {photos.length > 0 && hasMultipleViews && (
+        <div className="flex gap-1 p-1 rounded-xl bg-secondary/50 border border-border">
+          {(["all", "front", "side", "back"] as ViewFilter[]).map((v) => {
+            const count = v === "all" ? photos.length : photos.filter((p) => p.view === v).length;
+            if (v !== "all" && count === 0) return null;
+            return (
+              <button
+                key={v}
+                onClick={() => { setViewFilter(v); setSelectedIndex(0); }}
+                className={`flex-1 py-1.5 rounded-lg text-xs font-display transition-all ${
+                  viewFilter === v ? "bg-primary text-primary-foreground" : "text-muted-foreground"
+                }`}
+              >
+                {VIEW_FILTER_LABELS[v]}
+                <span className={`ml-1 text-[10px] ${viewFilter === v ? "text-primary-foreground/70" : "text-muted-foreground/60"}`}>
+                  {count}
+                </span>
+              </button>
+            );
+          })}
+        </div>
+      )}
 
       {/* Stats row */}
       {statsLoading ? (
@@ -148,7 +187,14 @@ const TransformationTimeline = () => {
       {/* Photo content */}
       {photosLoading ? (
         <div className="aspect-[3/4] rounded-2xl bg-secondary animate-pulse" />
-      ) : photos.length === 0 ? (
+      ) : filteredPhotos.length === 0 && viewFilter !== "all" ? (
+        <div className="p-6 rounded-2xl bg-card/40 border border-border/50 text-center">
+          <p className="text-muted-foreground text-sm">Bu açıdan fotoğraf yok</p>
+          <Button size="sm" variant="outline" className="mt-3 border-border gap-1" onClick={() => setViewFilter("all")}>
+            Tümünü Göster
+          </Button>
+        </div>
+      ) : filteredPhotos.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
@@ -208,7 +254,7 @@ const TransformationTimeline = () => {
 
           {/* Thumbnail strip */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-            {photos.map((photo, index) => (
+            {filteredPhotos.map((photo, index) => (
               <button
                 key={photo.id}
                 onClick={() => setSelectedIndex(index)}
@@ -303,7 +349,7 @@ const TransformationTimeline = () => {
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1.5">Önce</p>
                 <div className="flex gap-1.5 overflow-x-auto">
-                  {photos.map((p, i) => (
+                  {filteredPhotos.map((p, i) => (
                     <button key={p.id} onClick={() => setCompareLeftIndex(i)} className={`flex-shrink-0 w-12 h-14 rounded-lg overflow-hidden transition-all ${i === compareLeftIndex ? "ring-2 ring-primary" : "opacity-50"}`}>
                       <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -313,7 +359,7 @@ const TransformationTimeline = () => {
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1.5">Sonra</p>
                 <div className="flex gap-1.5 overflow-x-auto">
-                  {photos.map((p, i) => (
+                  {filteredPhotos.map((p, i) => (
                     <button key={p.id} onClick={() => setCompareRightIndex(i)} className={`flex-shrink-0 w-12 h-14 rounded-lg overflow-hidden transition-all ${i === compareRightIndex ? "ring-2 ring-primary" : "opacity-50"}`}>
                       <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -343,7 +389,7 @@ const TransformationTimeline = () => {
             <img src={selectedPhoto.photo_url} alt={selectedPhoto.note ?? ""} className="max-w-full max-h-full object-contain" />
             <div className="absolute bottom-8 left-1/2 -translate-x-1/2 flex gap-2">
               <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.max(0, i - 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronLeft className="w-5 h-5 text-foreground" /></button>
-              <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.min(photos.length - 1, i + 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronRight className="w-5 h-5 text-foreground" /></button>
+              <button onClick={(e) => { e.stopPropagation(); setSelectedIndex(i => Math.min(filteredPhotos.length - 1, i + 1)); }} className="p-3 rounded-full bg-secondary/80 backdrop-blur-sm"><ChevronRight className="w-5 h-5 text-foreground" /></button>
             </div>
           </motion.div>
         )}
