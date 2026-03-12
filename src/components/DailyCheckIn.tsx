@@ -7,6 +7,7 @@ import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
+import { useBioCoin } from "@/hooks/useBioCoin";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -81,6 +82,7 @@ function calculateReadiness(v: Record<SliderKey, number>): number {
 const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
+  const { awardCoins } = useBioCoin();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -177,6 +179,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
 
         if (checkinError) throw checkinError;
         triggerAchievement("daily_checkin");
+        await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 

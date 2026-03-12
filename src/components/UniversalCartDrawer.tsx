@@ -8,20 +8,18 @@ import PaymentModal, { PaymentDetails } from "./PaymentModal";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { useBioCoin } from "@/hooks/useBioCoin";
+import { Switch } from "@/components/ui/switch";
+
+const COIN_DISCOUNT_THRESHOLD = 100;
+const COIN_DISCOUNT_AMOUNT = 50; // 100 coins = 50₺
 
 const fireConfetti = () => {
   const count = 200;
-  const defaults = {
-    origin: { y: 0.7 },
-    zIndex: 9999,
-  };
+  const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
 
   function fire(particleRatio: number, opts: confetti.Options) {
-    confetti({
-      ...defaults,
-      ...opts,
-      particleCount: Math.floor(count * particleRatio),
-    });
+    confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
   }
 
   fire(0.25, { spread: 26, startVelocity: 55, colors: ["#CDDC39", "#8BC34A", "#4CAF50"] });
@@ -34,21 +32,24 @@ const fireConfetti = () => {
 const UniversalCartDrawer = () => {
   const { items, removeFromCart, updateQuantity, clearCart, cartTotal, isCartOpen, closeCart } = useCart();
   const { user } = useAuth();
+  const { balance, spendCoins } = useBioCoin();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
-  
+  const [useCoinDiscount, setUseCoinDiscount] = useState(false);
+
   const totalCoinsUsed = items.reduce((acc, item) => acc + (item.coinsUsed || 0) * item.quantity, 0);
+  const canUseCoinDiscount = balance >= COIN_DISCOUNT_THRESHOLD && cartTotal >= COIN_DISCOUNT_AMOUNT;
+  const coinDiscount = useCoinDiscount && canUseCoinDiscount ? COIN_DISCOUNT_AMOUNT : 0;
+  const finalTotal = Math.max(0, cartTotal - coinDiscount);
 
   const getPaymentDetails = (): PaymentDetails => {
     const itemTypes = [...new Set(items.map(i => i.type))];
-    const primaryType = itemTypes.includes("coaching") ? "coaching" : 
+    const primaryType = itemTypes.includes("coaching") ? "coaching" :
                        itemTypes.includes("supplement") ? "supplement" : "store";
-    
-    const itemSummary = items.length === 1 
-      ? items[0].title 
-      : `${items.length} Ürün`;
+
+    const itemSummary = items.length === 1 ? items[0].title : `${items.length} Ürün`;
 
     return {
-      amount: cartTotal,
+      amount: finalTotal,
       title: itemSummary,
       description: items.map(i => `${i.title} x${i.quantity}`).join(", "),
       type: primaryType,
@@ -57,22 +58,24 @@ const UniversalCartDrawer = () => {
   };
 
   const handleCheckout = () => {
-    // Close cart first, then open payment modal to avoid z-index conflict
     closeCart();
-    // Small delay to ensure cart is closed before modal opens
-    setTimeout(() => {
-      setShowPaymentModal(true);
-    }, 100);
+    setTimeout(() => { setShowPaymentModal(true); }, 100);
   };
 
   const handlePaymentSuccess = async () => {
     if (!user) return;
 
+    // Spend coins if discount was applied
+    if (useCoinDiscount && coinDiscount > 0) {
+      const success = await spendCoins(COIN_DISCOUNT_THRESHOLD, "purchase", "Sepet İndirimi");
+      if (!success) return;
+    }
+
     const { error } = await supabase.from("orders").insert({
       user_id: user.id,
       items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
-      total_price: cartTotal,
-      total_coins_used: totalCoinsUsed,
+      total_price: finalTotal,
+      total_coins_used: totalCoinsUsed + (coinDiscount > 0 ? COIN_DISCOUNT_THRESHOLD : 0),
       status: "pending",
     });
 
@@ -84,10 +87,8 @@ const UniversalCartDrawer = () => {
     fireConfetti();
     clearCart();
     closeCart();
-    toast({
-      title: "Sipariş Tamamlandı! 🎉",
-      description: "Siparişiniz başarıyla oluşturuldu.",
-    });
+    setUseCoinDiscount(false);
+    toast({ title: "Sipariş Tamamlandı! 🎉", description: "Siparişiniz başarıyla oluşturuldu." });
   };
 
   return (
@@ -110,12 +111,10 @@ const UniversalCartDrawer = () => {
               dragConstraints={{ top: 0, bottom: 0 }}
               dragElastic={{ top: 0, bottom: 0.5 }}
               onDragEnd={(_, info) => {
-                if (info.offset.y > 100 || info.velocity.y > 500) {
-                  closeCart();
-                }
+                if (info.offset.y > 100 || info.velocity.y > 500) closeCart();
               }}
               onClick={(e) => e.stopPropagation()}
-              className="absolute inset-x-0 bottom-0 w-full max-w-[430px] mx-auto bg-[#0a0a0a] border-t border-white/10 rounded-t-3xl max-h-[85vh] flex flex-col touch-none"
+              className="absolute inset-x-0 bottom-0 w-full max-w-[430px] mx-auto bg-[hsl(var(--background))] border-t border-border rounded-t-3xl max-h-[85vh] flex flex-col touch-none"
             >
               {/* Drag Handle */}
               <div className="flex justify-center pt-3 pb-1">
@@ -123,7 +122,7 @@ const UniversalCartDrawer = () => {
               </div>
 
               {/* Header */}
-              <div className="p-4 border-b border-white/10 flex items-center justify-between">
+              <div className="p-4 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-primary" />
                   <h2 className="font-display text-lg text-foreground">SEPETİM</h2>
@@ -131,10 +130,7 @@ const UniversalCartDrawer = () => {
                     {items.reduce((acc, i) => acc + i.quantity, 0)} Ürün
                   </span>
                 </div>
-                <button
-                  onClick={closeCart}
-                  className="p-2 text-muted-foreground hover:text-foreground transition-colors"
-                >
+                <button onClick={closeCart} className="p-2 text-muted-foreground hover:text-foreground transition-colors">
                   <X className="w-5 h-5" />
                 </button>
               </div>
@@ -145,9 +141,7 @@ const UniversalCartDrawer = () => {
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
                     <ShoppingBag className="w-16 h-16 text-muted-foreground/30 mb-4" />
                     <p className="text-foreground font-medium">Sepetiniz Boş</p>
-                    <p className="text-muted-foreground text-sm mt-1">
-                      Mağazadan ürün ekleyerek alışverişe başlayın
-                    </p>
+                    <p className="text-muted-foreground text-sm mt-1">Mağazadan ürün ekleyerek alışverişe başlayın</p>
                   </div>
                 ) : (
                   <>
@@ -159,59 +153,38 @@ const UniversalCartDrawer = () => {
                           initial={{ opacity: 0, y: 10 }}
                           animate={{ opacity: 1, y: 0 }}
                           transition={{ delay: index * 0.05 }}
-                          className="bg-white/5 border border-white/10 rounded-xl p-3 flex gap-3"
+                          className="bg-muted/50 border border-border rounded-xl p-3 flex gap-3"
                         >
-                          <img 
-                            src={item.image} 
-                            alt={item.title}
-                            className="w-16 h-16 rounded-lg object-cover flex-shrink-0"
-                          />
+                          <img src={item.image} alt={item.title} className="w-16 h-16 rounded-lg object-cover flex-shrink-0" />
                           <div className="flex-1 min-w-0">
-                            <p className="text-foreground text-sm font-medium line-clamp-2">
-                              {item.title}
-                            </p>
-                            {item.coachName && (
-                              <p className="text-muted-foreground text-xs mt-0.5">
-                                {item.coachName}
-                              </p>
-                            )}
+                            <p className="text-foreground text-sm font-medium line-clamp-2">{item.title}</p>
+                            {item.coachName && <p className="text-muted-foreground text-xs mt-0.5">{item.coachName}</p>}
                             <div className="flex items-center gap-2 mt-1">
                               {item.discountedPrice ? (
                                 <>
-                                  <span className="text-muted-foreground text-xs line-through">
-                                    {item.price}₺
-                                  </span>
-                                  <span className="text-primary font-display text-sm">
-                                    {item.discountedPrice}₺
-                                  </span>
+                                  <span className="text-muted-foreground text-xs line-through">{item.price}₺</span>
+                                  <span className="text-primary font-display text-sm">{item.discountedPrice}₺</span>
                                 </>
                               ) : (
-                                <span className="text-primary font-display text-sm">
-                                  {item.price}₺
-                                </span>
+                                <span className="text-primary font-display text-sm">{item.price}₺</span>
                               )}
                               {item.coinsUsed && item.coinsUsed > 0 && (
                                 <span className="flex items-center gap-0.5 text-[10px] text-muted-foreground">
-                                  <Coins className="w-3 h-3" />
-                                  -{item.coinsUsed}
+                                  <Coins className="w-3 h-3" />-{item.coinsUsed}
                                 </span>
                               )}
                             </div>
-
-                            {/* Quantity Controls */}
                             <div className="flex items-center gap-2 mt-2">
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity - 1)}
-                                className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                                className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
                               >
                                 <Minus className="w-3 h-3 text-foreground" />
                               </button>
-                              <span className="text-sm text-foreground font-medium w-6 text-center">
-                                {item.quantity}
-                              </span>
+                              <span className="text-sm text-foreground font-medium w-6 text-center">{item.quantity}</span>
                               <button
                                 onClick={() => updateQuantity(item.id, item.quantity + 1)}
-                                className="w-6 h-6 rounded-full bg-white/10 flex items-center justify-center hover:bg-white/20 transition-colors"
+                                className="w-6 h-6 rounded-full bg-muted flex items-center justify-center hover:bg-accent transition-colors"
                               >
                                 <Plus className="w-3 h-3 text-foreground" />
                               </button>
@@ -228,7 +201,7 @@ const UniversalCartDrawer = () => {
                     </div>
 
                     {/* Cart Footer */}
-                    <div className="border-t border-white/10 p-4 space-y-4 bg-[#0a0a0a]">
+                    <div className="border-t border-border p-4 space-y-4 bg-[hsl(var(--background))]">
                       {/* Summary */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -238,31 +211,59 @@ const UniversalCartDrawer = () => {
                         {totalCoinsUsed > 0 && (
                           <div className="flex items-center justify-between text-sm">
                             <span className="text-muted-foreground flex items-center gap-1">
-                              <Coins className="w-4 h-4 text-primary" />
-                              Kullanılan Coin
+                              <Coins className="w-4 h-4 text-primary" /> Kullanılan Coin
                             </span>
                             <span className="text-primary">{totalCoinsUsed.toLocaleString()}</span>
                           </div>
                         )}
-                        <div className="flex items-center justify-between pt-2 border-t border-white/10">
+
+                        {/* BioCoin Discount Section */}
+                        {canUseCoinDiscount && (
+                          <motion.div
+                            initial={{ opacity: 0, height: 0 }}
+                            animate={{ opacity: 1, height: "auto" }}
+                            className="bg-primary/10 border border-primary/20 rounded-xl p-3 space-y-2"
+                          >
+                            <div className="flex items-center justify-between">
+                              <div className="flex items-center gap-2">
+                                <Coins className="w-4 h-4 text-primary" />
+                                <div>
+                                  <p className="text-xs font-display text-foreground">BİOCOİN İNDİRİMİ</p>
+                                  <p className="text-[10px] text-muted-foreground">
+                                    {COIN_DISCOUNT_THRESHOLD} coin = {COIN_DISCOUNT_AMOUNT}₺ indirim
+                                  </p>
+                                </div>
+                              </div>
+                              <Switch checked={useCoinDiscount} onCheckedChange={setUseCoinDiscount} />
+                            </div>
+                            {useCoinDiscount && (
+                              <div className="flex items-center justify-between text-xs text-primary font-display pt-1 border-t border-primary/10">
+                                <span>Bakiye: {balance} coin</span>
+                                <span>-{COIN_DISCOUNT_AMOUNT}₺</span>
+                              </div>
+                            )}
+                          </motion.div>
+                        )}
+
+                        {coinDiscount > 0 && (
+                          <div className="flex items-center justify-between text-sm text-primary">
+                            <span>BioCoin İndirimi</span>
+                            <span>-{coinDiscount}₺</span>
+                          </div>
+                        )}
+
+                        <div className="flex items-center justify-between pt-2 border-t border-border">
                           <span className="text-foreground font-display">TOPLAM</span>
-                          <span className="text-primary font-display text-xl">{cartTotal}₺</span>
+                          <span className="text-primary font-display text-xl">{finalTotal}₺</span>
                         </div>
                       </div>
 
                       {/* Actions */}
                       <div className="space-y-2">
-                        <Button
-                          onClick={handleCheckout}
-                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12"
-                        >
+                        <Button onClick={handleCheckout} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12">
                           ÖDEMEYE GEÇ
                         </Button>
-                        <Button
-                          variant="outline"
-                          onClick={clearCart}
-                          className="w-full border-white/10 text-muted-foreground hover:text-destructive h-10"
-                        >
+                        <Button variant="outline" onClick={clearCart} className="w-full border-border text-muted-foreground hover:text-destructive h-10">
                           Sepeti Temizle
                         </Button>
                       </div>
@@ -275,7 +276,6 @@ const UniversalCartDrawer = () => {
         )}
       </AnimatePresence>
 
-      {/* Payment Modal */}
       <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
