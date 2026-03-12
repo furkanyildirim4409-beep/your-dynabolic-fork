@@ -30,7 +30,7 @@ export const useWeeklyWorkoutStats = () => {
           .single(),
         supabase
           .from("workout_logs")
-          .select("duration_minutes, details")
+          .select("duration_minutes, details, tonnage")
           .eq("user_id", user.id)
           .eq("completed", true)
           .gte("logged_at", weekStart.toISOString())
