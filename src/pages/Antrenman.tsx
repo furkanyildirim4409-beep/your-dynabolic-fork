@@ -664,10 +664,14 @@ const Antrenman = () => {
               </div>
 
               {/* Stats Row */}
-              <div className="p-4 border-b border-white/10 grid grid-cols-3 gap-4">
+              <div className="p-4 border-b border-white/10 grid grid-cols-4 gap-3">
                 <div className="text-center">
                   <p className="font-display text-xl text-primary">{selectedWorkout.tonnage}</p>
                   <p className="text-muted-foreground text-[10px]">TONAJ</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-display text-xl text-orange-400">{selectedWorkout.calories}</p>
+                  <p className="text-muted-foreground text-[10px]">KALORİ</p>
                 </div>
                 <div className="text-center">
                   <p className="font-display text-xl text-foreground">{selectedWorkout.exercises}</p>
