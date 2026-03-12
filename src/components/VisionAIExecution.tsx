@@ -102,10 +102,18 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
   const { data: globalPRMap } = useExerciseHistory();
+  const [userWeight, setUserWeight] = useState(75);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
   const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
   const workoutStartTime = useRef(Date.now());
+
+  // Fetch user weight for calorie calculation
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from("profiles").select("current_weight").eq("id", user.id).single()
+      .then(({ data }) => { if (data?.current_weight) setUserWeight(Number(data.current_weight)); });
+  }, [user?.id]);
 
   
   const exercise = exercises[currentExerciseIndex];
@@ -471,6 +479,20 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Toplam Set</span><span className="font-display text-lg text-foreground">{getTotalSetsCompleted()}</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Süre</span><span className="font-display text-lg text-foreground">{Math.round((Date.now() - workoutStartTime.current) / 60000)} dk</span></div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Tonnaj</span><span className="font-display text-lg text-foreground">{calculateTotalTonnage() >= 1000 ? `${(calculateTotalTonnage() / 1000).toFixed(1)} Ton` : `${calculateTotalTonnage()} kg`}</span></div>
+                <div className="flex justify-between items-center">
+                  <span className="text-muted-foreground text-sm">Yakılan Kalori</span>
+                  <span className="font-display text-lg text-orange-400">
+                    🔥 {(() => {
+                      const durationMin = Math.round((Date.now() - workoutStartTime.current) / 60000);
+                      const baseBurn = (durationMin / 60) * userWeight * 5.0;
+                      let failCount = 0;
+                      Object.values(completedSetsRef.current).forEach(sets => {
+                        sets.forEach(s => { if (s.isFailure) failCount++; });
+                      });
+                      return Math.round(baseBurn + failCount * 15);
+                    })()} kcal
+                  </span>
+                </div>
                 <div className="flex justify-between items-center"><span className="text-muted-foreground text-sm">Kazanılan Bio-Coin</span><span className="font-display text-lg text-primary">+150</span></div>
               </motion.div>
 

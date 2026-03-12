@@ -15,6 +15,8 @@ export interface WorkoutHistoryEntry {
   bioCoins: number;
   completed: boolean;
   tonnageRaw: number;
+  calories: number;
+  durationMinutes: number;
   details: {
     exerciseName: string;
     sets: { weight: number; reps: number; isFailure?: boolean }[];
@@ -29,16 +31,24 @@ export const useWorkoutHistory = () => {
     queryFn: async (): Promise<WorkoutHistoryEntry[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from("workout_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("completed", true)
-        .order("logged_at", { ascending: false })
-        .limit(50);
+      const [logsRes, profileRes] = await Promise.all([
+        supabase
+          .from("workout_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("completed", true)
+          .order("logged_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("profiles")
+          .select("current_weight")
+          .eq("id", user.id)
+          .single(),
+      ]);
 
-      if (error) throw error;
-      if (!data) return [];
+      if (logsRes.error) throw logsRes.error;
+      const data = logsRes.data ?? [];
+      const weightKg = profileRes.data?.current_weight ?? 75;
 
       return data.map((log) => {
         const loggedAt = log.logged_at ? new Date(log.logged_at) : new Date();
@@ -63,6 +73,16 @@ export const useWorkoutHistory = () => {
           }));
         }
 
+        // Calorie calculation (MET-based + EPOC)
+        let failureSets = 0;
+        for (const d of details) {
+          for (const s of d.sets) {
+            if (s.isFailure) failureSets++;
+          }
+        }
+        const baseBurn = (durationMin / 60) * weightKg * 5.0;
+        const calories = Math.round(baseBurn + failureSets * 15);
+
         return {
           id: log.id,
           date: format(loggedAt, "d MMMM yyyy", { locale: tr }),
@@ -76,6 +96,8 @@ export const useWorkoutHistory = () => {
           bioCoins: log.bio_coins_earned ?? 0,
           completed: log.completed ?? true,
           tonnageRaw: tonnageKg,
+          calories,
+          durationMinutes: durationMin,
           details,
         };
       });

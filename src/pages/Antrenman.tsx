@@ -597,9 +597,14 @@ const Antrenman = () => {
                       {/* Stats */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-foreground font-display text-sm">{workout.tonnage}</p>
-                        <div className="flex items-center gap-1 justify-end text-primary text-[10px]">
-                          <Flame className="w-3 h-3" />
-                          <span>+{workout.bioCoins}</span>
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="flex items-center gap-0.5 text-orange-400 text-[10px] font-medium">
+                            🔥 {workout.calories} kcal
+                          </span>
+                          <span className="flex items-center gap-1 text-primary text-[10px]">
+                            <Flame className="w-3 h-3" />
+                            +{workout.bioCoins}
+                          </span>
                         </div>
                       </div>
 
@@ -659,10 +664,14 @@ const Antrenman = () => {
               </div>
 
               {/* Stats Row */}
-              <div className="p-4 border-b border-white/10 grid grid-cols-3 gap-4">
+              <div className="p-4 border-b border-white/10 grid grid-cols-4 gap-3">
                 <div className="text-center">
                   <p className="font-display text-xl text-primary">{selectedWorkout.tonnage}</p>
                   <p className="text-muted-foreground text-[10px]">TONAJ</p>
+                </div>
+                <div className="text-center">
+                  <p className="font-display text-xl text-orange-400">{selectedWorkout.calories}</p>
+                  <p className="text-muted-foreground text-[10px]">KALORİ</p>
                 </div>
                 <div className="text-center">
                   <p className="font-display text-xl text-foreground">{selectedWorkout.exercises}</p>
