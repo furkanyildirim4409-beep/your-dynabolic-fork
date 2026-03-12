@@ -266,6 +266,80 @@ export type Database = {
         }
         Relationships: []
       }
+      diet_template_foods: {
+        Row: {
+          calories: number | null
+          carbs: number | null
+          day_number: number | null
+          fat: number | null
+          food_name: string
+          id: string
+          meal_type: string
+          protein: number | null
+          serving_size: string | null
+          template_id: string
+        }
+        Insert: {
+          calories?: number | null
+          carbs?: number | null
+          day_number?: number | null
+          fat?: number | null
+          food_name: string
+          id?: string
+          meal_type?: string
+          protein?: number | null
+          serving_size?: string | null
+          template_id: string
+        }
+        Update: {
+          calories?: number | null
+          carbs?: number | null
+          day_number?: number | null
+          fat?: number | null
+          food_name?: string
+          id?: string
+          meal_type?: string
+          protein?: number | null
+          serving_size?: string | null
+          template_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diet_template_foods_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "diet_templates"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diet_templates: {
+        Row: {
+          coach_id: string
+          created_at: string | null
+          description: string | null
+          id: string
+          target_calories: number | null
+          title: string
+        }
+        Insert: {
+          coach_id: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          target_calories?: number | null
+          title: string
+        }
+        Update: {
+          coach_id?: string
+          created_at?: string | null
+          description?: string | null
+          id?: string
+          target_calories?: number | null
+          title?: string
+        }
+        Relationships: []
+      }
       exercise_library: {
         Row: {
           category: string | null
@@ -417,6 +491,7 @@ export type Database = {
       }
       nutrition_targets: {
         Row: {
+          active_diet_template_id: string | null
           athlete_id: string
           carbs_g: number
           coach_id: string
@@ -428,6 +503,7 @@ export type Database = {
           updated_at: string | null
         }
         Insert: {
+          active_diet_template_id?: string | null
           athlete_id: string
           carbs_g?: number
           coach_id: string
@@ -439,6 +515,7 @@ export type Database = {
           updated_at?: string | null
         }
         Update: {
+          active_diet_template_id?: string | null
           athlete_id?: string
           carbs_g?: number
           coach_id?: string
@@ -449,7 +526,15 @@ export type Database = {
           protein_g?: number
           updated_at?: string | null
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "nutrition_targets_active_diet_template_id_fkey"
+            columns: ["active_diet_template_id"]
+            isOneToOne: false
+            referencedRelation: "diet_templates"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       orders: {
         Row: {
