@@ -74,26 +74,15 @@ const MacroDashboard = ({
   totals: { protein: number; carbs: number; fat: number; calories: number };
   macroGoals: { protein: number; carbs: number; fat: number; calories: number } | null;
 }) => {
-  // No fallbacks — only show coach-assigned targets
-  if (!macroGoals || macroGoals.calories === 0) {
-    return (
-      <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
-        <p className="text-muted-foreground text-sm text-center py-4">
-          Henüz koçunuz tarafından makro hedefi belirlenmedi.
-        </p>
-      </div>
-    );
-  }
-
-  const safeGoals = macroGoals;
+  const hasGoals = macroGoals && macroGoals.calories > 0;
 
   const macros = [
-    { label: "PROTEİN", current: Math.round(totals.protein), goal: safeGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
-    { label: "KARBONHİDRAT", current: Math.round(totals.carbs), goal: safeGoals.carbs, color: "bg-blue-500", textColor: "text-blue-500" },
-    { label: "YAĞ", current: Math.round(totals.fat), goal: safeGoals.fat, color: "bg-orange-500", textColor: "text-orange-500" },
+    { label: "PROTEİN", current: Math.round(totals.protein), goal: hasGoals ? macroGoals.protein : null, color: "bg-yellow-500", textColor: "text-yellow-500" },
+    { label: "KARBONHİDRAT", current: Math.round(totals.carbs), goal: hasGoals ? macroGoals.carbs : null, color: "bg-blue-500", textColor: "text-blue-500" },
+    { label: "YAĞ", current: Math.round(totals.fat), goal: hasGoals ? macroGoals.fat : null, color: "bg-orange-500", textColor: "text-orange-500" },
   ];
 
-  const calPercentage = Math.min((totals.calories / safeGoals.calories) * 100, 100);
+  const calPercentage = hasGoals ? Math.min((totals.calories / macroGoals.calories) * 100, 100) : 0;
 
   return (
     <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
@@ -101,37 +90,47 @@ const MacroDashboard = ({
         <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">MAKRO ÖZETİ</h2>
         <div className="flex items-baseline gap-1">
           <span className="text-xl font-display font-bold text-primary">{Math.round(totals.calories)}</span>
-          <span className="text-muted-foreground text-sm">/ {safeGoals.calories} kcal</span>
+          {hasGoals && (
+            <span className="text-muted-foreground text-sm">/ {macroGoals.calories} kcal</span>
+          )}
+          {!hasGoals && <span className="text-muted-foreground text-sm">kcal</span>}
         </div>
       </div>
-      {/* Calorie progress bar */}
-      <div className="h-2 w-full bg-white/5 rounded-full mb-4 overflow-hidden">
-        <motion.div
-          key={`cal-${Math.round(totals.calories)}`}
-          initial={{ width: 0 }}
-          animate={{ width: `${calPercentage}%` }}
-          transition={{ duration: 0.8, ease: "easeOut" }}
-          className="h-full rounded-full bg-primary"
-        />
-      </div>
+      {/* Calorie progress bar — only show if coach target exists */}
+      {hasGoals && (
+        <div className="h-2 w-full bg-white/5 rounded-full mb-4 overflow-hidden">
+          <motion.div
+            key={`cal-${Math.round(totals.calories)}`}
+            initial={{ width: 0 }}
+            animate={{ width: `${calPercentage}%` }}
+            transition={{ duration: 0.8, ease: "easeOut" }}
+            className="h-full rounded-full bg-primary"
+          />
+        </div>
+      )}
+      {!hasGoals && (
+        <p className="text-muted-foreground text-[10px] mb-3">Koç hedefi atandığında ilerleme çubuğu görünecek</p>
+      )}
       <div className="grid grid-cols-3 gap-3">
         {macros.map((macro) => {
-          const percentage = macro.goal > 0 ? Math.min((macro.current / macro.goal) * 100, 100) : 0;
+          const percentage = macro.goal ? Math.min((macro.current / macro.goal) * 100, 100) : 0;
           return (
             <div key={macro.label} className="bg-secondary/50 rounded-xl p-3">
               <p className="text-[10px] font-bold text-muted-foreground mb-2 tracking-wide">{macro.label}</p>
-              <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
-                <motion.div
-                  key={`${macro.label}-${macro.current}`}
-                  initial={{ width: 0 }}
-                  animate={{ width: `${percentage}%` }}
-                  transition={{ duration: 0.8, ease: "easeOut" }}
-                  className={cn("h-full rounded-full", macro.color)}
-                />
-              </div>
+              {macro.goal && (
+                <div className="h-1.5 w-full bg-white/5 rounded-full mb-2 overflow-hidden">
+                  <motion.div
+                    key={`${macro.label}-${macro.current}`}
+                    initial={{ width: 0 }}
+                    animate={{ width: `${percentage}%` }}
+                    transition={{ duration: 0.8, ease: "easeOut" }}
+                    className={cn("h-full rounded-full", macro.color)}
+                  />
+                </div>
+              )}
               <div className="flex items-baseline gap-0.5">
                 <span className={cn("font-display font-bold text-lg", macro.textColor)}>{macro.current}g</span>
-                <span className="text-muted-foreground text-xs">/ {macro.goal}g</span>
+                {macro.goal && <span className="text-muted-foreground text-xs">/ {macro.goal}g</span>}
               </div>
             </div>
           );
