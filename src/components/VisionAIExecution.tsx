@@ -65,6 +65,7 @@ const getRPEColor = (rpe: number): { bg: string; text: string; border: string } 
 const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentId, onClose }: VisionAIExecutionProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
+  const { awardCoins } = useBioCoin();
   
   const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
     id: ex.id,
