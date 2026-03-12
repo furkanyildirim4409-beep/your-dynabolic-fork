@@ -65,9 +65,8 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       setBirthDate(profileAny?.birth_date ? String(profileAny.birth_date) : "");
       setGender((profileAny?.gender as string) || "male");
       setActivityLevel((profileAny?.activity_level as string) || "moderate");
-      setFitnessGoal((profileAny?.fitness_goal as string) || "maintenance");
     }
-  }, [isOpen, latest, profileAny?.current_weight, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level, profileAny?.fitness_goal]);
+  }, [isOpen, latest, profileAny?.current_weight, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level]);
 
   const weightNum = weightKg ? Number(weightKg) : null;
   const heightNum = heightCm ? Number(heightCm) : null;
