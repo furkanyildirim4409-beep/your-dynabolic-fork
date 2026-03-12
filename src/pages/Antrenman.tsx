@@ -228,15 +228,25 @@ const Antrenman = () => {
             </h2>
           </div>
           <div className="grid grid-cols-3 gap-4">
-            {weeklyStats.map((stat, index) => (
-              <div key={index} className="text-center">
-                <div className="w-10 h-10 rounded-lg bg-secondary mx-auto mb-2 flex items-center justify-center">
-                  <stat.icon className="w-5 h-5 text-primary" />
+            {isWeeklyLoading ? (
+              Array.from({ length: 3 }).map((_, i) => (
+                <div key={i} className="text-center">
+                  <Skeleton className="w-10 h-10 rounded-lg mx-auto mb-2" />
+                  <Skeleton className="h-5 w-12 mx-auto mb-1" />
+                  <Skeleton className="h-3 w-16 mx-auto" />
                 </div>
-                <p className="font-display text-lg text-foreground">{stat.value}</p>
-                <p className="text-muted-foreground text-[10px]">{stat.label}</p>
-              </div>
-            ))}
+              ))
+            ) : (
+              weeklyStats.map((stat, index) => (
+                <div key={index} className="text-center">
+                  <div className="w-10 h-10 rounded-lg bg-secondary mx-auto mb-2 flex items-center justify-center">
+                    <stat.icon className="w-5 h-5 text-primary" />
+                  </div>
+                  <p className="font-display text-lg text-foreground">{stat.value}</p>
+                  <p className="text-muted-foreground text-[10px]">{stat.label}</p>
+                </div>
+              ))
+            )}
           </div>
         </motion.div>
 
