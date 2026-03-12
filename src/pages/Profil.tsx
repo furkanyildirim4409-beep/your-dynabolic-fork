@@ -435,9 +435,8 @@ const Profil = () => {
             <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-xl">
               <Flame className="w-5 h-5 text-primary flex-shrink-0" />
               <div>
-                <p className="text-muted-foreground text-[10px]">HEDEF KALORİ</p>
                 <p className="font-display text-xl text-primary">
-                  {macros.calories.toLocaleString()} kcal
+                  {macros!.calories.toLocaleString()} kcal
                 </p>
               </div>
             </div>
