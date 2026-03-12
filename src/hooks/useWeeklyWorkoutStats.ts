@@ -30,7 +30,7 @@ export const useWeeklyWorkoutStats = () => {
           .single(),
         supabase
           .from("workout_logs")
-          .select("duration_minutes, details")
+          .select("duration_minutes, details, tonnage")
           .eq("user_id", user.id)
           .eq("completed", true)
           .gte("logged_at", weekStart.toISOString())
@@ -63,7 +63,9 @@ export const useWeeklyWorkoutStats = () => {
         }
 
         const epocBonus = failureSets * 15; // +15 kcal per failure/RIR-0 set
-        totalCalories += baseBurn + epocBonus;
+        const logTonnage = log.tonnage ? Number(log.tonnage) : 0;
+        const mechanicalBonus = (logTonnage / 1000) * 20; // +20 kcal per 1,000 kg lifted
+        totalCalories += baseBurn + epocBonus + mechanicalBonus;
       }
 
       // Format duration
