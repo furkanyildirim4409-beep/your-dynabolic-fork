@@ -1,11 +1,13 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
-import { Target, ChevronRight } from "lucide-react";
+import { Target, ChevronRight, Settings2 } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
-import { useExerciseRecords } from "@/hooks/useExerciseRecords";
+import { useExerciseRecords, type ExerciseRecord } from "@/hooks/useExerciseRecords";
 import ExerciseRecordsModal from "./ExerciseRecordsModal";
+import ExerciseSetHistoryModal from "./ExerciseSetHistoryModal";
+import ExerciseSlotPickerModal from "./ExerciseSlotPickerModal";
 
-const FIXED_SLOTS = [
+const DEFAULT_SLOTS = [
   { name: "Bench Press", emoji: "🏋️" },
   { name: "Squat", emoji: "🦵" },
   { name: "Deadlift", emoji: "💀" },
@@ -13,14 +15,44 @@ const FIXED_SLOTS = [
   { name: "Barbell Row", emoji: "🔥" },
 ];
 
+const STORAGE_KEY = "exercise-record-slots";
+
+interface SlotConfig {
+  name: string;
+  emoji: string;
+}
+
+const loadSlots = (): SlotConfig[] => {
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) return JSON.parse(stored);
+  } catch {}
+  return DEFAULT_SLOTS;
+};
+
 const ExerciseGoalsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
+  const [pickerOpen, setPickerOpen] = useState(false);
+  const [quickDetail, setQuickDetail] = useState<ExerciseRecord | null>(null);
+  const [slots, setSlots] = useState<SlotConfig[]>(loadSlots);
   const { data, isLoading } = useExerciseRecords();
   const allExercises = data?.allExercises ?? [];
+
+  useEffect(() => {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(slots));
+  }, [slots]);
 
   const matchExercise = (slotName: string) => {
     const q = slotName.toLowerCase();
     return allExercises.find(e => e.name.toLowerCase().includes(q));
+  };
+
+  const handleSlotClick = (e: React.MouseEvent, slot: SlotConfig) => {
+    e.stopPropagation();
+    const match = matchExercise(slot.name);
+    if (match) {
+      setQuickDetail(match);
+    }
   };
 
   return (
@@ -29,8 +61,7 @@ const ExerciseGoalsSection = () => {
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.15 }}
-        className="glass-card p-4 cursor-pointer active:scale-[0.98] transition-transform"
-        onClick={() => setModalOpen(true)}
+        className="glass-card p-4"
       >
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
@@ -39,9 +70,20 @@ const ExerciseGoalsSection = () => {
               EGZERSİZ REKORLARI
             </h2>
           </div>
-          <div className="flex items-center gap-1 text-muted-foreground">
-            <span className="text-[10px]">Tümünü gör</span>
-            <ChevronRight className="w-3 h-3" />
+          <div className="flex items-center gap-2">
+            <button
+              onClick={(e) => { e.stopPropagation(); setPickerOpen(true); }}
+              className="p-1 rounded-md hover:bg-secondary/50 transition-colors"
+            >
+              <Settings2 className="w-3.5 h-3.5 text-muted-foreground" />
+            </button>
+            <button
+              onClick={() => setModalOpen(true)}
+              className="flex items-center gap-1 text-muted-foreground hover:text-foreground transition-colors"
+            >
+              <span className="text-[10px]">Tümünü gör</span>
+              <ChevronRight className="w-3 h-3" />
+            </button>
           </div>
         </div>
 
@@ -57,23 +99,27 @@ const ExerciseGoalsSection = () => {
           </div>
         ) : (
           <div className="grid grid-cols-5 gap-2">
-            {FIXED_SLOTS.map((slot, index) => {
+            {slots.map((slot, index) => {
               const match = matchExercise(slot.name);
+              const hasData = match && match.maxWeight > 0;
               return (
                 <motion.div
-                  key={slot.name}
+                  key={`${slot.name}-${index}`}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: 0.2 + index * 0.05 }}
-                  className="flex flex-col items-center gap-1 p-2 rounded-xl bg-secondary/50 border border-transparent"
+                  onClick={(e) => handleSlotClick(e, slot)}
+                  className={`flex flex-col items-center gap-1 p-2 rounded-xl bg-secondary/50 border transition-all cursor-pointer active:scale-95 ${
+                    hasData ? "border-primary/20 hover:border-primary/40" : "border-transparent"
+                  }`}
                 >
                   <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">
                     {slot.emoji}
                   </div>
                   <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2">
-                    {slot.name}
+                    {slot.name.length > 14 ? slot.name.slice(0, 14) + "…" : slot.name}
                   </span>
-                  {match && match.maxWeight > 0 ? (
+                  {hasData ? (
                     <span className="text-[10px] font-display text-primary">
                       {match.maxWeight} kg
                     </span>
@@ -91,6 +137,19 @@ const ExerciseGoalsSection = () => {
         isOpen={modalOpen}
         onClose={() => setModalOpen(false)}
         exercises={allExercises}
+      />
+
+      <ExerciseSetHistoryModal
+        exercise={quickDetail}
+        onClose={() => setQuickDetail(null)}
+      />
+
+      <ExerciseSlotPickerModal
+        isOpen={pickerOpen}
+        onClose={() => setPickerOpen(false)}
+        currentSlots={slots}
+        onSave={setSlots}
+        allExercises={allExercises}
       />
     </>
   );
