@@ -15,6 +15,8 @@ export interface WorkoutHistoryEntry {
   bioCoins: number;
   completed: boolean;
   tonnageRaw: number;
+  calories: number;
+  durationMinutes: number;
   details: {
     exerciseName: string;
     sets: { weight: number; reps: number; isFailure?: boolean }[];
