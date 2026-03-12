@@ -349,7 +349,7 @@ const TransformationTimeline = () => {
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1.5">Önce</p>
                 <div className="flex gap-1.5 overflow-x-auto">
-                  {photos.map((p, i) => (
+                  {filteredPhotos.map((p, i) => (
                     <button key={p.id} onClick={() => setCompareLeftIndex(i)} className={`flex-shrink-0 w-12 h-14 rounded-lg overflow-hidden transition-all ${i === compareLeftIndex ? "ring-2 ring-primary" : "opacity-50"}`}>
                       <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
                     </button>
@@ -359,7 +359,7 @@ const TransformationTimeline = () => {
               <div>
                 <p className="text-muted-foreground text-[10px] uppercase tracking-widest mb-1.5">Sonra</p>
                 <div className="flex gap-1.5 overflow-x-auto">
-                  {photos.map((p, i) => (
+                  {filteredPhotos.map((p, i) => (
                     <button key={p.id} onClick={() => setCompareRightIndex(i)} className={`flex-shrink-0 w-12 h-14 rounded-lg overflow-hidden transition-all ${i === compareRightIndex ? "ring-2 ring-primary" : "opacity-50"}`}>
                       <img src={p.photo_url} alt="" className="w-full h-full object-cover" />
                     </button>
