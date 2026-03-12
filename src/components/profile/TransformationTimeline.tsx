@@ -187,7 +187,14 @@ const TransformationTimeline = () => {
       {/* Photo content */}
       {photosLoading ? (
         <div className="aspect-[3/4] rounded-2xl bg-secondary animate-pulse" />
-      ) : photos.length === 0 ? (
+      ) : filteredPhotos.length === 0 && viewFilter !== "all" ? (
+        <div className="p-6 rounded-2xl bg-card/40 border border-border/50 text-center">
+          <p className="text-muted-foreground text-sm">Bu açıdan fotoğraf yok</p>
+          <Button size="sm" variant="outline" className="mt-3 border-border gap-1" onClick={() => setViewFilter("all")}>
+            Tümünü Göster
+          </Button>
+        </div>
+      ) : filteredPhotos.length === 0 ? (
         <motion.div
           initial={{ opacity: 0, scale: 0.95 }}
           animate={{ opacity: 1, scale: 1 }}
