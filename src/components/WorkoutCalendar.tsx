@@ -93,7 +93,7 @@ const WorkoutCalendar = () => {
 
     if (completedLog) {
       const dur = completedLog.duration_minutes ?? 0;
-      let details: CalendarDayData["workout"]!["details"] = [];
+      let details: NonNullable<CalendarDayData["workout"]>["details"] = [];
       if (completedLog.details && Array.isArray(completedLog.details)) {
         details = (completedLog.details as any[]).map(d => ({
           exerciseName: d.exerciseName ?? d.exercise_name ?? "Bilinmeyen",
