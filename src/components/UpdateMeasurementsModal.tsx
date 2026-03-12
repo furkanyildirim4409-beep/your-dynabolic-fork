@@ -8,14 +8,14 @@ import { toast } from "@/hooks/use-toast";
 import { calcNavyBodyFat, calcMuscleMass, calcBMR, calcTDEE, calcMacroTargets, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Ruler, Calculator, UserCog, Target } from "lucide-react";
+import { Ruler, Calculator, UserCog, Target, Scale } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
   onClose: () => void;
 }
 
-const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: number; max?: number; placeholder?: string }[] = [
+const tapeFields: { key: keyof MeasurementInput; label: string; unit: string; min?: number; max?: number; placeholder?: string }[] = [
   { key: "neck", label: "Boyun", unit: "cm", min: 25, max: 55, placeholder: "ör: 38" },
   { key: "chest", label: "Göğüs", unit: "cm", min: 70, max: 150, placeholder: "ör: 100" },
   { key: "shoulder", label: "Omuz", unit: "cm", min: 80, max: 160, placeholder: "ör: 115" },
@@ -23,8 +23,6 @@ const fields: { key: keyof MeasurementInput; label: string; unit: string; min?: 
   { key: "hips", label: "Kalça", unit: "cm", min: 60, max: 150, placeholder: "ör: 95" },
   { key: "arm", label: "Kol", unit: "cm", min: 20, max: 55, placeholder: "ör: 35" },
   { key: "thigh", label: "Bacak", unit: "cm", min: 35, max: 80, placeholder: "ör: 55" },
-  { key: "body_fat_pct", label: "Yağ Oranı", unit: "%", min: 3, max: 60, placeholder: "otomatik hesaplanır" },
-  { key: "muscle_mass_kg", label: "Kas Kütlesi", unit: "kg", min: 20, max: 120, placeholder: "ör: 70" },
 ];
 
 const activityOptions = [
@@ -48,69 +46,75 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
   const [saving, setSaving] = useState(false);
 
   const profileAny = profile as Record<string, unknown> | null;
+  const [weightKg, setWeightKg] = useState("");
   const [heightCm, setHeightCm] = useState("");
   const [birthDate, setBirthDate] = useState("");
   const [gender, setGender] = useState("male");
   const [activityLevel, setActivityLevel] = useState("moderate");
   const [fitnessGoal, setFitnessGoal] = useState("maintenance");
 
-  const weightKg = profile?.current_weight ? Number(profile.current_weight) : null;
-
   useEffect(() => {
     if (isOpen) {
       if (latest) {
         const pre: Record<string, string> = {};
-        fields.forEach(({ key }) => {
-          if (key === "muscle_mass_kg") return;
+        tapeFields.forEach(({ key }) => {
           const val = latest[key as keyof typeof latest];
-          if (val != null && !(key === "body_fat_pct" && Number(val) <= 0)) {
-            pre[key] = String(val);
-          }
+          if (val != null) pre[key] = String(val);
         });
         setForm(pre);
       } else {
         setForm({});
       }
 
+      setWeightKg(profileAny?.current_weight ? String(profileAny.current_weight) : "");
       setHeightCm(profileAny?.height_cm ? String(profileAny.height_cm) : "");
       setBirthDate(profileAny?.birth_date ? String(profileAny.birth_date) : "");
       setGender((profileAny?.gender as string) || "male");
       setActivityLevel((profileAny?.activity_level as string) || "moderate");
       setFitnessGoal((profileAny?.fitness_goal as string) || "maintenance");
     }
-  }, [isOpen, latest, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level, profileAny?.fitness_goal]);
+  }, [isOpen, latest, profileAny?.current_weight, profileAny?.height_cm, profileAny?.birth_date, profileAny?.gender, profileAny?.activity_level, profileAny?.fitness_goal]);
 
+  const weightNum = weightKg ? Number(weightKg) : null;
+  const heightNum = heightCm ? Number(heightCm) : null;
+
+  // Auto-calculate body fat using gender-aware Navy formula
   const navyEstimate =
-    form.waist && form.neck && !form.body_fat_pct
-      ? calcNavyBodyFat(Number(form.waist), Number(form.neck), heightCm ? Number(heightCm) : undefined)
+    form.waist && form.neck && heightNum
+      ? calcNavyBodyFat(
+          Number(form.waist),
+          Number(form.neck),
+          heightNum,
+          gender as "male" | "female",
+          form.hips ? Number(form.hips) : null,
+        )
       : null;
 
-  const effectiveBf = form.body_fat_pct ? Number(form.body_fat_pct) : navyEstimate;
   const muscleEstimate =
-    effectiveBf != null && weightKg != null
-      ? calcMuscleMass(weightKg, effectiveBf)
+    navyEstimate != null && weightNum != null
+      ? calcMuscleMass(weightNum, navyEstimate)
       : null;
 
   const previewAge = birthDate
     ? Math.floor((Date.now() - new Date(birthDate).getTime()) / (365.25 * 24 * 60 * 60 * 1000))
     : null;
   const previewBMR =
-    weightKg && heightCm && previewAge
-      ? calcBMR(weightKg, Number(heightCm), previewAge, gender as "male" | "female")
+    weightNum && heightNum && previewAge
+      ? calcBMR(weightNum, heightNum, previewAge, gender as "male" | "female")
       : null;
   const previewTDEE = previewBMR ? calcTDEE(previewBMR, activityLevel) : null;
-  const previewMacros = previewTDEE && weightKg ? calcMacroTargets(weightKg, previewTDEE, fitnessGoal) : null;
+  const previewMacros = previewTDEE && weightNum ? calcMacroTargets(weightNum, previewTDEE, fitnessGoal) : null;
 
   const getValidationError = (key: string, value: string): string | null => {
     if (!value) return null;
-    const field = fields.find(f => f.key === key);
+    const field = tapeFields.find(f => f.key === key);
     if (!field || !field.min || !field.max) return null;
     const num = Number(value);
     if (num < field.min || num > field.max) return `${field.min}-${field.max} arası olmalı`;
     return null;
   };
 
-  const hasValidationErrors = fields.some(({ key }) => {
+  const hasValidationErrors = tapeFields.some(({ key }) => {
     const v = form[key];
     return v ? getValidationError(key, v) !== null : false;
   });
@@ -124,13 +128,13 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
     try {
       if (user) {
         const profileUpdate: Record<string, unknown> = {};
+        if (weightKg) profileUpdate.current_weight = Number(weightKg);
         if (heightCm) profileUpdate.height_cm = Number(heightCm);
         if (birthDate) profileUpdate.birth_date = birthDate;
         if (gender) profileUpdate.gender = gender;
         if (activityLevel) profileUpdate.activity_level = activityLevel;
         profileUpdate.fitness_goal = fitnessGoal;
 
-        // Auto-calculate macro targets if we have enough data
         if (previewMacros) {
           profileUpdate.daily_protein_target = previewMacros.protein;
           profileUpdate.daily_carb_target = previewMacros.carbs;
@@ -149,11 +153,11 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       }
 
       const input: MeasurementInput = {};
-      fields.forEach(({ key }) => {
+      tapeFields.forEach(({ key }) => {
         const v = form[key];
         (input as any)[key] = v ? Number(v) : null;
       });
-      await saveMeasurement(input, weightKg);
+      await saveMeasurement(input, weightNum, gender as "male" | "female", heightNum);
       toast({ title: "Ölçümler kaydedildi ✅" });
       onClose();
     } catch (e: any) {
@@ -162,6 +166,8 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
       setSaving(false);
     }
   };
+
+  const needsHipForFemale = gender === "female" && !form.hips && form.waist && form.neck;
 
   return (
     <Dialog open={isOpen} onOpenChange={(o) => !o && onClose()}>
@@ -180,6 +186,21 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
             PROFİL BİLGİLERİ
           </div>
           <div className="grid grid-cols-2 gap-3">
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Scale className="w-3 h-3" /> Kilo (kg)
+              </Label>
+              <Input
+                type="number"
+                step="0.1"
+                placeholder="ör: 75"
+                value={weightKg}
+                onChange={(e) => setWeightKg(e.target.value)}
+                className="h-9 bg-secondary/50 border-border"
+                min={30}
+                max={300}
+              />
+            </div>
             <div className="space-y-1">
               <Label className="text-xs text-muted-foreground">Boy (cm)</Label>
               <Input
@@ -227,41 +248,46 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
                 </SelectContent>
               </Select>
             </div>
-          </div>
-
-          {/* Fitness Goal */}
-          <div className="col-span-2 space-y-1">
-            <Label className="text-xs text-muted-foreground flex items-center gap-1">
-              <Target className="w-3 h-3" /> Hedef
-            </Label>
-            <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
-              <SelectTrigger className="h-9 bg-secondary/50 border-border">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                {goalOptions.map((opt) => (
-                  <SelectItem key={opt.value} value={opt.value}>
-                    {opt.label} ({opt.desc})
-                  </SelectItem>
-                ))}
-              </SelectContent>
-            </Select>
+            <div className="space-y-1">
+              <Label className="text-xs text-muted-foreground flex items-center gap-1">
+                <Target className="w-3 h-3" /> Hedef
+              </Label>
+              <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
+                <SelectTrigger className="h-9 bg-secondary/50 border-border">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  {goalOptions.map((opt) => (
+                    <SelectItem key={opt.value} value={opt.value}>
+                      {opt.label} ({opt.desc})
+                    </SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
           </div>
         </div>
 
-        {/* Measurement Fields */}
+        {/* Tape Measurement Fields */}
         <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground mt-2">
           <Ruler className="w-4 h-4" />
           VÜCUT ÖLÇÜLERİ
         </div>
 
+        {needsHipForFemale && (
+          <div className="text-xs text-yellow-500 bg-yellow-500/10 border border-yellow-500/30 rounded-lg px-3 py-2">
+            ⚠️ Kadınlar için yağ oranı hesabında <strong>Kalça</strong> ölçümü zorunludur.
+          </div>
+        )}
+
         <div className="grid grid-cols-2 gap-3">
-          {fields.map(({ key, label, unit, placeholder }) => {
+          {tapeFields.map(({ key, label, unit, placeholder }) => {
             const error = form[key] ? getValidationError(key, form[key]) : null;
             return (
               <div key={key} className="space-y-1">
                 <Label className="text-xs text-muted-foreground">
                   {label} ({unit})
+                  {key === "hips" && gender === "female" && <span className="text-yellow-500 ml-1">*</span>}
                 </Label>
                 <Input
                   type="number"
@@ -277,14 +303,19 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
           })}
         </div>
 
-        {/* Estimates */}
+        {/* Auto-Calculated Read-Only Badges */}
         {(navyEstimate != null || muscleEstimate != null || previewBMR != null || previewMacros != null) && (
           <div className="mt-3 space-y-2">
+            <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
+              <Calculator className="w-4 h-4" />
+              OTOMATİK HESAPLAMA
+            </div>
+
             {navyEstimate != null && (
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
                 <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  Tahmini yağ oranı:{" "}
+                  Yağ Oranı (U.S. Navy):{" "}
                   <span className="font-display text-primary">%{navyEstimate}</span>
                 </p>
               </div>
@@ -293,7 +324,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
               <div className="flex items-center gap-2 rounded-lg bg-primary/10 border border-primary/30 px-3 py-2">
                 <Calculator className="w-4 h-4 text-primary flex-shrink-0" />
                 <p className="text-xs text-foreground">
-                  Tahmini LBM ({weightKg}kg × %{effectiveBf} yağ):{" "}
+                  Yağsız Kütle (LBM):{" "}
                   <span className="font-display text-primary">{muscleEstimate} kg</span>
                 </p>
               </div>

@@ -193,14 +193,25 @@ export function useBodyMeasurements() {
     };
   }, [userId, fetchData]);
 
-  const saveMeasurement = async (input: MeasurementInput, weightKg?: number | null) => {
+  const saveMeasurement = async (
+    input: MeasurementInput,
+    weightKg?: number | null,
+    gender: "male" | "female" = "male",
+    heightCm?: number | null,
+  ) => {
     if (!userId) throw new Error("Not authenticated");
 
     let bodyFat = input.body_fat_pct != null ? Number(input.body_fat_pct) : null;
 
     // Auto-calculate BF% if not provided
     if (bodyFat == null && input.waist && input.neck) {
-      bodyFat = calcNavyBodyFat(Number(input.waist), Number(input.neck));
+      bodyFat = calcNavyBodyFat(
+        Number(input.waist),
+        Number(input.neck),
+        heightCm ? Number(heightCm) : undefined,
+        gender,
+        input.hips ? Number(input.hips) : null,
+      );
     }
 
     let muscleMass = input.muscle_mass_kg != null ? Number(input.muscle_mass_kg) : null;

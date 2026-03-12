@@ -518,11 +518,6 @@ const Profil = () => {
         onClose={() => setShowMeasurements(false)}
       />
 
-      {/* Body Metrics Editor */}
-      <BodyMetricsEditor
-        isOpen={showMetricsEditor}
-        onClose={() => setShowMetricsEditor(false)}
-      />
     </div>
   );
 };
