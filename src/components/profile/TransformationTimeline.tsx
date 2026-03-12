@@ -254,7 +254,7 @@ const TransformationTimeline = () => {
 
           {/* Thumbnail strip */}
           <div className="flex gap-2 overflow-x-auto pb-2 -mx-1 px-1">
-            {photos.map((photo, index) => (
+            {filteredPhotos.map((photo, index) => (
               <button
                 key={photo.id}
                 onClick={() => setSelectedIndex(index)}
