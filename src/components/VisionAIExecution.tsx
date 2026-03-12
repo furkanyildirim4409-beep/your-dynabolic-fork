@@ -1,4 +1,5 @@
 import { useState, useEffect, useRef } from "react";
+import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
@@ -197,6 +198,23 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       isFailure: achievedFailure || false,
     });
     setAchievedFailure(false);
+
+    // 🎉 New PR detection — confetti + toast
+    const pr = globalPRMap?.get(exercise.name);
+    if (pr && weight > pr.maxWeight) {
+      confetti({
+        particleCount: 100,
+        spread: 70,
+        origin: { y: 0.6 },
+        colors: ["#a3e635", "#facc15", "#f97316", "#ef4444", "#8b5cf6"],
+        zIndex: 9999,
+      });
+      setTimeout(() => {
+        confetti({ particleCount: 50, spread: 100, origin: { y: 0.5, x: 0.3 }, colors: ["#a3e635", "#22c55e", "#facc15"], zIndex: 9999 });
+        confetti({ particleCount: 50, spread: 100, origin: { y: 0.5, x: 0.7 }, colors: ["#f97316", "#ef4444", "#8b5cf6"], zIndex: 9999 });
+      }, 200);
+      toast.success(`🏆 YENİ REKOR! ${exercise.name}: ${weight} kg (+${weight - pr.maxWeight} kg)`, { duration: 4000 });
+    }
 
     setShowComplete(true);
     pauseTimer();
