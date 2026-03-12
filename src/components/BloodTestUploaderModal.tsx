@@ -54,8 +54,6 @@ const BloodTestUploaderModal = ({ isOpen, onClose, onUpload }: BloodTestUploader
   const handleFile = useCallback(async (file: File) => {
     if (!file.type.includes("pdf") && !file.type.includes("image")) return;
     setIsParsing(true);
-    // Simulate 3-second OCR parsing
-    await new Promise((r) => setTimeout(r, 3000));
     await onUpload(file, format(selectedDate, "yyyy-MM-dd"));
     setIsParsing(false);
     onClose();

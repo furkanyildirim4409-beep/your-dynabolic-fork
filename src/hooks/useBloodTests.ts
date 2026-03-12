@@ -62,15 +62,40 @@ export const useBloodTests = () => {
       return;
     }
 
-    const mockBiomarkers = generateMockBiomarkers();
+    // Call AI edge function for real OCR analysis
+    let biomarkers: BloodTestBiomarker[] = [];
+    let status = "pending";
+
+    try {
+      const { data: fnData, error: fnError } = await supabase.functions.invoke("analyze-bloodwork", {
+        body: { fileUrl: filePath, fileName: file.name },
+      });
+
+      if (fnError) {
+        console.error("Edge function error:", fnError);
+        toast({ title: "AI Analiz Uyarısı", description: "Yapay zeka analizi başarısız oldu. Tahlil kaydedildi, daha sonra tekrar denenebilir.", variant: "destructive" });
+      } else if (fnData?.error === "rate_limit") {
+        toast({ title: "Rate Limit", description: "AI istek limiti aşıldı. Lütfen biraz bekleyip tekrar deneyin.", variant: "destructive" });
+      } else if (fnData?.error === "credits_exhausted") {
+        toast({ title: "Kredi Yetersiz", description: "AI kredileri tükendi. Workspace'inize kredi ekleyin.", variant: "destructive" });
+      } else if (fnData?.biomarkers && Array.isArray(fnData.biomarkers) && fnData.biomarkers.length > 0) {
+        biomarkers = fnData.biomarkers;
+        status = "analyzed";
+      } else {
+        toast({ title: "Analiz Uyarısı", description: "Belgeden biyobelirteç çıkarılamadı. Manuel giriş yapabilirsiniz.", variant: "destructive" });
+      }
+    } catch (err) {
+      console.error("AI analysis failed:", err);
+      toast({ title: "AI Analiz Hatası", description: "Bağlantı hatası oluştu. Tahlil kaydedildi.", variant: "destructive" });
+    }
 
     const { error: insertError } = await supabase.from("blood_tests").insert({
       user_id: user.id,
       date,
       file_name: file.name,
       document_url: filePath,
-      status: "analyzed",
-      extracted_data: mockBiomarkers as any,
+      status,
+      extracted_data: biomarkers as any,
     });
 
     if (insertError) {
@@ -78,7 +103,9 @@ export const useBloodTests = () => {
       return;
     }
 
-    toast({ title: "Tahlil Yüklendi ✅", description: "Kan tahlili başarıyla analiz edildi." });
+    if (status === "analyzed") {
+      toast({ title: "Tahlil Analiz Edildi ✅", description: `${biomarkers.length} biyobelirteç Gemini AI tarafından çıkarıldı.` });
+    }
     await fetchTests();
   }, [user, fetchTests]);
 
