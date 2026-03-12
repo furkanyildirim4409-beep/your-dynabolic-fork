@@ -272,7 +272,7 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         </div>
 
         {/* Auto-Calculated Read-Only Badges */}
-        {(navyEstimate != null || muscleEstimate != null || previewBMR != null || previewMacros != null) && (
+        {(navyEstimate != null || muscleEstimate != null) && (
           <div className="mt-3 space-y-2">
             <div className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
               <Calculator className="w-4 h-4" />
