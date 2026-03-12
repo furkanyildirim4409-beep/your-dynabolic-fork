@@ -102,10 +102,18 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
   const { data: globalPRMap } = useExerciseHistory();
+  const [userWeight, setUserWeight] = useState(75);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
   const completedSetsRef = useRef<Record<number, { weight: number; reps: number; isFailure: boolean }[]>>({});
   const workoutStartTime = useRef(Date.now());
+
+  // Fetch user weight for calorie calculation
+  useEffect(() => {
+    if (!user?.id) return;
+    supabase.from("profiles").select("current_weight").eq("id", user.id).single()
+      .then(({ data }) => { if (data?.current_weight) setUserWeight(Number(data.current_weight)); });
+  }, [user?.id]);
 
   
   const exercise = exercises[currentExerciseIndex];
