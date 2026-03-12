@@ -31,16 +31,24 @@ export const useWorkoutHistory = () => {
     queryFn: async (): Promise<WorkoutHistoryEntry[]> => {
       if (!user?.id) return [];
 
-      const { data, error } = await supabase
-        .from("workout_logs")
-        .select("*")
-        .eq("user_id", user.id)
-        .eq("completed", true)
-        .order("logged_at", { ascending: false })
-        .limit(50);
+      const [logsRes, profileRes] = await Promise.all([
+        supabase
+          .from("workout_logs")
+          .select("*")
+          .eq("user_id", user.id)
+          .eq("completed", true)
+          .order("logged_at", { ascending: false })
+          .limit(50),
+        supabase
+          .from("profiles")
+          .select("current_weight")
+          .eq("id", user.id)
+          .single(),
+      ]);
 
-      if (error) throw error;
-      if (!data) return [];
+      if (logsRes.error) throw logsRes.error;
+      const data = logsRes.data ?? [];
+      const weightKg = profileRes.data?.current_weight ?? 75;
 
       return data.map((log) => {
         const loggedAt = log.logged_at ? new Date(log.logged_at) : new Date();
