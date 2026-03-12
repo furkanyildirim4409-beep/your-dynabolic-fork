@@ -1,5 +1,8 @@
 project_id = "fsbhbfltathfcpvcjfzt"
 
+[functions.analyze-bloodwork]
+verify_jwt = false
+
 [functions.send-order-push]
 verify_jwt = false
 
