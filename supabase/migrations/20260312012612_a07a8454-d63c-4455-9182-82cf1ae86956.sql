@@ -1,0 +1,1 @@
+ALTER TABLE public.consumed_foods ADD COLUMN IF NOT EXISTS planned_food_id uuid;
