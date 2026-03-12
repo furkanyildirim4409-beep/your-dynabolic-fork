@@ -77,11 +77,12 @@ export const useWorkoutHistory = () => {
         let failureSets = 0;
         for (const d of details) {
           for (const s of d.sets) {
-            if (s.isFailure) failureSets++;
+            if (s.isFailure || (s as any).rir === 0) failureSets++;
           }
         }
         const baseBurn = (durationMin / 60) * weightKg * 5.0;
-        const calories = Math.round(baseBurn + failureSets * 15);
+        const mechanicalBonus = (Number(tonnageKg) / 1000) * 20;
+        const calories = Math.round(baseBurn + failureSets * 15 + mechanicalBonus);
 
         return {
           id: log.id,
