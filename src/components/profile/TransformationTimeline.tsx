@@ -38,6 +38,7 @@ const TransformationTimeline = () => {
   const [overlayOpacity, setOverlayOpacity] = useState(50);
   const [showUploadModal, setShowUploadModal] = useState(false);
   const [deleteConfirm, setDeleteConfirm] = useState<ProgressPhoto | null>(null);
+  const [viewFilter, setViewFilter] = useState<ViewFilter>("all");
   const sliderRef = useRef<HTMLDivElement>(null);
   const isDragging = useRef(false);
 
