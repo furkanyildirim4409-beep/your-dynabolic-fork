@@ -15,7 +15,7 @@ export interface ProgressPhoto {
   created_at: string;
 }
 
-interface UploadMetadata {
+export interface UploadMetadata {
   date: string;
   weight?: number;
   bodyFatPct?: number;
@@ -55,7 +55,7 @@ export function useProgressPhotos() {
     fetchPhotos();
   }, [fetchPhotos]);
 
-  const uploadPhoto = useCallback(
+  const uploadSinglePhoto = useCallback(
     async (file: File, metadata: UploadMetadata) => {
       if (!user?.id) throw new Error("Not authenticated");
 
@@ -85,11 +85,19 @@ export function useProgressPhotos() {
         } as any);
 
       if (dbError) throw dbError;
-
-      await fetchPhotos();
-      toast.success("Fotoğraf yüklendi!");
     },
-    [user?.id, fetchPhotos]
+    [user?.id]
+  );
+
+  const uploadPhotos = useCallback(
+    async (files: { file: File; view: string }[], metadata: UploadMetadata) => {
+      for (const { file, view } of files) {
+        await uploadSinglePhoto(file, { ...metadata, view });
+      }
+      await fetchPhotos();
+      toast.success(`${files.length} fotoğraf yüklendi!`);
+    },
+    [uploadSinglePhoto, fetchPhotos]
   );
 
   const deletePhoto = useCallback(
@@ -97,7 +105,6 @@ export function useProgressPhotos() {
       if (!user?.id) return;
 
       try {
-        // Extract storage path from URL
         const urlParts = photoUrl.split("/progress-photos/");
         if (urlParts[1]) {
           await supabase.storage
@@ -120,5 +127,5 @@ export function useProgressPhotos() {
     [user?.id, fetchPhotos]
   );
 
-  return { photos, loading, uploadPhoto, deletePhoto, refetch: fetchPhotos };
+  return { photos, loading, uploadPhotos, deletePhoto, refetch: fetchPhotos };
 }
