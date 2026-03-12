@@ -855,7 +855,7 @@ const Beslenme = () => {
             <DialogHeader>
               <DialogTitle>Haftalık Beslenme Uyumu</DialogTitle>
             </DialogHeader>
-            <WeeklyNutritionChart calorieTarget={macroGoals.calories} />
+            <WeeklyNutritionChart calorieTarget={macroGoals?.calories ?? 0} />
           </DialogContent>
         </Dialog>
 
