@@ -32,8 +32,9 @@ const Antrenman = () => {
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
   // Group workouts: by scheduledDate when available, else by dayOfWeek
+  // Also inject rest days for days without workouts
   const groupedByDay = useMemo(() => {
-    const groupMap = new Map<string, { label: string; isToday: boolean; workouts: TransformedWorkout[] }>();
+    const groupMap = new Map<string, { label: string; isToday: boolean; isRest: boolean; workouts: TransformedWorkout[] }>();
 
     for (const w of workouts) {
       let key: string;
@@ -51,15 +52,39 @@ const Antrenman = () => {
       }
 
       if (!groupMap.has(key)) {
-        groupMap.set(key, { label, isToday, workouts: [] });
+        groupMap.set(key, { label, isToday, isRest: false, workouts: [] });
       }
       groupMap.get(key)!.workouts.push(w);
+    }
+
+    // Add rest days for missing days of the week (only when using day_of_week mode)
+    const hasScheduledDates = workouts.some(w => w.scheduledDate);
+    if (!hasScheduledDates && workouts.length > 0) {
+      for (const day of DAYS_TR) {
+        const key = `dow-${day}`;
+        if (!groupMap.has(key)) {
+          groupMap.set(key, {
+            label: day,
+            isToday: day === todayTR,
+            isRest: true,
+            workouts: [],
+          });
+        }
+      }
     }
 
     const allGroups = Array.from(groupMap.entries()).map(([key, val]) => ({
       key,
       ...val,
     }));
+
+    // Sort by DAYS_TR order
+    const dayOrder = new Map(DAYS_TR.map((d, i) => [d.toLowerCase(), i]));
+    allGroups.sort((a, b) => {
+      const orderA = dayOrder.get(a.label.toLowerCase()) ?? 99;
+      const orderB = dayOrder.get(b.label.toLowerCase()) ?? 99;
+      return orderA - orderB;
+    });
 
     // Move today's group to front
     const todayIdx = allGroups.findIndex((g) => g.isToday);
@@ -238,11 +263,11 @@ const Antrenman = () => {
                   </motion.div>
                 ) : (
                   <div className="space-y-5">
-                    {groupedByDay.map(({ key, label, isToday, workouts: dayWorkouts }, gi) => {
+                    {groupedByDay.map(({ key, label, isToday, isRest, workouts: dayWorkouts }, gi) => {
                       const dayHeader = (
                         <div className={`flex items-center gap-2 ${isToday ? "mb-3" : ""} px-1`}>
-                          <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : "bg-muted-foreground/40"}`} />
-                          <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : "text-muted-foreground"}`}>
+                          <div className={`w-2 h-2 rounded-full ${isToday ? "bg-primary animate-pulse" : isRest ? "bg-muted-foreground/20" : "bg-muted-foreground/40"}`} />
+                          <h3 className={`font-display text-sm tracking-wider ${isToday ? "text-primary" : isRest ? "text-muted-foreground/60" : "text-muted-foreground"}`}>
                             {label.toUpperCase()}
                           </h3>
                           {isToday && (
@@ -250,7 +275,13 @@ const Antrenman = () => {
                               BUGÜN
                             </span>
                           )}
-                          {!isToday && (
+                          {isRest && (
+                            <span className="text-[10px] px-2 py-0.5 rounded-full bg-muted text-muted-foreground font-medium flex items-center gap-1">
+                              <Moon className="w-3 h-3" />
+                              DİNLENME
+                            </span>
+                          )}
+                          {!isToday && !isRest && (
                             <>
                               <span className="text-[10px] text-muted-foreground/60 ml-auto mr-1">
                                 {dayWorkouts.length} antrenman
@@ -260,6 +291,58 @@ const Antrenman = () => {
                           )}
                         </div>
                       );
+
+                      // Rest day card
+                      if (isRest) {
+                        const restContent = (
+                          <div>
+                            {dayHeader}
+                            <motion.div
+                              initial={{ opacity: 0, y: 10 }}
+                              animate={{ opacity: 1, y: 0 }}
+                              transition={{ delay: 0.1 + gi * 0.03 }}
+                              className="glass-card p-4 mt-2 border border-muted/30"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                                  <Moon className="w-5 h-5 text-muted-foreground/60" />
+                                </div>
+                                <div>
+                                  <p className="font-display text-sm text-muted-foreground">Dinlenme Günü</p>
+                                  <p className="text-[11px] text-muted-foreground/50">Kaslarını dinlendir, iyileş 💤</p>
+                                </div>
+                              </div>
+                            </motion.div>
+                          </div>
+                        );
+
+                        if (isToday) return <div key={key}>{restContent}</div>;
+
+                        return (
+                          <Collapsible key={key} className="group">
+                            <CollapsibleTrigger className="w-full py-2">
+                              {dayHeader}
+                            </CollapsibleTrigger>
+                            <CollapsibleContent className="mt-2">
+                              <motion.div
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                className="glass-card p-4 border border-muted/30"
+                              >
+                                <div className="flex items-center gap-3">
+                                  <div className="w-10 h-10 rounded-xl bg-muted/50 flex items-center justify-center">
+                                    <Moon className="w-5 h-5 text-muted-foreground/60" />
+                                  </div>
+                                  <div>
+                                    <p className="font-display text-sm text-muted-foreground">Dinlenme Günü</p>
+                                    <p className="text-[11px] text-muted-foreground/50">Kaslarını dinlendir, iyileş 💤</p>
+                                  </div>
+                                </div>
+                              </motion.div>
+                            </CollapsibleContent>
+                          </Collapsible>
+                        );
+                      }
 
                       const workoutCards = (
                         <div className="space-y-3">
