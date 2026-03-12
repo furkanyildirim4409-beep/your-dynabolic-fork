@@ -91,9 +91,9 @@ const TransformationTimeline = () => {
     setDeleteConfirm(null);
   };
 
-  const selectedPhoto = photos[selectedIndex] as ProgressPhoto | undefined;
-  const leftPhoto = photos[compareLeftIndex] as ProgressPhoto | undefined;
-  const rightPhoto = photos[compareRightIndex] as ProgressPhoto | undefined;
+  const selectedPhoto = filteredPhotos[selectedIndex] as ProgressPhoto | undefined;
+  const leftPhoto = filteredPhotos[compareLeftIndex] as ProgressPhoto | undefined;
+  const rightPhoto = filteredPhotos[compareRightIndex] as ProgressPhoto | undefined;
 
   return (
     <div className="space-y-4">
