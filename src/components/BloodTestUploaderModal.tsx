@@ -164,8 +164,8 @@ const BloodTestUploaderModal = ({ isOpen, onClose, onUpload }: BloodTestUploader
             {isParsing ? (
               <div className="flex flex-col items-center justify-center p-12 rounded-xl border-2 border-primary/30 bg-primary/5">
                 <Loader2 className="w-10 h-10 text-primary animate-spin mb-4" />
-                <p className="text-sm font-medium text-foreground">PDF analiz ediliyor...</p>
-                <p className="text-xs text-muted-foreground mt-1">Biyobelirteçler çıkarılıyor</p>
+                <p className="text-sm font-medium text-foreground animate-pulse">🤖 Yapay Zeka Tahlilinizi Okuyor...</p>
+                <p className="text-xs text-muted-foreground mt-1">Gemini AI biyobelirteçleri çıkarıyor</p>
               </div>
             ) : (
               <div
