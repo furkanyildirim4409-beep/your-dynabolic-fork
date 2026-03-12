@@ -1,6 +1,8 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee, Trophy } from "lucide-react";
+import { eachDayOfInterval, startOfWeek, endOfWeek, format as fnsFormat, isSameDay } from "date-fns";
+import { tr } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import WorkoutCard from "@/components/WorkoutCard";
 import VisionAIExecution from "@/components/VisionAIExecution";
