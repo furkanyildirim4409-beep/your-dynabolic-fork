@@ -1,15 +1,27 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Target, Trophy, ChevronRight, Dumbbell } from "lucide-react";
+import { Target, ChevronRight } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useExerciseRecords } from "@/hooks/useExerciseRecords";
 import ExerciseRecordsModal from "./ExerciseRecordsModal";
 
+const FIXED_SLOTS = [
+  { name: "Bench Press", emoji: "🏋️" },
+  { name: "Squat", emoji: "🦵" },
+  { name: "Deadlift", emoji: "💀" },
+  { name: "Shoulder Press", emoji: "💪" },
+  { name: "Barbell Row", emoji: "🔥" },
+];
+
 const ExerciseGoalsSection = () => {
   const [modalOpen, setModalOpen] = useState(false);
   const { data, isLoading } = useExerciseRecords();
-  const top5 = data?.top5Exercises ?? [];
   const allExercises = data?.allExercises ?? [];
+
+  const matchExercise = (slotName: string) => {
+    const q = slotName.toLowerCase();
+    return allExercises.find(e => e.name.toLowerCase().includes(q));
+  };
 
   return (
     <>
@@ -43,36 +55,34 @@ const ExerciseGoalsSection = () => {
               </div>
             ))}
           </div>
-        ) : top5.length === 0 ? (
-          <div className="text-center py-6">
-            <Dumbbell className="w-8 h-8 text-muted-foreground/30 mx-auto mb-2" />
-            <p className="text-muted-foreground text-xs">
-              Antrenman yaptıkça rekorların burada belirecek.
-            </p>
-          </div>
         ) : (
           <div className="grid grid-cols-5 gap-2">
-            {top5.map((exercise, index) => (
-              <motion.div
-                key={exercise.name}
-                initial={{ opacity: 0, scale: 0.9 }}
-                animate={{ opacity: 1, scale: 1 }}
-                transition={{ delay: 0.2 + index * 0.05 }}
-                className="flex flex-col items-center gap-1 p-2 rounded-xl bg-secondary/50 border border-transparent"
-              >
-                <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Trophy className="w-4 h-4 text-primary" />
-                </div>
-                <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2">
-                  {exercise.name.length > 14 ? exercise.name.slice(0, 14) + "…" : exercise.name}
-                </span>
-                {exercise.maxWeight > 0 && (
-                  <span className="text-[10px] font-display text-primary">
-                    {exercise.maxWeight} kg
+            {FIXED_SLOTS.map((slot, index) => {
+              const match = matchExercise(slot.name);
+              return (
+                <motion.div
+                  key={slot.name}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2 + index * 0.05 }}
+                  className="flex flex-col items-center gap-1 p-2 rounded-xl bg-secondary/50 border border-transparent"
+                >
+                  <div className="w-8 h-8 rounded-lg bg-primary/10 flex items-center justify-center text-lg">
+                    {slot.emoji}
+                  </div>
+                  <span className="text-[9px] text-muted-foreground text-center leading-tight line-clamp-2">
+                    {slot.name}
                   </span>
-                )}
-              </motion.div>
-            ))}
+                  {match && match.maxWeight > 0 ? (
+                    <span className="text-[10px] font-display text-primary">
+                      {match.maxWeight} kg
+                    </span>
+                  ) : (
+                    <span className="text-[10px] text-muted-foreground/40">—</span>
+                  )}
+                </motion.div>
+              );
+            })}
           </div>
         )}
       </motion.div>

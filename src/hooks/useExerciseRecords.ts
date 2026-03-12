@@ -2,12 +2,25 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
+export interface SetDetail {
+  weight: number;
+  reps: number;
+  rir?: number;
+  isFailure?: boolean;
+}
+
+export interface WorkoutHistory {
+  date: string;
+  sets: SetDetail[];
+}
+
 export interface ExerciseRecord {
   name: string;
   performCount: number;
   maxWeight: number;
   repsAtMax: number;
   bestDate: string;
+  history: WorkoutHistory[];
 }
 
 export const useExerciseRecords = () => {
@@ -28,8 +41,8 @@ export const useExerciseRecords = () => {
       if (error || !data) return { top5Exercises: [], allExercises: [] };
 
       const map = new Map<string, ExerciseRecord>();
-      // Track which workouts each exercise appeared in
       const workoutPresence = new Map<string, Set<number>>();
+      const historyMap = new Map<string, WorkoutHistory[]>();
 
       for (let logIdx = 0; logIdx < data.length; logIdx++) {
         const log = data[logIdx];
@@ -40,29 +53,44 @@ export const useExerciseRecords = () => {
           const name: string = d.exerciseName ?? d.exercise_name ?? "";
           if (!name) continue;
 
-          // Track unique workout appearances
           if (!workoutPresence.has(name)) workoutPresence.set(name, new Set());
           workoutPresence.get(name)!.add(logIdx);
 
           const sets = Array.isArray(d.sets) ? d.sets : [];
+          const setsForHistory: SetDetail[] = [];
+
           for (const s of sets) {
             const w = Number(s.weight) || 0;
             const r = Number(s.reps) || 0;
+            const rir = s.rir != null ? Number(s.rir) : undefined;
+            const isFailure = s.isFailure ?? s.failure ?? false;
+
+            setsForHistory.push({ weight: w, reps: r, rir, isFailure });
+
             if (w <= 0) continue;
 
             const existing = map.get(name);
             if (!existing || w > existing.maxWeight || (w === existing.maxWeight && r > existing.repsAtMax)) {
               map.set(name, {
                 name,
-                performCount: 0, // will be set below
+                performCount: 0,
                 maxWeight: w,
                 repsAtMax: r,
                 bestDate: log.logged_at ?? "",
+                history: [],
               });
             }
           }
 
-          // Ensure entry exists even if no weighted sets
+          // Add to history
+          if (setsForHistory.length > 0) {
+            if (!historyMap.has(name)) historyMap.set(name, []);
+            historyMap.get(name)!.push({
+              date: log.logged_at ?? "",
+              sets: setsForHistory,
+            });
+          }
+
           if (!map.has(name)) {
             map.set(name, {
               name,
@@ -70,15 +98,21 @@ export const useExerciseRecords = () => {
               maxWeight: 0,
               repsAtMax: 0,
               bestDate: log.logged_at ?? "",
+              history: [],
             });
           }
         }
       }
 
-      // Set performCount from workout presence
       for (const [name, workouts] of workoutPresence) {
         const record = map.get(name);
         if (record) record.performCount = workouts.size;
+      }
+
+      // Attach history
+      for (const [name, history] of historyMap) {
+        const record = map.get(name);
+        if (record) record.history = history;
       }
 
       const allExercises = Array.from(map.values()).sort((a, b) => b.performCount - a.performCount);
