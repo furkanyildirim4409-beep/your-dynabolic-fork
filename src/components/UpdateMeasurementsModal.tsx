@@ -5,10 +5,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { toast } from "@/hooks/use-toast";
-import { calcNavyBodyFat, calcMuscleMass, calcBMR, calcTDEE, calcMacroTargets, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
+import { calcNavyBodyFat, calcMuscleMass, useBodyMeasurements, type MeasurementInput } from "@/hooks/useBodyMeasurements";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { Ruler, Calculator, UserCog, Target, Scale } from "lucide-react";
+import { Ruler, Calculator, UserCog, Scale } from "lucide-react";
 
 interface Props {
   isOpen: boolean;
