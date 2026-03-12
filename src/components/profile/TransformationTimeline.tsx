@@ -44,12 +44,18 @@ const TransformationTimeline = () => {
 
   const { weightDiff, fatDiff, timeElapsed, hasEnoughData, loading: statsLoading } = useTransformationStats();
 
+  const filteredPhotos = viewFilter === "all" ? photos : photos.filter((p) => p.view === viewFilter);
+
+  // Unique views present in photos for showing filter only when relevant
+  const availableViews = [...new Set(photos.map((p) => p.view))];
+  const hasMultipleViews = availableViews.length > 1;
+
   useEffect(() => {
-    if (photos.length > 0) {
-      setCompareRightIndex(photos.length - 1);
-      if (selectedIndex >= photos.length) setSelectedIndex(photos.length - 1);
+    if (filteredPhotos.length > 0) {
+      setCompareRightIndex(filteredPhotos.length - 1);
+      if (selectedIndex >= filteredPhotos.length) setSelectedIndex(filteredPhotos.length - 1);
     }
-  }, [photos.length, selectedIndex]);
+  }, [filteredPhotos.length, selectedIndex]);
 
   const formatDate = (dateStr: string) => new Date(dateStr).toLocaleDateString("tr-TR", { month: "short", year: "numeric" });
 
