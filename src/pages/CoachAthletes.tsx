@@ -207,17 +207,29 @@ const CoachAthletes = () => {
                     </div>
                   )}
 
-                  {/* Action Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs gap-2"
-                    onClick={() => handleOpenMacro(athlete)}
-                  >
-                    <Target className="w-3.5 h-3.5" />
-                    Makro Hedeflerini Düzenle
-                    <ChevronRight className="w-3.5 h-3.5 ml-auto" />
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-2"
+                      onClick={() => handleOpenMacro(athlete)}
+                    >
+                      <Target className="w-3.5 h-3.5" />
+                      Makro Düzenle
+                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-2"
+                      onClick={() => handleOpenBloodwork(athlete)}
+                    >
+                      <Droplet className="w-3.5 h-3.5 text-red-400" />
+                      Kan Tahlilleri
+                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                    </Button>
+                  </div>
                 </motion.div>
               );
             })}
