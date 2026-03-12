@@ -74,12 +74,18 @@ const MacroDashboard = ({
   totals: { protein: number; carbs: number; fat: number; calories: number };
   macroGoals: { protein: number; carbs: number; fat: number; calories: number };
 }) => {
-  const safeGoals = {
-    protein: macroGoals.protein > 0 ? macroGoals.protein : 150,
-    carbs: macroGoals.carbs > 0 ? macroGoals.carbs : 250,
-    fat: macroGoals.fat > 0 ? macroGoals.fat : 70,
-    calories: macroGoals.calories > 0 ? macroGoals.calories : 2000,
-  };
+  // No fallbacks — only show coach-assigned targets
+  if (!macroGoals || macroGoals.calories === 0) {
+    return (
+      <div className="bg-card border border-white/5 rounded-2xl p-4 mb-6">
+        <p className="text-muted-foreground text-sm text-center py-4">
+          Henüz koçunuz tarafından makro hedefi belirlenmedi.
+        </p>
+      </div>
+    );
+  }
+
+  const safeGoals = macroGoals;
 
   const macros = [
     { label: "PROTEİN", current: Math.round(totals.protein), goal: safeGoals.protein, color: "bg-yellow-500", textColor: "text-yellow-500" },
