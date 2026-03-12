@@ -26,6 +26,7 @@ const Profil = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showMetricsEditor, setShowMetricsEditor] = useState(false);
   const { isOffline } = useOfflineMode();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
