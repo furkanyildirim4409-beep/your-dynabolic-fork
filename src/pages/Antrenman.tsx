@@ -127,10 +127,12 @@ const Antrenman = () => {
     return allGroups;
   }, [workouts, todayStr, todayTR]);
 
+  const { data: weeklyStatsData, isLoading: isWeeklyLoading } = useWeeklyWorkoutStats();
+
   const weeklyStats = [
-    { label: "Tamamlanan", value: "5", icon: Target },
-    { label: "Toplam Süre", value: "4.2sa", icon: Clock },
-    { label: "Yakılan Kalori", value: "2,450", icon: TrendingUp },
+    { label: "Tamamlanan", value: weeklyStatsData?.completedCount.toString() ?? "0", icon: Target },
+    { label: "Toplam Süre", value: weeklyStatsData?.totalDurationHours ?? "0sa", icon: Clock },
+    { label: "Yakılan Kalori", value: weeklyStatsData?.totalCalories ?? "0", icon: TrendingUp },
   ];
 
   // Calculate history stats
