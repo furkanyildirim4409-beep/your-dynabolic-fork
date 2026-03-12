@@ -423,14 +423,14 @@ const Profil = () => {
               {profileAny.fitness_goal === "cut" ? "Kilo Ver" : profileAny.fitness_goal === "bulk" ? "Kas Yap" : "Koruma"}
             </span>
           )}
-          {macros.source !== "default" && (
+          {macros && (
             <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-              {macros.source === "coach" ? "Koç" : macros.source === "profile" ? "Manuel" : "Otomatik"}
+              Koç
             </span>
           )}
         </div>
 
-        {macros.source !== "default" ? (
+        {macros ? (
           <div className="space-y-3">
             <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-xl">
               <Flame className="w-5 h-5 text-primary flex-shrink-0" />
