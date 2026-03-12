@@ -233,23 +233,6 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
                 </SelectContent>
               </Select>
             </div>
-            <div className="space-y-1">
-              <Label className="text-xs text-muted-foreground flex items-center gap-1">
-                <Target className="w-3 h-3" /> Hedef
-              </Label>
-              <Select value={fitnessGoal} onValueChange={setFitnessGoal}>
-                <SelectTrigger className="h-9 bg-secondary/50 border-border">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  {goalOptions.map((opt) => (
-                    <SelectItem key={opt.value} value={opt.value}>
-                      {opt.label} ({opt.desc})
-                    </SelectItem>
-                  ))}
-                </SelectContent>
-              </Select>
-            </div>
           </div>
         </div>
 
