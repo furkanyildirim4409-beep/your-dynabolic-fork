@@ -597,9 +597,14 @@ const Antrenman = () => {
                       {/* Stats */}
                       <div className="text-right flex-shrink-0">
                         <p className="text-foreground font-display text-sm">{workout.tonnage}</p>
-                        <div className="flex items-center gap-1 justify-end text-primary text-[10px]">
-                          <Flame className="w-3 h-3" />
-                          <span>+{workout.bioCoins}</span>
+                        <div className="flex items-center gap-2 justify-end">
+                          <span className="flex items-center gap-0.5 text-orange-400 text-[10px] font-medium">
+                            🔥 {workout.calories} kcal
+                          </span>
+                          <span className="flex items-center gap-1 text-primary text-[10px]">
+                            <Flame className="w-3 h-3" />
+                            +{workout.bioCoins}
+                          </span>
                         </div>
                       </div>
 
