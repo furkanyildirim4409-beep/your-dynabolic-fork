@@ -15,6 +15,8 @@ import {
   Utensils,
   Pill,
   Loader2,
+  Circle,
+  CheckCircle2,
 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { Button } from "@/components/ui/button";
@@ -32,8 +34,7 @@ import { useMacros } from "@/hooks/useMacros";
 import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
 import { DialogTrigger } from "@/components/ui/dialog";
-import { useDietPlan } from "@/hooks/useDietPlan";
-import { Beef, Wheat, Droplets as DropletIcon, Flame, CalendarDays } from "lucide-react";
+import { useDietPlan, type PlannedFood } from "@/hooks/useDietPlan";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
@@ -50,6 +51,20 @@ const mealSlots: MealSlot[] = [
   { id: "ara", title: "Ara Öğün", time: "16:00", icon: "🍏", color: "text-green-500" },
   { id: "aksam", title: "Akşam Yemeği", time: "19:30", icon: "🌙", color: "text-indigo-400" },
 ];
+
+const SLOT_TO_MEAL_TYPE: Record<string, string> = {
+  kahvalti: "breakfast",
+  ogle: "lunch",
+  ara: "snack",
+  aksam: "dinner",
+};
+
+const MEAL_TYPE_TO_SLOT: Record<string, string> = {
+  breakfast: "kahvalti",
+  lunch: "ogle",
+  snack: "ara",
+  dinner: "aksam",
+};
 
 // --- MACRO DASHBOARD COMPONENT ---
 const MacroDashboard = ({
@@ -287,60 +302,175 @@ const CameraScanner = ({
   );
 };
 
-// --- CONSUMED FOOD ROW ---
-const ConsumedFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () => void }) => {
-  return (
-    <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
-      <div className="flex items-center gap-3">
-        <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
-          <Check size={14} strokeWidth={3} />
-        </div>
-        <div>
-          <p className="text-sm font-medium text-foreground">{food.food_name}</p>
-          <p className="text-xs text-muted-foreground">{food.serving_size || "100g"}</p>
-        </div>
+// --- PLANNED FOOD ROW (unchecked) ---
+const PlannedFoodRow = ({
+  food,
+  onCheck,
+  isToggling,
+}: {
+  food: PlannedFood;
+  onCheck: () => void;
+  isToggling: boolean;
+}) => (
+  <button
+    onClick={onCheck}
+    disabled={isToggling}
+    className="w-full flex items-center justify-between p-3 rounded-xl border border-dashed border-white/10 bg-secondary/20 hover:bg-secondary/40 hover:border-primary/30 transition-all group"
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-6 h-6 rounded-full flex items-center justify-center border border-muted-foreground/30 text-muted-foreground/40 group-hover:border-primary/50 group-hover:text-primary/50 transition-colors flex-shrink-0">
+        {isToggling ? <Loader2 size={14} className="animate-spin" /> : <Circle size={14} />}
       </div>
-      <div className="flex items-center gap-3">
-        <div className="text-right flex-shrink-0">
-          <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
-          <div className="flex gap-2 text-[10px] text-muted-foreground justify-end">
-            <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
-            <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
-          </div>
-        </div>
-        <button
-          onClick={(e) => {
-            e.stopPropagation();
-            onRemove();
-          }}
-          className="w-8 h-8 flex items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
-        >
-          <Trash2 size={16} />
-        </button>
+      <div className="text-left">
+        <p className="text-sm font-medium text-muted-foreground group-hover:text-foreground transition-colors">{food.food_name}</p>
+        {food.serving_size && <p className="text-[10px] text-muted-foreground/60">{food.serving_size}</p>}
       </div>
     </div>
-  );
-};
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="flex gap-1.5 text-[10px] text-muted-foreground/50">
+        <span>{food.calories} kcal</span>
+        <span className="text-yellow-500/50">P:{Math.round(food.protein)}</span>
+        <span className="text-blue-500/50">K:{Math.round(food.carbs)}</span>
+      </div>
+    </div>
+  </button>
+);
 
-// --- EXPANDABLE MEAL CARD ---
+// --- CHECKED PLANNED FOOD ROW ---
+const CheckedPlannedFoodRow = ({
+  food,
+  onUncheck,
+  isToggling,
+}: {
+  food: ConsumedFood;
+  onUncheck: () => void;
+  isToggling: boolean;
+}) => (
+  <button
+    onClick={onUncheck}
+    disabled={isToggling}
+    className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group"
+  >
+    <div className="flex items-center gap-3">
+      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-emerald-500 text-white flex-shrink-0">
+        {isToggling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
+      </div>
+      <div className="text-left">
+        <p className="text-sm font-medium text-foreground">{food.food_name}</p>
+        {food.serving_size && <p className="text-[10px] text-muted-foreground">{food.serving_size}</p>}
+      </div>
+    </div>
+    <div className="flex items-center gap-2 flex-shrink-0">
+      <div className="text-right">
+        <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
+        <div className="flex gap-1.5 text-[10px] text-muted-foreground justify-end">
+          <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
+          <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
+        </div>
+      </div>
+    </div>
+  </button>
+);
+
+// --- MANUAL CONSUMED FOOD ROW ---
+const ManualFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () => void }) => (
+  <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
+    <div className="flex items-center gap-3">
+      <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
+        <Check size={14} strokeWidth={3} />
+      </div>
+      <div>
+        <p className="text-sm font-medium text-foreground">{food.food_name}</p>
+        <p className="text-xs text-muted-foreground">{food.serving_size || "100g"}</p>
+      </div>
+    </div>
+    <div className="flex items-center gap-3">
+      <div className="text-right flex-shrink-0">
+        <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
+        <div className="flex gap-2 text-[10px] text-muted-foreground justify-end">
+          <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
+          <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
+        </div>
+      </div>
+      <button
+        onClick={(e) => {
+          e.stopPropagation();
+          onRemove();
+        }}
+        className="w-8 h-8 flex items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
+      >
+        <Trash2 size={16} />
+      </button>
+    </div>
+  </div>
+);
+
+// --- EXPANDABLE MEAL CARD (with checklist) ---
 const ExpandableMealCard = ({
   slot,
-  foods,
+  consumedFoods,
+  plannedFoods,
+  consumedPlannedIds,
   onRemoveFood,
+  onCheckPlanned,
+  onUncheckPlanned,
 }: {
   slot: MealSlot;
-  foods: ConsumedFood[];
+  consumedFoods: ConsumedFood[];
+  plannedFoods: PlannedFood[];
+  consumedPlannedIds: Map<string, string>;
   onRemoveFood: (id: string) => void;
+  onCheckPlanned: (food: PlannedFood) => void;
+  onUncheckPlanned: (consumedFoodId: string) => void;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
-  const totalCal = foods.reduce((a, f) => a + (f.calories || 0), 0);
+  const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
+
+  // Separate consumed foods: checked planned vs manual
+  const checkedPlannedFoods = consumedFoods.filter((f) => f.planned_food_id);
+  const manualFoods = consumedFoods.filter((f) => !f.planned_food_id);
+
+  // Unchecked planned foods
+  const uncheckedPlanned = plannedFoods.filter((pf) => !consumedPlannedIds.has(pf.id));
+
+  // Total cal = only consumed foods (checked + manual)
+  const totalCal = consumedFoods.reduce((a, f) => a + (f.calories || 0), 0);
+  const totalItems = consumedFoods.length + uncheckedPlanned.length;
+  const checkedCount = consumedFoods.length;
+  const hasPlannedItems = plannedFoods.length > 0;
+
+  const handleCheck = async (food: PlannedFood) => {
+    setTogglingIds((prev) => new Set(prev).add(food.id));
+    try {
+      await onCheckPlanned(food);
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(food.id);
+        return next;
+      });
+    }
+  };
+
+  const handleUncheck = async (consumedFoodId: string, plannedFoodId: string) => {
+    setTogglingIds((prev) => new Set(prev).add(plannedFoodId));
+    try {
+      await onUncheckPlanned(consumedFoodId);
+    } finally {
+      setTogglingIds((prev) => {
+        const next = new Set(prev);
+        next.delete(plannedFoodId);
+        return next;
+      });
+    }
+  };
 
   return (
     <motion.div
       layout
       className={cn(
         "border rounded-2xl overflow-hidden mb-3 transition-colors",
-        foods.length > 0 ? "bg-card border-primary/20" : "bg-card border-white/5",
+        consumedFoods.length > 0 ? "bg-card border-primary/20" : "bg-card border-white/5",
       )}
     >
       <button
@@ -350,15 +480,24 @@ const ExpandableMealCard = ({
         <div className="flex items-center gap-4">
           <div className={cn("w-10 h-10 rounded-full bg-secondary flex items-center justify-center text-xl relative flex-shrink-0", slot.color)}>
             {slot.icon}
-            {foods.length > 0 && (
+            {hasPlannedItems && checkedCount > 0 && (
+              <div className="absolute -top-1 -right-1 bg-emerald-500 rounded-full w-5 h-5 flex items-center justify-center border-2 border-card">
+                <span className="text-[9px] font-bold text-white">{checkedCount}</span>
+              </div>
+            )}
+            {!hasPlannedItems && consumedFoods.length > 0 && (
               <div className="absolute -top-1 -right-1 bg-primary rounded-full p-0.5 border-2 border-card">
                 <Check size={10} className="text-primary-foreground" />
               </div>
             )}
           </div>
           <div className="text-left">
-            <h3 className={cn("font-bold text-sm", foods.length > 0 ? "text-primary" : "text-foreground")}>{slot.title}</h3>
-            <p className="text-muted-foreground text-xs">{slot.time}</p>
+            <h3 className={cn("font-bold text-sm", consumedFoods.length > 0 ? "text-primary" : "text-foreground")}>{slot.title}</h3>
+            <p className="text-muted-foreground text-xs">
+              {hasPlannedItems
+                ? `${checkedCount}/${plannedFoods.length} tamamlandı`
+                : slot.time}
+            </p>
           </div>
         </div>
         <div className="flex items-center gap-3">
@@ -380,12 +519,38 @@ const ExpandableMealCard = ({
             className="border-t border-white/5 bg-secondary/10"
           >
             <div className="p-3 space-y-2">
-              {foods.length === 0 ? (
+              {/* Unchecked planned foods first */}
+              {uncheckedPlanned.map((food) => (
+                <PlannedFoodRow
+                  key={`planned-${food.id}`}
+                  food={food}
+                  onCheck={() => handleCheck(food)}
+                  isToggling={togglingIds.has(food.id)}
+                />
+              ))}
+
+              {/* Checked planned foods */}
+              {checkedPlannedFoods.map((food) => (
+                <CheckedPlannedFoodRow
+                  key={`checked-${food.id}`}
+                  food={food}
+                  onUncheck={() => handleUncheck(food.id, food.planned_food_id!)}
+                  isToggling={togglingIds.has(food.planned_food_id!)}
+                />
+              ))}
+
+              {/* Manual foods */}
+              {manualFoods.map((food) => (
+                <ManualFoodRow
+                  key={`manual-${food.id}`}
+                  food={food}
+                  onRemove={() => onRemoveFood(food.id)}
+                />
+              ))}
+
+              {/* Empty state */}
+              {totalItems === 0 && (
                 <p className="text-xs text-muted-foreground text-center py-2">Bu öğünde henüz yiyecek yok.</p>
-              ) : (
-                foods.map((food) => (
-                  <ConsumedFoodRow key={food.id} food={food} onRemove={() => onRemoveFood(food.id)} />
-                ))
               )}
             </div>
           </motion.div>
@@ -496,7 +661,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const staticMacros = useMacros();
-  const { dynamicTargets, groupedByMeal: plannedMeals, hasTemplate, isLoading: dietLoading, MEAL_LABELS } = useDietPlan();
+  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading } = useDietPlan();
   const macroGoals = dynamicTargets
     ? { ...dynamicTargets, source: "coach" as const }
     : staticMacros;
@@ -509,6 +674,9 @@ const Beslenme = () => {
     searchFood,
     addFood,
     removeFood,
+    checkPlannedFood,
+    uncheckPlannedFood,
+    consumedPlannedIds,
     groupedByMeal,
     totals,
     setSearchResults,
@@ -532,6 +700,21 @@ const Beslenme = () => {
       icon: s.icon,
     })),
   );
+
+  // Group planned foods by slot id
+  const plannedBySlot = useMemo(() => {
+    const groups: Record<string, PlannedFood[]> = {
+      kahvalti: [],
+      ogle: [],
+      ara: [],
+      aksam: [],
+    };
+    plannedFoods.forEach((f) => {
+      const slotId = MEAL_TYPE_TO_SLOT[f.meal_type] || "ara";
+      if (groups[slotId]) groups[slotId].push(f);
+    });
+    return groups;
+  }, [plannedFoods]);
 
   // Debounced search
   const debounceRef = useRef<ReturnType<typeof setTimeout>>();
@@ -573,6 +756,24 @@ const Beslenme = () => {
     }
   };
 
+  const handleCheckPlanned = async (food: PlannedFood) => {
+    try {
+      await checkPlannedFood(food);
+      toast({ title: "Tamamlandı ✅", description: `${food.food_name} yenildi olarak işaretlendi.` });
+    } catch {
+      toast({ title: "Hata", description: "İşaretleme sırasında bir hata oluştu.", variant: "destructive" });
+    }
+  };
+
+  const handleUncheckPlanned = async (consumedFoodId: string) => {
+    try {
+      await uncheckPlannedFood(consumedFoodId);
+      toast({ title: "Geri alındı", description: "Yiyecek işareti kaldırıldı." });
+    } catch {
+      toast({ title: "Hata", description: "İşlem sırasında bir hata oluştu.", variant: "destructive" });
+    }
+  };
+
   const handleConfirmAddFood = async (targetMealId: string, grams: number) => {
     if (!selectedFood) return;
     try {
@@ -583,7 +784,6 @@ const Beslenme = () => {
       setShowManualAdd(false);
       setSearchTerm("");
       setSearchResults([]);
-      // Weekly chart self-manages its data
     } catch {
       toast({ title: "Hata", description: "Kayıt sırasında bir hata oluştu.", variant: "destructive" });
     }
@@ -651,55 +851,6 @@ const Beslenme = () => {
             <WeeklyNutritionChart calorieTarget={macroGoals.calories} />
           </DialogContent>
         </Dialog>
-
-        {/* TODAY'S DIET PLAN */}
-        {hasTemplate && plannedMeals.length > 0 && (
-          <div className="bg-card border border-border rounded-2xl p-4 mb-2">
-            <div className="flex items-center gap-2 mb-3">
-              <div className="w-7 h-7 rounded-lg bg-primary/15 flex items-center justify-center">
-                <CalendarDays className="w-4 h-4 text-primary" />
-              </div>
-              <h2 className="text-xs font-bold text-muted-foreground uppercase tracking-wider">BUGÜNÜN PLANI</h2>
-            </div>
-            <div className="space-y-3">
-              {plannedMeals.map(([mealType, foods]) => (
-                <div key={mealType}>
-                  <p className="text-[11px] font-bold text-muted-foreground uppercase tracking-wide mb-1.5 pl-1">
-                    {MEAL_LABELS[mealType] || mealType}
-                  </p>
-                  <div className="space-y-1.5">
-                    {foods.map((food) => (
-                      <div
-                        key={food.id}
-                        className="flex items-center justify-between px-3 py-2 rounded-xl bg-secondary/40 border border-border"
-                      >
-                        <div className="flex-1 min-w-0">
-                          <p className="text-sm font-medium text-foreground truncate">{food.food_name}</p>
-                          {food.serving_size && (
-                            <p className="text-[10px] text-muted-foreground">{food.serving_size}</p>
-                          )}
-                        </div>
-                        <div className="flex items-center gap-2 flex-shrink-0 ml-2">
-                          <div className="flex gap-1.5 text-[10px]">
-                            <span className="text-primary font-semibold">{food.calories}</span>
-                            <span className="text-yellow-500/80">P:{Math.round(food.protein)}</span>
-                            <span className="text-blue-500/80">K:{Math.round(food.carbs)}</span>
-                            <span className="text-orange-500/80">Y:{Math.round(food.fat)}</span>
-                          </div>
-                        </div>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              ))}
-            </div>
-          </div>
-        )}
-        {!dietLoading && !hasTemplate && (
-          <div className="text-center py-2 mb-2">
-            <p className="text-muted-foreground text-xs">Atanmış bir beslenme programı bulunmuyor.</p>
-          </div>
-        )}
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
@@ -806,14 +957,21 @@ const Beslenme = () => {
             <div>
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">BUGÜNKÜ ÖĞÜNLER</h2>
+                {hasTemplate && (
+                  <span className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wide">📋 Koç Planı Aktif</span>
+                )}
               </div>
               <div className="space-y-3">
                 {mealSlots.map((slot) => (
                   <ExpandableMealCard
                     key={slot.id}
                     slot={slot}
-                    foods={groupedByMeal[slot.id] || []}
+                    consumedFoods={groupedByMeal[slot.id] || []}
+                    plannedFoods={plannedBySlot[slot.id] || []}
+                    consumedPlannedIds={consumedPlannedIds}
                     onRemoveFood={handleRemoveFood}
+                    onCheckPlanned={handleCheckPlanned}
+                    onUncheckPlanned={handleUncheckPlanned}
                   />
                 ))}
               </div>
