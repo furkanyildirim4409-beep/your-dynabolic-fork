@@ -262,8 +262,43 @@ const WorkoutCalendar = () => {
         </motion.div>
       </AnimatePresence>
 
+      {/* Monthly Summary Stats */}
+      {monthLogs.length > 0 && (
+        <motion.div
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          className="grid grid-cols-3 gap-2 mt-4 pt-4 border-t border-border/30"
+        >
+          <div className="bg-primary/10 rounded-xl p-3 text-center">
+            <Dumbbell className="w-4 h-4 text-primary mx-auto mb-1" />
+            <span className="text-lg font-bold text-foreground">{monthLogs.length}</span>
+            <p className="text-[10px] text-muted-foreground">Antrenman</p>
+          </div>
+          <div className="bg-primary/10 rounded-xl p-3 text-center">
+            <TrendingUp className="w-4 h-4 text-primary mx-auto mb-1" />
+            <span className="text-lg font-bold text-foreground">
+              {(() => {
+                const total = monthLogs.reduce((s, l) => s + (l.tonnage ?? 0), 0);
+                return total >= 1000 ? `${(total / 1000).toFixed(1)}t` : `${total}kg`;
+              })()}
+            </span>
+            <p className="text-[10px] text-muted-foreground">Toplam Tonaj</p>
+          </div>
+          <div className="bg-primary/10 rounded-xl p-3 text-center">
+            <Timer className="w-4 h-4 text-primary mx-auto mb-1" />
+            <span className="text-lg font-bold text-foreground">
+              {(() => {
+                const mins = monthLogs.reduce((s, l) => s + (l.duration_minutes ?? 0), 0);
+                return mins >= 60 ? `${Math.floor(mins / 60)}sa ${mins % 60}dk` : `${mins}dk`;
+              })()}
+            </span>
+            <p className="text-[10px] text-muted-foreground">Toplam Süre</p>
+          </div>
+        </motion.div>
+      )}
+
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 mt-4 pt-4 border-t border-border/30">
+      <div className="flex items-center justify-center gap-4 mt-3 pt-3 border-t border-border/30">
         <div className="flex items-center gap-2">
           <div className="w-2 h-2 rounded-full bg-primary" />
           <span className="text-[10px] text-muted-foreground">Tamamlandı</span>
