@@ -1,7 +1,9 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Droplet, Plus, FileText, CheckCircle2, Clock, AlertTriangle, ChevronDown, Eye, Trash2, Loader2 } from "lucide-react";
+import { Droplet, Plus, FileText, CheckCircle2, Clock, AlertTriangle, ChevronDown, Eye, Trash2, Loader2, Sparkles, ShoppingCart } from "lucide-react";
 import { useBloodTests, type BloodTest } from "@/hooks/useBloodTests";
+import { generateSupplementSuggestions } from "@/lib/supplementSuggestions";
+import { useCart } from "@/context/CartContext";
 import BloodworkDetailModal from "@/components/BloodworkDetailModal";
 import BloodTestUploaderModal from "@/components/BloodTestUploaderModal";
 
@@ -16,6 +18,7 @@ interface BloodworkUploadProps { className?: string; disabled?: boolean; }
 
 const BloodworkUpload = ({ className, disabled = false }: BloodworkUploadProps) => {
   const { tests, loading, uploadTest, deleteTest } = useBloodTests();
+  const { addToCart } = useCart();
   const [expandedReport, setExpandedReport] = useState<string | null>(null);
   const [selectedTest, setSelectedTest] = useState<BloodTest | null>(null);
   const [showDetailModal, setShowDetailModal] = useState(false);
@@ -25,6 +28,9 @@ const BloodworkUpload = ({ className, disabled = false }: BloodworkUploadProps) 
 
   const getFlaggedValues = (test: BloodTest) =>
     test.extracted_data?.filter((b) => b.status !== "normal").map((b) => b.name) || [];
+
+  const getSuggestions = (test: BloodTest) =>
+    test.status === "analyzed" && test.extracted_data?.length ? generateSupplementSuggestions(test.extracted_data) : [];
 
   return (
     <div className={className}>
@@ -57,6 +63,7 @@ const BloodworkUpload = ({ className, disabled = false }: BloodworkUploadProps) 
             const StatusIcon = status.icon;
             const isExpanded = expandedReport === test.id;
             const flagged = getFlaggedValues(test);
+            const suggestions = getSuggestions(test);
 
             return (
               <motion.div key={test.id} initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: index * 0.05 }} className="glass-card overflow-hidden">
@@ -66,11 +73,16 @@ const BloodworkUpload = ({ className, disabled = false }: BloodworkUploadProps) 
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-sm font-medium text-foreground truncate">{test.file_name}</p>
-                    <div className="flex items-center gap-2 mt-1">
+                    <div className="flex items-center gap-2 mt-1 flex-wrap">
                       <span className="text-xs text-muted-foreground">{formatDate(test.date)}</span>
                       <span className={`px-2 py-0.5 rounded-full text-xs border flex items-center gap-1 ${status.className}`}>
                         <StatusIcon className="w-3 h-3" />{status.label}
                       </span>
+                      {suggestions.length > 0 && (
+                        <span className="px-2 py-0.5 rounded-full text-xs border border-purple-500/40 bg-purple-500/15 text-purple-300 flex items-center gap-1 animate-pulse">
+                          <Sparkles className="w-3 h-3" />{suggestions.length} Takviye Önerisi
+                        </span>
+                      )}
                     </div>
                     {flagged.length > 0 && (
                       <div className="flex items-center gap-1 mt-2">
@@ -98,6 +110,41 @@ const BloodworkUpload = ({ className, disabled = false }: BloodworkUploadProps) 
                             <p className="text-sm text-amber-400">Koçunuz tahlil sonuçlarınızı inceliyor.</p>
                           </div>
                         )}
+
+                        {/* AI Supplement Suggestions */}
+                        {suggestions.length > 0 && (
+                          <div className="space-y-2">
+                            <div className="flex items-center gap-1.5">
+                              <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+                              <span className="text-xs font-medium text-purple-300">AI Takviye Önerileri</span>
+                            </div>
+                            {suggestions.map((s) => (
+                              <div
+                                key={s.id}
+                                className="relative rounded-xl p-[1px] overflow-hidden"
+                                style={{ background: "linear-gradient(135deg, hsl(270 80% 60%), hsl(220 80% 60%))" }}
+                              >
+                                <div className="bg-background rounded-[11px] p-3 flex items-center justify-between gap-3">
+                                  <div className="flex-1 min-w-0">
+                                    <p className="text-foreground text-sm font-medium truncate">{s.name}</p>
+                                    <p className="text-muted-foreground text-xs mt-0.5">{s.price}₺</p>
+                                  </div>
+                                  <motion.button
+                                    whileTap={{ scale: 0.95 }}
+                                    onClick={(e) => {
+                                      e.stopPropagation();
+                                      addToCart({ id: s.id, title: s.name, price: s.price, image: s.image, type: "supplement" });
+                                    }}
+                                    className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-primary text-primary-foreground text-xs font-medium whitespace-nowrap"
+                                  >
+                                    <ShoppingCart className="w-3.5 h-3.5" />Sepete Ekle
+                                  </motion.button>
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
                         <div className="flex gap-2">
                           {test.status === "analyzed" && (
                             <motion.button
