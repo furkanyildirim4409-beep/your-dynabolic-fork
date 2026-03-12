@@ -443,17 +443,17 @@ const Profil = () => {
             <div className="grid grid-cols-3 gap-3">
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Beef className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.protein}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.protein}g</p>
                 <p className="text-muted-foreground text-[10px]">PROTEİN</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Wheat className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.carbs}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.carbs}g</p>
                 <p className="text-muted-foreground text-[10px]">KARBONHİDRAT</p>
               </div>
               <div className="text-center p-3 bg-secondary/50 rounded-xl">
                 <Droplets className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros.fat}g</p>
+                <p className="font-display text-lg text-foreground">{macros!.fat}g</p>
                 <p className="text-muted-foreground text-[10px]">YAĞ</p>
               </div>
             </div>
