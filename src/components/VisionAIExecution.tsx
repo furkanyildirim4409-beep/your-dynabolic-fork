@@ -484,7 +484,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   <span className="font-display text-lg text-orange-400">
                     🔥 {(() => {
                       const durationMin = Math.round((Date.now() - workoutStartTime.current) / 60000);
-                      const userWeight = 75; // fallback
                       const baseBurn = (durationMin / 60) * userWeight * 5.0;
                       let failCount = 0;
                       Object.values(completedSetsRef.current).forEach(sets => {
