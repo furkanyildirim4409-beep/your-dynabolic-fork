@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Beef, Wheat, Droplets, Flame, Users, Activity } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -11,7 +11,7 @@ import TransformationTimeline from "@/components/profile/TransformationTimeline"
 import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
 import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
-import BodyMetricsEditor from "@/components/BodyMetricsEditor";
+
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -19,19 +19,19 @@ import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
-import { useMacros } from "@/hooks/useMacros";
+
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
-  const [showMetricsEditor, setShowMetricsEditor] = useState(false);
+  
   const { isOffline } = useOfflineMode();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
-  const macros = useMacros();
+  
   
   // Base values from real data or defaults
   const hasRealBodyFat = latestMeasurement?.body_fat_pct && Number(latestMeasurement.body_fat_pct) > 0;
@@ -357,57 +357,6 @@ const Profil = () => {
         <WeightHistoryChart />
       </motion.div>
 
-      {/* My Body Metrics Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.24 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center justify-between mb-3">
-          <div className="flex items-center gap-2">
-            <Activity className="w-5 h-5 text-primary" />
-            <h2 className="font-display text-lg text-foreground tracking-wide">VÜCUT VERİLERİM</h2>
-          </div>
-          <Button
-            size="sm"
-            variant="outline"
-            onClick={() => setShowMetricsEditor(true)}
-            className="text-xs gap-1.5"
-          >
-            <Ruler className="w-3.5 h-3.5" />
-            Düzenle
-          </Button>
-        </div>
-        <div className="grid grid-cols-3 gap-2 mb-2">
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">CİNSİYET</p>
-            <p className="font-display text-sm text-foreground mt-0.5">
-              {profileGender === "male" ? "Erkek" : profileGender === "female" ? "Kadın" : "Diğer"}
-            </p>
-          </div>
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">YAŞ</p>
-            <p className="font-display text-sm text-foreground mt-0.5">{profileAge ?? "—"}</p>
-          </div>
-          <div className="text-center p-2 bg-secondary/50 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">AKTİVİTE</p>
-            <p className="font-display text-sm text-foreground mt-0.5 truncate">
-              {profileActivityLevel === "sedentary" ? "Düşük" : profileActivityLevel === "light" ? "Hafif" : profileActivityLevel === "moderate" ? "Aktif" : "Çok Aktif"}
-            </p>
-          </div>
-        </div>
-        <div className="grid grid-cols-2 gap-2">
-          <div className="text-center p-2 bg-primary/10 border border-primary/30 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">BOY</p>
-            <p className="font-display text-sm text-primary mt-0.5">{profileHeight ? `${profileHeight} cm` : "—"}</p>
-          </div>
-          <div className="text-center p-2 bg-primary/10 border border-primary/30 rounded-lg">
-            <p className="text-muted-foreground text-[10px]">KİLO</p>
-            <p className="font-display text-sm text-primary mt-0.5">{profileWeight ? `${profileWeight} kg` : "—"}</p>
-          </div>
-        </div>
-      </motion.div>
 
       {/* Body Stats */}
       <motion.div
@@ -462,71 +411,6 @@ const Profil = () => {
         </div>
       </motion.div>
 
-      {/* Günlük Hedef Card */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.27 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">GÜNLÜK HEDEF</h2>
-          {profileAny?.fitness_goal && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-primary/20 text-primary font-medium uppercase">
-              {profileAny.fitness_goal === "cut" ? "Kilo Ver" : profileAny.fitness_goal === "bulk" ? "Kas Yap" : "Koruma"}
-            </span>
-          )}
-          {macros && (
-            <span className="text-[10px] px-2 py-0.5 rounded-full bg-secondary text-muted-foreground">
-              Koç
-            </span>
-          )}
-        </div>
-
-        {macros ? (
-          <div className="space-y-3">
-            <div className="flex items-center gap-3 p-3 bg-primary/10 border border-primary/30 rounded-xl">
-              <Flame className="w-5 h-5 text-primary flex-shrink-0" />
-              <div>
-                <p className="font-display text-xl text-primary">
-                  {macros!.calories.toLocaleString()} kcal
-                </p>
-              </div>
-            </div>
-            <div className="grid grid-cols-3 gap-3">
-              <div className="text-center p-3 bg-secondary/50 rounded-xl">
-                <Beef className="w-4 h-4 text-blue-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros!.protein}g</p>
-                <p className="text-muted-foreground text-[10px]">PROTEİN</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-xl">
-                <Wheat className="w-4 h-4 text-orange-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros!.carbs}g</p>
-                <p className="text-muted-foreground text-[10px]">KARBONHİDRAT</p>
-              </div>
-              <div className="text-center p-3 bg-secondary/50 rounded-xl">
-                <Droplets className="w-4 h-4 text-yellow-400 mx-auto mb-1" />
-                <p className="font-display text-lg text-foreground">{macros!.fat}g</p>
-                <p className="text-muted-foreground text-[10px]">YAĞ</p>
-              </div>
-            </div>
-          </div>
-        ) : (
-          <div className="text-center py-4">
-            <p className="text-muted-foreground text-sm">Henüz ayarlanmadı</p>
-            <Button
-              variant="outline"
-              size="sm"
-              className="mt-2 text-xs"
-              onClick={() => setShowMeasurements(true)}
-            >
-              <Ruler className="w-3.5 h-3.5 mr-1" />
-              Ölçümleri Gir
-            </Button>
-          </div>
-        )}
-      </motion.div>
 
       {/* Transformation Timeline */}
       <motion.div
@@ -634,11 +518,6 @@ const Profil = () => {
         onClose={() => setShowMeasurements(false)}
       />
 
-      {/* Body Metrics Editor */}
-      <BodyMetricsEditor
-        isOpen={showMetricsEditor}
-        onClose={() => setShowMetricsEditor(false)}
-      />
     </div>
   );
 };
