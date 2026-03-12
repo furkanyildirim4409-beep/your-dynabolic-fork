@@ -1,8 +1,49 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, FileText, AlertTriangle, CheckCircle, TrendingUp, TrendingDown } from "lucide-react";
+import { X, FileText, AlertTriangle, CheckCircle, TrendingUp, TrendingDown, Sparkles, ShoppingCart, PackagePlus, Check, Save, Loader2 } from "lucide-react";
 import { LineChart, Line, XAxis, YAxis, ResponsiveContainer, Tooltip, CartesianGrid } from "recharts";
+import { Textarea } from "@/components/ui/textarea";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "@/hooks/use-toast";
 import type { BloodTestBiomarker, BloodTest } from "@/hooks/useBloodTests";
 
+/* ─── Supplement suggestion engine ─── */
+interface SupplementSuggestion {
+  name: string;
+  reason: string;
+  inStock: boolean;
+}
+
+const supplementMap: Record<string, { name: string; reasonTemplate: string }> = {
+  "Vitamin D":   { name: "Vitamin D3 + K2 (2000 IU)", reasonTemplate: "Kan tahlilinizde Vitamin D seviyeniz düşük." },
+  "Ferritin":    { name: "Demir Bisglisinat", reasonTemplate: "Ferritin seviyeniz referans aralığının altında." },
+  "Vitamin B12": { name: "Metilkobalamin B12 (1000 mcg)", reasonTemplate: "B12 vitamininiz düşük, sinir sistemi desteği gerekli." },
+  "Magnezyum":   { name: "Magnezyum Bisglisinat (400 mg)", reasonTemplate: "Magnezyum seviyeniz düşük, kas ve uyku kalitesini etkileyebilir." },
+  "Testosteron": { name: "Çinko + D3 + Ashwagandha", reasonTemplate: "Testosteron seviyeniz düşük, doğal destek önerilir." },
+};
+
+const highSupplementMap: Record<string, { name: string; reasonTemplate: string }> = {
+  "CRP":      { name: "Omega-3 (EPA/DHA) 2000 mg", reasonTemplate: "CRP yüksek — kronik inflamasyon riski. Omega-3 anti-inflamatuar destek sağlar." },
+  "Kortizol": { name: "Ashwagandha + Magnezyum", reasonTemplate: "Kortizol seviyeniz yüksek — stres yönetimi için adaptojenik destek." },
+};
+
+const generateSupplementSuggestions = (data: BloodTestBiomarker[]): SupplementSuggestion[] => {
+  const suggestions: SupplementSuggestion[] = [];
+  data.forEach((b) => {
+    if (b.status === "low" && supplementMap[b.name]) {
+      const s = supplementMap[b.name];
+      suggestions.push({ name: s.name, reason: s.reasonTemplate, inStock: false });
+    }
+    if (b.status === "high" && highSupplementMap[b.name]) {
+      const s = highSupplementMap[b.name];
+      suggestions.push({ name: s.name, reason: s.reasonTemplate, inStock: false });
+    }
+  });
+  return suggestions;
+};
+
+/* ─── Props ─── */
 interface BloodworkDetailModalProps {
   isOpen: boolean;
   onClose: () => void;
@@ -10,15 +51,26 @@ interface BloodworkDetailModalProps {
   coachNotes?: string | null;
   testDate?: string;
   allTests: BloodTest[];
+  mode?: "athlete" | "coach";
+  testId?: string;
+  onNotesSaved?: () => void;
 }
 
-const BloodworkDetailModal = ({ isOpen, onClose, extractedData, coachNotes, allTests }: BloodworkDetailModalProps) => {
+const BloodworkDetailModal = ({
+  isOpen, onClose, extractedData, coachNotes, allTests,
+  mode = "athlete", testId, onNotesSaved,
+}: BloodworkDetailModalProps) => {
+  const [notes, setNotes] = useState(coachNotes || "");
+  const [saving, setSaving] = useState(false);
+  const [addedToStock, setAddedToStock] = useState<Set<string>>(new Set());
+
   if (!isOpen) return null;
 
   const biomarkers = extractedData || [];
   const flagged = biomarkers.filter((b) => b.status === "low" || b.status === "high");
+  const suggestions = generateSupplementSuggestions(biomarkers);
 
-  // Build hormone trend from all tests (sorted by date ascending)
+  // Hormone trend from all tests
   const sortedTests = [...allTests]
     .filter((t) => t.status === "analyzed" && t.extracted_data?.length > 0)
     .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime())
@@ -28,12 +80,30 @@ const BloodworkDetailModal = ({ isOpen, onClose, extractedData, coachNotes, allT
     const testo = t.extracted_data.find((b) => b.name === "Testosteron");
     const cortisol = t.extracted_data.find((b) => b.name === "Kortizol");
     const month = new Date(t.date).toLocaleDateString("tr-TR", { month: "short" });
-    return {
-      month,
-      testosterone: testo?.value || 0,
-      cortisol: cortisol?.value || 0,
-    };
+    return { month, testosterone: testo?.value || 0, cortisol: cortisol?.value || 0 };
   });
+
+  const handleSaveNotes = async () => {
+    if (!testId) return;
+    setSaving(true);
+    const { error } = await supabase.from("blood_tests").update({ coach_notes: notes }).eq("id", testId);
+    setSaving(false);
+    if (error) {
+      toast({ title: "Hata", description: error.message, variant: "destructive" });
+    } else {
+      toast({ title: "Kaydedildi ✅", description: "Koç notu başarıyla güncellendi." });
+      onNotesSaved?.();
+    }
+  };
+
+  const handleOrder = (name: string) => {
+    toast({ title: "🛒 Sipariş Yönlendirme", description: `${name} için sipariş sayfasına yönlendiriliyor...` });
+  };
+
+  const handleAddStock = (name: string) => {
+    setAddedToStock((prev) => new Set(prev).add(name));
+    toast({ title: "✅ Stoğa Eklendi", description: `${name} envanterinize eklendi.` });
+  };
 
   return (
     <AnimatePresence>
@@ -146,15 +216,90 @@ const BloodworkDetailModal = ({ isOpen, onClose, extractedData, coachNotes, allT
             </div>
           </div>
 
+          {/* ✨ Gemini AI Supplement Suggestions (Athlete mode only) */}
+          {mode === "athlete" && suggestions.length > 0 && (
+            <div className="mx-4 mt-6">
+              <div className="flex items-center gap-2 mb-3">
+                <Sparkles className="w-5 h-5 text-purple-400" />
+                <h3 className="text-foreground text-sm font-medium">Gemini AI Analizi & Takviye Önerileri</h3>
+              </div>
+              <div className="space-y-3">
+                {suggestions.map((s) => {
+                  const isInStock = addedToStock.has(s.name);
+                  return (
+                    <div
+                      key={s.name}
+                      className="relative rounded-xl p-[1px] overflow-hidden"
+                      style={{ background: "linear-gradient(135deg, hsl(270 80% 60%), hsl(220 80% 60%), hsl(270 80% 60%))" }}
+                    >
+                      <div className="bg-background rounded-[11px] p-4 space-y-3">
+                        <div className="flex items-start gap-3">
+                          <div className="w-8 h-8 rounded-lg bg-purple-500/20 flex items-center justify-center flex-shrink-0">
+                            <Sparkles className="w-4 h-4 text-purple-400" />
+                          </div>
+                          <div className="flex-1">
+                            <p className="text-foreground text-sm font-semibold">{s.name}</p>
+                            <p className="text-muted-foreground text-xs mt-1">{s.reason}</p>
+                          </div>
+                        </div>
+                        <div className="flex gap-2">
+                          {isInStock ? (
+                            <div className="flex-1 flex items-center justify-center gap-2 p-2.5 bg-green-500/10 text-green-400 rounded-xl text-sm font-medium">
+                              <Check className="w-4 h-4" />Stokta Var
+                            </div>
+                          ) : (
+                            <>
+                              <Button
+                                size="sm"
+                                className="flex-1 gap-2 text-xs"
+                                onClick={() => handleOrder(s.name)}
+                              >
+                                <ShoppingCart className="w-3.5 h-3.5" />Sipariş Ver
+                              </Button>
+                              <Button
+                                variant="outline"
+                                size="sm"
+                                className="flex-1 gap-2 text-xs"
+                                onClick={() => handleAddStock(s.name)}
+                              >
+                                <PackagePlus className="w-3.5 h-3.5" />Stoğuma Ekle
+                              </Button>
+                            </>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
           {/* Coach Notes */}
-          {coachNotes && (
+          {mode === "coach" ? (
+            <div className="mx-4 mt-6">
+              <div className="backdrop-blur-xl bg-card border border-primary/20 rounded-xl p-4 space-y-3">
+                <p className="text-primary text-xs font-medium">Koç Notu</p>
+                <Textarea
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  placeholder="Sporcu için notunuzu yazın..."
+                  className="min-h-[80px] bg-secondary/50 border-border text-sm"
+                />
+                <Button onClick={handleSaveNotes} disabled={saving} className="w-full gap-2">
+                  {saving ? <Loader2 className="w-4 h-4 animate-spin" /> : <Save className="w-4 h-4" />}
+                  {saving ? "Kaydediliyor..." : "Notu Kaydet"}
+                </Button>
+              </div>
+            </div>
+          ) : coachNotes ? (
             <div className="mx-4 mt-6">
               <div className="backdrop-blur-xl bg-card border border-primary/20 rounded-xl p-4">
                 <p className="text-primary text-xs font-medium mb-1">Koç Notu</p>
                 <p className="text-muted-foreground text-sm">{coachNotes}</p>
               </div>
             </div>
-          )}
+          ) : null}
         </motion.div>
       </motion.div>
     </AnimatePresence>

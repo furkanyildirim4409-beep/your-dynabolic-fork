@@ -1,12 +1,13 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog } from "lucide-react";
+import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog, Droplet } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import CoachMacroOverrideModal from "@/components/CoachMacroOverrideModal";
+import CoachBloodworkModal from "@/components/CoachBloodworkModal";
 import { hapticLight } from "@/lib/haptics";
 
 interface AthleteRow {
@@ -40,6 +41,8 @@ const CoachAthletes = () => {
   const [search, setSearch] = useState("");
   const [selectedAthlete, setSelectedAthlete] = useState<AthleteRow | null>(null);
   const [showMacroModal, setShowMacroModal] = useState(false);
+  const [bloodworkAthlete, setBloodworkAthlete] = useState<AthleteRow | null>(null);
+  const [showBloodworkModal, setShowBloodworkModal] = useState(false);
 
   const fetchAthletes = useCallback(async () => {
     if (!user) return;
@@ -74,6 +77,12 @@ const CoachAthletes = () => {
     hapticLight();
     setSelectedAthlete(athlete);
     setShowMacroModal(true);
+  };
+
+  const handleOpenBloodwork = (athlete: AthleteRow) => {
+    hapticLight();
+    setBloodworkAthlete(athlete);
+    setShowBloodworkModal(true);
   };
 
   return (
@@ -198,17 +207,29 @@ const CoachAthletes = () => {
                     </div>
                   )}
 
-                  {/* Action Button */}
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="w-full text-xs gap-2"
-                    onClick={() => handleOpenMacro(athlete)}
-                  >
-                    <Target className="w-3.5 h-3.5" />
-                    Makro Hedeflerini Düzenle
-                    <ChevronRight className="w-3.5 h-3.5 ml-auto" />
-                  </Button>
+                  {/* Action Buttons */}
+                  <div className="flex gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-2"
+                      onClick={() => handleOpenMacro(athlete)}
+                    >
+                      <Target className="w-3.5 h-3.5" />
+                      Makro Düzenle
+                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="flex-1 text-xs gap-2"
+                      onClick={() => handleOpenBloodwork(athlete)}
+                    >
+                      <Droplet className="w-3.5 h-3.5 text-red-400" />
+                      Kan Tahlilleri
+                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                    </Button>
+                  </div>
                 </motion.div>
               );
             })}
@@ -222,6 +243,14 @@ const CoachAthletes = () => {
         onClose={() => setShowMacroModal(false)}
         athlete={selectedAthlete}
         onSaved={fetchAthletes}
+      />
+
+      {/* Coach Bloodwork Modal */}
+      <CoachBloodworkModal
+        isOpen={showBloodworkModal}
+        onClose={() => { setShowBloodworkModal(false); setBloodworkAthlete(null); }}
+        athleteId={bloodworkAthlete?.id || ""}
+        athleteName={bloodworkAthlete?.full_name || "Sporcu"}
       />
     </div>
   );
