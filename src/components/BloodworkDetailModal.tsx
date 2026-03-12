@@ -6,42 +6,9 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "@/hooks/use-toast";
+import { useCart } from "@/context/CartContext";
+import { generateSupplementSuggestions } from "@/lib/supplementSuggestions";
 import type { BloodTestBiomarker, BloodTest } from "@/hooks/useBloodTests";
-
-/* ─── Supplement suggestion engine ─── */
-interface SupplementSuggestion {
-  name: string;
-  reason: string;
-  inStock: boolean;
-}
-
-const supplementMap: Record<string, { name: string; reasonTemplate: string }> = {
-  "Vitamin D":   { name: "Vitamin D3 + K2 (2000 IU)", reasonTemplate: "Kan tahlilinizde Vitamin D seviyeniz düşük." },
-  "Ferritin":    { name: "Demir Bisglisinat", reasonTemplate: "Ferritin seviyeniz referans aralığının altında." },
-  "Vitamin B12": { name: "Metilkobalamin B12 (1000 mcg)", reasonTemplate: "B12 vitamininiz düşük, sinir sistemi desteği gerekli." },
-  "Magnezyum":   { name: "Magnezyum Bisglisinat (400 mg)", reasonTemplate: "Magnezyum seviyeniz düşük, kas ve uyku kalitesini etkileyebilir." },
-  "Testosteron": { name: "Çinko + D3 + Ashwagandha", reasonTemplate: "Testosteron seviyeniz düşük, doğal destek önerilir." },
-};
-
-const highSupplementMap: Record<string, { name: string; reasonTemplate: string }> = {
-  "CRP":      { name: "Omega-3 (EPA/DHA) 2000 mg", reasonTemplate: "CRP yüksek — kronik inflamasyon riski. Omega-3 anti-inflamatuar destek sağlar." },
-  "Kortizol": { name: "Ashwagandha + Magnezyum", reasonTemplate: "Kortizol seviyeniz yüksek — stres yönetimi için adaptojenik destek." },
-};
-
-const generateSupplementSuggestions = (data: BloodTestBiomarker[]): SupplementSuggestion[] => {
-  const suggestions: SupplementSuggestion[] = [];
-  data.forEach((b) => {
-    if (b.status === "low" && supplementMap[b.name]) {
-      const s = supplementMap[b.name];
-      suggestions.push({ name: s.name, reason: s.reasonTemplate, inStock: false });
-    }
-    if (b.status === "high" && highSupplementMap[b.name]) {
-      const s = highSupplementMap[b.name];
-      suggestions.push({ name: s.name, reason: s.reasonTemplate, inStock: false });
-    }
-  });
-  return suggestions;
-};
 
 /* ─── Props ─── */
 interface BloodworkDetailModalProps {
@@ -63,6 +30,7 @@ const BloodworkDetailModal = ({
   const [notes, setNotes] = useState(coachNotes || "");
   const [saving, setSaving] = useState(false);
   const [addedToStock, setAddedToStock] = useState<Set<string>>(new Set());
+  const { addToCart } = useCart();
 
   if (!isOpen) return null;
 
@@ -94,10 +62,6 @@ const BloodworkDetailModal = ({
       toast({ title: "Kaydedildi ✅", description: "Koç notu başarıyla güncellendi." });
       onNotesSaved?.();
     }
-  };
-
-  const handleOrder = (name: string) => {
-    toast({ title: "🛒 Sipariş Yönlendirme", description: `${name} için sipariş sayfasına yönlendiriliyor...` });
   };
 
   const handleAddStock = (name: string) => {
@@ -228,7 +192,7 @@ const BloodworkDetailModal = ({
                   const isInStock = addedToStock.has(s.name);
                   return (
                     <div
-                      key={s.name}
+                      key={s.id}
                       className="relative rounded-xl p-[1px] overflow-hidden"
                       style={{ background: "linear-gradient(135deg, hsl(270 80% 60%), hsl(220 80% 60%), hsl(270 80% 60%))" }}
                     >
@@ -240,6 +204,7 @@ const BloodworkDetailModal = ({
                           <div className="flex-1">
                             <p className="text-foreground text-sm font-semibold">{s.name}</p>
                             <p className="text-muted-foreground text-xs mt-1">{s.reason}</p>
+                            <p className="text-primary text-sm font-bold mt-1">{s.price}₺</p>
                           </div>
                         </div>
                         <div className="flex gap-2">
@@ -252,9 +217,9 @@ const BloodworkDetailModal = ({
                               <Button
                                 size="sm"
                                 className="flex-1 gap-2 text-xs"
-                                onClick={() => handleOrder(s.name)}
+                                onClick={() => addToCart({ id: s.id, title: s.name, price: s.price, image: s.image, type: "supplement" })}
                               >
-                                <ShoppingCart className="w-3.5 h-3.5" />Sipariş Ver
+                                <ShoppingCart className="w-3.5 h-3.5" />Sepete Ekle
                               </Button>
                               <Button
                                 variant="outline"
