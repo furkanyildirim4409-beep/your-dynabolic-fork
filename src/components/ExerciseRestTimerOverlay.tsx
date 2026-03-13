@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-react";
-import { hapticLight } from "@/lib/haptics";
+import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 import { toast } from "sonner";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useEffect, useRef } from "react";
