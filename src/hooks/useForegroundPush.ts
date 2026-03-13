@@ -15,7 +15,14 @@ export function useForegroundPush() {
     if (!("serviceWorker" in navigator)) return;
     const navHandler = (event: MessageEvent) => {
       if (event.data?.type === "PUSH_NAVIGATE" && event.data.url) {
-        navigate(event.data.url);
+        // NUKE Radix UI / shadcn leftover body locks (critical for mobile PWAs)
+        document.body.style.pointerEvents = "auto";
+        document.body.removeAttribute("data-scroll-locked");
+
+        // Route on next paint for a smooth, freeze-free transition
+        requestAnimationFrame(() => {
+          navigate(event.data.url);
+        });
       }
     };
     navigator.serviceWorker.addEventListener("message", navHandler);
