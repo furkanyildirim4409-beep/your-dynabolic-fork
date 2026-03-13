@@ -67,14 +67,13 @@ const Kokpit = () => {
   // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
 
-  // Auto-open chat from push notification click routing
+  // Auto-open chat from deep link (reactive to search param changes)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('openChat') === 'true') {
+    if (searchParams.get('openChat') === 'true') {
       setShowChat(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      setSearchParams({}, { replace: true });
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   // Listen for coach chat open event from EliteDock
   useEffect(() => {

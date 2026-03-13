@@ -82,13 +82,11 @@ export function useForegroundPush() {
           if (msg.media_type === "image") body = "📷 Fotoğraf gönderdi";
           else if (msg.media_type === "audio") body = "🎤 Ses kaydı gönderdi";
 
-          const url = `/?openChat=true&coachId=${msg.sender_id}`;
-
           toast("💬 Yeni mesaj", {
             description: body.length > 100 ? body.substring(0, 100) + "…" : body,
             action: {
               label: "Görüntüle",
-              onClick: () => navigate(url),
+              onClick: () => window.dispatchEvent(new Event("openCoachChat")),
             },
             duration: 5000,
           });
