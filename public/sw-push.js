@@ -50,13 +50,19 @@ self.addEventListener("notificationclick", (event) => {
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
-        // Try to find an existing window and navigate it
-        for (const client of clientList) {
-          if ("navigate" in client) {
-            return client.navigate(urlToOpen).then((c) => c?.focus());
+        if (clientList.length > 0) {
+          // Find a focused client, or default to the first one
+          let target = clientList[0];
+          for (let i = 0; i < clientList.length; i++) {
+            if (clientList[i].focused) {
+              target = clientList[i];
+              break;
+            }
           }
+          // CRITICAL FOR IOS WEBKIT: focus() BEFORE navigate()
+          return target.focus().then((c) => c.navigate(urlToOpen));
         }
-        // No existing window — open a new one
+        // App is fully killed — open a new window
         return clients.openWindow(urlToOpen);
       })
   );

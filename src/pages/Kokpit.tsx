@@ -75,6 +75,15 @@ const Kokpit = () => {
     }
   }, [searchParams, setSearchParams]);
 
+  // Race-proof fallback: iOS cold boot may hydrate before useSearchParams is ready
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('openChat') === 'true') {
+      setShowChat(true);
+      window.history.replaceState({}, '', window.location.pathname);
+    }
+  }, []);
+
   // Listen for coach chat open event from EliteDock
   useEffect(() => {
     const handleOpenCoachChat = () => {
