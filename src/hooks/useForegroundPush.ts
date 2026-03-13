@@ -97,7 +97,7 @@ export function useForegroundPush() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, navigate]);
+  }, [user]);
 
   // Keep seenIds from growing unbounded
   useEffect(() => {
