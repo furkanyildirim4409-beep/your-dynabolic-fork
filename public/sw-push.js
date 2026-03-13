@@ -9,32 +9,25 @@ self.addEventListener("push", (event) => {
     data.body = event.data?.text() || "";
   }
 
+  // iOS WebKit: showNotification MUST be called immediately — zero async delay
   event.waitUntil(
-    clients
-      .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        // Relay to foreground client for in-app toast (bonus)
-        const focusedClient = clientList.find(
-          (c) => c.visibilityState === "visible"
-        );
-        if (focusedClient) {
-          focusedClient.postMessage({
-            type: "PUSH_FOREGROUND",
-            payload: data,
-          });
-        }
+    self.registration.showNotification(data.title, {
+      body: data.body,
+      icon: "/pwa-icon-192.png",
+      badge: "/favicon.ico",
+      data: data.data || {},
+      tag: data.data?.messageId || undefined,
+    })
+  );
 
-        // ALWAYS show system notification — iOS WebKit REQUIRES this
-        // Skipping showNotification() on iOS causes silent push failure
-        // and potential permission revocation
-        return self.registration.showNotification(data.title, {
-          body: data.body,
-          icon: "/pwa-icon-192.png",
-          badge: "/favicon.ico",
-          data: data.data || {},
-          tag: data.data?.messageId || undefined,
-        });
-      })
+  // Foreground relay — separate waitUntil so it doesn't block notification
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then((clientList) => {
+      const focused = clientList.find((c) => c.visibilityState === "visible");
+      if (focused) {
+        focused.postMessage({ type: "PUSH_FOREGROUND", payload: data });
+      }
+    })
   );
 });
 
