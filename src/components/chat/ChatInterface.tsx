@@ -57,7 +57,9 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
     });
   };
 
-  return (
+  if (typeof document === 'undefined') return null;
+
+  return createPortal(
     <AnimatePresence>
       {isOpen && (
         <motion.div
