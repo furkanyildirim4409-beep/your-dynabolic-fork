@@ -35,21 +35,25 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const notifData = event.notification.data || {};
-  // Use relative path — iOS WebKit restarts the app with absolute URLs
-  const url = notifData.athleteUrl || notifData.url || "/";
+  const rawUrl = notifData.athleteUrl || notifData.url || "/";
+  const relativeUrl =
+    typeof rawUrl === "string" && rawUrl.startsWith("/")
+      ? rawUrl
+      : `/${String(rawUrl || "").replace(/^\/+/, "")}`;
+  const absoluteUrl = new URL(relativeUrl, self.location.origin).toString();
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
-      .then((windowClients) => {
+      .then(async (windowClients) => {
         for (const client of windowClients) {
           if (client.url.includes(self.location.origin) && "focus" in client) {
-            // navigate BEFORE focus — matches working coach panel pattern
-            client.navigate(url);
+            // iOS: navigate BEFORE focus for best reliability
+            await client.navigate(relativeUrl);
             return client.focus();
           }
         }
-        return clients.openWindow(url);
+        return clients.openWindow(absoluteUrl);
       })
   );
 });
