@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import {
   Bell,
   X,
@@ -38,6 +38,7 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const Kokpit = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
@@ -66,14 +67,13 @@ const Kokpit = () => {
   // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
 
-  // Auto-open chat from push notification click routing
+  // Auto-open chat from deep link (reactive to search param changes)
   useEffect(() => {
-    const params = new URLSearchParams(window.location.search);
-    if (params.get('openChat') === 'true') {
+    if (searchParams.get('openChat') === 'true') {
       setShowChat(true);
-      window.history.replaceState({}, document.title, window.location.pathname);
+      setSearchParams({}, { replace: true });
     }
-  }, []);
+  }, [searchParams, setSearchParams]);
 
   // Listen for coach chat open event from EliteDock
   useEffect(() => {

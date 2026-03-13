@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
-import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useForegroundPush() {
   const { user } = useAuth();
-  const navigate = useNavigate();
   const seenIds = useRef(new Set<string>());
   const listenerAttached = useRef(false);
 
@@ -29,13 +27,12 @@ export function useForegroundPush() {
 
       const title = payload.title || "Yeni Bildirim";
       const body = payload.body || "";
-      const url = payload.data?.athleteUrl || payload.data?.url || "/";
 
       toast(title, {
         description: body,
         action: {
           label: "Görüntüle",
-          onClick: () => navigate(url),
+          onClick: () => window.dispatchEvent(new Event("openCoachChat")),
         },
         duration: 5000,
       });
@@ -47,7 +44,7 @@ export function useForegroundPush() {
       listenerAttached.current = false;
       navigator.serviceWorker.removeEventListener("message", handler);
     };
-  }, [user, navigate]);
+  }, [user]);
 
   // Realtime fallback — catch messages even if SW relay is missed
   useEffect(() => {
@@ -83,13 +80,11 @@ export function useForegroundPush() {
           if (msg.media_type === "image") body = "📷 Fotoğraf gönderdi";
           else if (msg.media_type === "audio") body = "🎤 Ses kaydı gönderdi";
 
-          const url = `/?openChat=true&coachId=${msg.sender_id}`;
-
           toast("💬 Yeni mesaj", {
             description: body.length > 100 ? body.substring(0, 100) + "…" : body,
             action: {
               label: "Görüntüle",
-              onClick: () => navigate(url),
+              onClick: () => window.dispatchEvent(new Event("openCoachChat")),
             },
             duration: 5000,
           });
@@ -100,7 +95,7 @@ export function useForegroundPush() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, navigate]);
+  }, [user]);
 
   // Keep seenIds from growing unbounded
   useEffect(() => {
