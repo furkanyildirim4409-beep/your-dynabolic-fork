@@ -29,13 +29,12 @@ export function useForegroundPush() {
 
       const title = payload.title || "Yeni Bildirim";
       const body = payload.body || "";
-      const url = payload.data?.athleteUrl || payload.data?.url || "/";
 
       toast(title, {
         description: body,
         action: {
           label: "Görüntüle",
-          onClick: () => navigate(url),
+          onClick: () => window.dispatchEvent(new Event("openCoachChat")),
         },
         duration: 5000,
       });
