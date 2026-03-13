@@ -38,6 +38,7 @@ import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 
 const Kokpit = () => {
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
