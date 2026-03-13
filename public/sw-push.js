@@ -13,26 +13,25 @@ self.addEventListener("push", (event) => {
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
       .then((clientList) => {
+        // Relay to foreground client for in-app toast (bonus)
         const focusedClient = clientList.find(
           (c) => c.visibilityState === "visible"
         );
-
         if (focusedClient) {
-          // App is in foreground — relay to React for in-app toast
           focusedClient.postMessage({
             type: "PUSH_FOREGROUND",
             payload: data,
           });
-          return;
         }
 
-        // App is backgrounded/closed — show system notification
+        // ALWAYS show system notification — iOS WebKit REQUIRES this
+        // Skipping showNotification() on iOS causes silent push failure
+        // and potential permission revocation
         return self.registration.showNotification(data.title, {
           body: data.body,
           icon: "/pwa-icon-192.png",
           badge: "/favicon.ico",
           data: data.data || {},
-          vibrate: [200, 100, 200],
           tag: data.data?.messageId || undefined,
         });
       })
