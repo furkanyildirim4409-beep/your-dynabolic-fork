@@ -1,12 +1,10 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
-import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useForegroundPush() {
   const { user } = useAuth();
-  const seenIds = useRef(new Set<string>());
   const seenIds = useRef(new Set<string>());
   const listenerAttached = useRef(false);
 
