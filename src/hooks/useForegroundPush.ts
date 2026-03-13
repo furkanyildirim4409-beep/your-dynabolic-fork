@@ -1,12 +1,31 @@
 import { useEffect, useRef } from "react";
 import { toast } from "sonner";
+import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useForegroundPush() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const seenIds = useRef(new Set<string>());
   const listenerAttached = useRef(false);
+
+  // SW PUSH_NAVIGATE listener — handles deep link from push notification click
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+
+    const navHandler = (event: MessageEvent) => {
+      if (event.data?.type !== "PUSH_NAVIGATE") return;
+      const url = event.data.url;
+      if (url) {
+        // Use React Router navigate to avoid full page reload
+        navigate(url);
+      }
+    };
+
+    navigator.serviceWorker.addEventListener("message", navHandler);
+    return () => navigator.serviceWorker.removeEventListener("message", navHandler);
+  }, [navigate]);
 
   // SW postMessage listener (primary path)
   useEffect(() => {
