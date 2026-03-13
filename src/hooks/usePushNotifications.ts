@@ -81,7 +81,7 @@ export function usePushNotifications() {
       // Subscribe immediately — pass Uint8Array directly (NOT .buffer for WebKit)
       const sub = await reg.pushManager.subscribe({
         userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidKey),
+        applicationServerKey: urlBase64ToUint8Array(vapidKey) as BufferSource,
       });
 
       await upsertSubscription(user.id, sub);
