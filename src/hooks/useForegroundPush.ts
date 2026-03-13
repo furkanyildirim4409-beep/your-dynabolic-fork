@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export function useForegroundPush() {
   const { user } = useAuth();
-  const navigate = useNavigate();
+  const seenIds = useRef(new Set<string>());
   const seenIds = useRef(new Set<string>());
   const listenerAttached = useRef(false);
 
