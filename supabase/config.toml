@@ -14,3 +14,6 @@ verify_jwt = false
 
 [functions.get-vapid-public-key]
 verify_jwt = false
+
+[functions.send-test-broadcast]
+verify_jwt = false
