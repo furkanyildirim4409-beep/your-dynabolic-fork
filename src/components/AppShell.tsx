@@ -3,9 +3,11 @@ import { motion } from "framer-motion";
 import EliteDock from "./EliteDock";
 import { useAuth } from "@/context/AuthContext";
 import BodyMetricsOnboarding from "./BodyMetricsOnboarding";
+import { useForegroundPush } from "@/hooks/useForegroundPush";
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { profile, isLoading } = useAuth();
+  useForegroundPush();
   const needsOnboarding = !isLoading && profile && (profile.current_weight == null || profile.height_cm == null);
 
   return (
