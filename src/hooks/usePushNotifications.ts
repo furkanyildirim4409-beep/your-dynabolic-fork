@@ -64,20 +64,45 @@ export function usePushNotifications() {
 
   useEffect(() => {
     if (!isSupported || !user || syncedRef.current) return;
-    const checkSubscription = async () => {
+
+    const autoSyncSubscription = async () => {
       try {
         const registration = await navigator.serviceWorker.ready;
-        const subscription = await registration.pushManager.getSubscription();
+        let subscription = await registration.pushManager.getSubscription();
+
+        // If permission is already granted but no subscription exists, silently create one
+        if (!subscription && Notification.permission === "granted") {
+          const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
+          if (vapidPublicKey) {
+            subscription = await registration.pushManager.subscribe({
+              userVisibleOnly: true,
+              applicationServerKey: urlBase64ToUint8Array(vapidPublicKey),
+            });
+          }
+        }
+
+        // If a subscription exists, ALWAYS sync it to Supabase on boot
         if (subscription) {
+          const subJson = subscription.toJSON();
+          await supabase.from("push_subscriptions").upsert(
+            {
+              user_id: user.id,
+              endpoint: subJson.endpoint,
+              p256dh: subJson.keys?.p256dh || "",
+              auth: subJson.keys?.auth || "",
+            },
+            { onConflict: "user_id,endpoint" }
+          );
           setIsSubscribed(true);
         }
       } catch (error) {
-        // silent
+        console.error("Push auto-sync error:", error);
       } finally {
         syncedRef.current = true;
       }
     };
-    checkSubscription();
+
+    autoSyncSubscription();
   }, [isSupported, user]);
 
   return { isSupported, isSubscribed, subscribe };
