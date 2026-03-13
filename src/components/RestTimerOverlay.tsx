@@ -19,6 +19,7 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
     mode: "down",
     initialSeconds,
     autoStart: isOpen,
+    onComplete: onClose,
   });
 
   const totalSeconds = initialSeconds;
