@@ -35,27 +35,21 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
   const notifData = event.notification.data || {};
-  const path = notifData.athleteUrl || notifData.url || "/";
-  const urlToOpen = new URL(path, self.location.origin).href;
+  // Use relative path — iOS WebKit restarts the app with absolute URLs
+  const url = notifData.athleteUrl || notifData.url || "/";
 
   event.waitUntil(
     clients
       .matchAll({ type: "window", includeUncontrolled: true })
-      .then((clientList) => {
-        if (clientList.length > 0) {
-          // Find a focused client, or default to the first one
-          let target = clientList[0];
-          for (let i = 0; i < clientList.length; i++) {
-            if (clientList[i].focused) {
-              target = clientList[i];
-              break;
-            }
+      .then((windowClients) => {
+        for (const client of windowClients) {
+          if (client.url.includes(self.location.origin) && "focus" in client) {
+            // navigate BEFORE focus — matches working coach panel pattern
+            client.navigate(url);
+            return client.focus();
           }
-          // CRITICAL FOR IOS WEBKIT: focus() BEFORE navigate()
-          return target.focus().then((c) => c.navigate(urlToOpen));
         }
-        // App is fully killed — open a new window
-        return clients.openWindow(urlToOpen);
+        return clients.openWindow(url);
       })
   );
 });
