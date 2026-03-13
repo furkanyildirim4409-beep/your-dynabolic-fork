@@ -46,7 +46,7 @@ export function useForegroundPush() {
       listenerAttached.current = false;
       navigator.serviceWorker.removeEventListener("message", handler);
     };
-  }, [user, navigate]);
+  }, [user]);
 
   // Realtime fallback — catch messages even if SW relay is missed
   useEffect(() => {
