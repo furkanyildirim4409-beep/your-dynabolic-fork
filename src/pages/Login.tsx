@@ -1,5 +1,5 @@
 import { useState, useEffect } from "react";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useSearchParams } from "react-router-dom";
 import { motion } from "framer-motion";
 import { Mail, Lock, User, LogIn, UserPlus } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
@@ -11,6 +11,11 @@ import IcosahedronBackground from "@/components/IcosahedronBackground";
 
 type ViewState = "login" | "signup" | "forgot";
 
+const getSafeRedirectPath = (redirect: string | null) => {
+  if (!redirect || !redirect.startsWith("/") || redirect.startsWith("//")) return "/";
+  return redirect;
+};
+
 const Login = () => {
   const [view, setView] = useState<ViewState>("login");
   const [email, setEmail] = useState("");
@@ -19,18 +24,20 @@ const Login = () => {
   const [loading, setLoading] = useState(false);
   const { user, profile, signIn, signUp, signOut, isLoading } = useAuth();
   const navigate = useNavigate();
+  const [searchParams] = useSearchParams();
+  const redirectPath = getSafeRedirectPath(searchParams.get("redirect"));
 
   // Role-based redirect after login
   useEffect(() => {
     if (!user || !profile || isLoading) return;
 
     if (profile.role === "athlete") {
-      navigate("/", { replace: true });
+      navigate(redirectPath, { replace: true });
     } else if (profile.role === "coach") {
       toast.error("Bu panel sadece Öğrenciler içindir. Koç paneline gidin.");
       signOut();
     }
-  }, [user, profile, isLoading]);
+  }, [user, profile, isLoading, navigate, redirectPath, signOut]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
