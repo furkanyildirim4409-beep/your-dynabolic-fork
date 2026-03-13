@@ -19,17 +19,35 @@ self.addEventListener('push', (event) => {
 
 self.addEventListener('notificationclick', (event) => {
   event.notification.close();
-  const url = event.notification.data?.athleteUrl || '/';
+
+  const rawPath = event.notification.data?.athleteUrl || '/';
+  // iOS WebKit prefers absolute URLs for openWindow
+  const targetUrl = new URL(rawPath, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
-      for (const client of windowClients) {
-        if (client.url.includes(self.location.origin) && 'focus' in client) {
-          client.navigate(url);
-          return client.focus();
+      if (windowClients.length > 0) {
+        // Find focused window or default to the first one
+        let client = windowClients[0];
+        for (let i = 0; i < windowClients.length; i++) {
+          if (windowClients[i].focused) {
+            client = windowClients[i];
+            break;
+          }
+        }
+
+        // CRITICAL FOR IOS: Focus FIRST, then navigate
+        if ('focus' in client) {
+          return client.focus().then((c) => {
+            if ('navigate' in c) {
+              return c.navigate(targetUrl);
+            }
+          });
         }
       }
-      return clients.openWindow(url);
+
+      // If no window is open
+      return clients.openWindow(targetUrl);
     })
   );
 });
