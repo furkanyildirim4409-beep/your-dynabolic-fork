@@ -1,12 +1,26 @@
 import { useEffect, useRef } from "react";
+import { useNavigate } from "react-router-dom";
 import { toast } from "sonner";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 export function useForegroundPush() {
   const { user } = useAuth();
+  const navigate = useNavigate();
   const seenIds = useRef(new Set<string>());
   const listenerAttached = useRef(false);
+
+  // Handle background-to-foreground deep linking via SW postMessage
+  useEffect(() => {
+    if (!("serviceWorker" in navigator)) return;
+    const navHandler = (event: MessageEvent) => {
+      if (event.data?.type === "PUSH_NAVIGATE" && event.data.url) {
+        navigate(event.data.url);
+      }
+    };
+    navigator.serviceWorker.addEventListener("message", navHandler);
+    return () => navigator.serviceWorker.removeEventListener("message", navHandler);
+  }, [navigate]);
 
   // SW postMessage listener (primary path)
   useEffect(() => {
