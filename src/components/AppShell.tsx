@@ -4,10 +4,12 @@ import EliteDock from "./EliteDock";
 import { useAuth } from "@/context/AuthContext";
 import BodyMetricsOnboarding from "./BodyMetricsOnboarding";
 import { useForegroundPush } from "@/hooks/useForegroundPush";
+import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const AppShell = ({ children }: { children: ReactNode }) => {
   const { profile, isLoading } = useAuth();
   useForegroundPush();
+  usePushNotifications(); // Auto-sync push subscription on login
   const needsOnboarding = !isLoading && profile && (profile.current_weight == null || profile.height_cm == null);
 
   return (

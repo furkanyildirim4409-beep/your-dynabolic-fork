@@ -21,7 +21,7 @@ Deno.serve(async (req) => {
       });
     }
 
-    const { sender_id, receiver_id, content, media_type } = record;
+    const { id: messageId, sender_id, receiver_id, content, media_type } = record;
     if (!sender_id || !receiver_id || !content) {
       return new Response(JSON.stringify({ error: "missing fields" }), {
         status: 400,
@@ -82,6 +82,7 @@ Deno.serve(async (req) => {
           ? previewText.substring(0, 100) + "…"
           : previewText,
       data: {
+        messageId: messageId,
         url: "/",
         coachUrl: `/messages?athleteId=${sender_id}`,
         athleteUrl: `/?openChat=true&coachId=${sender_id}`,
