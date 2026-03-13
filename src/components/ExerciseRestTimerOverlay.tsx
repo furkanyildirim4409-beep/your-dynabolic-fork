@@ -44,6 +44,9 @@ const ExerciseRestTimerOverlay = ({
     if (timeLeft <= 3 && timeLeft > 0 && timeLeft !== lastPlayedRef.current) {
       lastPlayedRef.current = timeLeft;
       playSound(600, 0.1);
+      if (timeLeft === 3) hapticLight();
+      else if (timeLeft === 2) hapticMedium();
+      else if (timeLeft === 1) hapticHeavy();
     }
   }, [timeLeft]);
 

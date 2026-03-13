@@ -1,8 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, RotateCcw, Plus, Minus, X, Volume2, VolumeX } from "lucide-react";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useState } from "react";
+import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 
 interface RestTimerOverlayProps {
   isOpen: boolean;
