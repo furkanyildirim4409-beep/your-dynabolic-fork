@@ -30,13 +30,11 @@ self.addEventListener('notificationclick', (event) => {
 
         return client.focus().then((c) => {
           if (!c) return;
-          // Tell the alive React app to route internally (smooth SPA transition)
-          c.postMessage({ type: "PUSH_NAVIGATE", url: rawPath });
-
-          // Fallback native navigation if paths don't match
-          if ('navigate' in c && c.url !== targetUrl) {
-            return c.navigate(targetUrl);
-          }
+          // Give mobile webview 100ms to unfreeze before routing
+          setTimeout(() => {
+            c.postMessage({ type: "PUSH_NAVIGATE", url: rawPath });
+          }, 100);
+          // DO NOT call c.navigate() here — trust React Router to avoid race condition
         });
       }
       // If fully killed
