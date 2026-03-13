@@ -54,12 +54,28 @@ export function usePushNotifications() {
     if (!isSupported || !user) return false;
 
     try {
+      // iOS Safari: VAPID key ve SW registration'ı izin istemeden ÖNCE hazırla
+      // Böylece izin verildikten sonra pushManager.subscribe() hemen çağrılır
+      // ve user gesture zinciri kırılmaz
+      const [reg, vapidKey] = await Promise.all([
+        navigator.serviceWorker.ready,
+        fetchVapidPublicKey(),
+      ]);
+
+      if (!vapidKey) {
+        console.error("VAPID public key not available");
+        return false;
+      }
+
+      // İzin iste — bu, user gesture'dan hemen sonra olmalı
       const permission = await Notification.requestPermission();
       if (permission !== "granted") return false;
 
-      const reg = await navigator.serviceWorker.ready;
-      const sub = await createSubscription(reg);
-      if (!sub) return false;
+      // İzin verildi — hemen subscribe ol (artık async fetch yok)
+      const sub = await reg.pushManager.subscribe({
+        userVisibleOnly: true,
+        applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
+      });
 
       await upsertSubscription(user.id, sub);
       setIsSubscribed(true);
