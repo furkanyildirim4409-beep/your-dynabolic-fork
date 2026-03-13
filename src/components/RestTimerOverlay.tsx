@@ -30,6 +30,17 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
   const circumference = 2 * Math.PI * 120;
   const isFinished = secondsLeft === 0;
 
+  // Haptic feedback for last 3 seconds
+  const lastHapticRef = useRef<number>(-1);
+  useEffect(() => {
+    if (secondsLeft <= 3 && secondsLeft > 0 && secondsLeft !== lastHapticRef.current) {
+      lastHapticRef.current = secondsLeft;
+      if (secondsLeft === 3) hapticLight();
+      else if (secondsLeft === 2) hapticMedium();
+      else if (secondsLeft === 1) hapticHeavy();
+    }
+  }, [secondsLeft]);
+
   if (!isOpen) return null;
 
   return (
