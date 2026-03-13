@@ -12,6 +12,16 @@ export function usePushNotifications() {
     setIsSupported("serviceWorker" in navigator && "PushManager" in window);
   }, []);
 
+  // Force SW update on boot — busts stubborn iOS WebKit SW cache
+  useEffect(() => {
+    if (!isSupported) return;
+    navigator.serviceWorker.getRegistrations().then((regs) => {
+      for (const reg of regs) {
+        reg.update();
+      }
+    });
+  }, [isSupported]);
+
   // Auto-sync existing subscription on login (if permission already granted)
   useEffect(() => {
     if (!isSupported || !user || syncedRef.current) return;
