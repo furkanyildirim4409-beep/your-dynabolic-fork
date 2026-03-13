@@ -21,32 +21,25 @@ self.addEventListener('notificationclick', (event) => {
   event.notification.close();
 
   const rawPath = event.notification.data?.athleteUrl || '/';
-  // iOS WebKit prefers absolute URLs for openWindow
   const targetUrl = new URL(rawPath, self.location.origin).href;
 
   event.waitUntil(
     clients.matchAll({ type: 'window', includeUncontrolled: true }).then((windowClients) => {
       if (windowClients.length > 0) {
-        // Find focused window or default to the first one
-        let client = windowClients[0];
-        for (let i = 0; i < windowClients.length; i++) {
-          if (windowClients[i].focused) {
-            client = windowClients[i];
-            break;
+        let client = windowClients.find(c => c.focused) || windowClients[0];
+
+        return client.focus().then((c) => {
+          if (!c) return;
+          // Tell the alive React app to route internally (smooth SPA transition)
+          c.postMessage({ type: "PUSH_NAVIGATE", url: rawPath });
+
+          // Fallback native navigation if paths don't match
+          if ('navigate' in c && c.url !== targetUrl) {
+            return c.navigate(targetUrl);
           }
-        }
-
-        // CRITICAL FOR IOS: Focus FIRST, then navigate
-        if ('focus' in client) {
-          return client.focus().then((c) => {
-            if ('navigate' in c) {
-              return c.navigate(targetUrl);
-            }
-          });
-        }
+        });
       }
-
-      // If no window is open
+      // If fully killed
       return clients.openWindow(targetUrl);
     })
   );
