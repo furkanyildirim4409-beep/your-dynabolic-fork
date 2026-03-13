@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -6,22 +6,41 @@ export function usePushNotifications() {
   const { user } = useAuth();
   const [isSubscribed, setIsSubscribed] = useState(false);
   const [isSupported, setIsSupported] = useState(false);
+  const syncedRef = useRef(false);
 
   useEffect(() => {
     setIsSupported("serviceWorker" in navigator && "PushManager" in window);
   }, []);
 
+  // Auto-sync existing subscription on login (if permission already granted)
   useEffect(() => {
-    if (!isSupported || !user) return;
+    if (!isSupported || !user || syncedRef.current) return;
+    syncedRef.current = true;
 
-    // Register service worker and check existing subscription
-    navigator.serviceWorker.register("/sw.js").then(async (reg) => {
-      const sub = await reg.pushManager.getSubscription();
-      setIsSubscribed(!!sub);
-    });
+    (async () => {
+      try {
+        const reg = await navigator.serviceWorker.ready;
+        const existingSub = await reg.pushManager.getSubscription();
+
+        if (existingSub) {
+          // Sync to DB in case it's missing
+          await upsertSubscription(user.id, existingSub);
+          setIsSubscribed(true);
+        } else if (Notification.permission === "granted") {
+          // Permission granted but no subscription — re-subscribe
+          const sub = await createSubscription(reg);
+          if (sub) {
+            await upsertSubscription(user.id, sub);
+            setIsSubscribed(true);
+          }
+        }
+      } catch (err) {
+        console.error("Push auto-sync error:", err);
+      }
+    })();
   }, [isSupported, user]);
 
-  const subscribe = async () => {
+  const subscribe = useCallback(async () => {
     if (!isSupported || !user) return false;
 
     try {
@@ -29,46 +48,60 @@ export function usePushNotifications() {
       if (permission !== "granted") return false;
 
       const reg = await navigator.serviceWorker.ready;
+      const sub = await createSubscription(reg);
+      if (!sub) return false;
 
-      // Fetch VAPID public key from env
-      const vapidPublicKey = import.meta.env.VITE_VAPID_PUBLIC_KEY;
-      if (!vapidPublicKey) {
-        console.error("VAPID public key not configured");
-        return false;
-      }
-
-      const sub = await reg.pushManager.subscribe({
-        userVisibleOnly: true,
-        applicationServerKey: urlBase64ToUint8Array(vapidPublicKey).buffer as ArrayBuffer,
-      });
-
-      const subJson = sub.toJSON();
-
-      // Save to Supabase
-      const { error } = await supabase.from("push_subscriptions" as any).upsert(
-        {
-          user_id: user.id,
-          endpoint: subJson.endpoint,
-          p256dh: subJson.keys?.p256dh || "",
-          auth: subJson.keys?.auth || "",
-        },
-        { onConflict: "user_id,endpoint" }
-      );
-
-      if (error) {
-        console.error("Push subscription save error:", error.message);
-        return false;
-      }
-
+      await upsertSubscription(user.id, sub);
       setIsSubscribed(true);
       return true;
     } catch (err) {
       console.error("Push subscribe error:", err);
       return false;
     }
-  };
+  }, [isSupported, user]);
 
   return { isSupported, isSubscribed, subscribe };
+}
+
+async function fetchVapidPublicKey(): Promise<string | null> {
+  try {
+    const { data, error } = await supabase.functions.invoke("get-vapid-public-key");
+    if (error) throw error;
+    return data?.vapidPublicKey || null;
+  } catch (err) {
+    console.error("Failed to fetch VAPID key:", err);
+    return null;
+  }
+}
+
+async function createSubscription(reg: ServiceWorkerRegistration): Promise<PushSubscription | null> {
+  const vapidKey = await fetchVapidPublicKey();
+  if (!vapidKey) {
+    console.error("VAPID public key not available");
+    return null;
+  }
+
+  return reg.pushManager.subscribe({
+    userVisibleOnly: true,
+    applicationServerKey: urlBase64ToUint8Array(vapidKey).buffer as ArrayBuffer,
+  });
+}
+
+async function upsertSubscription(userId: string, sub: PushSubscription) {
+  const subJson = sub.toJSON();
+  const { error } = await supabase.from("push_subscriptions" as any).upsert(
+    {
+      user_id: userId,
+      endpoint: subJson.endpoint,
+      p256dh: subJson.keys?.p256dh || "",
+      auth: subJson.keys?.auth || "",
+    },
+    { onConflict: "user_id,endpoint" }
+  );
+
+  if (error) {
+    console.error("Push subscription upsert error:", error.message);
+  }
 }
 
 function urlBase64ToUint8Array(base64String: string): Uint8Array {

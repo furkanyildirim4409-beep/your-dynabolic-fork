@@ -19,6 +19,7 @@ export default defineConfig(({ mode }) => ({
       registerType: "autoUpdate",
       includeAssets: ["favicon.ico", "pwa-icon-512.png", "pwa-icon-192.png"],
       workbox: {
+        importScripts: ["/sw-push.js"],
         navigateFallbackDenylist: [/^\/~oauth/],
         maximumFileSizeToCacheInBytes: 5242880,
         globPatterns: ["**/*.{js,css,html,ico,png,svg,woff2}"],
