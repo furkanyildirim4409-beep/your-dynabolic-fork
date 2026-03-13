@@ -1,8 +1,9 @@
-import { useCallback } from "react";
+import { useCallback, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { Play, Pause, RotateCcw, Plus, Minus, X, Volume2, VolumeX } from "lucide-react";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useState } from "react";
+import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 
 interface RestTimerOverlayProps {
   isOpen: boolean;
@@ -28,6 +29,17 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
   const seconds = secondsLeft % 60;
   const circumference = 2 * Math.PI * 120;
   const isFinished = secondsLeft === 0;
+
+  // Haptic feedback for last 3 seconds
+  const lastHapticRef = useRef<number>(-1);
+  useEffect(() => {
+    if (secondsLeft <= 3 && secondsLeft > 0 && secondsLeft !== lastHapticRef.current) {
+      lastHapticRef.current = secondsLeft;
+      if (secondsLeft === 3) hapticLight();
+      else if (secondsLeft === 2) hapticMedium();
+      else if (secondsLeft === 1) hapticHeavy();
+    }
+  }, [secondsLeft]);
 
   if (!isOpen) return null;
 

@@ -1,6 +1,6 @@
 import { motion } from "framer-motion";
 import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-react";
-import { hapticLight } from "@/lib/haptics";
+import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 import { toast } from "sonner";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useEffect, useRef } from "react";
@@ -44,6 +44,9 @@ const ExerciseRestTimerOverlay = ({
     if (timeLeft <= 3 && timeLeft > 0 && timeLeft !== lastPlayedRef.current) {
       lastPlayedRef.current = timeLeft;
       playSound(600, 0.1);
+      if (timeLeft === 3) hapticLight();
+      else if (timeLeft === 2) hapticMedium();
+      else if (timeLeft === 1) hapticHeavy();
     }
   }, [timeLeft]);
 
