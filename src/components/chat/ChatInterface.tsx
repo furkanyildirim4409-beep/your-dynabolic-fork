@@ -222,7 +222,8 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           </div>
         </motion.div>
       )}
-    </AnimatePresence>
+    </AnimatePresence>,
+    document.body
   );
 };
 

@@ -70,8 +70,9 @@ const Kokpit = () => {
   // Auto-open chat from deep link (reactive to search param changes)
   useEffect(() => {
     if (searchParams.get('openChat') === 'true') {
-      setShowChat(true);
       setSearchParams({}, { replace: true });
+      const t = setTimeout(() => setShowChat(true), 150);
+      return () => clearTimeout(t);
     }
   }, [searchParams, setSearchParams]);
 
@@ -79,8 +80,9 @@ const Kokpit = () => {
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('openChat') === 'true') {
-      setShowChat(true);
       window.history.replaceState({}, '', window.location.pathname);
+      const t = setTimeout(() => setShowChat(true), 150);
+      return () => clearTimeout(t);
     }
   }, []);
 
