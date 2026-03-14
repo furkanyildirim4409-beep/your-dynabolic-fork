@@ -35,6 +35,11 @@ import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/u
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { useDietPlan, type PlannedFood } from "@/hooks/useDietPlan";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { format, parseISO } from "date-fns";
+import { tr } from "date-fns/locale";
+import { CalendarClock, AlertTriangle, RefreshCw } from "lucide-react";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {

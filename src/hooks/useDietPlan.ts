@@ -1,6 +1,7 @@
 import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { differenceInDays, startOfDay, parseISO } from "date-fns";
 
 export interface PlannedFood {
   id: string;
@@ -37,9 +38,11 @@ const MEAL_LABELS: Record<string, string> = {
 
 export function useDietPlan() {
   const { user } = useAuth();
-  const [plannedFoods, setPlannedFoods] = useState<PlannedFood[]>([]);
+  const [allFoods, setAllFoods] = useState<PlannedFood[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [hasTemplate, setHasTemplate] = useState(false);
+  const [dietStartDate, setDietStartDate] = useState<string | null>(null);
+  const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -47,13 +50,13 @@ export function useDietPlan() {
       return;
     }
 
-    const fetch = async () => {
+    const fetchData = async () => {
       setIsLoading(true);
 
-      // 1. Get active_diet_template_id from nutrition_targets
+      // 1. Get targets including temporal fields
       const { data: targets } = await supabase
         .from("nutrition_targets")
-        .select("active_diet_template_id")
+        .select("active_diet_template_id, diet_start_date, diet_duration_weeks")
         .eq("athlete_id", user.id)
         .not("active_diet_template_id", "is", null)
         .limit(1)
@@ -62,30 +65,30 @@ export function useDietPlan() {
       const templateId = targets?.active_diet_template_id;
       if (!templateId) {
         setHasTemplate(false);
-        setPlannedFoods([]);
+        setAllFoods([]);
+        setDietStartDate(null);
+        setDietDurationWeeks(null);
         setIsLoading(false);
         return;
       }
 
-      // 2. Determine today's day number (Monday=1 ... Sunday=7)
-      const day = new Date().getDay();
-      const todayNum = day === 0 ? 7 : day;
+      setDietStartDate(targets.diet_start_date ?? null);
+      setDietDurationWeeks(targets.diet_duration_weeks ?? null);
 
-      // 3. Fetch planned foods for today
+      // 2. Fetch ALL template foods (no day_number filter)
       const { data: foods, error } = await supabase
         .from("diet_template_foods")
         .select("*")
         .eq("template_id", templateId)
-        .eq("day_number", todayNum)
         .order("meal_type");
 
       if (error) {
         console.error("Diet plan fetch error:", error.message);
         setHasTemplate(false);
-        setPlannedFoods([]);
+        setAllFoods([]);
       } else {
         setHasTemplate(true);
-        setPlannedFoods(
+        setAllFoods(
           (foods || []).map((f) => ({
             id: f.id,
             food_name: f.food_name,
@@ -95,7 +98,7 @@ export function useDietPlan() {
             protein: Number(f.protein ?? 0),
             carbs: Number(f.carbs ?? 0),
             fat: Number(f.fat ?? 0),
-            day_number: f.day_number ?? todayNum,
+            day_number: f.day_number ?? 1,
           }))
         );
       }
@@ -103,10 +106,36 @@ export function useDietPlan() {
       setIsLoading(false);
     };
 
-    fetch();
+    fetchData();
   }, [user]);
 
-  // Dynamic targets = sum of today's planned foods
+  // --- Temporal state calculations ---
+  const temporalState = useMemo(() => {
+    const today = startOfDay(new Date());
+    const startDate = dietStartDate ? startOfDay(parseISO(dietStartDate)) : today;
+    const durationWeeks = dietDurationWeeks || 4;
+
+    const elapsedDays = differenceInDays(today, startDate);
+    const isFuture = elapsedDays < 0;
+    const isExpired = elapsedDays >= durationWeeks * 7;
+    const isActive = !isFuture && !isExpired;
+
+    const totalTemplateDays = allFoods.length > 0
+      ? Math.max(1, ...allFoods.map((f) => f.day_number || 1))
+      : 1;
+
+    const currentDayNumber = isActive ? (elapsedDays % totalTemplateDays) + 1 : 1;
+
+    return { isFuture, isExpired, isActive, currentDayNumber, totalTemplateDays };
+  }, [allFoods, dietStartDate, dietDurationWeeks]);
+
+  // --- STRICT GUARD: Only populate meals if active ---
+  const plannedFoods = useMemo(() => {
+    if (!temporalState.isActive || allFoods.length === 0) return [];
+    return allFoods.filter((f) => (f.day_number || 1) === temporalState.currentDayNumber);
+  }, [allFoods, temporalState]);
+
+  // Dynamic targets = sum of today's planned foods (null if inactive)
   const dynamicTargets = useMemo<DynamicTargets | null>(() => {
     if (!hasTemplate || plannedFoods.length === 0) return null;
     return plannedFoods.reduce(
@@ -127,7 +156,6 @@ export function useDietPlan() {
       if (!groups[f.meal_type]) groups[f.meal_type] = [];
       groups[f.meal_type].push(f);
     });
-    // Sort by meal order
     const sorted = Object.entries(groups).sort(
       ([a], [b]) => (MEAL_ORDER[a] ?? 99) - (MEAL_ORDER[b] ?? 99)
     );
@@ -141,5 +169,11 @@ export function useDietPlan() {
     hasTemplate,
     isLoading,
     MEAL_LABELS,
+    // New temporal exports
+    isFuture: temporalState.isFuture,
+    isExpired: temporalState.isExpired,
+    currentDayNumber: temporalState.currentDayNumber,
+    totalTemplateDays: temporalState.totalTemplateDays,
+    dietStartDate,
   };
 }
