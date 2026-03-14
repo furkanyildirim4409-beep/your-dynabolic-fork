@@ -143,7 +143,7 @@ const Antrenman = () => {
     }
 
     return allGroups;
-  }, [workouts, todayStr, todayTR]);
+  }, [currentWeekWorkouts, todayStr, todayTR]);
 
   const { data: weeklyStatsData, isLoading: isWeeklyLoading } = useWeeklyWorkoutStats();
 
