@@ -1038,6 +1038,22 @@ const Beslenme = () => {
       {/* CAMERA SCANNER */}
       <CameraScanner isOpen={showCamera} onClose={() => setShowCamera(false)} mode={scannerMode} />
 
+      {/* NUTRITION CALENDAR DIALOG */}
+      <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DialogContent className="max-w-sm bg-background border-border">
+          <DialogHeader>
+            <DialogTitle>Beslenme Takvimi</DialogTitle>
+          </DialogHeader>
+          <NutritionCalendar
+            allFoods={allFoods}
+            dietStartDate={dietStartDate}
+            dietDurationWeeks={dietDurationWeeks}
+            totalTemplateDays={totalTemplateDays}
+            hasTemplate={hasTemplate}
+          />
+        </DialogContent>
+      </Dialog>
+
       {/* MANUAL ADD MODAL */}
       <Dialog
         open={showManualAdd}
