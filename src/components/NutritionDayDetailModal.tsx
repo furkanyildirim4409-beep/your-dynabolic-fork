@@ -1,9 +1,23 @@
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { format, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
 import type { DayNutritionStats } from "@/hooks/useNutritionCalendar";
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: "Kahvaltı",
+  lunch: "Öğle Yemeği",
+  snack: "Ara Öğün",
+  dinner: "Akşam Yemeği",
+};
+const MEAL_ORDER: Record<string, number> = {
+  breakfast: 0,
+  lunch: 1,
+  snack: 2,
+  dinner: 3,
+};
 
 interface Props {
   open: boolean;
