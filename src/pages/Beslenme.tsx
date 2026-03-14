@@ -671,7 +671,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const dbMacros = useMacros();
-  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading } = useDietPlan();
+  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate } = useDietPlan();
   // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
     ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
