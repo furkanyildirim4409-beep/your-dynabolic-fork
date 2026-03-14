@@ -35,12 +35,30 @@ const Antrenman = () => {
   const jsDay = new Date().getDay();
   const todayTR = DAYS_TR[jsDay === 0 ? 6 : jsDay - 1];
 
+  // WEEKLY FOCUS: Lock main feed to current physical week
+  const currentWeekWorkouts = useMemo(() => {
+    if (!workouts || !workouts.length) return [];
+    
+    const hasScheduledDates = workouts.some(w => w.scheduledDate);
+    if (!hasScheduledDates) return workouts; // Legacy DOW-based: show all
+
+    const now = new Date();
+    const weekStart = startOfWeek(now, { weekStartsOn: 1 });
+    const weekEnd = endOfWeek(now, { weekStartsOn: 1 });
+
+    return workouts.filter(w => {
+      if (!w.scheduledDate) return true;
+      const d = parseISO(w.scheduledDate);
+      return isWithinInterval(d, { start: weekStart, end: weekEnd });
+    });
+  }, [workouts]);
+
   // Group workouts: by scheduledDate when available, else by dayOfWeek
   // Also inject rest days for days without workouts
   const groupedByDay = useMemo(() => {
     const groupMap = new Map<string, { label: string; isToday: boolean; isRest: boolean; workouts: TransformedWorkout[] }>();
 
-    for (const w of workouts) {
+    for (const w of currentWeekWorkouts) {
       let key: string;
       let label: string;
       let isToday = false;
