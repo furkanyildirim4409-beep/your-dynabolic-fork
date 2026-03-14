@@ -968,8 +968,17 @@ const Beslenme = () => {
             <div>
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">BUGÜNKÜ ÖĞÜNLER</h2>
-                {hasTemplate && (
-                  <span className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wide">📋 Koç Planı Aktif</span>
+                {hasTemplate && !isFuture && !isExpired && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1 text-[10px] font-semibold">
+                      <RefreshCw className="w-3 h-3" />
+                      Gün {currentDayNumber} / {totalTemplateDays}
+                    </Badge>
+                    <span className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wide">📋 Koç Planı Aktif</span>
+                  </div>
+                )}
+                {hasTemplate && (isFuture || isExpired) && (
+                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">📋 Koç Planı</span>
                 )}
               </div>
               <div className="space-y-3">
