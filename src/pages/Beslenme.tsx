@@ -39,7 +39,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
-import { CalendarClock, AlertTriangle, RefreshCw } from "lucide-react";
+import { CalendarClock, AlertTriangle, RefreshCw, CalendarDays } from "lucide-react";
+import NutritionCalendar from "@/components/NutritionCalendar";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
