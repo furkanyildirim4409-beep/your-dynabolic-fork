@@ -39,7 +39,8 @@ import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Badge } from "@/components/ui/badge";
 import { format, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
-import { CalendarClock, AlertTriangle, RefreshCw } from "lucide-react";
+import { CalendarClock, AlertTriangle, RefreshCw, CalendarDays } from "lucide-react";
+import NutritionCalendar from "@/components/NutritionCalendar";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
@@ -671,7 +672,8 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const dbMacros = useMacros();
-  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate } = useDietPlan();
+  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate, allFoods, dietDurationWeeks } = useDietPlan();
+  const [calendarOpen, setCalendarOpen] = useState(false);
   // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
     ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
@@ -838,6 +840,13 @@ const Beslenme = () => {
             </p>
           </div>
           <div className="flex gap-2">
+            <Button
+              size="icon"
+              onClick={() => setCalendarOpen(true)}
+              className="bg-secondary text-foreground hover:bg-secondary/80 rounded-xl h-10 w-10"
+            >
+              <CalendarDays size={20} />
+            </Button>
             <Button
               size="icon"
               onClick={openBarcodeScanner}
@@ -1028,6 +1037,22 @@ const Beslenme = () => {
 
       {/* CAMERA SCANNER */}
       <CameraScanner isOpen={showCamera} onClose={() => setShowCamera(false)} mode={scannerMode} />
+
+      {/* NUTRITION CALENDAR DIALOG */}
+      <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
+        <DialogContent className="max-w-sm bg-background border-border">
+          <DialogHeader>
+            <DialogTitle>Beslenme Takvimi</DialogTitle>
+          </DialogHeader>
+          <NutritionCalendar
+            allFoods={allFoods}
+            dietStartDate={dietStartDate}
+            dietDurationWeeks={dietDurationWeeks}
+            totalTemplateDays={totalTemplateDays}
+            hasTemplate={hasTemplate}
+          />
+        </DialogContent>
+      </Dialog>
 
       {/* MANUAL ADD MODAL */}
       <Dialog
