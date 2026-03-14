@@ -15,8 +15,8 @@ const MacroBadges = ({ cal, p, c, f }: { cal: number; p: number; c: number; f: n
   <div className="flex gap-1.5 flex-wrap mt-1">
     <Badge variant="outline" className="bg-secondary/50 text-xs">{cal} kcal</Badge>
     <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs">{Math.round(p)}g P</Badge>
-    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">{Math.round(c)}g C</Badge>
-    <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs">{Math.round(f)}g F</Badge>
+    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">{Math.round(c)}g K</Badge>
+    <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs">{Math.round(f)}g Y</Badge>
   </div>
 );
 
