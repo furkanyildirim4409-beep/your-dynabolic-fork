@@ -675,6 +675,7 @@ const Beslenme = () => {
   const dbMacros = useMacros();
   const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate, allFoods, dietDurationWeeks } = useDietPlan();
   const [calendarOpen, setCalendarOpen] = useState(false);
+  const weeklyAdherence = useWeeklyAdherence({ allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate });
   // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
     ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
