@@ -21,6 +21,7 @@ const STATUS_COLORS: Record<DayStatus, string> = {
   over: "bg-orange-500",
   empty: "bg-muted-foreground/30",
   "no-plan": "bg-muted-foreground/20",
+  scheduled: "bg-blue-400",
 };
 
 const WEEKDAY_LABELS = ["Pzt", "Sal", "Çar", "Per", "Cum", "Cmt", "Paz"];
@@ -42,8 +43,6 @@ export default function NutritionCalendar({ allFoods, dietStartDate, dietDuratio
   const today = startOfDay(new Date());
   const monthStart = startOfMonth(currentMonth);
   const daysInMonth = getDaysInMonth(currentMonth);
-
-  // Monday = 0, adjust from JS getDay (Sun=0)
   const firstDayOfWeek = (getDay(monthStart) + 6) % 7;
 
   const handleDayClick = (dateStr: string) => {
@@ -86,12 +85,10 @@ export default function NutritionCalendar({ allFoods, dietStartDate, dietDuratio
 
       {/* Day grid */}
       <div className="grid grid-cols-7 gap-1">
-        {/* Empty cells for offset */}
         {Array.from({ length: firstDayOfWeek }).map((_, i) => (
           <div key={`empty-${i}`} className="aspect-square" />
         ))}
 
-        {/* Day cells */}
         {Array.from({ length: daysInMonth }).map((_, i) => {
           const day = addDays(monthStart, i);
           const dateStr = format(day, "yyyy-MM-dd");
@@ -102,18 +99,20 @@ export default function NutritionCalendar({ allFoods, dietStartDate, dietDuratio
           return (
             <button
               key={dateStr}
-              disabled={isFutureDay || !stats}
+              disabled={!stats}
               onClick={() => handleDayClick(dateStr)}
               className={cn(
                 "aspect-square rounded-lg flex flex-col items-center justify-center gap-0.5 text-xs transition-all relative",
                 isToday && "ring-1 ring-primary",
-                isFutureDay
+                !stats
                   ? "text-muted-foreground/30 cursor-default"
-                  : "text-foreground hover:bg-secondary/50 cursor-pointer"
+                  : isFutureDay
+                    ? "text-muted-foreground/60 hover:bg-secondary/50 cursor-pointer"
+                    : "text-foreground hover:bg-secondary/50 cursor-pointer"
               )}
             >
               <span className={cn("font-medium", isToday && "text-primary font-bold")}>{i + 1}</span>
-              {stats && !isFutureDay && (
+              {stats && (
                 <div className={cn("w-1.5 h-1.5 rounded-full", STATUS_COLORS[stats.status])} />
               )}
             </button>
@@ -122,11 +121,12 @@ export default function NutritionCalendar({ allFoods, dietStartDate, dietDuratio
       </div>
 
       {/* Legend */}
-      <div className="flex items-center justify-center gap-4 pt-2">
+      <div className="flex items-center justify-center gap-3 pt-2 flex-wrap">
         {[
           { status: "completed" as DayStatus, label: "Hedefte" },
           { status: "under" as DayStatus, label: "Eksik" },
           { status: "over" as DayStatus, label: "Fazla" },
+          { status: "scheduled" as DayStatus, label: "Planlandı" },
           { status: "empty" as DayStatus, label: "Boş" },
         ].map(({ status, label }) => (
           <div key={status} className="flex items-center gap-1">
@@ -136,7 +136,6 @@ export default function NutritionCalendar({ allFoods, dietStartDate, dietDuratio
         ))}
       </div>
 
-      {/* Detail modal */}
       <NutritionDayDetailModal
         open={modalOpen}
         onOpenChange={setModalOpen}

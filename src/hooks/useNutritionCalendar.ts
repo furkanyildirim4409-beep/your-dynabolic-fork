@@ -1,4 +1,4 @@
-import { useState, useEffect, useMemo } from "react";
+import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import {
@@ -13,18 +13,22 @@ import {
 } from "date-fns";
 import type { PlannedFood } from "@/hooks/useDietPlan";
 
-export type DayStatus = "completed" | "under" | "over" | "empty" | "no-plan";
+export type DayStatus = "completed" | "under" | "over" | "empty" | "no-plan" | "scheduled";
 
 export interface DayNutritionStats {
   date: string;
   targetCalories: number;
+  targetProtein: number;
+  targetCarbs: number;
+  targetFat: number;
   consumedCalories: number;
   consumedProtein: number;
   consumedCarbs: number;
   consumedFat: number;
   delta: number;
   status: DayStatus;
-  logs: { meal_name: string; total_calories: number }[];
+  plannedFoods: PlannedFood[];
+  logs: { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[];
 }
 
 interface UseNutritionCalendarProps {
@@ -50,7 +54,6 @@ export function useNutritionCalendar({
   >(new Map());
   const [isLoading, setIsLoading] = useState(false);
 
-  // Fetch nutrition_logs for the viewing month
   useEffect(() => {
     if (!user) return;
 
@@ -93,7 +96,7 @@ export function useNutritionCalendar({
     fetchLogs();
   }, [user, currentMonth]);
 
-  // Precompute target calories per day_number
+  // Precompute target macros per day_number
   const targetsByDayNumber = useMemo(() => {
     const map = new Map<number, { calories: number; protein: number; carbs: number; fat: number }>();
     allFoods.forEach((f) => {
@@ -109,7 +112,17 @@ export function useNutritionCalendar({
     return map;
   }, [allFoods]);
 
-  // Build stats map for the entire month
+  // Precompute planned foods grouped by day_number
+  const foodsByDayNumber = useMemo(() => {
+    const map = new Map<number, PlannedFood[]>();
+    allFoods.forEach((f) => {
+      const dn = f.day_number || 1;
+      if (!map.has(dn)) map.set(dn, []);
+      map.get(dn)!.push(f);
+    });
+    return map;
+  }, [allFoods]);
+
   const dayStatsMap = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -124,9 +137,7 @@ export function useNutritionCalendar({
     days.forEach((day) => {
       const dateStr = format(day, "yyyy-MM-dd");
       const dayStart = startOfDay(day);
-
-      // Don't calculate stats for future days
-      if (dayStart > today) return;
+      const isFuture = dayStart > today;
 
       const dayLogs = logsMap.get(dateStr) || [];
       const consumedCalories = dayLogs.reduce((s, l) => s + l.total_calories, 0);
@@ -135,7 +146,11 @@ export function useNutritionCalendar({
       const consumedFat = dayLogs.reduce((s, l) => s + l.total_fat, 0);
 
       let targetCalories = 0;
+      let targetProtein = 0;
+      let targetCarbs = 0;
+      let targetFat = 0;
       let status: DayStatus = "no-plan";
+      let plannedFoods: PlannedFood[] = [];
 
       if (hasTemplate && startDate) {
         const elapsed = differenceInDays(dayStart, startDate);
@@ -145,21 +160,35 @@ export function useNutritionCalendar({
           const historicalDayNumber = (elapsed % totalTemplateDays) + 1;
           const targets = targetsByDayNumber.get(historicalDayNumber);
           targetCalories = targets?.calories || 0;
+          targetProtein = targets?.protein || 0;
+          targetCarbs = targets?.carbs || 0;
+          targetFat = targets?.fat || 0;
+          plannedFoods = foodsByDayNumber.get(historicalDayNumber) || [];
 
-          if (consumedCalories === 0 && dayLogs.length === 0) {
-            status = "empty";
+          if (isFuture) {
+            status = "scheduled";
           } else {
-            const delta = consumedCalories - targetCalories;
-            if (delta < -150) status = "under";
-            else if (delta > 150) status = "over";
-            else status = "completed";
+            if (consumedCalories === 0 && dayLogs.length === 0) {
+              status = "empty";
+            } else {
+              const delta = consumedCalories - targetCalories;
+              if (delta < -150) status = "under";
+              else if (delta > 150) status = "over";
+              else status = "completed";
+            }
           }
         } else {
-          // Outside program bounds
-          status = consumedCalories > 0 ? "completed" : "empty";
+          if (isFuture) {
+            status = "no-plan";
+          } else {
+            status = consumedCalories > 0 ? "completed" : "empty";
+          }
         }
       } else {
-        // No template
+        if (isFuture) {
+          // No template, future — skip creating stats
+          return;
+        }
         status = consumedCalories > 0 ? "completed" : "empty";
       }
 
@@ -168,18 +197,22 @@ export function useNutritionCalendar({
       result.set(dateStr, {
         date: dateStr,
         targetCalories,
+        targetProtein,
+        targetCarbs,
+        targetFat,
         consumedCalories,
         consumedProtein,
         consumedCarbs,
         consumedFat,
         delta,
         status,
-        logs: dayLogs.map((l) => ({ meal_name: l.meal_name, total_calories: l.total_calories })),
+        plannedFoods,
+        logs: dayLogs,
       });
     });
 
     return result;
-  }, [currentMonth, logsMap, allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate, targetsByDayNumber]);
+  }, [currentMonth, logsMap, allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate, targetsByDayNumber, foodsByDayNumber]);
 
   return { dayStatsMap, isLoading };
 }
