@@ -136,19 +136,28 @@ export default function NutritionDayDetailModal({ open, onOpenChange, stats }: P
             </div>
           )}
 
-          {/* Planned Foods */}
-          {plannedFoods.length > 0 && (
-            <div className="space-y-1.5">
+          {/* Planned Foods — grouped by meal */}
+          {groupedPlanned.length > 0 && (
+            <div className="space-y-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hedeflenen İçerik</p>
-              {plannedFoods.map((food, i) => (
-                <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm text-foreground font-medium">{food.food_name}</span>
-                    {food.serving_size && (
-                      <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{food.serving_size}</span>
-                    )}
+              {groupedPlanned.map(([mealType, foods]) => (
+                <div key={mealType} className="space-y-1.5">
+                  <h4 className="text-xs font-medium text-foreground bg-secondary/40 px-2 py-1 rounded-md w-max">
+                    {MEAL_LABELS[mealType] || mealType}
+                  </h4>
+                  <div className="space-y-1.5 pl-2 border-l-2 border-secondary/50">
+                    {foods.map((food, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
+                        <div className="flex justify-between items-start">
+                          <span className="text-sm text-foreground font-medium">{food.food_name}</span>
+                          {food.serving_size && (
+                            <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{food.serving_size}</span>
+                          )}
+                        </div>
+                        <MacroBadges cal={food.calories} p={food.protein} c={food.carbs} f={food.fat} />
+                      </div>
+                    ))}
                   </div>
-                  <MacroBadges cal={food.calories} p={food.protein} c={food.carbs} f={food.fat} />
                 </div>
               ))}
             </div>
