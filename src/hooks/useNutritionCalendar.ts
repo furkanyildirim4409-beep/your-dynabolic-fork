@@ -1,6 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+
+// Module-level cache — survives Dialog unmounts
+const globalLogsCache = new Map<string, Map<string, { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[]>>();
 import {
   startOfMonth,
   endOfMonth,
