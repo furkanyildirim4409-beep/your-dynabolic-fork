@@ -35,9 +35,22 @@ const MacroBadges = ({ cal, p, c, f }: { cal: number; p: number; c: number; f: n
 );
 
 export default function NutritionDayDetailModal({ open, onOpenChange, stats }: Props) {
+  const groupedPlanned = useMemo(() => {
+    if (!stats) return [];
+    const groups: Record<string, typeof stats.plannedFoods> = {};
+    stats.plannedFoods.forEach((food) => {
+      const type = food.meal_type || "other";
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(food);
+    });
+    return Object.entries(groups).sort(
+      ([a], [b]) => (MEAL_ORDER[a] ?? 99) - (MEAL_ORDER[b] ?? 99)
+    );
+  }, [stats?.plannedFoods]);
+
   if (!stats) return null;
 
-  const { targetCalories, consumedCalories, delta, status, logs, date, plannedFoods, targetProtein, targetCarbs, targetFat } = stats;
+  const { targetCalories, consumedCalories, delta, status, logs, date, targetProtein, targetCarbs, targetFat } = stats;
   const percentage = targetCalories > 0 ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 150) : 0;
   const formattedDate = format(parseISO(date), "dd MMMM yyyy, EEEE", { locale: tr });
 
