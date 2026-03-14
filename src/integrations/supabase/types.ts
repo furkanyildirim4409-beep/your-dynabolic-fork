@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       assigned_workouts: {
         Row: {
+          assignment_batch_id: string | null
           athlete_id: string | null
           coach_id: string | null
           created_at: string | null
@@ -29,6 +30,7 @@ export type Database = {
           workout_name: string
         }
         Insert: {
+          assignment_batch_id?: string | null
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string | null
@@ -42,6 +44,7 @@ export type Database = {
           workout_name?: string
         }
         Update: {
+          assignment_batch_id?: string | null
           athlete_id?: string | null
           coach_id?: string | null
           created_at?: string | null
@@ -859,6 +862,39 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      program_assignment_logs: {
+        Row: {
+          action: string
+          assignment_batch_id: string | null
+          athlete_id: string
+          coach_id: string
+          created_at: string
+          id: string
+          program_id: string
+          program_title: string
+        }
+        Insert: {
+          action?: string
+          assignment_batch_id?: string | null
+          athlete_id: string
+          coach_id: string
+          created_at?: string
+          id?: string
+          program_id: string
+          program_title: string
+        }
+        Update: {
+          action?: string
+          assignment_batch_id?: string | null
+          athlete_id?: string
+          coach_id?: string
+          created_at?: string
+          id?: string
+          program_id?: string
+          program_title?: string
+        }
+        Relationships: []
       }
       programs: {
         Row: {
