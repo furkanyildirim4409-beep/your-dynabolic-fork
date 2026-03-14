@@ -35,6 +35,11 @@ import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/u
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
 import { DialogTrigger } from "@/components/ui/dialog";
 import { useDietPlan, type PlannedFood } from "@/hooks/useDietPlan";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Badge } from "@/components/ui/badge";
+import { format, parseISO } from "date-fns";
+import { tr } from "date-fns/locale";
+import { CalendarClock, AlertTriangle, RefreshCw } from "lucide-react";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
@@ -666,7 +671,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const dbMacros = useMacros();
-  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading } = useDietPlan();
+  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate } = useDietPlan();
   // Priority: dynamic (diet template sum) > coach DB targets > null
   const macroGoals = dynamicTargets
     ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
@@ -897,7 +902,24 @@ const Beslenme = () => {
               </button>
             </div>
 
-            {/* WATER TRACKER */}
+            {/* DIET TEMPORAL BANNERS */}
+            {hasTemplate && isFuture && dietStartDate && (
+              <Alert className="border-blue-500/30 bg-blue-500/10">
+                <CalendarClock className="h-4 w-4 text-blue-400" />
+                <AlertDescription className="text-sm text-blue-300">
+                  Beslenme programın <span className="font-bold">{format(parseISO(dietStartDate), "dd MMMM yyyy", { locale: tr })}</span> tarihinde başlayacak.
+                </AlertDescription>
+              </Alert>
+            )}
+            {hasTemplate && isExpired && (
+              <Alert className="border-orange-500/30 bg-orange-500/10">
+                <AlertTriangle className="h-4 w-4 text-orange-400" />
+                <AlertDescription className="text-sm text-orange-300">
+                  Koçunun atadığı beslenme programının süresi doldu. Lütfen koçunla iletişime geç.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="bg-secondary border border-white/5 rounded-2xl p-5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
               <div className="flex justify-between items-center mb-4">
@@ -963,8 +985,17 @@ const Beslenme = () => {
             <div>
               <div className="flex items-center justify-between mb-3 px-1">
                 <h2 className="text-muted-foreground text-xs font-bold uppercase tracking-wider">BUGÜNKÜ ÖĞÜNLER</h2>
-                {hasTemplate && (
-                  <span className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wide">📋 Koç Planı Aktif</span>
+                {hasTemplate && !isFuture && !isExpired && (
+                  <div className="flex items-center gap-2">
+                    <Badge variant="secondary" className="gap-1 text-[10px] font-semibold">
+                      <RefreshCw className="w-3 h-3" />
+                      Gün {currentDayNumber} / {totalTemplateDays}
+                    </Badge>
+                    <span className="text-[10px] text-emerald-500 font-semibold uppercase tracking-wide">📋 Koç Planı Aktif</span>
+                  </div>
+                )}
+                {hasTemplate && (isFuture || isExpired) && (
+                  <span className="text-[10px] text-muted-foreground font-semibold uppercase tracking-wide">📋 Koç Planı</span>
                 )}
               </div>
               <div className="space-y-3">
