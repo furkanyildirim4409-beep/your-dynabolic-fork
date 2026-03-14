@@ -11,22 +11,31 @@ interface Props {
   stats: DayNutritionStats | null;
 }
 
+const MacroBadges = ({ cal, p, c, f }: { cal: number; p: number; c: number; f: number }) => (
+  <div className="flex gap-1.5 flex-wrap mt-1">
+    <Badge variant="outline" className="bg-secondary/50 text-xs">{cal} kcal</Badge>
+    <Badge variant="outline" className="bg-blue-500/10 text-blue-500 border-blue-500/20 text-xs">{Math.round(p)}g P</Badge>
+    <Badge variant="outline" className="bg-amber-500/10 text-amber-500 border-amber-500/20 text-xs">{Math.round(c)}g C</Badge>
+    <Badge variant="outline" className="bg-rose-500/10 text-rose-500 border-rose-500/20 text-xs">{Math.round(f)}g F</Badge>
+  </div>
+);
+
 export default function NutritionDayDetailModal({ open, onOpenChange, stats }: Props) {
   if (!stats) return null;
 
-  const { targetCalories, consumedCalories, delta, status, logs, date } = stats;
+  const { targetCalories, consumedCalories, delta, status, logs, date, plannedFoods, targetProtein, targetCarbs, targetFat } = stats;
   const percentage = targetCalories > 0 ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 150) : 0;
   const formattedDate = format(parseISO(date), "dd MMMM yyyy, EEEE", { locale: tr });
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-sm bg-background border-border">
+      <DialogContent className="max-w-sm bg-background border-border max-h-[85vh] overflow-y-auto">
         <DialogHeader>
           <DialogTitle className="text-base">{formattedDate}</DialogTitle>
         </DialogHeader>
 
         <div className="space-y-4">
-          {/* Badges */}
+          {/* Status Badges */}
           <div className="flex items-center gap-2 flex-wrap">
             {status === "under" && (
               <>
@@ -55,10 +64,13 @@ export default function NutritionDayDetailModal({ open, onOpenChange, stats }: P
             {status === "no-plan" && (
               <Badge variant="secondary">Plan Yok</Badge>
             )}
+            {status === "scheduled" && (
+              <Badge className="bg-blue-500/20 text-blue-400 border-blue-500/30 hover:bg-blue-500/30">Planlandı</Badge>
+            )}
           </div>
 
           {/* Progress */}
-          {targetCalories > 0 && (
+          {targetCalories > 0 && status !== "scheduled" && (
             <div className="space-y-2">
               <div className="flex justify-between text-sm">
                 <span className="text-muted-foreground">Tüketilen</span>
@@ -71,32 +83,58 @@ export default function NutritionDayDetailModal({ open, onOpenChange, stats }: P
             </div>
           )}
 
-          {/* Macro breakdown */}
+          {/* Target macro summary */}
+          {targetCalories > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hedef Makrolar</p>
+              <MacroBadges cal={targetCalories} p={targetProtein} c={targetCarbs} f={targetFat} />
+            </div>
+          )}
+
+          {/* Consumed macro breakdown */}
           {consumedCalories > 0 && (
             <div className="grid grid-cols-3 gap-2">
               <div className="bg-secondary/50 rounded-lg p-2 text-center">
                 <p className="text-xs text-muted-foreground">Protein</p>
-                <p className="text-sm font-bold text-yellow-500">{Math.round(stats.consumedProtein)}g</p>
+                <p className="text-sm font-bold text-blue-500">{Math.round(stats.consumedProtein)}g</p>
               </div>
               <div className="bg-secondary/50 rounded-lg p-2 text-center">
                 <p className="text-xs text-muted-foreground">Karb</p>
-                <p className="text-sm font-bold text-blue-500">{Math.round(stats.consumedCarbs)}g</p>
+                <p className="text-sm font-bold text-amber-500">{Math.round(stats.consumedCarbs)}g</p>
               </div>
               <div className="bg-secondary/50 rounded-lg p-2 text-center">
                 <p className="text-xs text-muted-foreground">Yağ</p>
-                <p className="text-sm font-bold text-orange-500">{Math.round(stats.consumedFat)}g</p>
+                <p className="text-sm font-bold text-rose-500">{Math.round(stats.consumedFat)}g</p>
               </div>
+            </div>
+          )}
+
+          {/* Planned Foods */}
+          {plannedFoods.length > 0 && (
+            <div className="space-y-1.5">
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hedeflenen İçerik</p>
+              {plannedFoods.map((food, i) => (
+                <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
+                  <div className="flex justify-between items-start">
+                    <span className="text-sm text-foreground font-medium">{food.food_name}</span>
+                    {food.serving_size && (
+                      <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{food.serving_size}</span>
+                    )}
+                  </div>
+                  <MacroBadges cal={food.calories} p={food.protein} c={food.carbs} f={food.fat} />
+                </div>
+              ))}
             </div>
           )}
 
           {/* Logged meals */}
           {logs.length > 0 && (
             <div className="space-y-1.5">
-              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Öğünler</p>
+              <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Tüketilen Öğünler</p>
               {logs.map((log, i) => (
-                <div key={i} className="flex justify-between items-center p-2 rounded-lg bg-secondary/30 border border-white/5">
-                  <span className="text-sm text-foreground">{log.meal_name}</span>
-                  <span className="text-sm font-semibold text-muted-foreground">{log.total_calories} kcal</span>
+                <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
+                  <span className="text-sm text-foreground font-medium">{log.meal_name}</span>
+                  <MacroBadges cal={log.total_calories} p={log.total_protein} c={log.total_carbs} f={log.total_fat} />
                 </div>
               ))}
             </div>
