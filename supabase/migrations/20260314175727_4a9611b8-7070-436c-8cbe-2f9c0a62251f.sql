@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS idx_nutrition_logs_user_date ON public.nutrition_logs (user_id, logged_at);

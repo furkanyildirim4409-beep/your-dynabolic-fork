@@ -1,6 +1,9 @@
 import { useMemo, useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+
+// Module-level cache — survives Dialog unmounts
+const globalLogsCache = new Map<string, Map<string, { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[]>>();
 import {
   startOfMonth,
   endOfMonth,
@@ -57,11 +60,20 @@ export function useNutritionCalendar({
   useEffect(() => {
     if (!user) return;
 
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      const monthStart = startOfMonth(currentMonth);
-      const monthEnd = endOfMonth(currentMonth);
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const cacheKey = `${user.id}-${format(monthStart, "yyyy-MM")}`;
 
+    // Instant cache hit (zero latency on re-open)
+    if (globalLogsCache.has(cacheKey)) {
+      setLogsMap(globalLogsCache.get(cacheKey)!);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    // Background fetch (SWR revalidation)
+    const fetchLogs = async () => {
       const { data, error } = await supabase
         .from("nutrition_logs")
         .select("logged_at, meal_name, total_calories, total_protein, total_carbs, total_fat")
@@ -89,6 +101,7 @@ export function useNutritionCalendar({
         });
       });
 
+      globalLogsCache.set(cacheKey, map);
       setLogsMap(map);
       setIsLoading(false);
     };
