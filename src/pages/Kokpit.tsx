@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { useNavigate, useSearchParams } from "react-router-dom";
 import {
@@ -12,7 +12,11 @@ import {
   Heart,
   Footprints,
   Calendar,
+  Moon,
+  CheckCircle2,
+  Utensils,
 } from "lucide-react";
+import { format } from "date-fns";
 import PerformanceRing from "@/components/PerformanceRing";
 import NextMissionCard from "@/components/NextMissionCard";
 import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
@@ -29,12 +33,29 @@ import StreakTierWidget from "@/components/StreakTierWidget";
 import WeeklyRecapModal from "@/components/WeeklyRecapModal";
 import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
+import { Skeleton } from "@/components/ui/skeleton";
+import { Progress } from "@/components/ui/progress";
 import { assignedCoach, notifications, getLatestAdjustment, wearableMetrics } from "@/lib/mockData";
 import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
+import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
+import { useDietPlan } from "@/hooks/useDietPlan";
+import { useNutritionLogs } from "@/hooks/useNutritionLogs";
+import { useWaterTracking } from "@/hooks/useWaterTracking";
+
+// Map Turkish day names to JS getDay() (0=Sun)
+const DOW_MAP: Record<string, number> = {
+  pazar: 0,
+  pazartesi: 1,
+  "salı": 2,
+  "çarşamba": 3,
+  "perşembe": 4,
+  cuma: 5,
+  cumartesi: 6,
+};
 
 const Kokpit = () => {
   const navigate = useNavigate();
@@ -55,19 +76,57 @@ const Kokpit = () => {
   // Get the latest unacknowledged coach adjustment
   const latestAdjustment = getLatestAdjustment("user-001", acknowledgedAdjustments);
 
-  // Payment reminders hook - triggers toast notifications on mount
+  // === REAL DATA HOOKS ===
+  const { data: workouts, isLoading: workoutsLoading } = useAssignedWorkouts();
+  const { dynamicTargets, hasTemplate, isLoading: dietLoading } = useDietPlan();
+  const { logs: nutritionLogs, isLoading: logsLoading } = useNutritionLogs();
+  const { totalMl: waterMl } = useWaterTracking();
+
+  // === STRICT TODAY'S WORKOUT (Ghost Workout Prevention) ===
+  const todaysWorkoutState = useMemo(() => {
+    if (!workouts || workouts.length === 0) return { workout: null, completed: false };
+
+    const todayStr = format(new Date(), "yyyy-MM-dd");
+    const todayDOW = new Date().getDay();
+    const hasAnyScheduledDates = workouts.some((w) => w.scheduledDate);
+
+    let todaysWorkout = null;
+    if (hasAnyScheduledDates) {
+      // STRICT MODE: only match exact scheduled_date
+      todaysWorkout = workouts.find((w) => w.scheduledDate === todayStr) ?? null;
+    } else {
+      // LEGACY DOW MODE: only if entire program is legacy
+      todaysWorkout = workouts.find(
+        (w) => w.dayOfWeek && DOW_MAP[w.dayOfWeek.toLowerCase()] === todayDOW
+      ) ?? null;
+    }
+
+    if (todaysWorkout?.completedToday) {
+      return { workout: todaysWorkout, completed: true };
+    }
+    return { workout: todaysWorkout, completed: false };
+  }, [workouts]);
+
+  // === CONSUMED NUTRITION TOTALS ===
+  const consumedTotals = useMemo(() => {
+    return nutritionLogs.reduce(
+      (acc, log) => ({
+        calories: acc.calories + log.total_calories,
+        protein: acc.protein + log.total_protein,
+        carbs: acc.carbs + log.total_carbs,
+        fat: acc.fat + log.total_fat,
+      }),
+      { calories: 0, protein: 0, carbs: 0, fat: 0 }
+    );
+  }, [nutritionLogs]);
+
+  // Payment reminders hook
   const { reminders } = usePaymentReminders();
-
-  // Unread messages hook
   const { unreadCount: unreadMsgCount, markAllRead: markMsgsRead } = useUnreadMessages();
-
-  // Weekly recap hook
   const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
-
-  // Scroll direction hook for hiding/showing weekly recap button
   const { scrollDirection, isAtTop } = useScrollDirection({ threshold: 20 });
 
-  // Auto-open chat from deep link (reactive to search param changes)
+  // Auto-open chat from deep link
   useEffect(() => {
     if (searchParams.get('openChat') === 'true') {
       setSearchParams({}, { replace: true });
@@ -76,7 +135,6 @@ const Kokpit = () => {
     }
   }, [searchParams, setSearchParams]);
 
-  // Race-proof fallback: iOS cold boot may hydrate before useSearchParams is ready
   useEffect(() => {
     const params = new URLSearchParams(window.location.search);
     if (params.get('openChat') === 'true') {
@@ -86,11 +144,8 @@ const Kokpit = () => {
     }
   }, []);
 
-  // Listen for coach chat open event from EliteDock
   useEffect(() => {
-    const handleOpenCoachChat = () => {
-      setShowChat(true);
-    };
+    const handleOpenCoachChat = () => setShowChat(true);
     window.addEventListener('openCoachChat', handleOpenCoachChat);
     return () => window.removeEventListener('openCoachChat', handleOpenCoachChat);
   }, []);
@@ -111,13 +166,18 @@ const Kokpit = () => {
     }
   };
 
-  // Get greeting based on time
   const getGreeting = () => {
     const hour = new Date().getHours();
     if (hour < 12) return "Günaydın";
     if (hour < 18) return "İyi günler";
     return "İyi akşamlar";
   };
+
+  // Calories for QuickStatsRow
+  const caloriesDisplay = consumedTotals.calories > 0
+    ? consumedTotals.calories.toLocaleString("tr-TR")
+    : "--";
+  const waterDisplay = waterMl > 0 ? (waterMl / 1000).toFixed(1) : "--";
 
   return (
     <div className="space-y-6 pb-24">
@@ -133,10 +193,8 @@ const Kokpit = () => {
         </div>
 
         <div className="flex items-center gap-2">
-          {/* Dispute Notifications Bell */}
           <DisputeNotificationBell />
 
-          {/* Chat Button */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -151,7 +209,6 @@ const Kokpit = () => {
             )}
           </motion.button>
 
-          {/* Notifications Bell */}
           <motion.button
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
@@ -166,7 +223,6 @@ const Kokpit = () => {
             )}
           </motion.button>
 
-          {/* Coach Avatar */}
           <motion.button
             onClick={() => navigate(`/coach/${assignedCoach.id}`)}
             whileHover={{ scale: 1.05 }}
@@ -186,19 +242,19 @@ const Kokpit = () => {
         </div>
       </motion.div>
 
-      {/* Coach Adjustment Banner - Urgent Alert */}
+      {/* Coach Adjustment Banner */}
       {latestAdjustment && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
           <CoachAdjustmentBanner adjustment={latestAdjustment} onDismiss={handleDismissAdjustment} />
         </motion.div>
       )}
 
-      {/* Stories Ring - Smaller & Elegant */}
+      {/* Stories Ring */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.1 }}>
         <StoriesRing />
       </motion.div>
 
-      {/* Performance Ring - The Hero Stat */}
+      {/* Performance Ring */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
         <PerformanceRing score={85} label="HAZIRSIN" sublabel="Yüksek yoğunluklu antrenman için uygun" />
       </motion.div>
@@ -208,11 +264,110 @@ const Kokpit = () => {
         <StreakTierWidget />
       </motion.div>
 
-      {/* Next Mission Card */}
-      <NextMissionCard title="GÖĞÜS & SIRT" duration="45 dk" calories="350 kcal" coach="Koç Serdar" />
+      {/* ========== TODAY'S WORKOUT (REAL DATA) ========== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.35 }}>
+        {workoutsLoading ? (
+          <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 space-y-3">
+            <Skeleton className="h-4 w-32" />
+            <Skeleton className="h-6 w-48" />
+            <Skeleton className="h-10 w-full" />
+          </div>
+        ) : todaysWorkoutState.completed && todaysWorkoutState.workout ? (
+          /* COMPLETED STATE */
+          <div className="rounded-2xl bg-white/[0.02] border border-green-500/20 p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-green-500/10 flex items-center justify-center flex-shrink-0">
+              <CheckCircle2 className="w-6 h-6 text-green-400" />
+            </div>
+            <div className="flex-1">
+              <p className="text-xs text-green-400 uppercase tracking-widest font-medium mb-0.5">Tamamlandı ✓</p>
+              <p className="text-foreground font-display text-base font-bold">{todaysWorkoutState.workout.title}</p>
+              <p className="text-muted-foreground text-xs mt-0.5">{todaysWorkoutState.workout.exercises} egzersiz · {todaysWorkoutState.workout.duration}</p>
+            </div>
+          </div>
+        ) : todaysWorkoutState.workout ? (
+          /* ACTIVE STATE — Real NextMissionCard */
+          <NextMissionCard
+            title={todaysWorkoutState.workout.title}
+            duration={todaysWorkoutState.workout.duration}
+            calories={`${todaysWorkoutState.workout.exercises} egzersiz`}
+          />
+        ) : (
+          /* REST DAY STATE */
+          <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-violet-500/10 flex items-center justify-center flex-shrink-0">
+              <Moon className="w-6 h-6 text-violet-400" />
+            </div>
+            <div>
+              <p className="text-xs text-violet-400 uppercase tracking-widest font-medium mb-0.5">Dinlenme Günü</p>
+              <p className="text-muted-foreground text-sm">Bugün planlanmış antrenmanın yok. Dinlenmene bak!</p>
+            </div>
+          </div>
+        )}
+      </motion.div>
 
-      {/* Quick Stats Row */}
-      <QuickStatsRow onStatClick={(stat) => setSelectedStat(stat)} />
+      {/* ========== TODAY'S NUTRITION (REAL DATA) ========== */}
+      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
+        {dietLoading || logsLoading ? (
+          <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 space-y-3">
+            <Skeleton className="h-4 w-40" />
+            <Skeleton className="h-3 w-full" />
+            <Skeleton className="h-4 w-56" />
+          </div>
+        ) : hasTemplate && dynamicTargets ? (
+          <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 space-y-3">
+            <div className="flex items-center gap-2 mb-1">
+              <Utensils className="w-4 h-4 text-orange-400" />
+              <span className="text-xs text-muted-foreground uppercase tracking-widest font-medium">Bugünkü Beslenme</span>
+            </div>
+            {/* Calorie Progress */}
+            <div>
+              <div className="flex items-baseline justify-between mb-1.5">
+                <span className="font-display text-lg font-bold text-foreground">
+                  {Math.round(consumedTotals.calories)}
+                  <span className="text-muted-foreground text-xs font-normal ml-1">/ {Math.round(dynamicTargets.calories)} kcal</span>
+                </span>
+                <span className="text-xs text-muted-foreground">
+                  {dynamicTargets.calories > 0 ? Math.min(Math.round((consumedTotals.calories / dynamicTargets.calories) * 100), 100) : 0}%
+                </span>
+              </div>
+              <Progress
+                value={dynamicTargets.calories > 0 ? Math.min((consumedTotals.calories / dynamicTargets.calories) * 100, 100) : 0}
+                className="h-2 bg-secondary"
+              />
+            </div>
+            {/* Macro Indicators */}
+            <div className="grid grid-cols-3 gap-3 pt-1">
+              {[
+                { label: "Protein", consumed: consumedTotals.protein, target: dynamicTargets.protein, color: "text-blue-400" },
+                { label: "Karb", consumed: consumedTotals.carbs, target: dynamicTargets.carbs, color: "text-amber-400" },
+                { label: "Yağ", consumed: consumedTotals.fat, target: dynamicTargets.fat, color: "text-pink-400" },
+              ].map((m) => (
+                <div key={m.label} className="text-center">
+                  <p className={`text-sm font-bold ${m.color}`}>{Math.round(m.consumed)}<span className="text-muted-foreground text-[10px] font-normal">/{Math.round(m.target)}g</span></p>
+                  <p className="text-[10px] text-muted-foreground uppercase tracking-wider">{m.label}</p>
+                </div>
+              ))}
+            </div>
+          </div>
+        ) : (
+          <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 flex items-center gap-4">
+            <div className="w-12 h-12 rounded-xl bg-orange-500/10 flex items-center justify-center flex-shrink-0">
+              <Utensils className="w-6 h-6 text-orange-400/60" />
+            </div>
+            <div>
+              <p className="text-xs text-orange-400/60 uppercase tracking-widest font-medium mb-0.5">Beslenme</p>
+              <p className="text-muted-foreground text-sm">Şu an aktif bir beslenme hedefin yok.</p>
+            </div>
+          </div>
+        )}
+      </motion.div>
+
+      {/* Quick Stats Row — Real Data */}
+      <QuickStatsRow
+        onStatClick={(stat) => setSelectedStat(stat)}
+        caloriesValue={caloriesDisplay}
+        waterValue={waterDisplay}
+      />
 
       {/* Daily Check-In Trigger Button */}
       <motion.button
@@ -265,7 +420,6 @@ const Kokpit = () => {
 
         {/* Additional Biometric Stats - RHR & Steps */}
         <div className="grid grid-cols-2 gap-3 mt-3">
-          {/* RHR Card */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
@@ -281,15 +435,12 @@ const Kokpit = () => {
               <span className="font-display text-2xl text-red-400">{wearableMetrics.rhr.value}</span>
               <span className="text-xs text-muted-foreground">bpm</span>
             </div>
-            <div className={`flex items-center gap-1 mt-1 text-xs ${
-              wearableMetrics.rhr.change < 0 ? "text-green-400" : "text-red-400"
-            }`}>
+            <div className={`flex items-center gap-1 mt-1 text-xs ${wearableMetrics.rhr.change < 0 ? "text-green-400" : "text-red-400"}`}>
               <span>{wearableMetrics.rhr.change < 0 ? "↓" : "↑"}{Math.abs(wearableMetrics.rhr.change)}</span>
               <span className="text-muted-foreground">dün</span>
             </div>
           </motion.button>
 
-          {/* Steps Card */}
           <motion.button
             whileHover={{ scale: 1.01 }}
             whileTap={{ scale: 0.98 }}
@@ -321,25 +472,15 @@ const Kokpit = () => {
         </div>
       </motion.div>
 
-      {/* Coach Chat */}
+      {/* Modals */}
       <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
-
-      {/* Daily Check-In Modal */}
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
-
-      {/* Stat Detail Modal */}
       <StatDetailModal isOpen={!!selectedStat} onClose={() => setSelectedStat(null)} statType={selectedStat} />
-
-      {/* Bento Stat Detail Modal */}
       <BentoStatDetailModal isOpen={!!selectedBentoStat} onClose={() => setSelectedBentoStat(null)} statType={selectedBentoStat} />
-
-      {/* Biometric Detail Modal (RHR & Steps) */}
       <BiometricDetailModal isOpen={!!selectedBiometric} onClose={() => setSelectedBiometric(null)} biometricType={selectedBiometric} />
-
-      {/* Weekly Recap Modal */}
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 
-      {/* Weekly Recap Test Button (Dev Only) - Hides on scroll down */}
+      {/* Weekly Recap Test Button */}
       <AnimatePresence>
         {(isAtTop || scrollDirection === "up") && (
           <motion.button
@@ -374,22 +515,15 @@ const Kokpit = () => {
               onClick={(e) => e.stopPropagation()}
               className="absolute right-0 top-0 bottom-0 w-full max-w-sm bg-background border-l border-white/10"
             >
-              {/* Header */}
               <div className="p-4 border-b border-white/10 flex items-center justify-between">
                 <h2 className="font-display text-lg font-bold text-foreground">Bildirimler</h2>
-                <button
-                  onClick={() => setShowNotifications(false)}
-                  className="p-2 text-muted-foreground hover:text-foreground"
-                >
+                <button onClick={() => setShowNotifications(false)} className="p-2 text-muted-foreground hover:text-foreground">
                   <X className="w-5 h-5" />
                 </button>
               </div>
-
-              {/* Notifications List */}
               <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-80px)]">
                 {notifications.map((notification, index) => {
                   const isRead = notification.read || readNotifications[notification.id];
-
                   return (
                     <motion.button
                       key={notification.id}
@@ -397,28 +531,16 @@ const Kokpit = () => {
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
                       onClick={() => handleNotificationClick(String(notification.id), notification.coachId)}
-                      className={`w-full text-left backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 flex items-start gap-3 hover:bg-white/[0.04] transition-colors ${
-                        !isRead ? "border-l-2 border-l-primary" : ""
-                      }`}
+                      className={`w-full text-left backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 flex items-start gap-3 hover:bg-white/[0.04] transition-colors ${!isRead ? "border-l-2 border-l-primary" : ""}`}
                     >
-                      <div
-                        className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${
-                          notification.type === "coach"
-                            ? "bg-primary/20"
-                            : notification.type === "achievement"
-                              ? "bg-yellow-500/20"
-                              : "bg-secondary"
-                        }`}
-                      >
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === "coach" ? "bg-primary/20" : notification.type === "achievement" ? "bg-yellow-500/20" : "bg-secondary"}`}>
                         {notification.type === "coach" && <MessageCircle className="w-5 h-5 text-primary" />}
                         {notification.type === "achievement" && <Trophy className="w-5 h-5 text-yellow-500" />}
                         {notification.type === "system" && <Settings className="w-5 h-5 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
-                          <p className={`font-medium text-sm ${isRead ? "text-muted-foreground" : "text-foreground"}`}>
-                            {notification.title}
-                          </p>
+                          <p className={`font-medium text-sm ${isRead ? "text-muted-foreground" : "text-foreground"}`}>{notification.title}</p>
                           {!isRead && <div className="w-2 h-2 rounded-full bg-primary" />}
                         </div>
                         <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{notification.message}</p>
