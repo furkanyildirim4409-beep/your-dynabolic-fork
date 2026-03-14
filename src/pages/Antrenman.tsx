@@ -305,7 +305,7 @@ const Antrenman = () => {
                       </div>
                     ))}
                   </div>
-                ) : workouts.length === 0 ? (
+                ) : currentWeekWorkouts.length === 0 ? (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.95 }}
                     animate={{ opacity: 1, scale: 1 }}
@@ -314,13 +314,27 @@ const Antrenman = () => {
                     <div className="w-20 h-20 rounded-2xl bg-primary/10 mx-auto mb-4 flex items-center justify-center">
                       <Coffee className="w-10 h-10 text-primary" />
                     </div>
-                    <h3 className="font-display text-lg text-foreground mb-2">DİNLENME GÜNÜ</h3>
-                    <p className="text-muted-foreground text-sm mb-1">
-                      Henüz atanmış antrenman yok.
-                    </p>
-                    <p className="text-muted-foreground/60 text-xs">
-                      Koçun yeni bir program atadığında burada görünecek.
-                    </p>
+                    {workouts.length > 0 ? (
+                      <>
+                        <h3 className="font-display text-lg text-foreground mb-2">BU HAFTA BOŞ</h3>
+                        <p className="text-muted-foreground text-sm mb-1">
+                          Bu hafta için planlanmış antrenmanın bulunmuyor.
+                        </p>
+                        <p className="text-muted-foreground/60 text-xs">
+                          Takvimden diğer haftaları kontrol edebilirsin.
+                        </p>
+                      </>
+                    ) : (
+                      <>
+                        <h3 className="font-display text-lg text-foreground mb-2">DİNLENME GÜNÜ</h3>
+                        <p className="text-muted-foreground text-sm mb-1">
+                          Henüz atanmış antrenman yok.
+                        </p>
+                        <p className="text-muted-foreground/60 text-xs">
+                          Koçun yeni bir program atadığında burada görünecek.
+                        </p>
+                      </>
+                    )}
                   </motion.div>
                 ) : (
                   <div className="space-y-5">
