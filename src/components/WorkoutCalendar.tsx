@@ -85,6 +85,13 @@ const WorkoutCalendar = () => {
     return set;
   }, [assignments]);
 
+  const programBounds = useMemo(() => {
+    const dates = assignments.map(a => a.scheduled_date).filter(Boolean) as string[];
+    if (dates.length === 0) return { hasScheduled: false, min: null, max: null };
+    dates.sort();
+    return { hasScheduled: true, min: dates[0], max: dates[dates.length - 1] };
+  }, [assignments]);
+
   const getDayData = (date: Date): CalendarDayData => {
     const completedLog = monthLogs.find(log => {
       if (!log.logged_at) return false;
@@ -117,53 +124,49 @@ const WorkoutCalendar = () => {
       };
     }
 
-    if (isFuture(date) || isToday(date)) {
-      const byDate = assignments.find(aw => {
-        if (!aw.scheduled_date) return false;
-        return isSameDay(parseISO(aw.scheduled_date + "T00:00:00"), date);
-      });
-      const byDOW = !byDate
-        ? assignments.find(aw => {
-            if (!aw.day_of_week) return false;
-            return DOW_MAP[aw.day_of_week.toLowerCase()] === getDay(date);
-          })
-        : null;
-      const match = byDate || byDOW;
-      if (match) {
-        const exArr = Array.isArray(match.exercises) ? (match.exercises as any[]) : [];
-        return {
-          date,
-          status: 'scheduled',
-          workout: {
-            name: match.workout_name,
-            duration: `~${exArr.length * 10}dk`,
-            exercises: exArr.length,
-          },
-          scheduledExercises: exArr.map(e => ({
-            name: e.name ?? "Bilinmeyen",
-            sets: e.sets ?? 3,
-            reps: e.reps ?? "10",
-            rir: e.rir,
-          })),
-        };
+    const calendarDateStr = format(date, "yyyy-MM-dd");
+
+    // 1. Strict date match (highest priority)
+    let match = assignments.find(aw => aw.scheduled_date === calendarDateStr);
+
+    // 2. Legacy DOW match only if NO scheduled dates exist in the dataset
+    if (!match && !programBounds.hasScheduled) {
+      match = assignments.find(aw =>
+        aw.day_of_week && DOW_MAP[aw.day_of_week.toLowerCase()] === getDay(date)
+      );
+    }
+
+    if (match) {
+      const exArr = Array.isArray(match.exercises) ? (match.exercises as any[]) : [];
+      return {
+        date,
+        status: isFuture(date) || isToday(date) ? 'scheduled' : 'none',
+        workout: {
+          name: match.workout_name,
+          duration: `~${exArr.length * 10}dk`,
+          exercises: exArr.length,
+        },
+        scheduledExercises: exArr.map(e => ({
+          name: e.name ?? "Bilinmeyen",
+          sets: e.sets ?? 3,
+          reps: e.reps ?? "10",
+          rir: e.rir,
+        })),
+      };
+    }
+
+    // 3. Rest day vs none — strict program boundaries
+    if (programBounds.hasScheduled) {
+      if (calendarDateStr >= programBounds.min! && calendarDateStr <= programBounds.max!) {
+        return { date, status: 'rest' };
       }
+      return { date, status: 'none' };
+    } else {
       if (scheduledDOWs.size > 0 && !scheduledDOWs.has(getDay(date))) {
         return { date, status: 'rest' };
       }
-    } else {
-      const wasDOW = assignments.some(aw => {
-        if (!aw.day_of_week) return false;
-        return DOW_MAP[aw.day_of_week.toLowerCase()] === getDay(date);
-      });
-      const wasByDate = assignments.some(aw => {
-        if (!aw.scheduled_date) return false;
-        return isSameDay(parseISO(aw.scheduled_date + "T00:00:00"), date);
-      });
-      if (scheduledDOWs.size > 0 && !wasDOW && !wasByDate) {
-        return { date, status: 'rest' };
-      }
+      return { date, status: 'none' };
     }
-    return { date, status: 'none' };
   };
 
   const handlePrevMonth = () => { setSlideDirection(-1); setCurrentMonth(subMonths(currentMonth, 1)); };
