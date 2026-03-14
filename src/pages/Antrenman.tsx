@@ -287,7 +287,7 @@ const Antrenman = () => {
                   <h2 className="font-display text-lg text-foreground tracking-wide">
                     HAFTALIK PROGRAM
                   </h2>
-                  <span className="text-xs text-primary">{workouts.length} Antrenman</span>
+                  <span className="text-xs text-primary">{currentWeekWorkouts.length} Antrenman</span>
                 </div>
                 
                 {isLoading ? (
