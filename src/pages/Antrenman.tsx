@@ -80,8 +80,8 @@ const Antrenman = () => {
     }
 
     // Add rest days for missing days
-    const hasScheduledDates = workouts.some(w => w.scheduledDate);
-    if (workouts.length > 0) {
+    const hasScheduledDates = currentWeekWorkouts.some(w => w.scheduledDate);
+    if (currentWeekWorkouts.length > 0) {
       if (hasScheduledDates) {
         // Scheduled date mode: fill missing days within the current week
         const now = new Date();
