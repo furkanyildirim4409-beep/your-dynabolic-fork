@@ -902,7 +902,24 @@ const Beslenme = () => {
               </button>
             </div>
 
-            {/* WATER TRACKER */}
+            {/* DIET TEMPORAL BANNERS */}
+            {hasTemplate && isFuture && dietStartDate && (
+              <Alert className="border-blue-500/30 bg-blue-500/10">
+                <CalendarClock className="h-4 w-4 text-blue-400" />
+                <AlertDescription className="text-sm text-blue-300">
+                  Beslenme programın <span className="font-bold">{format(parseISO(dietStartDate), "dd MMMM yyyy", { locale: tr })}</span> tarihinde başlayacak.
+                </AlertDescription>
+              </Alert>
+            )}
+            {hasTemplate && isExpired && (
+              <Alert className="border-orange-500/30 bg-orange-500/10">
+                <AlertTriangle className="h-4 w-4 text-orange-400" />
+                <AlertDescription className="text-sm text-orange-300">
+                  Koçunun atadığı beslenme programının süresi doldu. Lütfen koçunla iletişime geç.
+                </AlertDescription>
+              </Alert>
+            )}
+
             <div className="bg-secondary border border-white/5 rounded-2xl p-5 relative overflow-hidden">
               <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
               <div className="flex justify-between items-center mb-4">
