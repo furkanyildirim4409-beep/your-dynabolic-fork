@@ -60,11 +60,20 @@ export function useNutritionCalendar({
   useEffect(() => {
     if (!user) return;
 
-    const fetchLogs = async () => {
-      setIsLoading(true);
-      const monthStart = startOfMonth(currentMonth);
-      const monthEnd = endOfMonth(currentMonth);
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const cacheKey = `${user.id}-${format(monthStart, "yyyy-MM")}`;
 
+    // Instant cache hit (zero latency on re-open)
+    if (globalLogsCache.has(cacheKey)) {
+      setLogsMap(globalLogsCache.get(cacheKey)!);
+      setIsLoading(false);
+    } else {
+      setIsLoading(true);
+    }
+
+    // Background fetch (SWR revalidation)
+    const fetchLogs = async () => {
       const { data, error } = await supabase
         .from("nutrition_logs")
         .select("logged_at, meal_name, total_calories, total_protein, total_carbs, total_fat")
@@ -92,6 +101,7 @@ export function useNutritionCalendar({
         });
       });
 
+      globalLogsCache.set(cacheKey, map);
       setLogsMap(map);
       setIsLoading(false);
     };
