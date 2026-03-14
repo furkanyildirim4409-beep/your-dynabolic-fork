@@ -169,11 +169,14 @@ export function useDietPlan() {
     hasTemplate,
     isLoading,
     MEAL_LABELS,
-    // New temporal exports
+    // Temporal exports
     isFuture: temporalState.isFuture,
     isExpired: temporalState.isExpired,
     currentDayNumber: temporalState.currentDayNumber,
     totalTemplateDays: temporalState.totalTemplateDays,
     dietStartDate,
+    // Calendar exports
+    allFoods,
+    dietDurationWeeks,
   };
 }
