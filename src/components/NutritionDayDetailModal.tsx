@@ -1,9 +1,23 @@
+import { useMemo } from "react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { format, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
 import type { DayNutritionStats } from "@/hooks/useNutritionCalendar";
+
+const MEAL_LABELS: Record<string, string> = {
+  breakfast: "Kahvaltı",
+  lunch: "Öğle Yemeği",
+  snack: "Ara Öğün",
+  dinner: "Akşam Yemeği",
+};
+const MEAL_ORDER: Record<string, number> = {
+  breakfast: 0,
+  lunch: 1,
+  snack: 2,
+  dinner: 3,
+};
 
 interface Props {
   open: boolean;
@@ -21,9 +35,22 @@ const MacroBadges = ({ cal, p, c, f }: { cal: number; p: number; c: number; f: n
 );
 
 export default function NutritionDayDetailModal({ open, onOpenChange, stats }: Props) {
+  const groupedPlanned = useMemo(() => {
+    if (!stats) return [];
+    const groups: Record<string, typeof stats.plannedFoods> = {};
+    stats.plannedFoods.forEach((food) => {
+      const type = food.meal_type || "other";
+      if (!groups[type]) groups[type] = [];
+      groups[type].push(food);
+    });
+    return Object.entries(groups).sort(
+      ([a], [b]) => (MEAL_ORDER[a] ?? 99) - (MEAL_ORDER[b] ?? 99)
+    );
+  }, [stats?.plannedFoods]);
+
   if (!stats) return null;
 
-  const { targetCalories, consumedCalories, delta, status, logs, date, plannedFoods, targetProtein, targetCarbs, targetFat } = stats;
+  const { targetCalories, consumedCalories, delta, status, logs, date, targetProtein, targetCarbs, targetFat } = stats;
   const percentage = targetCalories > 0 ? Math.min(Math.round((consumedCalories / targetCalories) * 100), 150) : 0;
   const formattedDate = format(parseISO(date), "dd MMMM yyyy, EEEE", { locale: tr });
 
@@ -109,19 +136,28 @@ export default function NutritionDayDetailModal({ open, onOpenChange, stats }: P
             </div>
           )}
 
-          {/* Planned Foods */}
-          {plannedFoods.length > 0 && (
-            <div className="space-y-1.5">
+          {/* Planned Foods — grouped by meal */}
+          {groupedPlanned.length > 0 && (
+            <div className="space-y-3">
               <p className="text-xs font-bold text-muted-foreground uppercase tracking-wider">Hedeflenen İçerik</p>
-              {plannedFoods.map((food, i) => (
-                <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
-                  <div className="flex justify-between items-start">
-                    <span className="text-sm text-foreground font-medium">{food.food_name}</span>
-                    {food.serving_size && (
-                      <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{food.serving_size}</span>
-                    )}
+              {groupedPlanned.map(([mealType, foods]) => (
+                <div key={mealType} className="space-y-1.5">
+                  <h4 className="text-xs font-medium text-foreground bg-secondary/40 px-2 py-1 rounded-md w-max">
+                    {MEAL_LABELS[mealType] || mealType}
+                  </h4>
+                  <div className="space-y-1.5 pl-2 border-l-2 border-secondary/50">
+                    {foods.map((food, i) => (
+                      <div key={i} className="p-2 rounded-lg bg-secondary/30 border border-border/50">
+                        <div className="flex justify-between items-start">
+                          <span className="text-sm text-foreground font-medium">{food.food_name}</span>
+                          {food.serving_size && (
+                            <span className="text-[10px] text-muted-foreground ml-2 shrink-0">{food.serving_size}</span>
+                          )}
+                        </div>
+                        <MacroBadges cal={food.calories} p={food.protein} c={food.carbs} f={food.fat} />
+                      </div>
+                    ))}
                   </div>
-                  <MacroBadges cal={food.calories} p={food.protein} c={food.carbs} f={food.fat} />
                 </div>
               ))}
             </div>
