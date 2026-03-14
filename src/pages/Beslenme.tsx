@@ -842,6 +842,13 @@ const Beslenme = () => {
           <div className="flex gap-2">
             <Button
               size="icon"
+              onClick={() => setCalendarOpen(true)}
+              className="bg-secondary text-foreground hover:bg-secondary/80 rounded-xl h-10 w-10"
+            >
+              <CalendarDays size={20} />
+            </Button>
+            <Button
+              size="icon"
               onClick={openBarcodeScanner}
               className="bg-primary text-primary-foreground hover:bg-primary/90 rounded-xl h-10 w-10"
             >
