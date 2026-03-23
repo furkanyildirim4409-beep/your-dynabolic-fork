@@ -1,7 +1,8 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, Moon, Brain, Flame, Heart, Sparkles, Apple, RefreshCw } from "lucide-react";
+import { Send, Moon, Brain, Flame, Heart, Sparkles, Apple, RefreshCw, Clock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
+import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
@@ -84,9 +85,10 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
+  const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingCheckin, setExistingCheckin] = useState<{ id: string; values: Record<SliderKey, number>; notes: string } | null>(null);
+  const [existingCheckin, setExistingCheckin] = useState<{ id: string; values: Record<SliderKey, number>; notes: string; sleepHours: number | null } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const loadTodayCheckin = useCallback(async () => {
@@ -94,7 +96,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
     const today = new Date().toISOString().split("T")[0];
     const { data } = await supabase
       .from("daily_checkins")
-      .select("id, mood, sleep, soreness, stress, digestion, notes")
+      .select("id, mood, sleep, soreness, stress, digestion, notes, sleep_hours")
       .eq("user_id", user.id)
       .gte("created_at", `${today}T00:00:00`)
       .lt("created_at", `${today}T23:59:59.999`)
@@ -110,13 +112,15 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         stress: row.stress ?? 3,
         digestion: row.digestion ?? 3,
       };
-      setExistingCheckin({ id: row.id, values: loaded, notes: row.notes ?? "" });
+      setExistingCheckin({ id: row.id, values: loaded, notes: row.notes ?? "", sleepHours: row.sleep_hours ?? null });
       setValues(loaded);
+      setSleepHours(row.sleep_hours ?? null);
       setNotes(row.notes ?? "");
       setIsEditMode(true);
     } else {
       setExistingCheckin(null);
       setValues({ ...defaultValues });
+      setSleepHours(null);
       setNotes("");
       setIsEditMode(false);
     }
@@ -150,8 +154,9 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
             soreness: values.soreness,
             stress: values.stress,
             digestion: values.digestion,
+            sleep_hours: sleepHours,
             notes: notes || null,
-          })
+          } as any)
           .eq("id", existingCheckin.id);
 
         if (updateErr) throw updateErr;
@@ -174,8 +179,9 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
           soreness: values.soreness,
           stress: values.stress,
           digestion: values.digestion,
+          sleep_hours: sleepHours,
           notes: notes || null,
-        });
+        } as any);
 
         if (checkinError) throw checkinError;
         triggerAchievement("daily_checkin");
@@ -257,6 +263,38 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
               </div>
             </motion.div>
           ))}
+
+          {/* Sleep Hours Input */}
+          <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-500">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <span className="font-display text-xs text-muted-foreground tracking-wider">
+                  UYKU SÜRESİ (SAAT)
+                </span>
+              </div>
+              <div className="font-display text-xl font-bold bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
+                {sleepHours ?? "--"}
+              </div>
+            </div>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={sleepHours ?? ""}
+              onChange={(e) => setSleepHours(e.target.value ? Number(e.target.value) : null)}
+              placeholder="Örn: 7.5"
+              className="bg-white/[0.03] border-white/10 text-sm focus:border-indigo-500/50 focus:ring-indigo-500/20"
+            />
+          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 10 }}

@@ -3,10 +3,15 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }): number {
-  return Math.round(
+function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }, sleepHours?: number | null): number {
+  let base = Math.round(
     (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((5 - v.soreness) / 5) * 20 + ((5 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
   );
+  // Apply sleep duration penalty if available
+  if (sleepHours != null && sleepHours < 7) {
+    base -= Math.round((7 - sleepHours) * 3);
+  }
+  return Math.max(0, Math.min(100, base));
 }
 
 function getScoreTheme(score: number) {
@@ -25,7 +30,7 @@ const PerformanceRing = () => {
     const today = new Date().toISOString().split("T")[0];
     supabase
       .from("daily_checkins")
-      .select("mood, sleep, soreness, stress, digestion")
+      .select("mood, sleep, soreness, stress, digestion, sleep_hours")
       .eq("user_id", user.id)
       .gte("created_at", `${today}T00:00:00`)
       .lt("created_at", `${today}T23:59:59.999`)
@@ -37,7 +42,7 @@ const PerformanceRing = () => {
           setScore(calculateReadiness({
             mood: r.mood ?? 3, sleep: Number(r.sleep) ?? 3,
             soreness: r.soreness ?? 3, stress: r.stress ?? 3, digestion: r.digestion ?? 3,
-          }));
+          }, (r as any).sleep_hours));
         }
         setLoading(false);
       });

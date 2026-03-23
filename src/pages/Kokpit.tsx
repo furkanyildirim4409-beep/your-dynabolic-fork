@@ -22,8 +22,6 @@ import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
 import StatDetailModal from "@/components/StatDetailModal";
 import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
-import BentoStats, { BentoStatType } from "@/components/BentoStats";
-import BentoStatDetailModal from "@/components/BentoStatDetailModal";
 
 import DailyCheckIn from "@/components/DailyCheckIn";
 import CoachAdjustmentBanner from "@/components/dashboard/CoachAdjustmentBanner";
@@ -42,7 +40,7 @@ import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { useDietPlan } from "@/hooks/useDietPlan";
-import { useNutritionLogs } from "@/hooks/useNutritionLogs";
+import { useConsumedFoods } from "@/hooks/useConsumedFoods";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
 
 // Map Turkish day names to JS getDay() (0=Sun)
@@ -64,7 +62,7 @@ const Kokpit = () => {
   const [showChat, setShowChat] = useState(false);
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
-  const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
+  
   
   const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
   // === REAL COACH ADJUSTMENT DATA ===
@@ -74,7 +72,7 @@ const Kokpit = () => {
   // === REAL DATA HOOKS ===
   const { data: workouts, isLoading: workoutsLoading } = useAssignedWorkouts();
   const { dynamicTargets, hasTemplate, isLoading: dietLoading } = useDietPlan();
-  const { logs: nutritionLogs, isLoading: logsLoading } = useNutritionLogs();
+  const { totals: consumedTotals, isLoading: foodsLoading } = useConsumedFoods();
   const { totalMl: waterMl } = useWaterTracking();
 
   // === STRICT TODAY'S WORKOUT (Ghost Workout Prevention) ===
@@ -102,18 +100,6 @@ const Kokpit = () => {
     return { workout: todaysWorkout, completed: false };
   }, [workouts]);
 
-  // === CONSUMED NUTRITION TOTALS ===
-  const consumedTotals = useMemo(() => {
-    return nutritionLogs.reduce(
-      (acc, log) => ({
-        calories: acc.calories + log.total_calories,
-        protein: acc.protein + log.total_protein,
-        carbs: acc.carbs + log.total_carbs,
-        fat: acc.fat + log.total_fat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-  }, [nutritionLogs]);
 
   // Payment reminders hook
   const { reminders } = usePaymentReminders();
@@ -297,7 +283,7 @@ const Kokpit = () => {
 
       {/* ========== TODAY'S NUTRITION (REAL DATA) ========== */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        {dietLoading || logsLoading ? (
+        {dietLoading || foodsLoading ? (
           <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 space-y-3">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-full" />
@@ -380,25 +366,12 @@ const Kokpit = () => {
       </motion.button>
 
 
-      {/* Bento Stats Grid */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Sağlık Verileri</h2>
-        </div>
-        <BentoStats 
-          onStatClick={(stat) => setSelectedBentoStat(stat)}
-          realCalories={consumedTotals.calories}
-          realWater={waterMl}
-          calorieTarget={dynamicTargets?.calories}
-        />
-      </motion.div>
 
       {/* Modals */}
       <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
       <StatDetailModal isOpen={!!selectedStat} onClose={() => setSelectedStat(null)} statType={selectedStat} />
-      <BentoStatDetailModal isOpen={!!selectedBentoStat} onClose={() => setSelectedBentoStat(null)} statType={selectedBentoStat} />
+      
       
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 

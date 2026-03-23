@@ -474,6 +474,7 @@ export type Database = {
           mood: number | null
           notes: string | null
           sleep: number | null
+          sleep_hours: number | null
           soreness: number | null
           stress: number | null
           user_id: string
@@ -485,6 +486,7 @@ export type Database = {
           mood?: number | null
           notes?: string | null
           sleep?: number | null
+          sleep_hours?: number | null
           soreness?: number | null
           stress?: number | null
           user_id: string
@@ -496,6 +498,7 @@ export type Database = {
           mood?: number | null
           notes?: string | null
           sleep?: number | null
+          sleep_hours?: number | null
           soreness?: number | null
           stress?: number | null
           user_id?: string
