@@ -30,7 +30,7 @@ const PerformanceRing = () => {
     const today = new Date().toISOString().split("T")[0];
     supabase
       .from("daily_checkins")
-      .select("mood, sleep, soreness, stress, digestion")
+      .select("mood, sleep, soreness, stress, digestion, sleep_hours")
       .eq("user_id", user.id)
       .gte("created_at", `${today}T00:00:00`)
       .lt("created_at", `${today}T23:59:59.999`)
