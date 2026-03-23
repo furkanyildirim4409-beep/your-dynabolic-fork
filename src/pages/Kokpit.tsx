@@ -9,8 +9,6 @@ import {
   MessageCircle,
   ChevronRight,
   ClipboardCheck,
-  Heart,
-  Footprints,
   Calendar,
   Moon,
   CheckCircle2,
