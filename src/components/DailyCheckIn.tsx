@@ -264,7 +264,38 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
             </motion.div>
           ))}
 
+          {/* Sleep Hours Input */}
           <motion.div
+            initial={{ opacity: 0, x: -10 }}
+            animate={{ opacity: 1, x: 0 }}
+            transition={{ delay: 0.45 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-500">
+                  <Clock className="w-4 h-4" />
+                </div>
+                <span className="font-display text-xs text-muted-foreground tracking-wider">
+                  UYKU SÜRESİ (SAAT)
+                </span>
+              </div>
+              <div className="font-display text-xl font-bold bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
+                {sleepHours ?? "--"}
+              </div>
+            </div>
+            <Input
+              type="number"
+              min={0}
+              max={24}
+              step={0.5}
+              value={sleepHours ?? ""}
+              onChange={(e) => setSleepHours(e.target.value ? Number(e.target.value) : null)}
+              placeholder="Örn: 7.5"
+              className="bg-white/[0.03] border-white/10 text-sm focus:border-indigo-500/50 focus:ring-indigo-500/20"
+            />
+          </motion.div>
+
             initial={{ opacity: 0, y: 10 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ delay: 0.5 }}

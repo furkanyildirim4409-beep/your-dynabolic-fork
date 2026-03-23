@@ -42,7 +42,7 @@ const PerformanceRing = () => {
           setScore(calculateReadiness({
             mood: r.mood ?? 3, sleep: Number(r.sleep) ?? 3,
             soreness: r.soreness ?? 3, stress: r.stress ?? 3, digestion: r.digestion ?? 3,
-          }));
+          }, (r as any).sleep_hours));
         }
         setLoading(false);
       });
