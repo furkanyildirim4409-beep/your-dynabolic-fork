@@ -45,7 +45,7 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
     },
   };
 
-  const config = typeConfig[adjustment.type];
+  const config = typeConfig[adjustment.type] || typeConfig.calories;
   const Icon = config.icon;
 
   const handleDismiss = () => {
