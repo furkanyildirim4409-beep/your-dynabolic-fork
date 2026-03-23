@@ -18,7 +18,7 @@ import { format } from "date-fns";
 import PerformanceRing from "@/components/PerformanceRing";
 import NextMissionCard from "@/components/NextMissionCard";
 import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
-import WeeklyActivityChart from "@/components/WeeklyActivityChart";
+
 import StatDetailModal from "@/components/StatDetailModal";
 import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
