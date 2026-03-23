@@ -1,6 +1,6 @@
 import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
-import { Flame, Zap, BarChart3, ChevronRight, X, Activity, LucideIcon } from "lucide-react";
+import { Flame, Zap, BarChart3, ChevronRight, X, Activity, Beef, Wheat, Droplets, LucideIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { hapticSuccess } from "@/lib/haptics";
 import type { CoachAdjustment } from "@/types/shared-models";
