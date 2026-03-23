@@ -366,19 +366,6 @@ const Kokpit = () => {
       </motion.button>
 
 
-      {/* Bento Stats Grid */}
-      <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
-        <div className="flex items-center gap-2 mb-3">
-          <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
-          <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Sağlık Verileri</h2>
-        </div>
-        <BentoStats 
-          onStatClick={(stat) => setSelectedBentoStat(stat)}
-          realCalories={consumedTotals.calories}
-          realWater={waterMl}
-          calorieTarget={dynamicTargets?.calories}
-        />
-      </motion.div>
 
       {/* Modals */}
       <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
