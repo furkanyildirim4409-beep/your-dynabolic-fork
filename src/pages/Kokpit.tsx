@@ -43,6 +43,7 @@ import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { useDietPlan } from "@/hooks/useDietPlan";
 import { useConsumedFoods } from "@/hooks/useConsumedFoods";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
+import { useTodayCheckin } from "@/hooks/useTodayCheckin";
 
 // Map Turkish day names to JS getDay() (0=Sun)
 const DOW_MAP: Record<string, number> = {
