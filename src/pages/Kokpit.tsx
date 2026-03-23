@@ -22,8 +22,6 @@ import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
 import StatDetailModal from "@/components/StatDetailModal";
 import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
-import BentoStats, { BentoStatType } from "@/components/BentoStats";
-import BentoStatDetailModal from "@/components/BentoStatDetailModal";
 
 import DailyCheckIn from "@/components/DailyCheckIn";
 import CoachAdjustmentBanner from "@/components/dashboard/CoachAdjustmentBanner";
