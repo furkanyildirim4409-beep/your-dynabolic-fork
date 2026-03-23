@@ -179,8 +179,9 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
           soreness: values.soreness,
           stress: values.stress,
           digestion: values.digestion,
+          sleep_hours: sleepHours,
           notes: notes || null,
-        });
+        } as any);
 
         if (checkinError) throw checkinError;
         triggerAchievement("daily_checkin");
