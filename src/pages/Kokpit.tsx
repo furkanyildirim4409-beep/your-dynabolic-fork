@@ -156,6 +156,7 @@ const Kokpit = () => {
     ? consumedTotals.calories.toLocaleString("tr-TR")
     : "--";
   const waterDisplay = waterMl > 0 ? (waterMl / 1000).toFixed(1) : "--";
+  const sleepDisplay = todayCheckin?.sleep_hours ? `${todayCheckin.sleep_hours}` : "--";
 
   return (
     <div className="space-y-6 pb-24">
