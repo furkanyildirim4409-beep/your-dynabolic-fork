@@ -59,6 +59,7 @@ const Kokpit = () => {
   const navigate = useNavigate();
   const [searchParams, setSearchParams] = useSearchParams();
   const { profile } = useAuth();
+  const { data: coachProfile, isLoading: coachLoading } = useCoachProfile();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
   const { notifications, unreadCount, markAsRead } = useAthleteNotifications();
