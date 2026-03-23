@@ -9,8 +9,6 @@ import {
   MessageCircle,
   ChevronRight,
   ClipboardCheck,
-  Heart,
-  Footprints,
   Calendar,
   Moon,
   CheckCircle2,
@@ -20,13 +18,13 @@ import { format } from "date-fns";
 import PerformanceRing from "@/components/PerformanceRing";
 import NextMissionCard from "@/components/NextMissionCard";
 import QuickStatsRow, { StatType } from "@/components/QuickStatsRow";
-import WeeklyActivityChart from "@/components/WeeklyActivityChart";
+
 import StatDetailModal from "@/components/StatDetailModal";
 import ChatInterface from "@/components/chat/ChatInterface";
 import StoriesRing from "@/components/StoriesRing";
 import BentoStats, { BentoStatType } from "@/components/BentoStats";
 import BentoStatDetailModal from "@/components/BentoStatDetailModal";
-import BiometricDetailModal, { BiometricType } from "@/components/BiometricDetailModal";
+
 import DailyCheckIn from "@/components/DailyCheckIn";
 import CoachAdjustmentBanner from "@/components/dashboard/CoachAdjustmentBanner";
 import StreakTierWidget from "@/components/StreakTierWidget";
@@ -35,7 +33,7 @@ import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { assignedCoach, notifications, getLatestAdjustment, wearableMetrics } from "@/lib/mockData";
+import { assignedCoach, notifications, getLatestAdjustment } from "@/lib/mockData";
 import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
@@ -66,7 +64,7 @@ const Kokpit = () => {
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
-  const [selectedBiometric, setSelectedBiometric] = useState<BiometricType | null>(null);
+  
   const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
   const [acknowledgedAdjustments, setAcknowledgedAdjustments] = useState<string[]>(() => {
     const stored = localStorage.getItem("acknowledgedAdjustments");
@@ -389,26 +387,6 @@ const Kokpit = () => {
         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
       </motion.button>
 
-      {/* Weekly Activity Chart */}
-      <WeeklyActivityChart />
-
-      {/* Coach Message Teaser */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-        onClick={() => setShowChat(true)}
-        className="w-full backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 flex items-center gap-3 text-left"
-      >
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <MessageCircle className="w-4 h-4 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-foreground text-sm font-medium truncate">Koç Serdar</p>
-          <p className="text-muted-foreground text-xs truncate">Bugün bacak antrenmanında tempoyu düşürme...</p>
-        </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-      </motion.button>
 
       {/* Bento Stats Grid */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
@@ -417,59 +395,6 @@ const Kokpit = () => {
           <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Sağlık Verileri</h2>
         </div>
         <BentoStats onStatClick={(stat) => setSelectedBentoStat(stat)} />
-
-        {/* Additional Biometric Stats - RHR & Steps */}
-        <div className="grid grid-cols-2 gap-3 mt-3">
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelectedBiometric("rhr")}
-            className="glass-card-premium p-4 relative overflow-hidden text-left"
-          >
-            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-red-500 opacity-10 blur-2xl rounded-full" />
-            <div className="flex items-center gap-2 mb-2">
-              <Heart className="w-4 h-4 text-red-400" />
-              <span className="text-xs text-muted-foreground">Dinlenme Nabzı</span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display text-2xl text-red-400">{wearableMetrics.rhr.value}</span>
-              <span className="text-xs text-muted-foreground">bpm</span>
-            </div>
-            <div className={`flex items-center gap-1 mt-1 text-xs ${wearableMetrics.rhr.change < 0 ? "text-green-400" : "text-red-400"}`}>
-              <span>{wearableMetrics.rhr.change < 0 ? "↓" : "↑"}{Math.abs(wearableMetrics.rhr.change)}</span>
-              <span className="text-muted-foreground">dün</span>
-            </div>
-          </motion.button>
-
-          <motion.button
-            whileHover={{ scale: 1.01 }}
-            whileTap={{ scale: 0.98 }}
-            onClick={() => setSelectedBiometric("steps")}
-            className="glass-card-premium p-4 relative overflow-hidden text-left"
-          >
-            <div className="absolute -bottom-8 -right-8 w-24 h-24 bg-green-500 opacity-10 blur-2xl rounded-full" />
-            <div className="flex items-center gap-2 mb-2">
-              <Footprints className="w-4 h-4 text-green-400" />
-              <span className="text-xs text-muted-foreground">Günlük Adım</span>
-            </div>
-            <div className="flex items-baseline gap-1">
-              <span className="font-display text-2xl text-green-400">{wearableMetrics.steps.value.toLocaleString()}</span>
-            </div>
-            <div className="mt-2">
-              <div className="h-1.5 bg-secondary rounded-full overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${Math.min((wearableMetrics.steps.value / wearableMetrics.steps.goal) * 100, 100)}%` }}
-                  transition={{ duration: 1, delay: 0.5 }}
-                  className="h-full bg-green-400 rounded-full"
-                />
-              </div>
-              <p className="text-[10px] text-muted-foreground mt-1 text-right">
-                {Math.round((wearableMetrics.steps.value / wearableMetrics.steps.goal) * 100)}% hedef
-              </p>
-            </div>
-          </motion.button>
-        </div>
       </motion.div>
 
       {/* Modals */}
@@ -477,7 +402,7 @@ const Kokpit = () => {
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
       <StatDetailModal isOpen={!!selectedStat} onClose={() => setSelectedStat(null)} statType={selectedStat} />
       <BentoStatDetailModal isOpen={!!selectedBentoStat} onClose={() => setSelectedBentoStat(null)} statType={selectedBentoStat} />
-      <BiometricDetailModal isOpen={!!selectedBiometric} onClose={() => setSelectedBiometric(null)} biometricType={selectedBiometric} />
+      
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 
       {/* Weekly Recap Test Button */}
