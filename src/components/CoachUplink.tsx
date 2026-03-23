@@ -1,17 +1,22 @@
 import { motion } from "framer-motion";
 import { Wifi, WifiOff, MessageCircle, ChevronRight } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { assignedCoach } from "@/lib/mockData";
+import { CoachProfile } from "@/hooks/useCoachProfile";
 
 interface CoachUplinkProps {
+  coach: CoachProfile | null | undefined;
+  isLoading?: boolean;
   onChatOpen?: () => void;
   onProfileClick?: () => void;
 }
 
-const CoachUplink = ({ onChatOpen, onProfileClick }: CoachUplinkProps) => {
+const CoachUplink = ({ coach, isLoading, onChatOpen, onProfileClick }: CoachUplinkProps) => {
   const isOnline = true;
   const lastSeen = "Şimdi aktif";
   const unreadMessages = 2;
+
+  const coachName = coach?.full_name || "Koç";
+  const coachInitials = coachName.charAt(0).toUpperCase();
 
   return (
     <motion.div
@@ -30,8 +35,8 @@ const CoachUplink = ({ onChatOpen, onProfileClick }: CoachUplinkProps) => {
             <div className="absolute inset-0 bg-gradient-to-br from-primary/40 to-primary/20 rounded-xl rotate-45 transform" />
             <div className="absolute inset-1 bg-card rounded-lg rotate-45 transform overflow-hidden">
               <Avatar className="w-full h-full -rotate-45">
-                <AvatarImage src={assignedCoach.avatar} alt={assignedCoach.name} className="object-cover" />
-                <AvatarFallback className="bg-secondary text-foreground text-xs -rotate-45">KS</AvatarFallback>
+                <AvatarImage src={coach?.avatar_url || ""} alt={coachName} className="object-cover" />
+                <AvatarFallback className="bg-secondary text-foreground text-xs -rotate-45">{coachInitials}</AvatarFallback>
               </Avatar>
             </div>
           </div>
@@ -42,7 +47,7 @@ const CoachUplink = ({ onChatOpen, onProfileClick }: CoachUplinkProps) => {
         {/* Info */}
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2">
-            <p className="text-foreground text-sm font-medium truncate">{assignedCoach.name}</p>
+            <p className="text-foreground text-sm font-medium truncate">{coachName}</p>
             {isOnline ? (
               <Wifi className="w-3 h-3 text-green-400 flex-shrink-0" />
             ) : (
@@ -50,7 +55,9 @@ const CoachUplink = ({ onChatOpen, onProfileClick }: CoachUplinkProps) => {
             )}
           </div>
           <p className="text-muted-foreground text-xs">{lastSeen}</p>
-          <p className="text-muted-foreground text-xs truncate">{assignedCoach.specialty}</p>
+          {coach?.specialty && (
+            <p className="text-muted-foreground text-xs truncate">{coach.specialty}</p>
+          )}
         </div>
 
         {/* Chat Button */}
@@ -71,13 +78,12 @@ const CoachUplink = ({ onChatOpen, onProfileClick }: CoachUplinkProps) => {
       {/* Quick Info Bar */}
       <div className="flex items-center gap-2 mt-3 pt-3 border-t border-border">
         <div className="flex-1 text-center">
-          <p className="text-primary text-sm font-bold">{assignedCoach.rating}</p>
-          <p className="text-muted-foreground text-[10px]">Puan</p>
-        </div>
-        <div className="w-px h-6 bg-border" />
-        <div className="flex-1 text-center">
-          <p className="text-foreground text-sm font-bold">{assignedCoach.students}</p>
-          <p className="text-muted-foreground text-[10px]">Sporcu</p>
+          {coach?.gym_name && (
+            <>
+              <p className="text-primary text-sm font-bold truncate">{coach.gym_name}</p>
+              <p className="text-muted-foreground text-[10px]">Salon</p>
+            </>
+          )}
         </div>
         <div className="w-px h-6 bg-border" />
         <motion.button

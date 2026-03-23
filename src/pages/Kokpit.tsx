@@ -31,7 +31,7 @@ import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { assignedCoach } from "@/lib/mockData";
+import { useCoachProfile } from "@/hooks/useCoachProfile";
 import { useAthleteNotifications } from "@/hooks/useAthleteNotifications";
 import { useActiveAdjustment, useAcknowledgeAdjustment } from "@/hooks/useAthleteAdjustments";
 import { useAuth } from "@/context/AuthContext";
