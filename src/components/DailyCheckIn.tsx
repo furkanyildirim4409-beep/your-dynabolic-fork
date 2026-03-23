@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
-import { Send, Moon, Brain, Flame, Heart, Sparkles, Apple, RefreshCw } from "lucide-react";
+import { Send, Moon, Brain, Flame, Heart, Sparkles, Apple, RefreshCw, Clock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
