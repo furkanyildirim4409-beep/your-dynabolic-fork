@@ -100,18 +100,6 @@ const Kokpit = () => {
     return { workout: todaysWorkout, completed: false };
   }, [workouts]);
 
-  // === CONSUMED NUTRITION TOTALS ===
-  const consumedTotals = useMemo(() => {
-    return nutritionLogs.reduce(
-      (acc, log) => ({
-        calories: acc.calories + log.total_calories,
-        protein: acc.protein + log.total_protein,
-        carbs: acc.carbs + log.total_carbs,
-        fat: acc.fat + log.total_fat,
-      }),
-      { calories: 0, protein: 0, carbs: 0, fat: 0 }
-    );
-  }, [nutritionLogs]);
 
   // Payment reminders hook
   const { reminders } = usePaymentReminders();
