@@ -1,0 +1,1 @@
+ALTER TABLE public.daily_checkins ADD COLUMN sleep_hours numeric DEFAULT NULL;
