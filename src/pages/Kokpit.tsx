@@ -31,7 +31,8 @@ import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { assignedCoach, notifications } from "@/lib/mockData";
+import { assignedCoach } from "@/lib/mockData";
+import { useAthleteNotifications } from "@/hooks/useAthleteNotifications";
 import { useActiveAdjustment, useAcknowledgeAdjustment } from "@/hooks/useAthleteAdjustments";
 import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
@@ -60,7 +61,7 @@ const Kokpit = () => {
   const { profile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
+  const { notifications, unreadCount, markAsRead } = useAthleteNotifications();
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   
   
@@ -132,10 +133,8 @@ const Kokpit = () => {
   }, []);
 
 
-  const unreadCount = notifications.filter((n) => !n.read && !readNotifications[n.id]).length;
-
-  const handleNotificationClick = (notificationId: string, coachId?: string) => {
-    setReadNotifications((prev) => ({ ...prev, [notificationId]: true }));
+  const handleNotificationClick = (notificationId: string, coachId?: string | null) => {
+    markAsRead.mutate(notificationId);
     if (coachId) {
       setShowNotifications(false);
       navigate(`/coach/${coachId}`);
@@ -418,20 +417,22 @@ const Kokpit = () => {
               </div>
               <div className="p-4 space-y-3 overflow-y-auto max-h-[calc(100vh-80px)]">
                 {notifications.map((notification, index) => {
-                  const isRead = notification.read || readNotifications[notification.id];
+                  const isRead = notification.is_read;
+                  const timeAgo = new Date(notification.created_at).toLocaleDateString("tr-TR", { day: "numeric", month: "short", hour: "2-digit", minute: "2-digit" });
+                  const typeClass = notification.type === "ai_action" ? "bg-primary/20" : notification.type === "achievement" ? "bg-yellow-500/20" : "bg-secondary";
                   return (
                     <motion.button
                       key={notification.id}
                       initial={{ opacity: 0, x: 20 }}
                       animate={{ opacity: 1, x: 0 }}
                       transition={{ delay: index * 0.05 }}
-                      onClick={() => handleNotificationClick(String(notification.id), notification.coachId)}
+                      onClick={() => handleNotificationClick(notification.id, notification.coach_id)}
                       className={`w-full text-left backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 flex items-start gap-3 hover:bg-white/[0.04] transition-colors ${!isRead ? "border-l-2 border-l-primary" : ""}`}
                     >
-                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${notification.type === "coach" ? "bg-primary/20" : notification.type === "achievement" ? "bg-yellow-500/20" : "bg-secondary"}`}>
-                        {notification.type === "coach" && <MessageCircle className="w-5 h-5 text-primary" />}
+                      <div className={`w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0 ${typeClass}`}>
+                        {notification.type === "ai_action" && <Settings className="w-5 h-5 text-primary" />}
                         {notification.type === "achievement" && <Trophy className="w-5 h-5 text-yellow-500" />}
-                        {notification.type === "system" && <Settings className="w-5 h-5 text-muted-foreground" />}
+                        {!["ai_action", "achievement"].includes(notification.type) && <Bell className="w-5 h-5 text-muted-foreground" />}
                       </div>
                       <div className="flex-1 min-w-0">
                         <div className="flex items-center gap-2">
@@ -439,7 +440,7 @@ const Kokpit = () => {
                           {!isRead && <div className="w-2 h-2 rounded-full bg-primary" />}
                         </div>
                         <p className="text-muted-foreground text-xs mt-1 line-clamp-2">{notification.message}</p>
-                        <p className="text-muted-foreground/50 text-[10px] mt-2">{notification.time}</p>
+                        <p className="text-muted-foreground/50 text-[10px] mt-2">{timeAgo}</p>
                       </div>
                     </motion.button>
                   );
