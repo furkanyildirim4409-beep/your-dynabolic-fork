@@ -1,9 +1,70 @@
 import { useState } from "react";
-import { motion, AnimatePresence } from "framer-motion";
-import { Flame, Zap, BarChart3, ChevronRight, X } from "lucide-react";
+import { motion } from "framer-motion";
+import { Flame, Zap, BarChart3, ChevronRight, X, Activity, LucideIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
 import { hapticSuccess } from "@/lib/haptics";
 import type { CoachAdjustment } from "@/types/shared-models";
+
+interface AdjustmentConfig {
+  icon: LucideIcon;
+  label: string;
+  formatValue: (v: number) => string;
+  color: string;
+  bgColor: string;
+  borderColor: string;
+  glowColor: string;
+}
+
+function getAdjustmentConfig(type: string): AdjustmentConfig {
+  const t = (type || "").toLowerCase();
+
+  if (t.includes("calori") || t.includes("diet") || t.includes("nutri")) {
+    return {
+      icon: Flame,
+      label: "KALORİ GÜNCELLEMESİ",
+      formatValue: (v) => `${v} kcal`,
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/20",
+      borderColor: "border-orange-500/50",
+      glowColor: "shadow-orange-500/20",
+    };
+  }
+
+  if (t.includes("intens") || t.includes("work")) {
+    return {
+      icon: Zap,
+      label: "YOĞUNLUK GÜNCELLEMESİ",
+      formatValue: (v) => `%${v}`,
+      color: "text-amber-400",
+      bgColor: "bg-amber-500/20",
+      borderColor: "border-amber-500/50",
+      glowColor: "shadow-amber-500/20",
+    };
+  }
+
+  if (t.includes("vol")) {
+    return {
+      icon: BarChart3,
+      label: "HACİM GÜNCELLEMESİ",
+      formatValue: (v) => `${v} set`,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/20",
+      borderColor: "border-yellow-500/50",
+      glowColor: "shadow-yellow-500/20",
+    };
+  }
+
+  // Universal fallback
+  return {
+    icon: Activity,
+    label: "GÜNCELLEME",
+    formatValue: (v) => `${v}`,
+    color: "text-primary",
+    bgColor: "bg-primary/10",
+    borderColor: "border-primary/50",
+    glowColor: "shadow-primary/20",
+  };
+}
 
 interface CoachAdjustmentBannerProps {
   adjustment: CoachAdjustment | null;
@@ -15,48 +76,13 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
 
   if (!adjustment || !isVisible) return null;
 
-  const typeConfig = {
-    calories: {
-      icon: Flame,
-      label: "KALORİ GÜNCELLEMESİ",
-      formatValue: (v: number) => `${v} kcal`,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/20",
-      borderColor: "border-orange-500/50",
-      glowColor: "shadow-orange-500/20",
-    },
-    intensity: {
-      icon: Zap,
-      label: "YOĞUNLUK GÜNCELLEMESİ",
-      formatValue: (v: number) => `%${v}`,
-      color: "text-amber-400",
-      bgColor: "bg-amber-500/20",
-      borderColor: "border-amber-500/50",
-      glowColor: "shadow-amber-500/20",
-    },
-    volume: {
-      icon: BarChart3,
-      label: "HACİM GÜNCELLEMESİ",
-      formatValue: (v: number) => `${v} set`,
-      color: "text-yellow-400",
-      bgColor: "bg-yellow-500/20",
-      borderColor: "border-yellow-500/50",
-      glowColor: "shadow-yellow-500/20",
-    },
-  };
-
-  const config = typeConfig[adjustment.type] || typeConfig.calories;
+  const config = getAdjustmentConfig(adjustment.type);
   const Icon = config.icon;
 
   const handleDismiss = () => {
-    // Immediate UI feedback
     hapticSuccess();
     setIsVisible(false);
-    
-    // Persist to localStorage via parent
     onDismiss(adjustment.id);
-    
-    // Show toast notification
     toast({
       title: "Koç ayarlaması onaylandı ✓",
       description: `${config.label} güncellendi`,
@@ -72,14 +98,12 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
       transition={{ type: "spring", damping: 20, stiffness: 300 }}
       className={`relative z-10 backdrop-blur-xl bg-white/[0.03] border ${config.borderColor} rounded-2xl p-4 overflow-hidden shadow-lg ${config.glowColor}`}
     >
-      {/* Animated Glow Border Effect */}
       <motion.div
         className={`absolute inset-0 ${config.bgColor} opacity-20 pointer-events-none`}
         animate={{ opacity: [0.1, 0.2, 0.1] }}
         transition={{ duration: 2, repeat: Infinity }}
       />
 
-      {/* Close Button */}
       <button
         onClick={handleDismiss}
         className="absolute top-3 right-3 z-20 p-1.5 rounded-lg bg-white/[0.05] hover:bg-white/[0.1] transition-colors active:scale-95"
@@ -88,7 +112,6 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
         <X className="w-4 h-4 text-muted-foreground" />
       </button>
 
-      {/* Header */}
       <div className="flex items-center gap-2 mb-3">
         <motion.div
           animate={{ scale: [1, 1.1, 1] }}
@@ -102,12 +125,10 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
         </span>
       </div>
 
-      {/* Type Label */}
       <p className="font-display text-sm text-foreground tracking-wide mb-3">
         {config.label}
       </p>
 
-      {/* Value Comparison */}
       <div className="flex items-center gap-3 mb-4">
         <span className="font-display text-lg text-muted-foreground line-through">
           {config.formatValue(adjustment.previousValue)}
@@ -123,14 +144,12 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
         </span>
       </div>
 
-      {/* Coach Message */}
       <div className={`${config.bgColor} rounded-xl p-3 mb-4`}>
         <p className="text-foreground/90 text-sm italic leading-relaxed">
           "{adjustment.message}"
         </p>
       </div>
 
-      {/* Acknowledge Button */}
       <motion.button
         whileHover={{ scale: 1.02 }}
         whileTap={{ scale: 0.98 }}

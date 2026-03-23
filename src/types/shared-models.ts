@@ -73,7 +73,7 @@ export interface CoachStory {
 export interface CoachAdjustment {
   id: string;
   athleteId: string;
-  type: "intensity" | "calories" | "volume";
+  type: string;
   value: number;
   previousValue: number;
   message: string;
