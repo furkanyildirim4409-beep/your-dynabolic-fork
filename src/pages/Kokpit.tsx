@@ -283,7 +283,7 @@ const Kokpit = () => {
 
       {/* ========== TODAY'S NUTRITION (REAL DATA) ========== */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.4 }}>
-        {dietLoading || logsLoading ? (
+        {dietLoading || foodsLoading ? (
           <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5 space-y-3">
             <Skeleton className="h-4 w-40" />
             <Skeleton className="h-3 w-full" />
