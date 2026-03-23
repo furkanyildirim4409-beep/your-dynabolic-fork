@@ -64,7 +64,7 @@ const Kokpit = () => {
   const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
-  const [selectedBiometric, setSelectedBiometric] = useState<BiometricType | null>(null);
+  
   const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
   const [acknowledgedAdjustments, setAcknowledgedAdjustments] = useState<string[]>(() => {
     const stored = localStorage.getItem("acknowledgedAdjustments");
