@@ -85,9 +85,10 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
+  const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
-  const [existingCheckin, setExistingCheckin] = useState<{ id: string; values: Record<SliderKey, number>; notes: string } | null>(null);
+  const [existingCheckin, setExistingCheckin] = useState<{ id: string; values: Record<SliderKey, number>; notes: string; sleepHours: number | null } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
 
   const loadTodayCheckin = useCallback(async () => {
