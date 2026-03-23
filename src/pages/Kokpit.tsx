@@ -246,7 +246,7 @@ const Kokpit = () => {
 
       {/* Performance Ring */}
       <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.2 }}>
-        <PerformanceRing score={85} label="HAZIRSIN" sublabel="Yüksek yoğunluklu antrenman için uygun" />
+        <PerformanceRing />
       </motion.div>
 
       {/* Streak & Tier Widget */}
