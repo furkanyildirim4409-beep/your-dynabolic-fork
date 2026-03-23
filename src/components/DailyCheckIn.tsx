@@ -10,6 +10,7 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
+import { useXPEngine } from "@/hooks/useXPEngine";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -86,6 +87,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
   const { updateStreak } = useStreakTracking();
+  const { awardXP } = useXPEngine();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
@@ -189,6 +191,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         triggerAchievement("daily_checkin");
         await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
         await updateStreak();
+        await awardXP(50);
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 

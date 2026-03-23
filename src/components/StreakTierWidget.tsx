@@ -1,13 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Crown, ChevronRight, Trophy, Dumbbell, Users, Sparkles } from "lucide-react";
+import { Flame, ChevronRight, Trophy, Dumbbell, Users, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
-import { 
-  getCurrentTier, 
-  getNextTier, 
-  getTierProgress,
-  userTiers 
-} from "@/lib/gamificationData";
+import { useXPEngine } from "@/hooks/useXPEngine";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import PersonalRecords from "@/components/PersonalRecords";
 import { useAchievements } from "@/hooks/useAchievements";
@@ -21,13 +16,11 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const navigate = useNavigate();
   const { showDemoAchievement } = useAchievements();
   const { currentStreak, longestStreak, isStreakActive } = useStreakTracking();
+  const { levelInfo, currentXP } = useXPEngine();
   const [showPRModal, setShowPRModal] = useState(false);
-  
-  // Use streak data for XP calculation (mock)
-  const currentXP = 875 + (currentStreak * 10);
-  const currentTier = getCurrentTier(currentXP);
-  const nextTier = getNextTier(currentXP);
-  const tierProgress = getTierProgress(currentXP);
+
+  const CurrentIcon = levelInfo.currentIcon;
+  const NextIcon = levelInfo.nextIcon;
 
   const handleNavigateToAchievements = () => {
     hapticLight();
@@ -53,7 +46,6 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
         className="glass-card p-3 flex items-center justify-between w-full"
       >
         <div className="flex items-center gap-3">
-          {/* Streak */}
           <div className="flex items-center gap-1.5">
             <motion.div
               animate={isStreakActive ? { scale: [1, 1.1, 1] } : {}}
@@ -69,11 +61,10 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
 
           <div className="w-px h-6 bg-white/10" />
 
-          {/* Tier */}
           <div className="flex items-center gap-1.5">
-            <currentTier.icon className={`w-4 h-4 ${currentTier.color}`} />
-            <span className={`font-display text-sm ${currentTier.color}`}>
-              {currentTier.name}
+            <CurrentIcon className={`w-4 h-4 ${levelInfo.currentColor}`} />
+            <span className={`font-display text-sm ${levelInfo.currentColor}`}>
+              {levelInfo.currentLevel}
             </span>
           </div>
         </div>
@@ -128,7 +119,6 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
             >
               Rozetler
             </motion.button>
-            
           </div>
         </div>
 
@@ -167,69 +157,50 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
 
         {/* Tier Progress */}
         <div className="space-y-2">
-        {/* Tier Labels */}
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <currentTier.icon className={`w-5 h-5 ${currentTier.color}`} />
-            <span className={`font-display text-sm ${currentTier.color}`}>
-              {currentTier.name}
-            </span>
-          </div>
-          {nextTier && (
-            <div className="flex items-center gap-1.5">
-              <span className="text-muted-foreground text-xs">Sonraki:</span>
-              <nextTier.icon className={`w-4 h-4 ${nextTier.color}`} />
-              <span className={`text-xs ${nextTier.color}`}>{nextTier.name}</span>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <CurrentIcon className={`w-5 h-5 ${levelInfo.currentColor}`} />
+              <span className={`font-display text-sm ${levelInfo.currentColor}`}>
+                {levelInfo.currentLevel}
+              </span>
             </div>
-          )}
-        </div>
+            {levelInfo.nextLevel && NextIcon && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-muted-foreground text-xs">Sonraki:</span>
+                <NextIcon className={`w-4 h-4 ${levelInfo.nextColor}`} />
+                <span className={`text-xs ${levelInfo.nextColor}`}>{levelInfo.nextLevel}</span>
+              </div>
+            )}
+          </div>
 
-        {/* Progress Bar with Tier Markers */}
-        <div className="relative">
-          <div className="h-3 bg-secondary rounded-full overflow-hidden">
-            <motion.div
-              initial={{ width: 0 }}
-              animate={{ width: `${tierProgress}%` }}
-              transition={{ duration: 1, ease: "easeOut" }}
-              className={`h-full bg-gradient-to-r ${currentTier.gradient} rounded-full relative`}
-            >
-              {/* Animated glow */}
+          <div className="relative">
+            <div className="h-3 bg-secondary rounded-full overflow-hidden">
               <motion.div
-                className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-r from-transparent to-white/30 rounded-full"
-                animate={{ opacity: [0.5, 1, 0.5] }}
-                transition={{ duration: 1.5, repeat: Infinity }}
-              />
-            </motion.div>
-          </div>
-
-          {/* Tier Markers */}
-          <div className="absolute top-0 left-0 right-0 h-3 flex items-center">
-            {userTiers.slice(1).map((tier, index) => {
-              const position = ((tier.minXP - userTiers[0].minXP) / (userTiers[userTiers.length - 1].maxXP - userTiers[0].minXP)) * 100;
-              return (
-                <div
-                  key={tier.name}
-                  className="absolute w-0.5 h-full bg-white/20"
-                  style={{ left: `${Math.min(position, 100)}%` }}
+                initial={{ width: 0 }}
+                animate={{ width: `${levelInfo.progressPercent}%` }}
+                transition={{ duration: 1, ease: "easeOut" }}
+                className={`h-full bg-gradient-to-r ${levelInfo.currentGradient} rounded-full relative`}
+              >
+                <motion.div
+                  className="absolute right-0 top-0 bottom-0 w-4 bg-gradient-to-r from-transparent to-white/30 rounded-full"
+                  animate={{ opacity: [0.5, 1, 0.5] }}
+                  transition={{ duration: 1.5, repeat: Infinity }}
                 />
-              );
-            })}
+              </motion.div>
+            </div>
+          </div>
+
+          <div className="flex items-center justify-between text-xs">
+            <span className="text-primary font-medium">{currentXP} XP</span>
+            {levelInfo.nextLevel && (
+              <span className="text-muted-foreground">
+                {levelInfo.xpRemaining} XP kaldı
+              </span>
+            )}
           </div>
         </div>
-
-        {/* XP Info */}
-        <div className="flex items-center justify-between text-xs">
-          <span className="text-primary font-medium">{currentXP} XP</span>
-          {nextTier && (
-            <span className="text-muted-foreground">
-              {nextTier.minXP - currentXP} XP kaldı
-            </span>
-          )}
-        </div>
-      </div>
       </motion.div>
 
-      {/* PR Modal */}
       <PersonalRecords isOpen={showPRModal} onClose={() => setShowPRModal(false)} />
     </>
   );
