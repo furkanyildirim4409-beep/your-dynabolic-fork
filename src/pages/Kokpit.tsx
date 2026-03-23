@@ -238,9 +238,9 @@ const Kokpit = () => {
       </motion.div>
 
       {/* Coach Adjustment Banner */}
-      {latestAdjustment && (
+      {activeAdjustment && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <CoachAdjustmentBanner adjustment={latestAdjustment} onDismiss={handleDismissAdjustment} />
+          <CoachAdjustmentBanner adjustment={activeAdjustment} onDismiss={() => acknowledgeAdjustment.mutate(activeAdjustment.id)} />
         </motion.div>
       )}
 
