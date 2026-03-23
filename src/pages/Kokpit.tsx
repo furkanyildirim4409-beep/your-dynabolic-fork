@@ -77,6 +77,7 @@ const Kokpit = () => {
   const { dynamicTargets, hasTemplate, isLoading: dietLoading } = useDietPlan();
   const { totals: consumedTotals, isLoading: foodsLoading } = useConsumedFoods();
   const { totalMl: waterMl } = useWaterTracking();
+  const { data: todayCheckin } = useTodayCheckin();
 
   // === STRICT TODAY'S WORKOUT (Ghost Workout Prevention) ===
   const todaysWorkoutState = useMemo(() => {
