@@ -112,13 +112,15 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         stress: row.stress ?? 3,
         digestion: row.digestion ?? 3,
       };
-      setExistingCheckin({ id: row.id, values: loaded, notes: row.notes ?? "" });
+      setExistingCheckin({ id: row.id, values: loaded, notes: row.notes ?? "", sleepHours: row.sleep_hours ?? null });
       setValues(loaded);
+      setSleepHours(row.sleep_hours ?? null);
       setNotes(row.notes ?? "");
       setIsEditMode(true);
     } else {
       setExistingCheckin(null);
       setValues({ ...defaultValues });
+      setSleepHours(null);
       setNotes("");
       setIsEditMode(false);
     }
