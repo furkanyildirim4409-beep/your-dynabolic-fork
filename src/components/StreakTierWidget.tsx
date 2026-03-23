@@ -20,7 +20,7 @@ interface StreakTierWidgetProps {
 const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const navigate = useNavigate();
   const { showDemoAchievement } = useAchievements();
-  const { currentStreak, longestStreak, isStreakActive, simulateStreak, recordWorkout, resetStreak } = useStreakTracking();
+  const { currentStreak, longestStreak, isStreakActive } = useStreakTracking();
   const [showPRModal, setShowPRModal] = useState(false);
   
   // Use streak data for XP calculation (mock)
@@ -42,21 +42,6 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const handleOpenPRModal = () => {
     hapticMedium();
     setShowPRModal(true);
-  };
-
-  const handleDemoAchievement = () => {
-    hapticMedium();
-    showDemoAchievement();
-  };
-
-  const handleSimulateStreak = (days: number) => {
-    hapticMedium();
-    simulateStreak(days);
-  };
-
-  const handleRecordWorkout = () => {
-    hapticMedium();
-    recordWorkout();
   };
 
   if (compact) {
