@@ -78,6 +78,8 @@ export interface CoachAdjustment {
   previousValue: number;
   message: string;
   appliedAt: string;
+  isPercentageOnly?: boolean;
+  percentageChange?: number | null;
 }
 
 export interface Notification {
