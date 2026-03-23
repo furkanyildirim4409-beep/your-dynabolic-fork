@@ -387,26 +387,6 @@ const Kokpit = () => {
         <ChevronRight className="w-4 h-4 text-muted-foreground group-hover:text-primary transition-colors" />
       </motion.button>
 
-      {/* Weekly Activity Chart */}
-      <WeeklyActivityChart />
-
-      {/* Coach Message Teaser */}
-      <motion.button
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.7 }}
-        onClick={() => setShowChat(true)}
-        className="w-full backdrop-blur-xl bg-white/[0.02] border border-white/[0.05] rounded-xl p-4 flex items-center gap-3 text-left"
-      >
-        <div className="w-10 h-10 rounded-full bg-primary/10 flex items-center justify-center flex-shrink-0">
-          <MessageCircle className="w-4 h-4 text-primary" />
-        </div>
-        <div className="flex-1 min-w-0">
-          <p className="text-foreground text-sm font-medium truncate">Koç Serdar</p>
-          <p className="text-muted-foreground text-xs truncate">Bugün bacak antrenmanında tempoyu düşürme...</p>
-        </div>
-        <ChevronRight className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-      </motion.button>
 
       {/* Bento Stats Grid */}
       <motion.div initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.8 }}>
