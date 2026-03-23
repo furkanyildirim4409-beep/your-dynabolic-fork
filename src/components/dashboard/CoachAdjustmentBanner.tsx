@@ -18,15 +18,51 @@ interface AdjustmentConfig {
 function getAdjustmentConfig(type: string): AdjustmentConfig {
   const t = (type || "").toLowerCase();
 
+  if (t.includes("protein")) {
+    return {
+      icon: Beef,
+      label: "PROTEİN GÜNCELLEMESİ",
+      formatValue: (v) => `${v}g`,
+      color: "text-blue-400",
+      bgColor: "bg-blue-500/20",
+      borderColor: "border-blue-500/50",
+      glowColor: "shadow-blue-500/20",
+    };
+  }
+
+  if (t.includes("carb") || t.includes("karb")) {
+    return {
+      icon: Wheat,
+      label: "KARBONHİDRAT GÜNCELLEMESİ",
+      formatValue: (v) => `${v}g`,
+      color: "text-orange-400",
+      bgColor: "bg-orange-500/20",
+      borderColor: "border-orange-500/50",
+      glowColor: "shadow-orange-500/20",
+    };
+  }
+
+  if (t.includes("fat") || t.includes("yağ")) {
+    return {
+      icon: Droplets,
+      label: "YAĞ GÜNCELLEMESİ",
+      formatValue: (v) => `${v}g`,
+      color: "text-yellow-400",
+      bgColor: "bg-yellow-500/20",
+      borderColor: "border-yellow-500/50",
+      glowColor: "shadow-yellow-500/20",
+    };
+  }
+
   if (t.includes("calori") || t.includes("diet") || t.includes("nutri")) {
     return {
       icon: Flame,
       label: "KALORİ GÜNCELLEMESİ",
       formatValue: (v) => `${v} kcal`,
-      color: "text-orange-400",
-      bgColor: "bg-orange-500/20",
-      borderColor: "border-orange-500/50",
-      glowColor: "shadow-orange-500/20",
+      color: "text-red-400",
+      bgColor: "bg-red-500/20",
+      borderColor: "border-red-500/50",
+      glowColor: "shadow-red-500/20",
     };
   }
 
