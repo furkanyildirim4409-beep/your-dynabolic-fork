@@ -1,7 +1,14 @@
 import { motion } from "framer-motion";
-import { wearableMetrics } from "@/lib/mockData";
+import { Flame, Droplets, Battery, Moon } from "lucide-react";
 
-export type BentoStatType = "strain" | "recovery" | "sleep" | "hrv";
+export type BentoStatType = "calories" | "water" | "recovery" | "sleep";
+
+interface BentoStatsProps {
+  onStatClick?: (statType: BentoStatType) => void;
+  realCalories?: number;
+  realWater?: number;
+  calorieTarget?: number;
+}
 
 interface StatCardProps {
   title: string;
@@ -10,35 +17,15 @@ interface StatCardProps {
   badge?: string;
   type: BentoStatType;
   progress?: number;
+  isEmpty?: boolean;
   onClick?: () => void;
+  icon: React.ReactNode;
+  colorClass: string;
+  bgColorClass: string;
+  strokeColor: string;
 }
 
-const StatCard = ({ title, value, subtitle, badge, type, progress, onClick }: StatCardProps) => {
-  const typeConfig = {
-    strain: { 
-      bgColor: "bg-stat-strain",
-      textColor: "text-stat-strain",
-      strokeColor: "hsl(var(--stat-strain))"
-    },
-    recovery: { 
-      bgColor: "bg-primary",
-      textColor: "text-primary",
-      strokeColor: "hsl(var(--primary))"
-    },
-    sleep: { 
-      bgColor: "bg-stat-sleep",
-      textColor: "text-stat-sleep",
-      strokeColor: "hsl(var(--stat-sleep))"
-    },
-    hrv: { 
-      bgColor: "bg-stat-hrv",
-      textColor: "text-stat-hrv",
-      strokeColor: "hsl(var(--stat-hrv))"
-    },
-  };
-
-  const config = typeConfig[type];
-
+const StatCard = ({ title, value, subtitle, badge, type, progress, isEmpty, onClick, icon, colorClass, bgColorClass, strokeColor }: StatCardProps) => {
   return (
     <motion.button
       initial={{ opacity: 0, y: 20 }}
@@ -49,43 +36,60 @@ const StatCard = ({ title, value, subtitle, badge, type, progress, onClick }: St
       className="glass-card-premium p-4 relative overflow-hidden group transition-all duration-300 hover:border-primary/20 text-left w-full"
     >
       {/* Background Glow */}
-      <div className={`absolute -bottom-8 -right-8 w-24 h-24 ${config.bgColor} opacity-10 blur-2xl rounded-full`} />
+      <div className={`absolute -bottom-8 -right-8 w-24 h-24 ${bgColorClass} opacity-10 blur-2xl rounded-full`} />
       
       {/* Title */}
       <p className="text-muted-foreground text-xs font-medium tracking-wider mb-3">
         {title}
       </p>
 
-      {/* Visual based on type */}
-      {type === "strain" && progress !== undefined && (
+      {/* Calories - circular progress */}
+      {type === "calories" && (
         <div className="relative w-16 h-16 mb-3">
           <svg className="w-full h-full transform -rotate-90">
+            <circle cx="32" cy="32" r="28" stroke="hsl(var(--muted))" strokeWidth="6" fill="none" />
             <circle
-              cx="32"
-              cy="32"
-              r="28"
-              stroke="hsl(var(--muted))"
-              strokeWidth="6"
-              fill="none"
-            />
-            <circle
-              cx="32"
-              cy="32"
-              r="28"
-              stroke={config.strokeColor}
-              strokeWidth="6"
-              fill="none"
-              strokeLinecap="round"
-              strokeDasharray={`${2 * Math.PI * 28 * (progress / 21)} ${2 * Math.PI * 28}`}
-              className="drop-shadow-[0_0_6px_hsl(var(--stat-strain))]"
+              cx="32" cy="32" r="28"
+              stroke={isEmpty ? "hsl(var(--muted))" : strokeColor}
+              strokeWidth="6" fill="none" strokeLinecap="round"
+              strokeDasharray={`${2 * Math.PI * 28 * Math.min((progress || 0) / 100, 1)} ${2 * Math.PI * 28}`}
+              className={isEmpty ? "" : "drop-shadow-[0_0_6px_hsl(24_95%_53%/0.5)]"}
             />
           </svg>
           <div className="absolute inset-0 flex items-center justify-center">
-            <span className={`font-display text-lg ${config.textColor}`}>{value}</span>
+            <span className={`font-display text-lg ${isEmpty ? "text-muted-foreground" : colorClass}`}>{value}</span>
           </div>
         </div>
       )}
 
+      {/* Water - fill bars */}
+      {type === "water" && (
+        <div className="mb-3">
+          <div className="flex items-center gap-2 mb-2">
+            {icon}
+            <p className={`font-display text-2xl ${isEmpty ? "text-muted-foreground" : colorClass}`}>{value}</p>
+          </div>
+          {!isEmpty && (
+            <div className="flex items-end gap-1 h-8">
+              {Array.from({ length: 8 }, (_, i) => {
+                const waterLiters = (progress || 0) / 1000;
+                const filled = i < Math.ceil(waterLiters * 3);
+                return (
+                  <motion.div
+                    key={i}
+                    initial={{ height: 0 }}
+                    animate={{ height: filled ? "100%" : "30%" }}
+                    transition={{ delay: 0.05 * i, duration: 0.4 }}
+                    className={`flex-1 rounded-t-sm ${filled ? "bg-cyan-400" : "bg-cyan-400/20"}`}
+                  />
+                );
+              })}
+            </div>
+          )}
+        </div>
+      )}
+
+      {/* Recovery - awaiting data */}
       {type === "recovery" && (
         <div className="mb-3">
           <div className="flex items-end gap-1 h-12">
@@ -93,44 +97,25 @@ const StatCard = ({ title, value, subtitle, badge, type, progress, onClick }: St
               <motion.div
                 key={i}
                 initial={{ height: 0 }}
-                animate={{ height: `${height}%` }}
+                animate={{ height: `${isEmpty ? 20 : height}%` }}
                 transition={{ delay: 0.1 * i, duration: 0.5 }}
-                className={`flex-1 rounded-t-sm ${
-                  i === 6 ? "bg-primary" : "bg-primary/40"
-                }`}
+                className={`flex-1 rounded-t-sm ${isEmpty ? "bg-muted/40" : i === 6 ? "bg-primary" : "bg-primary/40"}`}
               />
             ))}
           </div>
-          <p className={`font-display text-2xl ${config.textColor} mt-2`}>{value}</p>
+          <p className={`font-display text-2xl mt-2 ${isEmpty ? "text-muted-foreground" : "text-primary"}`}>{value}</p>
         </div>
       )}
 
+      {/* Sleep - awaiting data */}
       {type === "sleep" && (
         <div className="mb-2">
-          <p className={`font-display text-2xl ${config.textColor}`}>{value}</p>
+          <p className={`font-display text-2xl ${isEmpty ? "text-muted-foreground" : colorClass}`}>{value}</p>
           {badge && (
-            <span className={`inline-block mt-2 text-[10px] px-2 py-1 rounded-full bg-stat-sleep/20 ${config.textColor}`}>
+            <span className={`inline-block mt-2 text-[10px] px-2 py-1 rounded-full ${isEmpty ? "bg-muted/20 text-muted-foreground" : "bg-violet-500/20 text-violet-400"}`}>
               {badge}
             </span>
           )}
-        </div>
-      )}
-
-      {type === "hrv" && (
-        <div className="mb-2">
-          <p className={`font-display text-2xl ${config.textColor}`}>{value}</p>
-          {/* Mini ECG Line */}
-          <svg className="w-full h-8 mt-2" viewBox="0 0 100 20">
-            <motion.path
-              d="M0,10 L20,10 L25,2 L30,18 L35,10 L50,10 L55,5 L60,15 L65,10 L100,10"
-              fill="none"
-              stroke={config.strokeColor}
-              strokeWidth="1.5"
-              initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1 }}
-              transition={{ duration: 2, repeat: Infinity }}
-            />
-          </svg>
         </div>
       )}
 
@@ -142,55 +127,72 @@ const StatCard = ({ title, value, subtitle, badge, type, progress, onClick }: St
   );
 };
 
-interface BentoStatsProps {
-  onStatClick?: (statType: BentoStatType) => void;
-}
+const BentoStats = ({ onStatClick, realCalories, realWater, calorieTarget }: BentoStatsProps) => {
+  const hasCalories = realCalories !== undefined && realCalories !== null;
+  const hasWater = realWater !== undefined && realWater !== null;
 
-const BentoStats = ({ onStatClick }: BentoStatsProps) => {
-  // Calculate sleep in hours and minutes from wearableMetrics
-  const totalSleepHours = wearableMetrics.sleep.total;
-  const sleepHours = Math.floor(totalSleepHours);
-  const sleepMinutes = Math.round((totalSleepHours - sleepHours) * 60);
-  const sleepDisplay = `${sleepHours}sa ${sleepMinutes}dk`;
+  const calorieProgress = calorieTarget && calorieTarget > 0
+    ? (realCalories || 0) / calorieTarget * 100
+    : 0;
 
-  // Calculate recovery based on HRV (higher HRV = better recovery)
-  const hrvValue = wearableMetrics.hrv.value;
-  const recoveryPercent = Math.min(Math.round((hrvValue / 50) * 100), 100);
+  const waterDisplay = hasWater && realWater > 0
+    ? `${(realWater / 1000).toFixed(1)}L`
+    : "--";
 
-  // Calculate daily strain based on steps (simplified calculation)
-  const stepsPercent = (wearableMetrics.steps.value / wearableMetrics.steps.goal) * 100;
-  const strainScore = Math.min((stepsPercent / 100) * 21, 21).toFixed(1);
+  const calorieDisplay = hasCalories ? `${realCalories}` : "--";
 
   return (
     <div className="grid grid-cols-2 gap-3">
       <StatCard
-        title="GÜNLÜK YÜK"
-        value={strainScore}
-        type="strain"
-        progress={parseFloat(strainScore)}
-        subtitle={`Hedef: ${wearableMetrics.steps.goal.toLocaleString()} adım`}
-        onClick={() => onStatClick?.("strain")}
+        title="KALORİ"
+        value={calorieDisplay}
+        type="calories"
+        progress={calorieProgress}
+        isEmpty={!hasCalories || realCalories === 0}
+        subtitle={calorieTarget ? `Hedef: ${calorieTarget} kcal` : undefined}
+        onClick={() => onStatClick?.("calories")}
+        icon={<Flame className="w-5 h-5 text-orange-400" />}
+        colorClass="text-orange-400"
+        bgColorClass="bg-orange-500"
+        strokeColor="hsl(24, 95%, 53%)"
+      />
+      <StatCard
+        title="SU TÜKETİMİ"
+        value={waterDisplay}
+        type="water"
+        progress={realWater || 0}
+        isEmpty={!hasWater || realWater === 0}
+        subtitle="Günlük hedef: 2.5L"
+        onClick={() => onStatClick?.("water")}
+        icon={<Droplets className="w-5 h-5 text-cyan-400" />}
+        colorClass="text-cyan-400"
+        bgColorClass="bg-cyan-500"
+        strokeColor="hsl(187, 85%, 53%)"
       />
       <StatCard
         title="TOPARLANMA"
-        value={`${recoveryPercent}%`}
+        value="--"
         type="recovery"
-        subtitle={recoveryPercent >= 80 ? "Çok İyi" : recoveryPercent >= 60 ? "İyi" : "Düşük"}
+        isEmpty={true}
+        subtitle="Veri Bekleniyor"
         onClick={() => onStatClick?.("recovery")}
+        icon={<Battery className="w-5 h-5 text-muted-foreground" />}
+        colorClass="text-primary"
+        bgColorClass="bg-primary"
+        strokeColor="hsl(var(--primary))"
       />
       <StatCard
         title="UYKU PUANI"
-        value={sleepDisplay}
+        value="--"
         type="sleep"
-        badge={`Derin Uyku: %${wearableMetrics.sleep.deep}`}
+        isEmpty={true}
+        badge="Veri Bekleniyor"
+        subtitle="Veri Bekleniyor"
         onClick={() => onStatClick?.("sleep")}
-      />
-      <StatCard
-        title="HRV (STRES)"
-        value={`${wearableMetrics.hrv.value}ms`}
-        type="hrv"
-        subtitle={wearableMetrics.hrv.value >= 40 ? "Sinir Sistemi Dengede" : "Stres Yüksek"}
-        onClick={() => onStatClick?.("hrv")}
+        icon={<Moon className="w-5 h-5 text-muted-foreground" />}
+        colorClass="text-violet-400"
+        bgColorClass="bg-violet-500"
+        strokeColor="hsl(270, 60%, 60%)"
       />
     </div>
   );

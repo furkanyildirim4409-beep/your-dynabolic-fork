@@ -386,7 +386,12 @@ const Kokpit = () => {
           <div className="w-1.5 h-1.5 rounded-full bg-primary animate-pulse" />
           <h2 className="text-muted-foreground text-xs uppercase tracking-widest font-medium">Sağlık Verileri</h2>
         </div>
-        <BentoStats onStatClick={(stat) => setSelectedBentoStat(stat)} />
+        <BentoStats 
+          onStatClick={(stat) => setSelectedBentoStat(stat)}
+          realCalories={consumedTotals.calories}
+          realWater={waterMl}
+          calorieTarget={dynamicTargets?.calories}
+        />
       </motion.div>
 
       {/* Modals */}
