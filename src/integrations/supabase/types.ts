@@ -158,6 +158,42 @@ export type Database = {
           },
         ]
       }
+      athlete_badges: {
+        Row: {
+          athlete_id: string
+          badge_id: string
+          earned_at: string | null
+          id: string
+        }
+        Insert: {
+          athlete_id: string
+          badge_id: string
+          earned_at?: string | null
+          id?: string
+        }
+        Update: {
+          athlete_id?: string
+          badge_id?: string
+          earned_at?: string | null
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "athlete_badges_athlete_id_fkey"
+            columns: ["athlete_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "athlete_badges_badge_id_fkey"
+            columns: ["badge_id"]
+            isOneToOne: false
+            referencedRelation: "badges"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       athlete_diet_assignments: {
         Row: {
           assigned_at: string
@@ -236,6 +272,45 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      badges: {
+        Row: {
+          category: string | null
+          condition_type: string | null
+          condition_value: number | null
+          created_at: string | null
+          description: string | null
+          icon_name: string | null
+          id: string
+          name: string
+          tier: string | null
+          xp_reward: number | null
+        }
+        Insert: {
+          category?: string | null
+          condition_type?: string | null
+          condition_value?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          name: string
+          tier?: string | null
+          xp_reward?: number | null
+        }
+        Update: {
+          category?: string | null
+          condition_type?: string | null
+          condition_value?: number | null
+          created_at?: string | null
+          description?: string | null
+          icon_name?: string | null
+          id?: string
+          name?: string
+          tier?: string | null
+          xp_reward?: number | null
+        }
+        Relationships: []
       }
       bio_coin_transactions: {
         Row: {
@@ -344,6 +419,76 @@ export type Database = {
           waist?: number | null
         }
         Relationships: []
+      }
+      challenges: {
+        Row: {
+          challenge_type: string
+          challenger_id: string
+          challenger_value: number | null
+          created_at: string | null
+          end_date: string | null
+          exercise_name: string | null
+          id: string
+          opponent_id: string
+          opponent_value: number | null
+          start_date: string | null
+          status: string | null
+          wager_coins: number | null
+          winner_id: string | null
+        }
+        Insert: {
+          challenge_type: string
+          challenger_id: string
+          challenger_value?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          exercise_name?: string | null
+          id?: string
+          opponent_id: string
+          opponent_value?: number | null
+          start_date?: string | null
+          status?: string | null
+          wager_coins?: number | null
+          winner_id?: string | null
+        }
+        Update: {
+          challenge_type?: string
+          challenger_id?: string
+          challenger_value?: number | null
+          created_at?: string | null
+          end_date?: string | null
+          exercise_name?: string | null
+          id?: string
+          opponent_id?: string
+          opponent_value?: number | null
+          start_date?: string | null
+          status?: string | null
+          wager_coins?: number | null
+          winner_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenges_challenger_id_fkey"
+            columns: ["challenger_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_opponent_id_fkey"
+            columns: ["opponent_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenges_winner_id_fkey"
+            columns: ["winner_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       checkin_edit_logs: {
         Row: {
@@ -1006,7 +1151,9 @@ export type Database = {
           gym_name: string | null
           height_cm: number | null
           id: string
+          last_activity_date: string | null
           level: number | null
+          longest_streak: number | null
           notification_preferences: Json | null
           notification_settings: Json | null
           readiness_score: number | null
@@ -1015,7 +1162,9 @@ export type Database = {
           streak: number | null
           subscription_status: string | null
           subscription_tier: string | null
+          total_volume_kg: number | null
           updated_at: string | null
+          xp: number | null
         }
         Insert: {
           active_program_id?: string | null
@@ -1038,7 +1187,9 @@ export type Database = {
           gym_name?: string | null
           height_cm?: number | null
           id: string
+          last_activity_date?: string | null
           level?: number | null
+          longest_streak?: number | null
           notification_preferences?: Json | null
           notification_settings?: Json | null
           readiness_score?: number | null
@@ -1047,7 +1198,9 @@ export type Database = {
           streak?: number | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          total_volume_kg?: number | null
           updated_at?: string | null
+          xp?: number | null
         }
         Update: {
           active_program_id?: string | null
@@ -1070,7 +1223,9 @@ export type Database = {
           gym_name?: string | null
           height_cm?: number | null
           id?: string
+          last_activity_date?: string | null
           level?: number | null
+          longest_streak?: number | null
           notification_preferences?: Json | null
           notification_settings?: Json | null
           readiness_score?: number | null
@@ -1079,7 +1234,9 @@ export type Database = {
           streak?: number | null
           subscription_status?: string | null
           subscription_tier?: string | null
+          total_volume_kg?: number | null
           updated_at?: string | null
+          xp?: number | null
         }
         Relationships: [
           {
