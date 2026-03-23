@@ -72,7 +72,7 @@ const Kokpit = () => {
   // === REAL DATA HOOKS ===
   const { data: workouts, isLoading: workoutsLoading } = useAssignedWorkouts();
   const { dynamicTargets, hasTemplate, isLoading: dietLoading } = useDietPlan();
-  const { logs: nutritionLogs, isLoading: logsLoading } = useNutritionLogs();
+  const { totals: consumedTotals, isLoading: foodsLoading } = useConsumedFoods();
   const { totalMl: waterMl } = useWaterTracking();
 
   // === STRICT TODAY'S WORKOUT (Ghost Workout Prevention) ===
