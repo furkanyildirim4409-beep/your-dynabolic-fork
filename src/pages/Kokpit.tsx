@@ -33,7 +33,7 @@ import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { assignedCoach, notifications, getLatestAdjustment, wearableMetrics } from "@/lib/mockData";
+import { assignedCoach, notifications, getLatestAdjustment } from "@/lib/mockData";
 import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
