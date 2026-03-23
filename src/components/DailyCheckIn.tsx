@@ -96,7 +96,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
     const today = new Date().toISOString().split("T")[0];
     const { data } = await supabase
       .from("daily_checkins")
-      .select("id, mood, sleep, soreness, stress, digestion, notes")
+      .select("id, mood, sleep, soreness, stress, digestion, notes, sleep_hours")
       .eq("user_id", user.id)
       .gte("created_at", `${today}T00:00:00`)
       .lt("created_at", `${today}T23:59:59.999`)
