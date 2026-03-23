@@ -67,13 +67,9 @@ const Kokpit = () => {
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
   
   const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
-  const [acknowledgedAdjustments, setAcknowledgedAdjustments] = useState<string[]>(() => {
-    const stored = localStorage.getItem("acknowledgedAdjustments");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  // Get the latest unacknowledged coach adjustment
-  const latestAdjustment = getLatestAdjustment("user-001", acknowledgedAdjustments);
+  // === REAL COACH ADJUSTMENT DATA ===
+  const { data: activeAdjustment } = useActiveAdjustment();
+  const acknowledgeAdjustment = useAcknowledgeAdjustment();
 
   // === REAL DATA HOOKS ===
   const { data: workouts, isLoading: workoutsLoading } = useAssignedWorkouts();
