@@ -346,6 +346,7 @@ const Kokpit = () => {
         onStatClick={(stat) => setSelectedStat(stat)}
         caloriesValue={caloriesDisplay}
         waterValue={waterDisplay}
+        sleepValue={sleepDisplay}
       />
 
       {/* Daily Check-In Trigger Button */}
