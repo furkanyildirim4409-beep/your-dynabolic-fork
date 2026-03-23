@@ -9,6 +9,7 @@ import { toast } from "sonner";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
+import { useStreakTracking } from "@/hooks/useStreakTracking";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
@@ -84,6 +85,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { triggerAchievement } = useAchievements();
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
+  const { updateStreak } = useStreakTracking();
   const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
@@ -186,6 +188,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         if (checkinError) throw checkinError;
         triggerAchievement("daily_checkin");
         await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
+        await updateStreak();
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 

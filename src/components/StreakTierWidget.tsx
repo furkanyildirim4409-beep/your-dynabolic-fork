@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Crown, ChevronRight, Trophy, Dumbbell, Users, Sparkles, Zap } from "lucide-react";
+import { Flame, Crown, ChevronRight, Trophy, Dumbbell, Users, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { 
   getCurrentTier, 
@@ -12,14 +12,6 @@ import { hapticLight, hapticMedium } from "@/lib/haptics";
 import PersonalRecords from "@/components/PersonalRecords";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 
 interface StreakTierWidgetProps {
   compact?: boolean;
@@ -28,7 +20,7 @@ interface StreakTierWidgetProps {
 const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const navigate = useNavigate();
   const { showDemoAchievement } = useAchievements();
-  const { currentStreak, longestStreak, isStreakActive, simulateStreak, recordWorkout, resetStreak } = useStreakTracking();
+  const { currentStreak, longestStreak, isStreakActive } = useStreakTracking();
   const [showPRModal, setShowPRModal] = useState(false);
   
   // Use streak data for XP calculation (mock)
@@ -50,21 +42,6 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const handleOpenPRModal = () => {
     hapticMedium();
     setShowPRModal(true);
-  };
-
-  const handleDemoAchievement = () => {
-    hapticMedium();
-    showDemoAchievement();
-  };
-
-  const handleSimulateStreak = (days: number) => {
-    hapticMedium();
-    simulateStreak(days);
-  };
-
-  const handleRecordWorkout = () => {
-    hapticMedium();
-    recordWorkout();
   };
 
   if (compact) {
@@ -152,53 +129,6 @@ const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
               Rozetler
             </motion.button>
             
-            {/* Streak Test Dropdown */}
-            <DropdownMenu>
-              <DropdownMenuTrigger asChild>
-                <motion.button
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="px-2 py-1 rounded-full bg-orange-500/20 text-orange-400 text-xs font-medium flex items-center gap-1"
-                >
-                  <Zap className="w-3 h-3" />
-                  Test
-                </motion.button>
-              </DropdownMenuTrigger>
-              <DropdownMenuContent align="end" className="w-48 bg-background border-white/10">
-                <DropdownMenuLabel className="text-muted-foreground text-xs">
-                  Seri Simülasyonu
-                </DropdownMenuLabel>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem 
-                  onClick={handleRecordWorkout}
-                  className="text-foreground cursor-pointer"
-                >
-                  <Flame className="w-4 h-4 mr-2 text-primary" />
-                  +1 Gün Ekle
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleSimulateStreak(7)}
-                  className="text-foreground cursor-pointer"
-                >
-                  <Flame className="w-4 h-4 mr-2 text-orange-400" />
-                  7 Gün Serisi (Rozet)
-                </DropdownMenuItem>
-                <DropdownMenuItem 
-                  onClick={() => handleSimulateStreak(30)}
-                  className="text-foreground cursor-pointer"
-                >
-                  <Trophy className="w-4 h-4 mr-2 text-purple-400" />
-                  30 Gün Serisi (Rozet)
-                </DropdownMenuItem>
-                <DropdownMenuSeparator className="bg-white/10" />
-                <DropdownMenuItem 
-                  onClick={() => resetStreak()}
-                  className="text-destructive cursor-pointer"
-                >
-                  Seriyi Sıfırla
-                </DropdownMenuItem>
-              </DropdownMenuContent>
-            </DropdownMenu>
           </div>
         </div>
 
