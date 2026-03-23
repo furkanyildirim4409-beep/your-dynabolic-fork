@@ -40,7 +40,7 @@ import { useScrollDirection } from "@/hooks/useScrollDirection";
 import { useUnreadMessages } from "@/hooks/useUnreadMessages";
 import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { useDietPlan } from "@/hooks/useDietPlan";
-import { useNutritionLogs } from "@/hooks/useNutritionLogs";
+import { useConsumedFoods } from "@/hooks/useConsumedFoods";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
 
 // Map Turkish day names to JS getDay() (0=Sun)
