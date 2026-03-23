@@ -33,7 +33,8 @@ import DisputeNotificationBell from "@/components/DisputeNotificationBell";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Progress } from "@/components/ui/progress";
-import { assignedCoach, notifications, getLatestAdjustment } from "@/lib/mockData";
+import { assignedCoach, notifications } from "@/lib/mockData";
+import { useActiveAdjustment, useAcknowledgeAdjustment } from "@/hooks/useAthleteAdjustments";
 import { useAuth } from "@/context/AuthContext";
 import { usePaymentReminders } from "@/hooks/usePaymentReminders";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
@@ -66,13 +67,9 @@ const Kokpit = () => {
   const [selectedBentoStat, setSelectedBentoStat] = useState<BentoStatType | null>(null);
   
   const [showDailyCheckIn, setShowDailyCheckIn] = useState(false);
-  const [acknowledgedAdjustments, setAcknowledgedAdjustments] = useState<string[]>(() => {
-    const stored = localStorage.getItem("acknowledgedAdjustments");
-    return stored ? JSON.parse(stored) : [];
-  });
-
-  // Get the latest unacknowledged coach adjustment
-  const latestAdjustment = getLatestAdjustment("user-001", acknowledgedAdjustments);
+  // === REAL COACH ADJUSTMENT DATA ===
+  const { data: activeAdjustment } = useActiveAdjustment();
+  const acknowledgeAdjustment = useAcknowledgeAdjustment();
 
   // === REAL DATA HOOKS ===
   const { data: workouts, isLoading: workoutsLoading } = useAssignedWorkouts();
@@ -148,11 +145,6 @@ const Kokpit = () => {
     return () => window.removeEventListener('openCoachChat', handleOpenCoachChat);
   }, []);
 
-  const handleDismissAdjustment = (adjustmentId: string) => {
-    const updated = [...acknowledgedAdjustments, adjustmentId];
-    setAcknowledgedAdjustments(updated);
-    localStorage.setItem("acknowledgedAdjustments", JSON.stringify(updated));
-  };
 
   const unreadCount = notifications.filter((n) => !n.read && !readNotifications[n.id]).length;
 
@@ -241,9 +233,9 @@ const Kokpit = () => {
       </motion.div>
 
       {/* Coach Adjustment Banner */}
-      {latestAdjustment && (
+      {activeAdjustment && (
         <motion.div initial={{ opacity: 0, y: -10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.05 }}>
-          <CoachAdjustmentBanner adjustment={latestAdjustment} onDismiss={handleDismissAdjustment} />
+          <CoachAdjustmentBanner adjustment={activeAdjustment} onDismiss={() => acknowledgeAdjustment.mutate(activeAdjustment.id)} />
         </motion.div>
       )}
 
