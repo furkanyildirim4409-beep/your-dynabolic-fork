@@ -10,6 +10,7 @@ import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
+import { useXPEngine } from "@/hooks/useXPEngine";
 import { supabase } from "@/integrations/supabase/client";
 import {
   Dialog,
