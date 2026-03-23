@@ -43,6 +43,7 @@ import { useAssignedWorkouts } from "@/hooks/useAssignedWorkouts";
 import { useDietPlan } from "@/hooks/useDietPlan";
 import { useConsumedFoods } from "@/hooks/useConsumedFoods";
 import { useWaterTracking } from "@/hooks/useWaterTracking";
+import { useTodayCheckin } from "@/hooks/useTodayCheckin";
 
 // Map Turkish day names to JS getDay() (0=Sun)
 const DOW_MAP: Record<string, number> = {
@@ -76,6 +77,7 @@ const Kokpit = () => {
   const { dynamicTargets, hasTemplate, isLoading: dietLoading } = useDietPlan();
   const { totals: consumedTotals, isLoading: foodsLoading } = useConsumedFoods();
   const { totalMl: waterMl } = useWaterTracking();
+  const { data: todayCheckin } = useTodayCheckin();
 
   // === STRICT TODAY'S WORKOUT (Ghost Workout Prevention) ===
   const todaysWorkoutState = useMemo(() => {
@@ -154,6 +156,7 @@ const Kokpit = () => {
     ? consumedTotals.calories.toLocaleString("tr-TR")
     : "--";
   const waterDisplay = waterMl > 0 ? (waterMl / 1000).toFixed(1) : "--";
+  const sleepDisplay = todayCheckin?.sleep_hours ? `${todayCheckin.sleep_hours}` : "--";
 
   return (
     <div className="space-y-6 pb-24">
@@ -343,6 +346,7 @@ const Kokpit = () => {
         onStatClick={(stat) => setSelectedStat(stat)}
         caloriesValue={caloriesDisplay}
         waterValue={waterDisplay}
+        sleepValue={sleepDisplay}
       />
 
       {/* Daily Check-In Trigger Button */}
