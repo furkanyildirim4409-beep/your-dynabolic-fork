@@ -61,7 +61,7 @@ const Kokpit = () => {
   const { profile } = useAuth();
   const [showNotifications, setShowNotifications] = useState(false);
   const [showChat, setShowChat] = useState(false);
-  const [readNotifications, setReadNotifications] = useState<Record<string, boolean>>({});
+  const { notifications, unreadCount, markAsRead } = useAthleteNotifications();
   const [selectedStat, setSelectedStat] = useState<StatType | null>(null);
   
   
