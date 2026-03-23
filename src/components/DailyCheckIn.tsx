@@ -188,6 +188,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         if (checkinError) throw checkinError;
         triggerAchievement("daily_checkin");
         await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
+        await updateStreak();
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 

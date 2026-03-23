@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Flame, Crown, ChevronRight, Trophy, Dumbbell, Users, Sparkles, Zap } from "lucide-react";
+import { Flame, Crown, ChevronRight, Trophy, Dumbbell, Users, Sparkles } from "lucide-react";
 import { useNavigate } from "react-router-dom";
 import { 
   getCurrentTier, 
@@ -12,14 +12,6 @@ import { hapticLight, hapticMedium } from "@/lib/haptics";
 import PersonalRecords from "@/components/PersonalRecords";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
-import {
-  DropdownMenu,
-  DropdownMenuContent,
-  DropdownMenuItem,
-  DropdownMenuTrigger,
-  DropdownMenuSeparator,
-  DropdownMenuLabel,
-} from "@/components/ui/dropdown-menu";
 
 interface StreakTierWidgetProps {
   compact?: boolean;
