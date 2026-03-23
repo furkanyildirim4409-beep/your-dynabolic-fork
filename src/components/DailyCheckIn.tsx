@@ -190,6 +190,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         triggerAchievement("daily_checkin");
         await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
         await updateStreak();
+        await awardXP(50);
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 
