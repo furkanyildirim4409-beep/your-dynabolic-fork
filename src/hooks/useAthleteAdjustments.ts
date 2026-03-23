@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
+import { toast } from "@/hooks/use-toast";
 import type { CoachAdjustment } from "@/types/shared-models";
 
 export function useActiveAdjustment() {
@@ -26,12 +27,11 @@ export function useActiveAdjustment() {
       if (!data) return null;
 
       const meta = (data.metadata as Record<string, any>) || {};
-      const moduleType = data.module_type as "calories" | "intensity" | "volume";
 
       return {
         id: data.id,
         athleteId: data.athlete_id,
-        type: moduleType,
+        type: data.module_type,
         value: meta.value ?? data.change_percentage,
         previousValue: meta.previousValue ?? 0,
         message: data.message,
@@ -47,14 +47,29 @@ export function useAcknowledgeAdjustment() {
 
   return useMutation({
     mutationFn: async (adjustmentId: string) => {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("mutation_logs")
         .update({ is_acknowledged: true } as any)
-        .eq("id", adjustmentId);
+        .eq("id", adjustmentId)
+        .select()
+        .maybeSingle();
 
       if (error) throw error;
+      return data;
     },
-    onSuccess: () => {
+    onMutate: async () => {
+      await queryClient.cancelQueries({ queryKey: ["active-adjustment", user?.id] });
+      queryClient.setQueryData(["active-adjustment", user?.id], null);
+    },
+    onError: (err: any) => {
+      toast({
+        title: "Hata",
+        description: "İşlem kaydedilemedi: " + (err?.message || "Bilinmeyen hata"),
+        variant: "destructive",
+      });
+      queryClient.invalidateQueries({ queryKey: ["active-adjustment", user?.id] });
+    },
+    onSettled: () => {
       queryClient.invalidateQueries({ queryKey: ["active-adjustment", user?.id] });
     },
   });
