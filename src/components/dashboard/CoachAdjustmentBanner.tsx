@@ -131,8 +131,10 @@ const CoachAdjustmentBanner = ({ adjustment, currentTargets, onDismiss }: CoachA
       }
 
       if (targetKey && currentTargets[targetKey] !== undefined) {
-        prev = currentTargets[targetKey];
-        next = Math.round(prev * (1 + adjustment.percentageChange / 100));
+        const currentVal = currentTargets[targetKey];
+        next = currentVal; // DB already holds the updated value
+        const scaleFactor = 1 + (adjustment.percentageChange / 100);
+        prev = Math.round(currentVal / scaleFactor); // Reverse-engineer the old value
       } else {
         // No matching target (e.g. intensity/volume) — show raw percentage
         prev = 0;
