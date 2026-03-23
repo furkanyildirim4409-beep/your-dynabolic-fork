@@ -145,11 +145,6 @@ const Kokpit = () => {
     return () => window.removeEventListener('openCoachChat', handleOpenCoachChat);
   }, []);
 
-  const handleDismissAdjustment = (adjustmentId: string) => {
-    const updated = [...acknowledgedAdjustments, adjustmentId];
-    setAcknowledgedAdjustments(updated);
-    localStorage.setItem("acknowledgedAdjustments", JSON.stringify(updated));
-  };
 
   const unreadCount = notifications.filter((n) => !n.read && !readNotifications[n.id]).length;
 
