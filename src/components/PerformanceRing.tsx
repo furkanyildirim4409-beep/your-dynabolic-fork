@@ -1,45 +1,80 @@
+import { useState, useEffect } from "react";
 import { motion } from "framer-motion";
+import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 
-interface PerformanceRingProps {
-  score: number;
-  label?: string;
-  sublabel?: string;
+function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }): number {
+  return Math.round(
+    (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((5 - v.soreness) / 5) * 20 + ((5 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
+  );
 }
 
-const PerformanceRing = ({ score, label = "Hazır Oluşluk", sublabel = "Bugün için optimal" }: PerformanceRingProps) => {
-  const circumference = 2 * Math.PI * 120; // radius = 120
-  const strokeDashoffset = circumference - (score / 100) * circumference;
+function getScoreTheme(score: number) {
+  if (score >= 80) return { h: 142, s: 71, l: 45, label: "HAZIRSIN", sublabel: "Yüksek yoğunluklu antrenman için uygun" };
+  if (score >= 60) return { h: 45, s: 93, l: 47, label: "ORTA SEVİYE", sublabel: "Orta yoğunlukta antrenman önerilir" };
+  return { h: 0, s: 84, l: 60, label: "DİNLEN", sublabel: "Bugün hafif aktivite veya dinlenme önerilir" };
+}
+
+const PerformanceRing = () => {
+  const { user } = useAuth();
+  const [score, setScore] = useState<number | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    if (!user?.id) { setLoading(false); return; }
+    const today = new Date().toISOString().split("T")[0];
+    supabase
+      .from("daily_checkins")
+      .select("mood, sleep, soreness, stress, digestion")
+      .eq("user_id", user.id)
+      .gte("created_at", `${today}T00:00:00`)
+      .lt("created_at", `${today}T23:59:59.999`)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .then(({ data }) => {
+        if (data && data.length > 0) {
+          const r = data[0];
+          setScore(calculateReadiness({
+            mood: r.mood ?? 3, sleep: Number(r.sleep) ?? 3,
+            soreness: r.soreness ?? 3, stress: r.stress ?? 3, digestion: r.digestion ?? 3,
+          }));
+        }
+        setLoading(false);
+      });
+  }, [user?.id]);
+
+  const circumference = 2 * Math.PI * 120;
+  const hasData = score !== null;
+  const theme = hasData ? getScoreTheme(score) : null;
+  const strokeDashoffset = hasData ? circumference - (score / 100) * circumference : circumference;
+  const displayScore = hasData ? String(score) : "--";
+  const label = hasData ? theme!.label : "VERİ BEKLENİYOR";
+  const sublabel = hasData ? theme!.sublabel : "Günlük check-in'ini tamamla";
+
+  const strokeColor = hasData ? `hsl(${theme!.h}, ${theme!.s}%, ${theme!.l}%)` : "hsl(var(--muted-foreground))";
+  const glowColor = strokeColor;
+
+  if (loading) {
+    return (
+      <div className="flex flex-col items-center justify-center py-8">
+        <div className="w-64 h-64 rounded-full bg-muted/10 animate-pulse" />
+      </div>
+    );
+  }
 
   return (
     <div className="relative flex flex-col items-center justify-center py-8">
-      {/* Main Ring Container */}
       <div className="relative w-64 h-64">
-        {/* Background Ring */}
-        <svg
-          className="absolute inset-0 w-full h-full -rotate-90"
-          viewBox="0 0 256 256"
-        >
-          <circle
-            cx="128"
-            cy="128"
-            r="120"
-            fill="none"
-            stroke="hsl(var(--muted))"
-            strokeWidth="4"
-            opacity="0.3"
-          />
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 256 256">
+          <circle cx="128" cy="128" r="120" fill="none" stroke="hsl(var(--muted))" strokeWidth="4" opacity="0.3" />
         </svg>
 
-        {/* Animated Progress Ring */}
-        <svg
-          className="absolute inset-0 w-full h-full -rotate-90"
-          viewBox="0 0 256 256"
-        >
+        <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 256 256">
           <defs>
             <linearGradient id="ringGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-              <stop offset="0%" stopColor="hsl(68, 100%, 50%)" />
-              <stop offset="50%" stopColor="hsl(68, 100%, 60%)" />
-              <stop offset="100%" stopColor="hsl(68, 100%, 45%)" />
+              <stop offset="0%" stopColor={strokeColor} />
+              <stop offset="50%" stopColor={hasData ? `hsl(${theme!.h}, ${theme!.s}%, ${theme!.l + 10}%)` : strokeColor} />
+              <stop offset="100%" stopColor={hasData ? `hsl(${theme!.h}, ${theme!.s}%, ${theme!.l - 5}%)` : strokeColor} />
             </linearGradient>
             <filter id="glow">
               <feGaussianBlur stdDeviation="4" result="coloredBlur" />
@@ -49,68 +84,42 @@ const PerformanceRing = ({ score, label = "Hazır Oluşluk", sublabel = "Bugün 
               </feMerge>
             </filter>
           </defs>
-          
-          {/* Glow layer */}
-          <motion.circle
-            cx="128"
-            cy="128"
-            r="120"
-            fill="none"
-            stroke="hsl(68, 100%, 50%)"
-            strokeWidth="6"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
-            filter="url(#glow)"
-            opacity="0.5"
-          />
-          
-          {/* Main progress ring */}
-          <motion.circle
-            cx="128"
-            cy="128"
-            r="120"
-            fill="none"
-            stroke="url(#ringGradient)"
-            strokeWidth="4"
-            strokeLinecap="round"
-            strokeDasharray={circumference}
-            initial={{ strokeDashoffset: circumference }}
-            animate={{ strokeDashoffset }}
-            transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
-          />
+
+          {hasData && (
+            <>
+              <motion.circle
+                cx="128" cy="128" r="120" fill="none" stroke={glowColor} strokeWidth="6" strokeLinecap="round"
+                strokeDasharray={circumference} initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset }}
+                transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }} filter="url(#glow)" opacity="0.5"
+              />
+              <motion.circle
+                cx="128" cy="128" r="120" fill="none" stroke="url(#ringGradient)" strokeWidth="4" strokeLinecap="round"
+                strokeDasharray={circumference} initial={{ strokeDashoffset: circumference }} animate={{ strokeDashoffset }}
+                transition={{ duration: 1.5, ease: "easeOut", delay: 0.3 }}
+              />
+            </>
+          )}
         </svg>
 
-        {/* Center Content */}
         <div className="absolute inset-0 flex flex-col items-center justify-center">
           <motion.span
-            initial={{ opacity: 0, scale: 0.5 }}
-            animate={{ opacity: 1, scale: 1 }}
+            initial={{ opacity: 0, scale: 0.5 }} animate={{ opacity: 1, scale: 1 }}
             transition={{ duration: 0.5, delay: 0.8 }}
-            className="font-display text-7xl font-extrabold text-foreground tracking-tight"
+            className={`font-display text-7xl font-extrabold tracking-tight ${hasData ? "text-foreground" : "text-muted-foreground"}`}
           >
-            {score}
+            {displayScore}
           </motion.span>
           <motion.span
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
+            initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.4, delay: 1 }}
-            className="text-primary font-medium text-sm uppercase tracking-widest mt-1"
+            className={`font-medium text-sm uppercase tracking-widest mt-1 ${hasData ? "text-primary" : "text-muted-foreground"}`}
           >
             {label}
           </motion.span>
         </div>
       </div>
 
-      {/* Sublabel */}
-      <motion.p
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 1.2 }}
-        className="text-muted-foreground text-sm mt-4"
-      >
+      <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="text-muted-foreground text-sm mt-4">
         {sublabel}
       </motion.p>
     </div>
