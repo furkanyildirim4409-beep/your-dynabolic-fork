@@ -765,6 +765,7 @@ export type Database = {
           coach_id: string
           created_at: string
           id: string
+          is_acknowledged: boolean
           message: string
           metadata: Json | null
           module_type: string
@@ -775,6 +776,7 @@ export type Database = {
           coach_id: string
           created_at?: string
           id?: string
+          is_acknowledged?: boolean
           message: string
           metadata?: Json | null
           module_type: string
@@ -785,6 +787,7 @@ export type Database = {
           coach_id?: string
           created_at?: string
           id?: string
+          is_acknowledged?: boolean
           message?: string
           metadata?: Json | null
           module_type?: string

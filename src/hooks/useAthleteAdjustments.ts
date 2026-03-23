@@ -6,10 +6,10 @@ import type { CoachAdjustment } from "@/types/shared-models";
 export function useActiveAdjustment() {
   const { user } = useAuth();
 
-  return useQuery({
+  return useQuery<CoachAdjustment | null>({
     queryKey: ["active-adjustment", user?.id],
     enabled: !!user?.id,
-    queryFn: async (): Promise<CoachAdjustment | null> => {
+    queryFn: async () => {
       const { data, error } = await supabase
         .from("mutation_logs")
         .select("id, module_type, change_percentage, message, metadata, created_at, athlete_id")

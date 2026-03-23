@@ -1,0 +1,1 @@
+ALTER TABLE public.mutation_logs ADD COLUMN is_acknowledged boolean NOT NULL DEFAULT false; CREATE POLICY "Athletes can acknowledge own mutation logs" ON public.mutation_logs FOR UPDATE TO authenticated USING (athlete_id = auth.uid()) WITH CHECK (athlete_id = auth.uid());
