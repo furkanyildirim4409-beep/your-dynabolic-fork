@@ -133,10 +133,8 @@ const Kokpit = () => {
   }, []);
 
 
-  const unreadCount = notifications.filter((n) => !n.read && !readNotifications[n.id]).length;
-
-  const handleNotificationClick = (notificationId: string, coachId?: string) => {
-    setReadNotifications((prev) => ({ ...prev, [notificationId]: true }));
+  const handleNotificationClick = (notificationId: string, coachId?: string | null) => {
+    markAsRead.mutate(notificationId);
     if (coachId) {
       setShowNotifications(false);
       navigate(`/coach/${coachId}`);
