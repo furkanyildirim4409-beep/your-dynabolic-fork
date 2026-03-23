@@ -200,16 +200,16 @@ const Kokpit = () => {
           </motion.button>
 
           <motion.button
-            onClick={() => navigate(`/coach/${assignedCoach.id}`)}
+            onClick={() => coachProfile?.id && navigate(`/coach/${coachProfile.id}`)}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
             className="relative"
           >
             <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary/80 to-primary">
               <Avatar className="w-9 h-9">
-                <AvatarImage src={assignedCoach.avatar} alt={assignedCoach.name} className="object-cover" />
+                <AvatarImage src={coachProfile?.avatar_url || ""} alt={coachProfile?.full_name || "Koç"} className="object-cover" />
                 <AvatarFallback className="bg-secondary text-foreground text-xs font-medium">
-                  {assignedCoach.name.charAt(4)}
+                  {(coachProfile?.full_name || "K").charAt(0).toUpperCase()}
                 </AvatarFallback>
               </Avatar>
             </div>
