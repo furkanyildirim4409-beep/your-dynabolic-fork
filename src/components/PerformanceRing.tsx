@@ -3,10 +3,15 @@ import { motion } from "framer-motion";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
-function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }): number {
-  return Math.round(
+function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }, sleepHours?: number | null): number {
+  let base = Math.round(
     (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((5 - v.soreness) / 5) * 20 + ((5 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
   );
+  // Apply sleep duration penalty if available
+  if (sleepHours != null && sleepHours < 7) {
+    base -= Math.round((7 - sleepHours) * 3);
+  }
+  return Math.max(0, Math.min(100, base));
 }
 
 function getScoreTheme(score: number) {
