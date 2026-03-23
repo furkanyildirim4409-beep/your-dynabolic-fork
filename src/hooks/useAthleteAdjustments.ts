@@ -28,14 +28,20 @@ export function useActiveAdjustment() {
 
       const meta = (data.metadata as Record<string, any>) || {};
 
+      const prevVal = meta.previous_value ?? meta.previousValue;
+      const newVal = meta.new_value ?? meta.value;
+      const isPercentageOnly = prevVal === undefined && newVal === undefined;
+
       return {
         id: data.id,
         athleteId: data.athlete_id,
         type: data.module_type,
-        value: meta.value ?? data.change_percentage,
-        previousValue: meta.previousValue ?? 0,
+        value: newVal ?? 0,
+        previousValue: prevVal ?? 0,
         message: data.message,
         appliedAt: data.created_at,
+        isPercentageOnly,
+        percentageChange: isPercentageOnly ? data.change_percentage : null,
       };
     },
   });

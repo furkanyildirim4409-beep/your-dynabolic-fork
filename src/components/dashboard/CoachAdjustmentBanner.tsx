@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { motion } from "framer-motion";
 import { Flame, Zap, BarChart3, ChevronRight, X, Activity, LucideIcon } from "lucide-react";
 import { toast } from "@/hooks/use-toast";
@@ -54,7 +54,6 @@ function getAdjustmentConfig(type: string): AdjustmentConfig {
     };
   }
 
-  // Universal fallback
   return {
     icon: Activity,
     label: "GÜNCELLEME",
@@ -68,11 +67,45 @@ function getAdjustmentConfig(type: string): AdjustmentConfig {
 
 interface CoachAdjustmentBannerProps {
   adjustment: CoachAdjustment | null;
+  currentTargets?: { calories: number; protein: number; carbs: number; fat: number } | null;
   onDismiss: (adjustmentId: string) => void;
 }
 
-const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerProps) => {
+const CoachAdjustmentBanner = ({ adjustment, currentTargets, onDismiss }: CoachAdjustmentBannerProps) => {
   const [isVisible, setIsVisible] = useState(true);
+
+  const { displayPrev, displayNew } = useMemo(() => {
+    if (!adjustment) return { displayPrev: 0, displayNew: 0 };
+
+    let prev = adjustment.previousValue;
+    let next = adjustment.value;
+
+    if (adjustment.isPercentageOnly && currentTargets && adjustment.percentageChange) {
+      const typeStr = (adjustment.type || "").toLowerCase();
+      let targetKey: keyof typeof currentTargets | null = null;
+
+      if (typeStr.includes("calori") || typeStr.includes("diet") || typeStr.includes("nutri")) {
+        targetKey = "calories";
+      } else if (typeStr.includes("protein")) {
+        targetKey = "protein";
+      } else if (typeStr.includes("carb")) {
+        targetKey = "carbs";
+      } else if (typeStr.includes("fat") || typeStr.includes("yağ")) {
+        targetKey = "fat";
+      }
+
+      if (targetKey && currentTargets[targetKey] !== undefined) {
+        prev = currentTargets[targetKey];
+        next = Math.round(prev * (1 + adjustment.percentageChange / 100));
+      } else {
+        // No matching target (e.g. intensity/volume) — show raw percentage
+        prev = 0;
+        next = adjustment.percentageChange;
+      }
+    }
+
+    return { displayPrev: prev, displayNew: next };
+  }, [adjustment, currentTargets]);
 
   if (!adjustment || !isVisible) return null;
 
@@ -88,6 +121,9 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
       description: `${config.label} güncellendi`,
     });
   };
+
+  // Hide the "previous" value if it's 0 and percentage-only with no target match
+  const showComparison = !(adjustment.isPercentageOnly && displayPrev === 0);
 
   return (
     <motion.div
@@ -130,18 +166,26 @@ const CoachAdjustmentBanner = ({ adjustment, onDismiss }: CoachAdjustmentBannerP
       </p>
 
       <div className="flex items-center gap-3 mb-4">
-        <span className="font-display text-lg text-muted-foreground line-through">
-          {config.formatValue(adjustment.previousValue)}
-        </span>
-        <motion.div
-          animate={{ x: [0, 5, 0] }}
-          transition={{ duration: 1, repeat: Infinity }}
-        >
-          <ChevronRight className={`w-5 h-5 ${config.color}`} />
-        </motion.div>
-        <span className={`font-display text-2xl ${config.color}`}>
-          {config.formatValue(adjustment.value)}
-        </span>
+        {showComparison ? (
+          <>
+            <span className="font-display text-lg text-muted-foreground line-through">
+              {config.formatValue(displayPrev)}
+            </span>
+            <motion.div
+              animate={{ x: [0, 5, 0] }}
+              transition={{ duration: 1, repeat: Infinity }}
+            >
+              <ChevronRight className={`w-5 h-5 ${config.color}`} />
+            </motion.div>
+            <span className={`font-display text-2xl ${config.color}`}>
+              {config.formatValue(displayNew)}
+            </span>
+          </>
+        ) : (
+          <span className={`font-display text-2xl ${config.color}`}>
+            {displayNew > 0 ? `+%${displayNew}` : `%${displayNew}`}
+          </span>
+        )}
       </div>
 
       <div className={`${config.bgColor} rounded-xl p-3 mb-4`}>
