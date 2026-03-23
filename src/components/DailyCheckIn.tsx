@@ -88,6 +88,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const { awardCoins } = useBioCoin();
   const { updateStreak } = useStreakTracking();
   const { awardXP } = useXPEngine();
+  const [values, setValues] = useState<Record<SliderKey, number>>({ ...defaultValues });
   const [sleepHours, setSleepHours] = useState<number | null>(null);
   const [notes, setNotes] = useState("");
   const [isSubmitting, setIsSubmitting] = useState(false);
