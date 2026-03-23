@@ -371,7 +371,7 @@ const Kokpit = () => {
       <ChatInterface isOpen={showChat} onClose={() => setShowChat(false)} />
       <DailyCheckIn isOpen={showDailyCheckIn} onClose={() => setShowDailyCheckIn(false)} />
       <StatDetailModal isOpen={!!selectedStat} onClose={() => setSelectedStat(null)} statType={selectedStat} />
-      <BentoStatDetailModal isOpen={!!selectedBentoStat} onClose={() => setSelectedBentoStat(null)} statType={selectedBentoStat} />
+      
       
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 
