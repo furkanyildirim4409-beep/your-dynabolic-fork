@@ -66,18 +66,32 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
     }
   };
 
-  const handleSendChallenge = () => {
-    hapticSuccess();
-    toast({
-      title: "Meydan okuma gönderildi! ⚔️",
-      description: `${selectedOpponent?.name} artık senin ${challengeType === "pr" ? `${selectedExercise.name} PR'ını` : "serini"} geçmek zorunda!`,
-    });
-    onClose();
-    // Reset state
-    setStep(preselectedAthlete ? "type" : "opponent");
-    setSelectedOpponent(preselectedAthlete || null);
-    setChallengeType("pr");
-    setTargetValue("");
+  const handleSendChallenge = async () => {
+    if (!selectedOpponent || !targetValue) return;
+    setIsSubmitting(true);
+    try {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + deadlineDays);
+      await createChallenge({
+        opponent_id: selectedOpponent.id,
+        challenge_type: challengeType,
+        exercise_name: challengeType === "pr" ? selectedExercise.name : undefined,
+        challenger_value: Number(targetValue),
+        wager_coins: calculateReward(),
+        end_date: endDate.toISOString(),
+      });
+      hapticSuccess();
+      onClose();
+      setStep(preselectedAthlete ? "type" : "opponent");
+      setSelectedOpponent(preselectedAthlete || null);
+      setChallengeType("pr");
+      setTargetValue("");
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Hata", description: "Meydan okuma gönderilemedi.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const calculateReward = () => {
