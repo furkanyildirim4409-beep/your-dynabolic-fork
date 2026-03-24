@@ -113,9 +113,9 @@ const App = () => {
                       <UniversalCartDrawer />
                       <FloatingCartButton />
                       <AchievementNotificationLayer />
-                    </AuthProvider>
-                  </BrowserRouter>
-                </AchievementProvider>
+                    </AchievementProvider>
+                  </AuthProvider>
+                </BrowserRouter>
               </StoryProvider>
             </CartProvider>
           </OfflineProvider>
