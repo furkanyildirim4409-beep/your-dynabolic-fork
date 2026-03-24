@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Dumbbell, Flame, Trophy, Calendar, Send, ChevronRight } from "lucide-react";
+import { X, Swords, Dumbbell, Flame, Trophy, Calendar, Send, ChevronRight, Loader2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { prExercises, ChallengeType } from "@/lib/challengeData";
-import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/haptics";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useChallenges } from "@/hooks/useChallenges";
 
 interface Athlete {
   id: string;
