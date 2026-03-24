@@ -7,6 +7,7 @@ import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
 import { hapticLight } from "@/lib/haptics";
 import ChallengesSection from "@/components/ChallengesSection";
+import ChallengeHistoryModal from "@/components/ChallengeHistoryModal";
 import { useLeaderboard, LeaderboardMetric, LeaderboardAthlete } from "@/hooks/useLeaderboard";
 
 const metricConfig: Record<LeaderboardMetric, { icon: typeof Coins; label: string; format: (a: LeaderboardAthlete) => string }> = {
@@ -29,6 +30,7 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [metric, setMetric] = useState<LeaderboardMetric>("bioCoins");
   const [activeTab, setActiveTab] = useState<"leaderboard" | "challenges">("leaderboard");
+  const [selectedAthlete, setSelectedAthlete] = useState<{ id: string; name: string; avatar: string } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { leaderboard, currentUserRank, isLoading } = useLeaderboard(metric);
 
@@ -51,10 +53,14 @@ const Leaderboard = () => {
     return `${diff.toLocaleString("tr-TR")} ${metric === "volume" ? "kg" : metric === "streak" ? "gün" : "puan"} ile #${currentUserRank - 1}'e yüksel`;
   };
 
-  // Map leaderboard to ChallengesSection format
   const challengeAthletes = leaderboard.map((a) => ({
     id: a.id, name: a.name, avatar: a.avatar, bioCoins: a.bioCoins, volume: a.volume, streak: a.streak,
   }));
+
+  const handleAthleteClick = (athlete: LeaderboardAthlete) => {
+    hapticLight();
+    setSelectedAthlete({ id: athlete.id, name: athlete.name, avatar: athlete.avatar });
+  };
 
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
@@ -119,7 +125,15 @@ const Leaderboard = () => {
                     const style = getPodiumStyle(position);
                     if (!athlete || !style) return null;
                     return (
-                      <motion.div key={athlete.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: position * 0.1 }} className="flex flex-col items-center" style={{ order: style.order }}>
+                      <motion.div
+                        key={athlete.id}
+                        initial={{ opacity: 0, y: 20 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        transition={{ delay: position * 0.1 }}
+                        className="flex flex-col items-center cursor-pointer"
+                        style={{ order: style.order }}
+                        onClick={() => handleAthleteClick(athlete)}
+                      >
                         <div className={`relative ${style.glow} rounded-full`}>
                           <Avatar className={`${style.size} ${style.ring} bg-transparent`}>
                             <AvatarImage src={athlete.avatar} alt={athlete.name} className="object-cover rounded-full" />
@@ -162,7 +176,14 @@ const Leaderboard = () => {
                 {rest.map((athlete, index) => {
                   const rank = index + 4;
                   return (
-                    <motion.div key={athlete.id} initial={{ opacity: 0, x: -20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 + index * 0.03 }} className={`glass-card p-3 flex items-center gap-3 ${athlete.isCurrentUser ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}>
+                    <motion.div
+                      key={athlete.id}
+                      initial={{ opacity: 0, x: -20 }}
+                      animate={{ opacity: 1, x: 0 }}
+                      transition={{ delay: 0.3 + index * 0.03 }}
+                      className={`glass-card p-3 flex items-center gap-3 cursor-pointer ${athlete.isCurrentUser ? "ring-2 ring-primary/50 bg-primary/5" : ""}`}
+                      onClick={() => handleAthleteClick(athlete)}
+                    >
                       <div className={`w-8 h-8 rounded-full flex items-center justify-center ${athlete.isCurrentUser ? "bg-primary text-primary-foreground" : "bg-secondary"}`}>
                         <span className="font-display text-xs">#{rank}</span>
                       </div>
@@ -216,6 +237,13 @@ const Leaderboard = () => {
           </div>
         </motion.div>
       )}
+
+      {/* Athlete Duel History Modal */}
+      <ChallengeHistoryModal
+        isOpen={!!selectedAthlete}
+        onClose={() => setSelectedAthlete(null)}
+        athlete={selectedAthlete}
+      />
     </div>
   );
 };
