@@ -1,13 +1,15 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Dumbbell, Flame, Trophy, Calendar, Send, ChevronRight } from "lucide-react";
+import { X, Swords, Dumbbell, Flame, Trophy, Calendar, Send, ChevronRight, Loader2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { prExercises, ChallengeType } from "@/lib/challengeData";
-import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/haptics";
+import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { useAuth } from "@/context/AuthContext";
+import { useChallenges } from "@/hooks/useChallenges";
 
 interface Athlete {
   id: string;
@@ -26,12 +28,15 @@ interface CreateChallengeModalProps {
 }
 
 const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }: CreateChallengeModalProps) => {
+  const { user } = useAuth();
+  const { createChallenge } = useChallenges();
   const [step, setStep] = useState<"type" | "opponent" | "details">(preselectedAthlete ? "type" : "opponent");
   const [challengeType, setChallengeType] = useState<ChallengeType>("pr");
   const [selectedOpponent, setSelectedOpponent] = useState<Athlete | null>(preselectedAthlete || null);
   const [selectedExercise, setSelectedExercise] = useState(prExercises[0]);
   const [targetValue, setTargetValue] = useState("");
   const [deadlineDays, setDeadlineDays] = useState(7);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mock user's current PRs
   const userPRs: Record<string, number> = {
@@ -61,18 +66,32 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
     }
   };
 
-  const handleSendChallenge = () => {
-    hapticSuccess();
-    toast({
-      title: "Meydan okuma gönderildi! ⚔️",
-      description: `${selectedOpponent?.name} artık senin ${challengeType === "pr" ? `${selectedExercise.name} PR'ını` : "serini"} geçmek zorunda!`,
-    });
-    onClose();
-    // Reset state
-    setStep(preselectedAthlete ? "type" : "opponent");
-    setSelectedOpponent(preselectedAthlete || null);
-    setChallengeType("pr");
-    setTargetValue("");
+  const handleSendChallenge = async () => {
+    if (!selectedOpponent || !targetValue) return;
+    setIsSubmitting(true);
+    try {
+      const endDate = new Date();
+      endDate.setDate(endDate.getDate() + deadlineDays);
+      await createChallenge({
+        opponent_id: selectedOpponent.id,
+        challenge_type: challengeType,
+        exercise_name: challengeType === "pr" ? selectedExercise.name : undefined,
+        challenger_value: Number(targetValue),
+        wager_coins: calculateReward(),
+        end_date: endDate.toISOString(),
+      });
+      hapticSuccess();
+      onClose();
+      setStep(preselectedAthlete ? "type" : "opponent");
+      setSelectedOpponent(preselectedAthlete || null);
+      setChallengeType("pr");
+      setTargetValue("");
+    } catch (error) {
+      console.error(error);
+      toast({ title: "Hata", description: "Meydan okuma gönderilemedi.", variant: "destructive" });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const calculateReward = () => {
@@ -125,7 +144,7 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
               </p>
               
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {athletes.filter(a => a.id !== "current").slice(0, 10).map((athlete) => (
+                {athletes.filter(a => a.id !== "current" && a.id !== user?.id).slice(0, 10).map((athlete) => (
                   <motion.button
                     key={athlete.id}
                     whileHover={{ scale: 1.01 }}
@@ -342,10 +361,13 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
                 <Button
                   onClick={handleSendChallenge}
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={!targetValue}
+                  disabled={!targetValue || isSubmitting}
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Meydan Oku!
+                  {isSubmitting ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gönderiliyor...</>
+                  ) : (
+                    <><Send className="w-4 h-4 mr-2" />Meydan Oku!</>
+                  )}
                 </Button>
               </div>
             </motion.div>
