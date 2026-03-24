@@ -28,12 +28,15 @@ interface CreateChallengeModalProps {
 }
 
 const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }: CreateChallengeModalProps) => {
+  const { user } = useAuth();
+  const { createChallenge } = useChallenges();
   const [step, setStep] = useState<"type" | "opponent" | "details">(preselectedAthlete ? "type" : "opponent");
   const [challengeType, setChallengeType] = useState<ChallengeType>("pr");
   const [selectedOpponent, setSelectedOpponent] = useState<Athlete | null>(preselectedAthlete || null);
   const [selectedExercise, setSelectedExercise] = useState(prExercises[0]);
   const [targetValue, setTargetValue] = useState("");
   const [deadlineDays, setDeadlineDays] = useState(7);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Mock user's current PRs
   const userPRs: Record<string, number> = {
