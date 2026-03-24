@@ -188,10 +188,13 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
         } as any);
 
         if (checkinError) throw checkinError;
-        triggerAchievement("daily_checkin");
-        await awardCoins(50, "bonus", "Günlük Check-in Tamamlandı");
+
+        // Synchronized Engine Triggers (strict order)
         await updateStreak();
         await awardXP(50);
+        await processTransaction(10, 'daily_reward', 'Günlük Check-in Ödülü');
+        setTimeout(() => { triggerAchievement("daily_checkin"); }, 1000);
+
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 
