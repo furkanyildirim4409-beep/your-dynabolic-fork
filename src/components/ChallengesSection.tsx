@@ -3,14 +3,14 @@ import { motion, AnimatePresence } from "framer-motion";
 import { Swords, Plus, Clock, CheckCircle } from "lucide-react";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
+import { Skeleton } from "@/components/ui/skeleton";
 import ChallengeCard from "./ChallengeCard";
 import CreateChallengeModal from "./CreateChallengeModal";
 import ChallengeDetailModal from "./ChallengeDetailModal";
 import ChallengeStreakBanner from "./ChallengeStreakBanner";
-import { mockChallenges, Challenge } from "@/lib/challengeData";
-import { hapticLight, hapticMedium, hapticSuccess } from "@/lib/haptics";
-import { toast } from "@/hooks/use-toast";
-import { useChallengeStreaks } from "@/hooks/useChallengeStreaks";
+import { Challenge } from "@/lib/challengeData";
+import { hapticLight, hapticMedium } from "@/lib/haptics";
+import { useChallenges } from "@/hooks/useChallenges";
 
 interface ChallengesSectionProps {
   athletes: Array<{ id: string; name: string; avatar: string; bioCoins: number; volume: number; streak: number; }>;
@@ -21,32 +21,18 @@ type FilterType = "all" | "pending" | "active" | "completed";
 const ChallengesSection = ({ athletes }: ChallengesSectionProps) => {
   const [filter, setFilter] = useState<FilterType>("all");
   const [showCreateModal, setShowCreateModal] = useState(false);
-  const [challenges, setChallenges] = useState(mockChallenges);
   const [selectedChallenge, setSelectedChallenge] = useState<Challenge | null>(null);
-  const { recordWin, calculateBonus, currentMilestone } = useChallengeStreaks();
+  const { challenges, pending, active, completed, isLoading, acceptChallenge, declineChallenge } = useChallenges();
 
-  const filteredChallenges = challenges.filter(ch => {
-    if (filter === "all") return true;
-    if (filter === "pending") return ch.status === "pending";
-    if (filter === "active") return ch.status === "active";
-    if (filter === "completed") return ch.status === "completed" || ch.status === "expired";
-    return true;
-  });
+  const filteredChallenges = filter === "all" ? challenges
+    : filter === "pending" ? pending
+    : filter === "active" ? active
+    : completed;
 
-  const pendingCount = challenges.filter(ch => ch.status === "pending" && ch.challengedId === "current").length;
+  const pendingCount = pending.filter(ch => ch.challengedId === "current").length;
 
-  const handleAcceptChallenge = (id: string) => {
-    setChallenges(prev => prev.map(ch => ch.id === id ? { ...ch, status: "active" as const } : ch));
-    hapticSuccess();
-    toast({ title: "Meydan okuma kabul edildi! ⚔️", description: "Şimdi rakibini geçme zamanı!" });
-  };
-
-  const handleDeclineChallenge = (id: string) => {
-    setChallenges(prev => prev.map(ch => ch.id === id ? { ...ch, status: "declined" as const } : ch));
-    hapticMedium();
-    toast({ title: "Meydan okuma reddedildi", description: "Belki başka zaman..." });
-  };
-
+  const handleAcceptChallenge = (id: string) => { acceptChallenge(id); };
+  const handleDeclineChallenge = (id: string) => { declineChallenge(id); };
   const handleViewDetails = (challenge: Challenge) => setSelectedChallenge(challenge);
 
   return (
@@ -80,34 +66,40 @@ const ChallengesSection = ({ athletes }: ChallengesSectionProps) => {
         </div>
 
         <div className="space-y-2">
-          <AnimatePresence mode="popLayout">
-            {filteredChallenges.length > 0 ? (
-              filteredChallenges.map((challenge, index) => (
-                <motion.div key={challenge.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: index * 0.05 }} className="relative">
-                  <ChallengeCard challenge={challenge} onAccept={handleAcceptChallenge} onDecline={handleDeclineChallenge} onViewDetails={handleViewDetails} />
+          {isLoading ? (
+            Array.from({ length: 3 }).map((_, i) => (
+              <Skeleton key={i} className="h-20 rounded-xl" />
+            ))
+          ) : (
+            <AnimatePresence mode="popLayout">
+              {filteredChallenges.length > 0 ? (
+                filteredChallenges.map((challenge, index) => (
+                  <motion.div key={challenge.id} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, scale: 0.95 }} transition={{ delay: index * 0.05 }} className="relative">
+                    <ChallengeCard challenge={challenge} onAccept={handleAcceptChallenge} onDecline={handleDeclineChallenge} onViewDetails={handleViewDetails} />
+                  </motion.div>
+                ))
+              ) : (
+                <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
+                  <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"><Swords className="w-8 h-8 text-primary/50" /></div>
+                  <p className="text-foreground font-display text-sm mb-1">Hareket Yok</p>
+                  <p className="text-muted-foreground text-xs mb-4">
+                    {filter === "pending" && "Bekleyen meydan okuman yok"}
+                    {filter === "active" && "Aktif meydan okuman yok"}
+                    {filter === "completed" && "Tamamlanan meydan okuman yok"}
+                    {filter === "all" && "Henüz hiç meydan okuma yapılmamış."}
+                  </p>
+                  <Button variant="outline" size="sm" onClick={() => setShowCreateModal(true)} className="border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"><Plus className="w-4 h-4 mr-1" />Meydan Oku</Button>
                 </motion.div>
-              ))
-            ) : (
-              <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="text-center py-12">
-                <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center"><Swords className="w-8 h-8 text-primary/50" /></div>
-                <p className="text-foreground font-display text-sm mb-1">Hareket Yok</p>
-                <p className="text-muted-foreground text-xs mb-4">
-                  {filter === "pending" && "Bekleyen meydan okuman yok"}
-                  {filter === "active" && "Aktif meydan okuman yok"}
-                  {filter === "completed" && "Tamamlanan meydan okuman yok"}
-                  {filter === "all" && "Henüz hiç meydan okuma yapılmamış."}
-                </p>
-                <Button variant="outline" size="sm" onClick={() => setShowCreateModal(true)} className="border-primary/50 text-primary hover:bg-primary/10 hover:text-primary"><Plus className="w-4 h-4 mr-1" />Meydan Oku</Button>
-              </motion.div>
-            )}
-          </AnimatePresence>
+              )}
+            </AnimatePresence>
+          )}
         </div>
 
-        {challenges.length > 0 && (
+        {!isLoading && challenges.length > 0 && (
           <div className="grid grid-cols-3 gap-3 pt-4">
-            <div className="glass-card p-3 text-center"><p className="text-primary font-display text-xl">{challenges.filter(c => c.status === "active").length}</p><p className="text-muted-foreground text-[10px]">AKTİF</p></div>
-            <div className="glass-card p-3 text-center"><p className="text-emerald-400 font-display text-xl">{challenges.filter(c => c.status === "completed" && c.winnerId === "current").length}</p><p className="text-muted-foreground text-[10px]">KAZANILAN</p></div>
-            <div className="glass-card p-3 text-center"><p className="text-yellow-400 font-display text-xl">{challenges.reduce((sum, c) => c.status === "completed" && c.winnerId === "current" ? sum + c.bioCoinsReward : sum, 0)}</p><p className="text-muted-foreground text-[10px]">COİN</p></div>
+            <div className="glass-card p-3 text-center"><p className="text-primary font-display text-xl">{active.length}</p><p className="text-muted-foreground text-[10px]">AKTİF</p></div>
+            <div className="glass-card p-3 text-center"><p className="text-emerald-400 font-display text-xl">{completed.filter(c => c.winnerId === "current").length}</p><p className="text-muted-foreground text-[10px]">KAZANILAN</p></div>
+            <div className="glass-card p-3 text-center"><p className="text-yellow-400 font-display text-xl">{completed.reduce((sum, c) => c.winnerId === "current" ? sum + c.bioCoinsReward : sum, 0)}</p><p className="text-muted-foreground text-[10px]">COİN</p></div>
           </div>
         )}
       </motion.div>
