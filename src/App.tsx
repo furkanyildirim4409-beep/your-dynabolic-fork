@@ -59,9 +59,9 @@ const App = () => {
           <OfflineProvider>
             <CartProvider>
               <StoryProvider>
-                <AchievementProvider>
-                  <BrowserRouter>
-                    <AuthProvider>
+                <BrowserRouter>
+                  <AuthProvider>
+                    <AchievementProvider>
                       <Toaster />
                       <Sonner />
                       <OfflineBanner />
