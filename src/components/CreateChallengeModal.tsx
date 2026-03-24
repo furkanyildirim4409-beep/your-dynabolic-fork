@@ -144,7 +144,7 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
               </p>
               
               <div className="space-y-2 max-h-[400px] overflow-y-auto">
-                {athletes.filter(a => a.id !== "current").slice(0, 10).map((athlete) => (
+                {athletes.filter(a => a.id !== "current" && a.id !== user?.id).slice(0, 10).map((athlete) => (
                   <motion.button
                     key={athlete.id}
                     whileHover={{ scale: 1.01 }}
