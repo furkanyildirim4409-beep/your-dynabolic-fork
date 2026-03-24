@@ -166,6 +166,77 @@ export const useChallenges = () => {
     },
   });
 
+  const concludeChallengeMutation = useMutation({
+    mutationFn: async ({ challengeId, winnerId }: { challengeId: string; winnerId: string }) => {
+      // 1. Fetch challenge details
+      const { data: challenge, error: fetchError } = await supabase
+        .from("challenges")
+        .select("*")
+        .eq("id", challengeId)
+        .single();
+      if (fetchError || !challenge) throw new Error("Challenge not found");
+
+      const wager = challenge.wager_coins || 0;
+      const loserId = challenge.challenger_id === winnerId
+        ? challenge.opponent_id
+        : challenge.challenger_id;
+
+      // 2. Update challenge status
+      const { error: updateError } = await supabase
+        .from("challenges")
+        .update({ status: "completed", winner_id: winnerId, end_date: new Date().toISOString() })
+        .eq("id", challengeId);
+      if (updateError) throw updateError;
+
+      // 3. Process coin transfers for both participants
+      if (wager > 0) {
+        await supabase.from("bio_coin_transactions").insert({
+          user_id: winnerId,
+          amount: wager,
+          type: "challenge_win",
+          description: "Düello Kazancı",
+        });
+
+        await supabase.from("bio_coin_transactions").insert({
+          user_id: loserId,
+          amount: -wager,
+          type: "challenge_loss",
+          description: "Düello Kaybı",
+        });
+
+        // Update winner balance
+        const { data: winnerProfile } = await supabase
+          .from("profiles")
+          .select("bio_coins")
+          .eq("id", winnerId)
+          .single();
+        if (winnerProfile) {
+          await supabase
+            .from("profiles")
+            .update({ bio_coins: (winnerProfile.bio_coins ?? 0) + wager })
+            .eq("id", winnerId);
+        }
+
+        // Update loser balance
+        const { data: loserProfile } = await supabase
+          .from("profiles")
+          .select("bio_coins")
+          .eq("id", loserId)
+          .single();
+        if (loserProfile) {
+          await supabase
+            .from("profiles")
+            .update({ bio_coins: Math.max(0, (loserProfile.bio_coins ?? 0) - wager) })
+            .eq("id", loserId);
+        }
+      }
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-challenges"] });
+      toast({ title: "Düello Sonuçlandı! 🏆", description: "Ödüller dağıtıldı." });
+    },
+  });
+
   return {
     challenges: remapped,
     pending,
@@ -175,5 +246,6 @@ export const useChallenges = () => {
     acceptChallenge: acceptMutation.mutateAsync,
     declineChallenge: declineMutation.mutateAsync,
     createChallenge: createMutation.mutateAsync,
+    concludeChallenge: concludeChallengeMutation.mutateAsync,
   };
 };
