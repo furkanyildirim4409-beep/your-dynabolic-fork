@@ -1,15 +1,12 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Trophy, MessageCircle, Clock, Camera, ChevronRight, Send, Medal, History } from "lucide-react";
+import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History } from "lucide-react";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
-
-interface Participant {
-  id: string;
-  name: string;
-  avatar: string;
-  score: number;
-  proofSubmitted: boolean;
-}
+import { useChallenges } from "@/hooks/useChallenges";
+import { useAuth } from "@/context/AuthContext";
+import { format } from "date-fns";
+import { tr } from "date-fns/locale";
 
 interface ChallengeDetailModalProps {
   isOpen: boolean;
@@ -22,25 +19,37 @@ interface ChallengeDetailModalProps {
     deadline: string;
     wager: number;
     status: "active" | "completed" | "pending";
+    challengerId?: string;
+    challengerName?: string;
+    challengerAvatar?: string;
+    challengerValue?: number;
+    challengedId?: string;
+    challengedName?: string;
+    challengedAvatar?: string;
+    challengedValue?: number;
+    winnerId?: string;
+    opponentRealId?: string;
   };
 }
-
-const mockParticipants: Participant[] = [
-  { id: "1", name: "Ahmet", avatar: "https://images.unsplash.com/photo-1507003211169-0a1dd7228f2d?w=80", score: 85, proofSubmitted: true },
-  { id: "2", name: "Mehmet", avatar: "https://images.unsplash.com/photo-1583468982228-19f19164aee2?w=80", score: 72, proofSubmitted: true },
-];
-
-const mockMessages = [
-  { id: "1", sender: "Ahmet", text: "Bu sefer ben kazanacağım! 💪", time: "14:30" },
-  { id: "2", sender: "Mehmet", text: "Rüyanda görürsün 😏", time: "14:32" },
-  { id: "3", sender: "Ahmet", text: "Kanıtım hazır, yükledim bile!", time: "15:10" },
-];
 
 const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailModalProps) => {
   const [activeTab, setActiveTab] = useState<"vs" | "chat" | "proof" | "history">("vs");
   const [message, setMessage] = useState("");
+  const { user } = useAuth();
+  const { completed } = useChallenges();
 
   if (!isOpen || !challenge) return null;
+
+  // Determine the real opponent ID for history filtering
+  const opponentId = challenge.opponentRealId ||
+    (challenge.challengerId === "current" ? challenge.challengedId : challenge.challengerId) || "";
+
+  // Filter completed challenges between current user and this specific opponent
+  const opponentHistory = completed.filter((c) => {
+    const involvesCurrent = c.challengerId === "current" || c.challengedId === "current";
+    const involvesOpponent = c.challengerId === opponentId || c.challengedId === opponentId;
+    return involvesCurrent && involvesOpponent;
+  });
 
   return (
     <AnimatePresence>
@@ -84,15 +93,15 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
 
           {/* Tabs */}
           <div className="flex border-b border-border">
-            {[
-              { key: "vs", icon: Swords, label: "VS" },
-              { key: "chat", icon: MessageCircle, label: "Mesajlar" },
-              { key: "proof", icon: Camera, label: "Kanıt" },
-              { key: "history", icon: History, label: "Geçmiş" },
-            ].map((tab) => (
+            {([
+              { key: "vs" as const, icon: Swords, label: "VS" },
+              { key: "chat" as const, icon: MessageCircle, label: "Mesajlar" },
+              { key: "proof" as const, icon: Camera, label: "Kanıt" },
+              { key: "history" as const, icon: History, label: "Geçmiş" },
+            ]).map((tab) => (
               <button
                 key={tab.key}
-                onClick={() => setActiveTab(tab.key as any)}
+                onClick={() => setActiveTab(tab.key)}
                 className={`flex-1 py-3 flex items-center justify-center gap-1.5 text-xs font-medium transition-all ${
                   activeTab === tab.key ? "text-primary border-b-2 border-primary" : "text-muted-foreground"
                 }`}
@@ -108,54 +117,62 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
             {/* VS Tab */}
             {activeTab === "vs" && (
               <div className="space-y-6">
-                {/* VS Display */}
                 <div className="flex items-center justify-center gap-6 py-6">
-                  {mockParticipants.map((p, i) => (
-                    <div key={p.id} className="text-center">
-                      <div className={`relative w-20 h-20 rounded-full overflow-hidden border-2 ${
-                        i === 0 ? "border-primary" : "border-border"
-                      }`}>
-                        <img src={p.avatar} alt={p.name} className="w-full h-full object-cover" />
-                      </div>
-                      <p className="text-foreground text-sm font-medium mt-2">{p.name}</p>
-                      <p className="text-primary text-2xl font-display font-bold">{p.score}</p>
-                      <p className="text-muted-foreground text-xs">puan</p>
-                      {p.proofSubmitted && (
-                        <div className="flex items-center gap-1 justify-center mt-1 text-green-400 text-xs">
-                          <Camera className="w-3 h-3" /> Kanıt var
-                        </div>
-                      )}
-                    </div>
-                  ))}
-                  <div className="absolute">
-                    <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-                      <span className="text-destructive font-bold text-sm">VS</span>
-                    </div>
+                  {/* Challenger */}
+                  <div className="text-center">
+                    <Avatar className="w-20 h-20 ring-2 ring-primary mx-auto">
+                      <AvatarImage src={challenge.challengerAvatar} className="object-cover" />
+                      <AvatarFallback className="bg-primary/20 text-primary text-lg">
+                        {(challenge.challengerName || "?").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-foreground text-sm font-medium mt-2">{challenge.challengerName || "Rakip"}</p>
+                    <p className="text-primary text-2xl font-display font-bold">{challenge.challengerValue ?? 0}</p>
+                    <p className="text-muted-foreground text-xs">puan</p>
+                  </div>
+
+                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
+                    <span className="text-destructive font-bold text-sm">VS</span>
+                  </div>
+
+                  {/* Challenged */}
+                  <div className="text-center">
+                    <Avatar className="w-20 h-20 ring-2 ring-border mx-auto">
+                      <AvatarImage src={challenge.challengedAvatar} className="object-cover" />
+                      <AvatarFallback className="bg-secondary text-foreground text-lg">
+                        {(challenge.challengedName || "?").charAt(0)}
+                      </AvatarFallback>
+                    </Avatar>
+                    <p className="text-foreground text-sm font-medium mt-2">{challenge.challengedName || "Rakip"}</p>
+                    <p className="text-primary text-2xl font-display font-bold">{challenge.challengedValue ?? 0}</p>
+                    <p className="text-muted-foreground text-xs">puan</p>
                   </div>
                 </div>
 
-                {/* Target */}
                 <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-4">
                   <p className="text-muted-foreground text-xs mb-1">Hedef</p>
                   <p className="text-foreground text-sm font-medium">{challenge.target}</p>
                 </div>
+
+                {challenge.winnerId && (
+                  <div className="glass-card p-4 bg-yellow-500/5 border-yellow-500/20 text-center">
+                    <Trophy className="w-8 h-8 text-yellow-400 mx-auto mb-2" />
+                    <p className="text-foreground font-display text-lg">
+                      {challenge.winnerId === "current" ? "Sen Kazandın! 🎉" : "Rakip Kazandı"}
+                    </p>
+                  </div>
+                )}
               </div>
             )}
 
-            {/* Chat Tab */}
+            {/* Chat Tab — Empty state */}
             {activeTab === "chat" && (
               <div className="space-y-3">
-                {mockMessages.map((msg) => (
-                  <div key={msg.id} className={`flex ${msg.sender === "Ahmet" ? "justify-end" : "justify-start"}`}>
-                    <div className={`max-w-[75%] px-3 py-2 rounded-2xl ${
-                      msg.sender === "Ahmet" ? "bg-primary/20 text-foreground" : "bg-secondary text-foreground"
-                    }`}>
-                      <p className="text-xs font-medium text-muted-foreground mb-0.5">{msg.sender}</p>
-                      <p className="text-sm">{msg.text}</p>
-                      <p className="text-[10px] text-muted-foreground text-right mt-0.5">{msg.time}</p>
-                    </div>
-                  </div>
-                ))}
+                <div className="text-center py-12">
+                  <MessageCircle className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+                  <p className="text-foreground text-sm font-medium">Henüz mesaj yok</p>
+                  <p className="text-muted-foreground text-xs mt-1">Rakibine sataşmaya başla! 🔥</p>
+                </div>
                 <div className="flex gap-2 mt-4">
                   <input
                     value={message}
@@ -183,24 +200,43 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
               </div>
             )}
 
-            {/* History Tab */}
+            {/* History Tab — Real data */}
             {activeTab === "history" && (
               <div className="space-y-3">
-                {[
-                  { date: "20 Oca", result: "Kazandın", coins: "+50", opponent: "Mehmet" },
-                  { date: "13 Oca", result: "Kaybettin", coins: "-30", opponent: "Mehmet" },
-                  { date: "6 Oca", result: "Kazandın", coins: "+40", opponent: "Elif" },
-                ].map((entry, i) => (
-                  <div key={i} className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 flex items-center justify-between">
-                    <div>
-                      <p className="text-foreground text-sm font-medium">{entry.result}</p>
-                      <p className="text-muted-foreground text-xs">vs {entry.opponent} • {entry.date}</p>
-                    </div>
-                    <span className={`text-sm font-bold ${entry.coins.startsWith("+") ? "text-green-400" : "text-red-400"}`}>
-                      {entry.coins} 🪙
-                    </span>
+                {opponentHistory.length === 0 ? (
+                  <div className="text-center py-12">
+                    <History className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+                    <p className="text-foreground text-sm font-medium">Geçmiş düello yok</p>
+                    <p className="text-muted-foreground text-xs mt-1">Bu rakiple ilk düellonuz!</p>
                   </div>
-                ))}
+                ) : (
+                  opponentHistory.map((entry) => {
+                    const won = entry.winnerId === "current";
+                    const coins = entry.bioCoinsReward || 0;
+                    let dateStr = "";
+                    try {
+                      dateStr = format(new Date(entry.completedAt || entry.deadline), "d MMM", { locale: tr });
+                    } catch {
+                      dateStr = "";
+                    }
+                    const opponentName = entry.challengerId === "current" ? entry.challengedName : entry.challengerName;
+
+                    return (
+                      <div key={entry.id} className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 flex items-center justify-between">
+                        <div>
+                          <p className="text-foreground text-sm font-medium">{won ? "Kazandın 🏆" : "Kaybettin"}</p>
+                          <p className="text-muted-foreground text-xs">
+                            vs {opponentName} {dateStr && `• ${dateStr}`}
+                            {entry.exercise && ` • ${entry.exercise}`}
+                          </p>
+                        </div>
+                        <span className={`text-sm font-bold ${won ? "text-green-400" : "text-red-400"}`}>
+                          {won ? "+" : "-"}{coins} 🪙
+                        </span>
+                      </div>
+                    );
+                  })
+                )}
               </div>
             )}
           </div>
