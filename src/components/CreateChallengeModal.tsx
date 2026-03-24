@@ -361,10 +361,13 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
                 <Button
                   onClick={handleSendChallenge}
                   className="flex-1 bg-primary hover:bg-primary/90"
-                  disabled={!targetValue}
+                  disabled={!targetValue || isSubmitting}
                 >
-                  <Send className="w-4 h-4 mr-2" />
-                  Meydan Oku!
+                  {isSubmitting ? (
+                    <><Loader2 className="w-4 h-4 mr-2 animate-spin" />Gönderiliyor...</>
+                  ) : (
+                    <><Send className="w-4 h-4 mr-2" />Meydan Oku!</>
+                  )}
                 </Button>
               </div>
             </motion.div>
