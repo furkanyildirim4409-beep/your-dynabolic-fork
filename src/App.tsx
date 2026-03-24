@@ -59,9 +59,9 @@ const App = () => {
           <OfflineProvider>
             <CartProvider>
               <StoryProvider>
-                <AchievementProvider>
-                  <BrowserRouter>
-                    <AuthProvider>
+                <BrowserRouter>
+                  <AuthProvider>
+                    <AchievementProvider>
                       <Toaster />
                       <Sonner />
                       <OfflineBanner />
@@ -113,9 +113,9 @@ const App = () => {
                       <UniversalCartDrawer />
                       <FloatingCartButton />
                       <AchievementNotificationLayer />
-                    </AuthProvider>
-                  </BrowserRouter>
-                </AchievementProvider>
+                    </AchievementProvider>
+                  </AuthProvider>
+                </BrowserRouter>
               </StoryProvider>
             </CartProvider>
           </OfflineProvider>
