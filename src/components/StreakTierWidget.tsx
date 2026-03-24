@@ -14,7 +14,7 @@ interface StreakTierWidgetProps {
 
 const StreakTierWidget = ({ compact = false }: StreakTierWidgetProps) => {
   const navigate = useNavigate();
-  const { showDemoAchievement } = useAchievements();
+  const _achievements = useAchievements();
   const { currentStreak, longestStreak, isStreakActive } = useStreakTracking();
   const { levelInfo, currentXP } = useXPEngine();
   const [showPRModal, setShowPRModal] = useState(false);

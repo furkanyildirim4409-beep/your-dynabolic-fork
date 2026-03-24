@@ -1,7 +1,8 @@
 import { useState, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Sparkles } from "lucide-react";
-import { Achievement, tierColors } from "@/lib/gamificationData";
+import { tierColors } from "@/lib/gamificationData";
+import { Achievement } from "@/hooks/useAchievements";
 import { hapticSuccess } from "@/lib/haptics";
 import confetti from "canvas-confetti";
 
@@ -44,7 +45,7 @@ const AchievementUnlockNotification = ({
 
   if (!achievement) return null;
 
-  const tierStyle = tierColors[achievement.tier];
+  const tierStyle = tierColors[achievement.tier] || tierColors.bronze;
   const Icon = achievement.icon;
 
   return (
@@ -74,19 +75,10 @@ const AchievementUnlockNotification = ({
               transition={{ duration: 3, repeat: Infinity }}
               style={{ backgroundSize: "200% 200%" }}
             />
-
-            <motion.div
-              className="absolute top-2 right-12"
-              animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: [0, 180, 360] }}
-              transition={{ duration: 2, repeat: Infinity }}
-            >
+            <motion.div className="absolute top-2 right-12" animate={{ scale: [1, 1.5, 1], opacity: [0.5, 1, 0.5], rotate: [0, 180, 360] }} transition={{ duration: 2, repeat: Infinity }}>
               <Sparkles className="w-4 h-4 text-yellow-400" />
             </motion.div>
-            <motion.div
-              className="absolute bottom-3 left-4"
-              animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.8, 0.3], rotate: [0, -180, -360] }}
-              transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}
-            >
+            <motion.div className="absolute bottom-3 left-4" animate={{ scale: [1, 1.3, 1], opacity: [0.3, 0.8, 0.3], rotate: [0, -180, -360] }} transition={{ duration: 2.5, repeat: Infinity, delay: 0.5 }}>
               <Sparkles className="w-3 h-3 text-primary" />
             </motion.div>
 
@@ -94,32 +86,19 @@ const AchievementUnlockNotification = ({
               <button onClick={handleClose} className="absolute top-2 right-2 p-1.5 rounded-full bg-white/10 hover:bg-white/20 transition-colors">
                 <X className="w-4 h-4 text-foreground" />
               </button>
-
               <div className="flex items-center gap-1 mb-3">
                 <motion.span animate={{ scale: [1, 1.2, 1] }} transition={{ duration: 0.5, repeat: 3 }} className="text-lg">🎉</motion.span>
                 <span className="text-xs font-bold uppercase tracking-widest text-primary">Rozet Açıldı!</span>
               </div>
-
               <div className="flex items-center gap-4">
-                <motion.div
-                  initial={{ scale: 0, rotate: -180 }}
-                  animate={{ scale: 1, rotate: 0 }}
-                  transition={{ type: "spring", damping: 10, delay: 0.2 }}
-                  className={`w-16 h-16 rounded-2xl flex items-center justify-center ${tierStyle.bg} border-2 ${tierStyle.border}`}
-                >
+                <motion.div initial={{ scale: 0, rotate: -180 }} animate={{ scale: 1, rotate: 0 }} transition={{ type: "spring", damping: 10, delay: 0.2 }} className={`w-16 h-16 rounded-2xl flex items-center justify-center ${tierStyle.bg} border-2 ${tierStyle.border}`}>
                   <Icon className={`w-8 h-8 ${tierStyle.text}`} />
                 </motion.div>
-
                 <div className="flex-1">
-                  <motion.h3 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="font-display text-lg text-foreground">
-                    {achievement.name}
-                  </motion.h3>
-                  <motion.p initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="text-muted-foreground text-sm">
-                    {achievement.description}
-                  </motion.p>
+                  <motion.h3 initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.3 }} className="font-display text-lg text-foreground">{achievement.name}</motion.h3>
+                  <motion.p initial={{ opacity: 0, x: 20 }} animate={{ opacity: 1, x: 0 }} transition={{ delay: 0.4 }} className="text-muted-foreground text-sm">{achievement.description}</motion.p>
                 </div>
               </div>
-
               <motion.div initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} transition={{ delay: 0.5 }} className="mt-4 flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <span className={`text-xs font-bold uppercase ${tierStyle.text}`}>
@@ -135,12 +114,7 @@ const AchievementUnlockNotification = ({
                 </motion.div>
               </motion.div>
             </div>
-
-            <motion.div
-              className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent"
-              animate={{ opacity: [0.3, 1, 0.3] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
+            <motion.div className="absolute bottom-0 left-0 right-0 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" animate={{ opacity: [0.3, 1, 0.3] }} transition={{ duration: 1.5, repeat: Infinity }} />
           </motion.div>
         </motion.div>
       )}
