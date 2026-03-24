@@ -246,5 +246,6 @@ export const useChallenges = () => {
     acceptChallenge: acceptMutation.mutateAsync,
     declineChallenge: declineMutation.mutateAsync,
     createChallenge: createMutation.mutateAsync,
+    concludeChallenge: concludeChallengeMutation.mutateAsync,
   };
 };
