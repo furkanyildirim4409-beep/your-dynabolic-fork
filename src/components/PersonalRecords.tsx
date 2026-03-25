@@ -325,7 +325,7 @@ const PRDetailView = ({ lift }: { lift: PREntry }) => {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-card p-3 text-center">
-          <p className="text-muted-foreground text-[10px] uppercase">GERÇEK PR</p>
+          <p className="text-muted-foreground text-[10px] uppercase">PR</p>
           <p className="font-display text-lg text-foreground tabular-nums">{realPR}kg</p>
         </div>
         <div className="glass-card p-3 text-center">
