@@ -13,6 +13,10 @@ interface Athlete {
   id: string;
   name: string;
   avatar: string;
+  rankScore?: number;
+  rankCoins?: number;
+  rankVolume?: number;
+  rankStreak?: number;
 }
 
 interface ChallengeHistoryModalProps {
