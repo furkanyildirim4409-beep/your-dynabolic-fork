@@ -12,6 +12,7 @@ import { useBioCoin } from "@/hooks/useBioCoin";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
 import { useXPEngine } from "@/hooks/useXPEngine";
 import { supabase } from "@/integrations/supabase/client";
+import { getIstanbulDateStr } from "@/lib/timezone";
 import {
   Dialog,
   DialogContent,
@@ -97,7 +98,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
 
   const loadTodayCheckin = useCallback(async () => {
     if (!user?.id || !isOpen) return;
-    const today = new Date().toISOString().split("T")[0];
+    const today = getIstanbulDateStr();
     const { data } = await supabase
       .from("daily_checkins")
       .select("id, mood, sleep, soreness, stress, digestion, notes, sleep_hours")
@@ -202,7 +203,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
       await supabase.from("profiles").update({ readiness_score }).eq("id", user.id);
 
       const checkInData: DailyCheckInType = {
-        date: new Date().toISOString().split("T")[0],
+        date: getIstanbulDateStr(),
         ...values,
         notes,
       };

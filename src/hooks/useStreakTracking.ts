@@ -1,6 +1,7 @@
 import { useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getIstanbulDateStr, getIstanbulYesterdayStr } from "@/lib/timezone";
 
 export const useStreakTracking = () => {
   const { user, profile, refreshProfile } = useAuth();
@@ -9,16 +10,14 @@ export const useStreakTracking = () => {
   const longestStreak = profile?.longest_streak || 0;
   const lastActivityDate = profile?.last_activity_date || null;
 
-  const today = new Date().toLocaleDateString("en-CA");
+  const today = getIstanbulDateStr();
   const isStreakActive = lastActivityDate === today;
 
   const updateStreak = useCallback(async () => {
     if (!user?.id || !profile) return;
 
-    const todayStr = new Date().toLocaleDateString("en-CA");
-    const yesterdayDate = new Date();
-    yesterdayDate.setDate(yesterdayDate.getDate() - 1);
-    const yesterdayStr = yesterdayDate.toLocaleDateString("en-CA");
+    const todayStr = getIstanbulDateStr();
+    const yesterdayStr = getIstanbulYesterdayStr();
 
     const lastActive = profile.last_activity_date;
 

@@ -1,6 +1,7 @@
 import { useState, useCallback } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
+import { getIstanbulDateStr, getIstanbulDaysAgoStr } from "@/lib/timezone";
 
 export interface WeeklyRecapData {
   weekStartDate: string;
@@ -21,14 +22,14 @@ export interface WeeklyRecapData {
   };
 }
 
-function calcTonnageFromWorkouts(workouts: any[]): number {
+/** Parse workout_logs `details` JSONB to calculate total tonnage */
+function calcTonnageFromLogs(logs: any[]): number {
   let total = 0;
-  for (const w of workouts) {
-    const exercises = w.exercises;
-    if (!Array.isArray(exercises)) continue;
-    for (const ex of exercises) {
-      const sets = ex.sets || ex.loggedSets || [];
-      if (!Array.isArray(sets)) continue;
+  for (const log of logs) {
+    const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
+    if (!Array.isArray(details)) continue;
+    for (const d of details) {
+      const sets = Array.isArray(d.sets) ? d.sets : [];
       for (const s of sets) {
         const weight = Number(s.weight) || 0;
         const reps = Number(s.reps) || 0;
@@ -39,13 +40,14 @@ function calcTonnageFromWorkouts(workouts: any[]): number {
   return total;
 }
 
-function getTopExercise(workouts: any[]): string {
+/** Parse workout_logs `details` JSONB to find the most frequent exercise */
+function getTopExercise(logs: any[]): string {
   const counts: Record<string, number> = {};
-  for (const w of workouts) {
-    const exercises = w.exercises;
-    if (!Array.isArray(exercises)) continue;
-    for (const ex of exercises) {
-      const name = ex.name || ex.exercise_name || "";
+  for (const log of logs) {
+    const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
+    if (!Array.isArray(details)) continue;
+    for (const d of details) {
+      const name = d.exerciseName ?? d.exercise_name ?? "";
       if (name) counts[name] = (counts[name] || 0) + 1;
     }
   }
@@ -70,54 +72,54 @@ export const useWeeklyRecap = () => {
   const triggerRecap = useCallback(async () => {
     if (!user?.id) return;
 
-    const now = new Date();
-    const weekEnd = now.toISOString();
-    const weekStart = new Date(now.getTime() - 7 * 86400000).toISOString();
-    const prevStart = new Date(now.getTime() - 14 * 86400000).toISOString();
+    const weekEndDate = getIstanbulDateStr();
+    const weekStartDate = getIstanbulDaysAgoStr(7);
+    const prevStartDate = getIstanbulDaysAgoStr(14);
 
-    const weekStartDate = weekStart.slice(0, 10);
-    const prevStartDate = prevStart.slice(0, 10);
-    const weekEndDate = weekEnd.slice(0, 10);
+    // Use ISO timestamps for timestamptz queries
+    const weekEndISO = `${weekEndDate}T23:59:59.999+03:00`;
+    const weekStartISO = `${weekStartDate}T00:00:00+03:00`;
+    const prevStartISO = `${prevStartDate}T00:00:00+03:00`;
 
-    // Parallel queries
+    // Parallel queries — using workout_logs (not assigned_workouts)
     const [thisWeekWk, prevWeekWk, challengesRes, coinsRes] = await Promise.all([
       supabase
-        .from("assigned_workouts")
-        .select("exercises")
-        .eq("athlete_id", user.id)
-        .eq("status", "completed")
-        .gte("scheduled_date", weekStartDate)
-        .lte("scheduled_date", weekEndDate),
+        .from("workout_logs")
+        .select("details, logged_at")
+        .eq("user_id", user.id)
+        .eq("completed", true)
+        .gte("logged_at", weekStartISO)
+        .lte("logged_at", weekEndISO),
       supabase
-        .from("assigned_workouts")
-        .select("exercises")
-        .eq("athlete_id", user.id)
-        .eq("status", "completed")
-        .gte("scheduled_date", prevStartDate)
-        .lt("scheduled_date", weekStartDate),
+        .from("workout_logs")
+        .select("details, logged_at")
+        .eq("user_id", user.id)
+        .eq("completed", true)
+        .gte("logged_at", prevStartISO)
+        .lt("logged_at", weekStartISO),
       supabase
         .from("challenges")
         .select("winner_id, challenger_id, opponent_id")
         .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
         .eq("status", "completed")
-        .gte("created_at", weekStart),
+        .gte("created_at", weekStartISO),
       supabase
         .from("bio_coin_transactions")
         .select("amount, type")
         .eq("user_id", user.id)
-        .gte("created_at", weekStart),
+        .gte("created_at", weekStartISO),
     ]);
 
-    const thisWorkouts = thisWeekWk.data || [];
-    const prevWorkouts = prevWeekWk.data || [];
+    const thisLogs = thisWeekWk.data || [];
+    const prevLogs = prevWeekWk.data || [];
     const challenges = challengesRes.data || [];
     const coins = coinsRes.data || [];
 
-    const workoutsCompleted = thisWorkouts.length;
-    const prevWorkoutsCount = prevWorkouts.length;
-    const totalTonnage = calcTonnageFromWorkouts(thisWorkouts);
-    const prevTonnage = calcTonnageFromWorkouts(prevWorkouts);
-    const topExercise = getTopExercise(thisWorkouts);
+    const workoutsCompleted = thisLogs.length;
+    const prevWorkoutsCount = prevLogs.length;
+    const totalTonnage = calcTonnageFromLogs(thisLogs);
+    const prevTonnage = calcTonnageFromLogs(prevLogs);
+    const topExercise = getTopExercise(thisLogs);
 
     const challengesWon = challenges.filter(c => c.winner_id === user.id).length;
     const challengesLost = challenges.filter(c => c.winner_id && c.winner_id !== user.id).length;
@@ -126,11 +128,10 @@ export const useWeeklyRecap = () => {
     const bonusCoins = coins.filter(c => c.type === "bonus" || c.type === "challenge_win").reduce((s, c) => s + c.amount, 0);
 
     const streakDays = profile?.streak || 0;
-    const prevStreak = Math.max(0, streakDays - (streakDays > 0 ? pctChange(streakDays, streakDays) : 0));
 
     setRecapData({
-      weekStartDate: weekStart,
-      weekEndDate: weekEnd,
+      weekStartDate,
+      weekEndDate,
       workoutsCompleted,
       streakDays,
       challengesWon,
