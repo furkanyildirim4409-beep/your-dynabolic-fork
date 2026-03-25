@@ -166,6 +166,21 @@ export const useChallenges = () => {
     },
   });
 
+  const submitResultMutation = useMutation({
+    mutationFn: async ({ challengeId, value, isChallenger }: { challengeId: string; value: number; isChallenger: boolean }) => {
+      const field = isChallenger ? "challenger_value" : "opponent_value";
+      const { error } = await supabase
+        .from("challenges")
+        .update({ [field]: value })
+        .eq("id", challengeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-challenges"] });
+      toast({ title: "Sonuç kaydedildi! 💪" });
+    },
+  });
+
   const concludeChallengeMutation = useMutation({
     mutationFn: async ({ challengeId, winnerId }: { challengeId: string; winnerId: string }) => {
       // 1. Fetch challenge details
@@ -247,5 +262,6 @@ export const useChallenges = () => {
     declineChallenge: declineMutation.mutateAsync,
     createChallenge: createMutation.mutateAsync,
     concludeChallenge: concludeChallengeMutation.mutateAsync,
+    submitResult: submitResultMutation.mutateAsync,
   };
 };

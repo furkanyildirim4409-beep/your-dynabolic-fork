@@ -420,6 +420,45 @@ export type Database = {
         }
         Relationships: []
       }
+      challenge_messages: {
+        Row: {
+          challenge_id: string
+          created_at: string | null
+          id: string
+          message: string
+          user_id: string
+        }
+        Insert: {
+          challenge_id: string
+          created_at?: string | null
+          id?: string
+          message: string
+          user_id: string
+        }
+        Update: {
+          challenge_id?: string
+          created_at?: string | null
+          id?: string
+          message?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "challenge_messages_challenge_id_fkey"
+            columns: ["challenge_id"]
+            isOneToOne: false
+            referencedRelation: "challenges"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "challenge_messages_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       challenges: {
         Row: {
           challenge_type: string
