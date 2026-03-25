@@ -98,7 +98,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
 
   const loadTodayCheckin = useCallback(async () => {
     if (!user?.id || !isOpen) return;
-    const today = new Date().toISOString().split("T")[0];
+    const today = getIstanbulDateStr();
     const { data } = await supabase
       .from("daily_checkins")
       .select("id, mood, sleep, soreness, stress, digestion, notes, sleep_hours")
