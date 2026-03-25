@@ -1,9 +1,11 @@
-import { useState } from "react";
+import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useChallengeChat } from "@/hooks/useChallengeChat";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -35,21 +37,78 @@ interface ChallengeDetailModalProps {
 const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailModalProps) => {
   const [activeTab, setActiveTab] = useState<"vs" | "chat" | "proof" | "history">("vs");
   const [message, setMessage] = useState("");
+  const [myResult, setMyResult] = useState("");
+  const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { completed } = useChallenges();
+  const { completed, submitResult } = useChallenges();
+  const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
+
+  useEffect(() => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  }, [chatMessages]);
 
   if (!isOpen || !challenge) return null;
 
-  // Determine the real opponent ID for history filtering
+  const isChallenger = challenge.challengerId === "current";
+  const myValue = isChallenger ? challenge.challengerValue : challenge.challengedValue;
+  const opponentValue = isChallenger ? challenge.challengedValue : challenge.challengerValue;
+
   const opponentId = challenge.opponentRealId ||
     (challenge.challengerId === "current" ? challenge.challengedId : challenge.challengerId) || "";
 
-  // Filter completed challenges between current user and this specific opponent
   const opponentHistory = completed.filter((c) => {
     const involvesCurrent = c.challengerId === "current" || c.challengedId === "current";
     const involvesOpponent = c.challengerId === opponentId || c.challengedId === opponentId;
     return involvesCurrent && involvesOpponent;
   });
+
+  const handleSubmitResult = async () => {
+    const val = Number(myResult);
+    if (!val || val <= 0) return;
+    await submitResult({ challengeId: challenge.id, value: val, isChallenger });
+    setMyResult("");
+  };
+
+  const handleSendMessage = async () => {
+    if (!message.trim()) return;
+    await sendMessage(message.trim());
+    setMessage("");
+  };
+
+  const renderValueOrInput = (isCurrentUserSide: boolean, currentValue: number | undefined) => {
+    if (challenge.status !== "active" || !isCurrentUserSide) {
+      return (
+        <>
+          <p className="text-primary text-2xl font-display font-bold">{currentValue ?? 0}</p>
+          <p className="text-muted-foreground text-xs">puan</p>
+        </>
+      );
+    }
+
+    if (currentValue && currentValue > 0) {
+      return (
+        <>
+          <p className="text-primary text-2xl font-display font-bold">{currentValue}</p>
+          <p className="text-green-400 text-[10px]">✓ Kaydedildi</p>
+        </>
+      );
+    }
+
+    return (
+      <div className="mt-1 space-y-1.5">
+        <Input
+          type="number"
+          value={myResult}
+          onChange={(e) => setMyResult(e.target.value)}
+          placeholder="Sonuç"
+          className="h-8 w-20 text-center text-sm mx-auto"
+        />
+        <Button size="sm" className="text-[10px] h-6 px-2" onClick={handleSubmitResult}>
+          Kaydet
+        </Button>
+      </div>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -111,7 +170,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
           </div>
 
           {/* Content */}
-          <div className="flex-1 overflow-y-auto p-4">
+          <div className={`flex-1 overflow-y-auto ${activeTab === "chat" ? "flex flex-col" : "p-4"}`}>
             {/* VS Tab */}
             {activeTab === "vs" && (
               <div className="space-y-6">
@@ -125,8 +184,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                       </AvatarFallback>
                     </Avatar>
                     <p className="text-foreground text-sm font-medium mt-2">{challenge.challengerName || "Rakip"}</p>
-                    <p className="text-primary text-2xl font-display font-bold">{challenge.challengerValue ?? 0}</p>
-                    <p className="text-muted-foreground text-xs">puan</p>
+                    {renderValueOrInput(isChallenger, challenge.challengerValue)}
                   </div>
 
                   <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
@@ -142,8 +200,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                       </AvatarFallback>
                     </Avatar>
                     <p className="text-foreground text-sm font-medium mt-2">{challenge.challengedName || "Rakip"}</p>
-                    <p className="text-primary text-2xl font-display font-bold">{challenge.challengedValue ?? 0}</p>
-                    <p className="text-muted-foreground text-xs">puan</p>
+                    {renderValueOrInput(!isChallenger, challenge.challengedValue)}
                   </div>
                 </div>
 
@@ -163,26 +220,60 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
               </div>
             )}
 
-            {/* Chat Tab — Empty state */}
+            {/* Chat Tab */}
             {activeTab === "chat" && (
-              <div className="space-y-3">
-                <div className="text-center py-12">
-                  <MessageCircle className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
-                  <p className="text-foreground text-sm font-medium">Henüz mesaj yok</p>
-                  <p className="text-muted-foreground text-xs mt-1">Rakibine sataşmaya başla! 🔥</p>
+              <>
+                <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                  {chatMessages.length === 0 ? (
+                    <div className="text-center py-12">
+                      <MessageCircle className="w-12 h-12 text-muted-foreground/20 mx-auto mb-3" />
+                      <p className="text-foreground text-sm font-medium">Henüz mesaj yok</p>
+                      <p className="text-muted-foreground text-xs mt-1">Rakibine sataşmaya başla! 🔥</p>
+                    </div>
+                  ) : (
+                    chatMessages.map((msg) => {
+                      const isMe = msg.user_id === user?.id;
+                      let timeStr = "";
+                      try {
+                        timeStr = format(new Date(msg.created_at), "HH:mm", { locale: tr });
+                      } catch { /* ignore */ }
+
+                      return (
+                        <div key={msg.id} className={`flex ${isMe ? "justify-end" : "justify-start"}`}>
+                          <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${
+                            isMe
+                              ? "bg-primary text-primary-foreground rounded-br-sm"
+                              : "bg-secondary text-secondary-foreground rounded-bl-sm"
+                          }`}>
+                            {!isMe && (
+                              <p className="text-[10px] font-medium opacity-70 mb-0.5">{msg.sender_name}</p>
+                            )}
+                            <p className="text-sm">{msg.message}</p>
+                            <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
+                              {timeStr}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })
+                  )}
+                  <div ref={messagesEndRef} />
                 </div>
-                <div className="flex gap-2 mt-4">
-                  <input
+
+                {/* Sticky input */}
+                <div className="p-3 border-t border-border flex gap-2">
+                  <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
+                    onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
                     placeholder="Mesaj yaz..."
-                    className="flex-1 px-3 py-2 rounded-xl bg-secondary border border-border text-foreground text-sm"
+                    className="flex-1 rounded-xl"
                   />
-                  <Button size="icon" className="rounded-xl">
+                  <Button size="icon" className="rounded-xl" onClick={handleSendMessage}>
                     <Send className="w-4 h-4" />
                   </Button>
                 </div>
-              </div>
+              </>
             )}
 
             {/* Proof Tab */}
@@ -198,7 +289,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
               </div>
             )}
 
-            {/* History Tab — Real data */}
+            {/* History Tab */}
             {activeTab === "history" && (
               <div className="space-y-3">
                 {opponentHistory.length === 0 ? (
