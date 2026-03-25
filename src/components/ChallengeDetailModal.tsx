@@ -218,6 +218,33 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                     </p>
                   </div>
                 )}
+
+                {/* Resolution buttons when both sides submitted */}
+                {challenge.status === "active" && !challenge.winnerId &&
+                  (challenge.challengerValue ?? 0) > 0 && (challenge.challengedValue ?? 0) > 0 && (
+                  <div className="flex gap-3 mt-2">
+                    <Button
+                      className="flex-1"
+                      onClick={async () => {
+                        const cVal = challenge.challengerValue ?? 0;
+                        const dVal = challenge.challengedValue ?? 0;
+                        const winnerId = cVal >= dVal
+                          ? (isChallenger ? user?.id : opponentId)
+                          : (isChallenger ? opponentId : user?.id);
+                        if (winnerId) await concludeChallenge({ challengeId: challenge.id, winnerId });
+                      }}
+                    >
+                      <Trophy className="w-4 h-4 mr-1" /> Kabul Et (Maçı Bitir)
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => disputeChallenge(challenge.id)}
+                    >
+                      ⚖️ İtiraz Et (Kanıt İste)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
