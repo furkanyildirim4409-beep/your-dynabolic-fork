@@ -122,6 +122,35 @@ const ChallengeHistoryModal = ({ isOpen, onClose, athlete }: ChallengeHistoryMod
           </div>
         </DialogHeader>
 
+        {/* Global Rankings */}
+        {athlete.rankScore && (
+          <div className="shrink-0 px-4 pt-3 pb-2 border-b border-white/10">
+            <p className="text-muted-foreground text-[10px] uppercase tracking-wider mb-2">Global Sıralama</p>
+            <div className="grid grid-cols-4 gap-2">
+              <div className="glass-card p-2 text-center">
+                <TrendingUp className="w-3.5 h-3.5 text-primary mx-auto mb-1" />
+                <p className="font-display text-sm text-foreground">#{athlete.rankScore}</p>
+                <p className="text-muted-foreground text-[10px]">Skor</p>
+              </div>
+              <div className="glass-card p-2 text-center">
+                <Coins className="w-3.5 h-3.5 text-yellow-400 mx-auto mb-1" />
+                <p className="font-display text-sm text-foreground">#{athlete.rankCoins}</p>
+                <p className="text-muted-foreground text-[10px]">Coin</p>
+              </div>
+              <div className="glass-card p-2 text-center">
+                <Dumbbell className="w-3.5 h-3.5 text-blue-400 mx-auto mb-1" />
+                <p className="font-display text-sm text-foreground">#{athlete.rankVolume}</p>
+                <p className="text-muted-foreground text-[10px]">Tonaj</p>
+              </div>
+              <div className="glass-card p-2 text-center">
+                <Flame className="w-3.5 h-3.5 text-orange-400 mx-auto mb-1" />
+                <p className="font-display text-sm text-foreground">#{athlete.rankStreak}</p>
+                <p className="text-muted-foreground text-[10px]">Seri</p>
+              </div>
+            </div>
+          </div>
+        )}
+
         {/* Stats */}
         <div className="shrink-0 p-4 border-b border-white/10">
           {isLoading ? (

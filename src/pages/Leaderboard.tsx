@@ -153,6 +153,9 @@ const Leaderboard = () => {
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-2xl">{style.badge}</div>
                         </div>
                         <p className="mt-4 text-foreground text-xs font-medium text-center max-w-16 truncate">{athlete.name.split(" ")[0]}</p>
+                        {position === 1 && <span className="text-[9px] text-yellow-400 font-display tracking-wider">HÜKÜMDAR</span>}
+                        {position === 2 && <span className="text-[9px] text-gray-400 font-display tracking-wider">ZİRVE</span>}
+                        {position === 3 && <span className="text-[9px] text-amber-500 font-display tracking-wider">ZİRVE</span>}
                         <div className="flex items-center gap-1 mt-1">
                           <MetricIcon className="w-3 h-3 text-primary" />
                           <span className="font-display text-primary text-sm tabular-nums">{cfg.format(athlete)}</span>
