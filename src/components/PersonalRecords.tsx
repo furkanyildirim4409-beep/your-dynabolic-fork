@@ -167,18 +167,18 @@ const PersonalRecords = ({ isOpen, onClose }: PersonalRecordsProps) => {
                               pr.isRecent ? "ring-2 ring-yellow-500/50" : ""
                             }`}
                           >
-                            {pr.isRecent && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
-                              >
-                                <Sparkles className="w-2 h-2" />
-                                YENİ PR
-                              </motion.div>
-                            )}
-
-                            <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
+                              {pr.isRecent && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                                >
+                                  <Sparkles className="w-2 h-2" /> YENİ
+                                </motion.div>
+                              )}
+                            </div>
 
                             <p className="text-muted-foreground text-xs mt-2 uppercase tracking-wider line-clamp-1">
                               {pr.name}
@@ -224,9 +224,9 @@ const PersonalRecords = ({ isOpen, onClose }: PersonalRecordsProps) => {
 /* ---------- Detail Sub-component ---------- */
 
 const PRDetailView = ({ lift }: { lift: PREntry }) => {
-  const startWeight = lift.history[0]?.weight ?? 0;
-  const gain = lift.estimated1RM - startWeight;
-  const pct = startWeight > 0 ? Math.round((gain / startWeight) * 100) : 0;
+  const realPR = lift.maxWeight;
+  const gain = lift.estimated1RM - realPR;
+  const pct = realPR > 0 ? Math.round((gain / realPR) * 100) : 0;
 
   return (
     <motion.div
@@ -242,18 +242,18 @@ const PRDetailView = ({ lift }: { lift: PREntry }) => {
           lift.isRecent ? "ring-2 ring-yellow-500/50" : ""
         }`}
       >
-        {lift.isRecent && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3" />
-            TAHMİNİ PR POTANSİYELİ
-          </motion.div>
-        )}
-
-        <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
+        <div className="flex flex-col items-center justify-center">
+          {lift.isRecent && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 mb-3"
+            >
+              <Sparkles className="w-3 h-3" /> YENİ POTANSİYEL
+            </motion.div>
+          )}
+          <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
+        </div>
         <p className="font-display text-6xl text-foreground mt-4 tabular-nums">
           {lift.estimated1RM}
           <span className="text-2xl text-muted-foreground ml-1">kg</span>
@@ -325,15 +325,15 @@ const PRDetailView = ({ lift }: { lift: PREntry }) => {
       {/* Stats */}
       <div className="grid grid-cols-3 gap-3">
         <div className="glass-card p-3 text-center">
-          <p className="text-muted-foreground text-[10px] uppercase">Başlangıç</p>
-          <p className="font-display text-lg text-foreground tabular-nums">{startWeight}kg</p>
+          <p className="text-muted-foreground text-[10px] uppercase">GERÇEK PR</p>
+          <p className="font-display text-lg text-foreground tabular-nums">{realPR}kg</p>
         </div>
         <div className="glass-card p-3 text-center">
-          <p className="text-muted-foreground text-[10px] uppercase">Artış</p>
+          <p className="text-muted-foreground text-[10px] uppercase">POTANSİYEL</p>
           <p className="font-display text-lg text-primary tabular-nums">+{gain}kg</p>
         </div>
         <div className="glass-card p-3 text-center">
-          <p className="text-muted-foreground text-[10px] uppercase">Yüzde</p>
+          <p className="text-muted-foreground text-[10px] uppercase">FARK</p>
           <p className="font-display text-lg text-emerald-500 tabular-nums">+{pct}%</p>
         </div>
       </div>
