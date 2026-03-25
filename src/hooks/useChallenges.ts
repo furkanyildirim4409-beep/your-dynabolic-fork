@@ -72,6 +72,7 @@ export const useChallenges = () => {
       completed: "completed",
       expired: "expired",
       declined: "declined",
+      disputed: "disputed",
     };
 
     return {
@@ -108,7 +109,7 @@ export const useChallenges = () => {
   }));
 
   const pending = remapped.filter((c) => c.status === "pending");
-  const active = remapped.filter((c) => c.status === "active");
+  const active = remapped.filter((c) => c.status === "active" || c.status === "disputed");
   const completed = remapped.filter((c) => c.status === "completed" || c.status === "expired");
 
   const acceptMutation = useMutation({
@@ -252,6 +253,20 @@ export const useChallenges = () => {
     },
   });
 
+  const disputeChallengeMutation = useMutation({
+    mutationFn: async (challengeId: string) => {
+      const { error } = await supabase
+        .from("challenges")
+        .update({ status: "disputed" })
+        .eq("id", challengeId);
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-challenges"] });
+      toast({ title: "İtiraz edildi ⚖️", description: "Koç incelemesi bekleniyor." });
+    },
+  });
+
   return {
     challenges: remapped,
     pending,
@@ -263,5 +278,6 @@ export const useChallenges = () => {
     createChallenge: createMutation.mutateAsync,
     concludeChallenge: concludeChallengeMutation.mutateAsync,
     submitResult: submitResultMutation.mutateAsync,
+    disputeChallenge: disputeChallengeMutation.mutateAsync,
   };
 };

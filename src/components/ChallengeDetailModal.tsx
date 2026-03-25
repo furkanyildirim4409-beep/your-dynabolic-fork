@@ -20,7 +20,7 @@ interface ChallengeDetailModalProps {
     target: string;
     deadline: string;
     wager: number;
-    status: "active" | "completed" | "pending";
+    status: "active" | "completed" | "pending" | "disputed";
     challengerId?: string;
     challengerName?: string;
     challengerAvatar?: string;
@@ -40,7 +40,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const [myResult, setMyResult] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { completed, submitResult } = useChallenges();
+  const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
   const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
 
   useEffect(() => {
@@ -140,10 +140,11 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
               <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {challenge.deadline}</span>
               <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> {challenge.wager} Bio-Coin</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
+                challenge.status === "disputed" ? "bg-amber-500/20 text-amber-400" :
                 challenge.status === "active" ? "bg-green-500/20 text-green-400" :
                 challenge.status === "completed" ? "bg-primary/20 text-primary" : "bg-yellow-500/20 text-yellow-400"
               }`}>
-                {challenge.status === "active" ? "Aktif" : challenge.status === "completed" ? "Tamamlandı" : "Bekliyor"}
+                {challenge.status === "disputed" ? "İtiraz Edildi" : challenge.status === "active" ? "Aktif" : challenge.status === "completed" ? "Tamamlandı" : "Bekliyor"}
               </span>
             </div>
           </div>
@@ -217,6 +218,33 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                     </p>
                   </div>
                 )}
+
+                {/* Resolution buttons when both sides submitted */}
+                {challenge.status === "active" && !challenge.winnerId &&
+                  (challenge.challengerValue ?? 0) > 0 && (challenge.challengedValue ?? 0) > 0 && (
+                  <div className="flex gap-3 mt-2">
+                    <Button
+                      className="flex-1"
+                      onClick={async () => {
+                        const cVal = challenge.challengerValue ?? 0;
+                        const dVal = challenge.challengedValue ?? 0;
+                        const winnerId = cVal >= dVal
+                          ? (isChallenger ? user?.id : opponentId)
+                          : (isChallenger ? opponentId : user?.id);
+                        if (winnerId) await concludeChallenge({ challengeId: challenge.id, winnerId });
+                      }}
+                    >
+                      <Trophy className="w-4 h-4 mr-1" /> Kabul Et (Maçı Bitir)
+                    </Button>
+                    <Button
+                      variant="destructive"
+                      className="flex-1"
+                      onClick={() => disputeChallenge(challenge.id)}
+                    >
+                      ⚖️ İtiraz Et (Kanıt İste)
+                    </Button>
+                  </div>
+                )}
               </div>
             )}
 
@@ -278,14 +306,15 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
 
             {/* Proof Tab */}
             {activeTab === "proof" && (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <Camera className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-foreground text-sm font-medium">Kanıt Yükle</p>
-                <p className="text-muted-foreground text-xs mt-1 mb-4">Fotoğraf veya video ile kanıtla</p>
-                <Button variant="outline" className="gap-2">
-                  <Camera className="w-4 h-4" />
-                  Fotoğraf Çek
-                </Button>
+                <p className="text-foreground text-sm font-medium mb-3">Kanıt Paylaşımı</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Lütfen antrenman videonu veya ekran görüntünü <span className="text-primary font-medium">'Mesajlar'</span> sekmesinden rakibine gönder.
+                </p>
+                <p className="text-muted-foreground text-xs leading-relaxed mt-3">
+                  Eğer rakibinin yalan söylediğini düşünüyorsan <span className="text-destructive font-medium">'VS'</span> sekmesinden <span className="text-destructive font-medium">İtiraz Et</span> butonuna bas.
+                </p>
               </div>
             )}
 
