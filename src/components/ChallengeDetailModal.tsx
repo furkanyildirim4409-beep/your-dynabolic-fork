@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History } from "lucide-react";
+import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -37,7 +37,7 @@ interface ChallengeDetailModalProps {
 const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailModalProps) => {
   const [activeTab, setActiveTab] = useState<"vs" | "chat" | "proof" | "history">("vs");
   const [message, setMessage] = useState("");
-  const [myResult, setMyResult] = useState("");
+  const [myResult, setMyResult] = useState(0);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
@@ -52,6 +52,10 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const isChallenger = challenge.challengerId === "current";
   const myValue = isChallenger ? challenge.challengerValue : challenge.challengedValue;
   const opponentValue = isChallenger ? challenge.challengedValue : challenge.challengerValue;
+  const myName = isChallenger ? challenge.challengerName : challenge.challengedName;
+  const myAvatar = isChallenger ? challenge.challengerAvatar : challenge.challengedAvatar;
+  const opponentName = isChallenger ? challenge.challengedName : challenge.challengerName;
+  const opponentAvatar = isChallenger ? challenge.challengedAvatar : challenge.challengerAvatar;
 
   const opponentId = challenge.opponentRealId ||
     (challenge.challengerId === "current" ? challenge.challengedId : challenge.challengerId) || "";
@@ -63,10 +67,9 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   });
 
   const handleSubmitResult = async () => {
-    const val = Number(myResult);
-    if (!val || val <= 0) return;
-    await submitResult({ challengeId: challenge.id, value: val, isChallenger });
-    setMyResult("");
+    if (myResult <= 0) return;
+    await submitResult({ challengeId: challenge.id, value: myResult, isChallenger });
+    setMyResult(0);
   };
 
   const handleSendMessage = async () => {
@@ -75,37 +78,70 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
     setMessage("");
   };
 
-  const renderValueOrInput = (isCurrentUserSide: boolean, currentValue: number | undefined) => {
-    if (challenge.status !== "active" || !isCurrentUserSide) {
-      return (
-        <>
-          <p className="text-primary text-2xl font-display font-bold">{currentValue ?? 0}</p>
-          <p className="text-muted-foreground text-xs">puan</p>
-        </>
-      );
-    }
+  const adjustValue = (delta: number) => {
+    setMyResult((prev) => Math.max(0, prev + delta));
+  };
 
-    if (currentValue && currentValue > 0) {
-      return (
-        <>
-          <p className="text-primary text-2xl font-display font-bold">{currentValue}</p>
-          <p className="text-green-400 text-[10px]">✓ Kaydedildi</p>
-        </>
-      );
-    }
+  // --- ScorePad Renderer ---
+  const renderScorePad = (isCurrentUserSide: boolean, currentValue: number | undefined, name: string | undefined, avatar: string | undefined, ringClass: string) => {
+    const showInput = challenge.status === "active" && isCurrentUserSide && (!currentValue || currentValue <= 0);
+    const isLocked = isCurrentUserSide && currentValue && currentValue > 0;
 
     return (
-      <div className="mt-1 space-y-1.5">
-        <Input
-          type="number"
-          value={myResult}
-          onChange={(e) => setMyResult(e.target.value)}
-          placeholder="Sonuç"
-          className="h-8 w-20 text-center text-sm mx-auto"
-        />
-        <Button size="sm" className="text-[10px] h-6 px-2" onClick={handleSubmitResult}>
-          Kaydet
-        </Button>
+      <div className="flex flex-col items-center gap-2">
+        <Avatar className={`w-20 h-20 ring-4 ${ringClass}`}>
+          <AvatarImage src={avatar} className="object-cover" />
+          <AvatarFallback className="bg-secondary text-foreground text-xl font-display">
+            {(name || "?").charAt(0).toUpperCase()}
+          </AvatarFallback>
+        </Avatar>
+        <p className="font-display text-sm font-bold text-foreground">{name || "Bilinmeyen"}</p>
+
+        {showInput ? (
+          <div className="flex flex-col items-center gap-3 mt-2">
+            <p className="text-5xl font-display font-black text-primary tabular-nums">{myResult}</p>
+            <div className="flex items-center gap-2">
+              {[-10, -1].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => adjustValue(d)}
+                  className="w-10 h-10 rounded-full bg-secondary/80 backdrop-blur border border-border text-foreground font-display text-sm font-bold flex items-center justify-center hover:bg-destructive/20 hover:text-destructive transition-colors active:scale-90"
+                >
+                  {d}
+                </button>
+              ))}
+              {[1, 10].map((d) => (
+                <button
+                  key={d}
+                  onClick={() => adjustValue(d)}
+                  className="w-10 h-10 rounded-full bg-secondary/80 backdrop-blur border border-border text-foreground font-display text-sm font-bold flex items-center justify-center hover:bg-primary/20 hover:text-primary transition-colors active:scale-90"
+                >
+                  +{d}
+                </button>
+              ))}
+            </div>
+            <Button
+              onClick={handleSubmitResult}
+              disabled={myResult <= 0}
+              className="w-full h-14 text-lg font-bold font-display tracking-wider bg-gradient-to-r from-primary to-orange-500 hover:from-primary/90 hover:to-orange-500/90 hover:scale-[1.02] transition-transform rounded-xl shadow-lg"
+            >
+              ⚔️ SONUCU KAYDET
+            </Button>
+          </div>
+        ) : isLocked ? (
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <p className="text-3xl font-display font-black text-primary">{currentValue}</p>
+            <div className="flex items-center gap-1 text-green-400">
+              <CheckCircle className="w-3.5 h-3.5" />
+              <span className="text-xs font-medium">Kaydedildi</span>
+            </div>
+          </div>
+        ) : (
+          <div className="flex flex-col items-center gap-1 mt-1">
+            <p className="text-3xl font-display font-black text-foreground/80">{currentValue ?? 0}</p>
+            <p className="text-muted-foreground text-xs">{currentValue && currentValue > 0 ? "puan" : "Bekleniyor..."}</p>
+          </div>
+        )}
       </div>
     );
   };
@@ -175,34 +211,16 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
             {/* VS Tab */}
             {activeTab === "vs" && (
               <div className="space-y-6">
-                <div className="flex items-center justify-center gap-6 py-6">
-                  {/* Challenger */}
-                  <div className="text-center">
-                    <Avatar className="w-20 h-20 ring-2 ring-primary mx-auto">
-                      <AvatarImage src={challenge.challengerAvatar} className="object-cover" />
-                      <AvatarFallback className="bg-primary/20 text-primary text-lg">
-                        {(challenge.challengerName || "?").charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-foreground text-sm font-medium mt-2">{challenge.challengerName || "Rakip"}</p>
-                    {renderValueOrInput(isChallenger, challenge.challengerValue)}
+                <div className="flex items-start justify-center gap-4 py-4">
+                  {/* Current User Side */}
+                  {renderScorePad(true, myValue, myName, myAvatar, "ring-primary/50")}
+
+                  <div className="w-12 h-12 rounded-full bg-destructive/20 flex items-center justify-center mt-6 shrink-0">
+                    <span className="text-destructive font-display font-black text-sm">VS</span>
                   </div>
 
-                  <div className="w-10 h-10 rounded-full bg-destructive/20 flex items-center justify-center">
-                    <span className="text-destructive font-bold text-sm">VS</span>
-                  </div>
-
-                  {/* Challenged */}
-                  <div className="text-center">
-                    <Avatar className="w-20 h-20 ring-2 ring-border mx-auto">
-                      <AvatarImage src={challenge.challengedAvatar} className="object-cover" />
-                      <AvatarFallback className="bg-secondary text-foreground text-lg">
-                        {(challenge.challengedName || "?").charAt(0)}
-                      </AvatarFallback>
-                    </Avatar>
-                    <p className="text-foreground text-sm font-medium mt-2">{challenge.challengedName || "Rakip"}</p>
-                    {renderValueOrInput(!isChallenger, challenge.challengedValue)}
-                  </div>
+                  {/* Opponent Side */}
+                  {renderScorePad(false, opponentValue, opponentName, opponentAvatar, "ring-destructive/50")}
                 </div>
 
                 <div className="backdrop-blur-xl bg-card border border-border rounded-xl p-4">
@@ -337,14 +355,14 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                     } catch {
                       dateStr = "";
                     }
-                    const opponentName = entry.challengerId === "current" ? entry.challengedName : entry.challengerName;
+                    const historyOpponentName = entry.challengerId === "current" ? entry.challengedName : entry.challengerName;
 
                     return (
                       <div key={entry.id} className="backdrop-blur-xl bg-card border border-border rounded-xl p-3 flex items-center justify-between">
                         <div>
                           <p className="text-foreground text-sm font-medium">{won ? "Kazandın 🏆" : "Kaybettin"}</p>
                           <p className="text-muted-foreground text-xs">
-                            vs {opponentName} {dateStr && `• ${dateStr}`}
+                            vs {historyOpponentName} {dateStr && `• ${dateStr}`}
                             {entry.exercise && ` • ${entry.exercise}`}
                           </p>
                         </div>
