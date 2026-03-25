@@ -30,7 +30,10 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [metric, setMetric] = useState<LeaderboardMetric>("bioCoins");
   const [activeTab, setActiveTab] = useState<"leaderboard" | "challenges">("leaderboard");
-  const [selectedAthlete, setSelectedAthlete] = useState<{ id: string; name: string; avatar: string } | null>(null);
+  const [selectedAthlete, setSelectedAthlete] = useState<{
+    id: string; name: string; avatar: string;
+    rankScore: number; rankCoins: number; rankVolume: number; rankStreak: number;
+  } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { leaderboard, currentUserRank, isLoading } = useLeaderboard(metric);
 
