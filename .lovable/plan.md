@@ -1,61 +1,58 @@
 
 
-## Plan: PR UI/UX Polish (Part 2.5)
+## Plan: The Arena UI Overhaul (Part 4 of 6)
 
 ### Summary
-Three visual fixes in `PersonalRecords.tsx`: (1) remove absolute positioning on list view badges, (2) remove absolute positioning on detail view badge, (3) overhaul stats grid to show actual lifted PR vs theoretical 1RM.
 
-### Changes to `src/components/PersonalRecords.tsx`
+Three targeted fixes: (1) hide the sticky ranking banner when on the Challenges tab, (2) expand exercise search results from 8 to 100 with a scrollable container, (3) convert `ChallengeDetailModal` from a bottom sheet to a full-screen layout.
 
-**1. List View Badge Fix (lines 170-181)**
+---
 
-Replace the absolutely-positioned badge + standalone emoji with a flex row:
+### Technical Details
 
+#### 1. Fix Banner Overlap (`src/pages/Leaderboard.tsx`, line 233)
+
+Change:
 ```tsx
-<div className="flex justify-between items-start mb-2">
-  <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
-  {pr.isRecent && (
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-      className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
-      <Sparkles className="w-2 h-2" /> YENİ
-    </motion.div>
-  )}
+{currentUser && currentUserRank > 0 && (
+```
+To:
+```tsx
+{activeTab === "leaderboard" && currentUser && currentUserRank > 0 && (
+```
+
+#### 2. Fix Exercise Search Limit (`src/components/CreateChallengeModal.tsx`)
+
+**Line 63** — change `.slice(0, 8)` to `.slice(0, 100)`.
+
+**Search results list rendering** — wrap `searchResults.map(...)` in a scrollable container:
+```tsx
+<div className="max-h-[200px] overflow-y-auto pr-2">
+  {searchResults.map((name) => ( ... ))}
 </div>
 ```
 
-**2. Detail View Badge Fix (lines 245-256)**
+#### 3. Full-Screen War Room (`src/components/ChallengeDetailModal.tsx`)
 
-Replace the absolutely-positioned badge + standalone emoji with a centered flex column:
+**Outer overlay (line 56-61):** Remove the `onClick={onClose}` from the backdrop div since the modal is now full-screen — closing is handled by the X button only.
 
-```tsx
-<div className="flex flex-col items-center justify-center">
-  {lift.isRecent && (
-    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
-      className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 mb-3">
-      <Sparkles className="w-3 h-3" /> YENİ POTANSİYEL
-    </motion.div>
-  )}
-  <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
-</div>
-```
+**Modal container (line 63-69):** Replace classes:
+- From: `absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl max-h-[90vh] overflow-hidden`
+- To: `fixed inset-0 z-[60] bg-background h-[100dvh] w-full flex flex-col rounded-none`
 
-**3. Stats Grid Overhaul (lines 226-229, 326-339)**
+**Animation:** Change from `y: "100%"` slide-up to a fade+scale entrance for full-screen feel.
 
-Change calculation logic:
-```typescript
-const realPR = lift.maxWeight;
-const gain = lift.estimated1RM - realPR;
-const pct = realPR > 0 ? Math.round((gain / realPR) * 100) : 0;
-```
+**Remove drag handle** if any pill-shaped div exists at the top.
 
-Update grid labels:
-- "Başlangıç" → "GERÇEK PR" showing `{realPR}kg`
-- "Artış" → "POTANSİYEL" showing `+{gain}kg`
-- "Yüzde" → "FARK" showing `+{pct}%`
+**Content area (line 106):** Change `overflow-y-auto p-4` div to use `flex-1 overflow-y-auto p-4` so it fills remaining space below the fixed header and tabs.
+
+---
 
 ### Files Changed
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/components/PersonalRecords.tsx` | Fix badge overlaps (list + detail), overhaul stats grid |
+| `src/pages/Leaderboard.tsx` | Add `activeTab === "leaderboard"` guard to bottom bar |
+| `src/components/CreateChallengeModal.tsx` | Expand search slice to 100, wrap results in scrollable div |
+| `src/components/ChallengeDetailModal.tsx` | Convert to full-screen layout with flex column structure |
 
