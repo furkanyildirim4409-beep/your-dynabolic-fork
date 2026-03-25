@@ -40,7 +40,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const [myResult, setMyResult] = useState("");
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
-  const { completed, submitResult } = useChallenges();
+  const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
   const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
 
   useEffect(() => {
