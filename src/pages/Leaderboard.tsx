@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { hapticLight } from "@/lib/haptics";
 import ChallengesSection from "@/components/ChallengesSection";
 import ChallengeHistoryModal from "@/components/ChallengeHistoryModal";
-import { useLeaderboard, LeaderboardMetric, LeaderboardAthlete } from "@/hooks/useLeaderboard";
+import { useLeaderboard, LeaderboardMetric, LeaderboardAthlete, metricAccessor } from "@/hooks/useLeaderboard";
 
 const metricConfig: Record<LeaderboardMetric, { icon: typeof Coins; label: string; format: (a: LeaderboardAthlete) => string }> = {
   bioCoins: { icon: Coins, label: "COİN", format: (a) => a.bioCoins.toLocaleString("tr-TR") },
@@ -30,7 +30,10 @@ const Leaderboard = () => {
   const navigate = useNavigate();
   const [metric, setMetric] = useState<LeaderboardMetric>("bioCoins");
   const [activeTab, setActiveTab] = useState<"leaderboard" | "challenges">("leaderboard");
-  const [selectedAthlete, setSelectedAthlete] = useState<{ id: string; name: string; avatar: string } | null>(null);
+  const [selectedAthlete, setSelectedAthlete] = useState<{
+    id: string; name: string; avatar: string;
+    rankScore: number; rankCoins: number; rankVolume: number; rankStreak: number;
+  } | null>(null);
   const scrollContainerRef = useRef<HTMLDivElement>(null);
   const { leaderboard, currentUserRank, isLoading } = useLeaderboard(metric);
 
@@ -59,7 +62,15 @@ const Leaderboard = () => {
 
   const handleAthleteClick = (athlete: LeaderboardAthlete) => {
     hapticLight();
-    setSelectedAthlete({ id: athlete.id, name: athlete.name, avatar: athlete.avatar });
+    const getRank = (m: LeaderboardMetric) => {
+      const sorted = [...leaderboard].sort((a, b) => metricAccessor[m](b) - metricAccessor[m](a));
+      return sorted.findIndex((a) => a.id === athlete.id) + 1;
+    };
+    setSelectedAthlete({
+      id: athlete.id, name: athlete.name, avatar: athlete.avatar,
+      rankScore: getRank("score"), rankCoins: getRank("bioCoins"),
+      rankVolume: getRank("volume"), rankStreak: getRank("streak"),
+    });
   };
 
   return (
@@ -142,6 +153,9 @@ const Leaderboard = () => {
                           <div className="absolute -bottom-2 left-1/2 -translate-x-1/2 text-2xl">{style.badge}</div>
                         </div>
                         <p className="mt-4 text-foreground text-xs font-medium text-center max-w-16 truncate">{athlete.name.split(" ")[0]}</p>
+                        {position === 1 && <span className="text-[9px] text-yellow-400 font-display tracking-wider">HÜKÜMDAR</span>}
+                        {position === 2 && <span className="text-[9px] text-gray-400 font-display tracking-wider">ZİRVE</span>}
+                        {position === 3 && <span className="text-[9px] text-amber-500 font-display tracking-wider">ZİRVE</span>}
                         <div className="flex items-center gap-1 mt-1">
                           <MetricIcon className="w-3 h-3 text-primary" />
                           <span className="font-display text-primary text-sm tabular-nums">{cfg.format(athlete)}</span>

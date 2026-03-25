@@ -20,7 +20,7 @@ export interface LeaderboardAthlete {
 const calcScore = (xp: number, streak: number, volume: number) =>
   xp + streak * 50 + Math.round(volume / 10);
 
-const metricAccessor: Record<LeaderboardMetric, (a: LeaderboardAthlete) => number> = {
+export const metricAccessor: Record<LeaderboardMetric, (a: LeaderboardAthlete) => number> = {
   score: (a) => a.score,
   bioCoins: (a) => a.bioCoins,
   volume: (a) => a.volume,
