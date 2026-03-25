@@ -109,7 +109,7 @@ export const useChallenges = () => {
   }));
 
   const pending = remapped.filter((c) => c.status === "pending");
-  const active = remapped.filter((c) => c.status === "active");
+  const active = remapped.filter((c) => c.status === "active" || c.status === "disputed");
   const completed = remapped.filter((c) => c.status === "completed" || c.status === "expired");
 
   const acceptMutation = useMutation({
