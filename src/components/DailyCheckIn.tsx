@@ -12,6 +12,7 @@ import { useBioCoin } from "@/hooks/useBioCoin";
 import { useStreakTracking } from "@/hooks/useStreakTracking";
 import { useXPEngine } from "@/hooks/useXPEngine";
 import { supabase } from "@/integrations/supabase/client";
+import { getIstanbulDateStr } from "@/lib/timezone";
 import {
   Dialog,
   DialogContent,
