@@ -140,11 +140,11 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
               <span className="flex items-center gap-1"><Clock className="w-3 h-3" /> {challenge.deadline}</span>
               <span className="flex items-center gap-1"><Trophy className="w-3 h-3 text-primary" /> {challenge.wager} Bio-Coin</span>
               <span className={`px-2 py-0.5 rounded-full text-[10px] font-medium ${
-                (challenge as any).rawStatus === "disputed" ? "bg-amber-500/20 text-amber-400" :
+                challenge.status === "disputed" ? "bg-amber-500/20 text-amber-400" :
                 challenge.status === "active" ? "bg-green-500/20 text-green-400" :
                 challenge.status === "completed" ? "bg-primary/20 text-primary" : "bg-yellow-500/20 text-yellow-400"
               }`}>
-                {(challenge as any).rawStatus === "disputed" ? "İtiraz Edildi" : challenge.status === "active" ? "Aktif" : challenge.status === "completed" ? "Tamamlandı" : "Bekliyor"}
+                {challenge.status === "disputed" ? "İtiraz Edildi" : challenge.status === "active" ? "Aktif" : challenge.status === "completed" ? "Tamamlandı" : "Bekliyor"}
               </span>
             </div>
           </div>

@@ -2,7 +2,7 @@ import { Dumbbell, Flame, Trophy, Target } from "lucide-react";
 import type { LucideIcon } from "lucide-react";
 
 export type ChallengeType = "pr" | "streak";
-export type ChallengeStatus = "pending" | "accepted" | "active" | "completed" | "expired" | "declined";
+export type ChallengeStatus = "pending" | "accepted" | "active" | "completed" | "expired" | "declined" | "disputed";
 
 export interface Challenge {
   id: string;
