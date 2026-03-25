@@ -167,18 +167,18 @@ const PersonalRecords = ({ isOpen, onClose }: PersonalRecordsProps) => {
                               pr.isRecent ? "ring-2 ring-yellow-500/50" : ""
                             }`}
                           >
-                            {pr.isRecent && (
-                              <motion.div
-                                initial={{ scale: 0 }}
-                                animate={{ scale: 1 }}
-                                className="absolute top-2 right-2 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[8px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
-                              >
-                                <Sparkles className="w-2 h-2" />
-                                YENİ PR
-                              </motion.div>
-                            )}
-
-                            <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
+                            <div className="flex justify-between items-start mb-2">
+                              <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
+                              {pr.isRecent && (
+                                <motion.div
+                                  initial={{ scale: 0 }}
+                                  animate={{ scale: 1 }}
+                                  className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1"
+                                >
+                                  <Sparkles className="w-2 h-2" /> YENİ
+                                </motion.div>
+                              )}
+                            </div>
 
                             <p className="text-muted-foreground text-xs mt-2 uppercase tracking-wider line-clamp-1">
                               {pr.name}
