@@ -1,65 +1,69 @@
 
 
-## Plan: The Tribunal & Proof Engine (Part 6 of 6)
+## Plan: Arena UI/UX Restoration (Part 1 of 4)
 
-### Summary
+### Root Cause Analysis
 
-Add a `disputeChallenge` mutation, wire "Kabul Et" and "İtiraz Et" buttons into the VS tab when both sides have submitted values, and update the Proof tab with instructional text pointing users to the Chat tab.
+**Bug #1 — Missing opponent data:** `ChallengesSection.tsx` line 108 only passes `id`, `title`, `type`, `target`, `deadline`, `wager`, and `status` to the modal. It completely omits `challengerName`, `challengerAvatar`, `challengedName`, `challengedAvatar`, `challengerValue`, `challengedValue`, `winnerId`, `challengerId`, `challengedId`. The profiles query in `useChallenges.ts` is actually fine — the data is available on the `selectedChallenge` object, it's just not forwarded.
 
----
+**Bug #2 — Plain input:** The `renderValueOrInput` function uses a tiny `Input` element. Needs replacement with a ScorePad.
 
-### Technical Details
+### Changes
 
-#### 1. Add `disputeChallenge` mutation (`src/hooks/useChallenges.ts`)
+#### 1. Fix Data Pass-Through (`src/components/ChallengesSection.tsx`, line 108)
 
-Insert a new mutation before the return block (after line 253):
+Pass all challenge fields to the modal. Replace the inline object construction with a full mapping:
 
-```typescript
-const disputeChallengeMutation = useMutation({
-  mutationFn: async (challengeId: string) => {
-    const { error } = await supabase
-      .from("challenges")
-      .update({ status: "disputed" })
-      .eq("id", challengeId);
-    if (error) throw error;
-  },
-  onSuccess: () => {
-    queryClient.invalidateQueries({ queryKey: ["my-challenges"] });
-    toast({ title: "İtiraz edildi ⚖️", description: "Koç incelemesi bekleniyor." });
-  },
-});
+```tsx
+<ChallengeDetailModal 
+  isOpen={!!selectedChallenge} 
+  onClose={() => setSelectedChallenge(null)} 
+  challenge={selectedChallenge ? {
+    id: selectedChallenge.id,
+    title: selectedChallenge.exercise || selectedChallenge.type,
+    type: selectedChallenge.type,
+    target: String(selectedChallenge.targetValue),
+    deadline: selectedChallenge.deadline,
+    wager: selectedChallenge.bioCoinsReward,
+    status: selectedChallenge.status === "disputed" ? "disputed" : 
+            selectedChallenge.status === "active" ? "active" : 
+            selectedChallenge.status === "completed" ? "completed" : "pending",
+    challengerId: selectedChallenge.challengerId,
+    challengerName: selectedChallenge.challengerName,
+    challengerAvatar: selectedChallenge.challengerAvatar,
+    challengerValue: selectedChallenge.challengerValue,
+    challengedId: selectedChallenge.challengedId,
+    challengedName: selectedChallenge.challengedName,
+    challengedAvatar: selectedChallenge.challengedAvatar,
+    challengedValue: selectedChallenge.challengedValue,
+    winnerId: selectedChallenge.winnerId,
+  } : undefined} 
+/>
 ```
 
-Add `disputeChallenge: disputeChallengeMutation.mutateAsync` to the return object.
+No changes needed to `useChallenges.ts` — the separate profiles query + `mapToChallenge` already populates names/avatars correctly.
 
-Update the `statusMap` in `mapToChallenge` (around line 76) to include `disputed: "active"` so disputed challenges still render as active in the UI (or add `"disputed"` to the Challenge status type if desired — for MVP, mapping to `"active"` keeps it visible).
+#### 2. Overhaul VS Tab — ScorePad UI (`src/components/ChallengeDetailModal.tsx`)
 
-#### 2. Wire VS Tab actions (`src/components/ChallengeDetailModal.tsx`)
+Replace the `renderValueOrInput` function with a ScorePad component:
 
-After the winner banner block (line 219), add a new conditional block:
+- **When value already submitted:** Show locked value with a green checkmark badge and large bold typography.
+- **When it's the user's turn (active, no value yet):**
+  - Large numeric display (text-5xl font-display) showing current `myResult` value (default 0).
+  - Quick-adjust button row: `[-10] [-1] [+1] [+10]` as pill buttons with glass-morphism styling.
+  - Massive gradient submit button: `bg-gradient-to-r from-primary to-orange-500` with `h-14 text-lg font-bold` and hover scale effect.
+  - Button text: "⚔️ SONUCU KAYDET"
+- **When it's the opponent's side:** Show their value or "Bekleniyor..." if 0.
 
-- Condition: `challenge.status === "active" && (challenge.challengerValue ?? 0) > 0 && (challenge.challengedValue ?? 0) > 0 && !challenge.winnerId`
-- Render two buttons:
-  1. **"Kabul Et (Maçı Bitir)"** — calls `concludeChallenge` with the winner determined by higher value
-  2. **"İtiraz Et (Kanıt İste)"** — calls `disputeChallenge(challenge.id)`
-
-Import `concludeChallenge` and `disputeChallenge` from `useChallenges`.
-
-Update the status badge in the header to handle `"disputed"` status with an orange/amber style showing "İtiraz Edildi".
-
-#### 3. Update Proof Tab text (line 280-290)
-
-Replace the current proof tab content with instructional text:
-- "Lütfen antrenman videonu veya ekran görüntünü 'Mesajlar' sekmesinden rakibine gönder."
-- "Eğer rakibinin yalan söylediğini düşünüyorsan VS sekmesinden İtiraz Et butonuna bas."
-- Remove the non-functional "Fotoğraf Çek" button.
-
----
+**Avatar upgrades:**
+- Size: `w-20 h-20` (already done).
+- Rings: Current user gets `ring-4 ring-primary/50`, opponent gets `ring-4 ring-destructive/50`.
+- Names in `font-display text-sm font-bold`.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useChallenges.ts` | Add `disputeChallenge` mutation + export |
-| `src/components/ChallengeDetailModal.tsx` | Wire conclude/dispute buttons, update proof tab text |
+| `src/components/ChallengesSection.tsx` | Pass all challenge fields to modal |
+| `src/components/ChallengeDetailModal.tsx` | ScorePad UI with quick-adjust buttons, gradient submit, enhanced avatars |
 
