@@ -306,14 +306,15 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
 
             {/* Proof Tab */}
             {activeTab === "proof" && (
-              <div className="text-center py-8">
+              <div className="text-center py-8 px-6">
                 <Camera className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-foreground text-sm font-medium">Kanıt Yükle</p>
-                <p className="text-muted-foreground text-xs mt-1 mb-4">Fotoğraf veya video ile kanıtla</p>
-                <Button variant="outline" className="gap-2">
-                  <Camera className="w-4 h-4" />
-                  Fotoğraf Çek
-                </Button>
+                <p className="text-foreground text-sm font-medium mb-3">Kanıt Paylaşımı</p>
+                <p className="text-muted-foreground text-xs leading-relaxed">
+                  Lütfen antrenman videonu veya ekran görüntünü <span className="text-primary font-medium">'Mesajlar'</span> sekmesinden rakibine gönder.
+                </p>
+                <p className="text-muted-foreground text-xs leading-relaxed mt-3">
+                  Eğer rakibinin yalan söylediğini düşünüyorsan <span className="text-destructive font-medium">'VS'</span> sekmesinden <span className="text-destructive font-medium">İtiraz Et</span> butonuna bas.
+                </p>
               </div>
             )}
 
