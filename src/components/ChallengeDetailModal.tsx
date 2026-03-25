@@ -20,7 +20,7 @@ interface ChallengeDetailModalProps {
     target: string;
     deadline: string;
     wager: number;
-    status: "active" | "completed" | "pending";
+    status: "active" | "completed" | "pending" | "disputed";
     challengerId?: string;
     challengerName?: string;
     challengerAvatar?: string;
