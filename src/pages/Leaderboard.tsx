@@ -230,7 +230,7 @@ const Leaderboard = () => {
       </div>
 
       {/* Bottom Bar */}
-      {currentUser && currentUserRank > 0 && (
+      {activeTab === "leaderboard" && currentUser && currentUserRank > 0 && (
         <motion.div initial={{ y: 100 }} animate={{ y: 0 }} className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-white/10">
           <div className="max-w-[430px] mx-auto p-4 flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center shadow-lg shadow-primary/20">

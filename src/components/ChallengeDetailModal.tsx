@@ -57,16 +57,14 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm"
-        onClick={onClose}
+        className="fixed inset-0 z-50"
       >
         <motion.div
-          initial={{ y: "100%" }}
-          animate={{ y: 0 }}
-          exit={{ y: "100%" }}
+          initial={{ opacity: 0, scale: 0.95 }}
+          animate={{ opacity: 1, scale: 1 }}
+          exit={{ opacity: 0, scale: 0.95 }}
           transition={{ type: "spring", damping: 25, stiffness: 300 }}
-          onClick={(e) => e.stopPropagation()}
-          className="absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl max-h-[90vh] overflow-hidden"
+          className="fixed inset-0 z-[60] bg-background h-[100dvh] w-full flex flex-col rounded-none"
         >
           {/* Header */}
           <div className="p-4 border-b border-border">
