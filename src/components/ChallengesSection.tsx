@@ -105,7 +105,26 @@ const ChallengesSection = ({ athletes }: ChallengesSectionProps) => {
       </motion.div>
 
       <CreateChallengeModal isOpen={showCreateModal} onClose={() => setShowCreateModal(false)} athletes={athletes} />
-      <ChallengeDetailModal isOpen={!!selectedChallenge} onClose={() => setSelectedChallenge(null)} challenge={selectedChallenge ? { id: selectedChallenge.id, title: selectedChallenge.exercise || selectedChallenge.type, type: selectedChallenge.type, target: String(selectedChallenge.targetValue), deadline: selectedChallenge.deadline, wager: selectedChallenge.bioCoinsReward, status: selectedChallenge.status === "active" ? "active" : selectedChallenge.status === "completed" ? "completed" : "pending" } : undefined} />
+      <ChallengeDetailModal isOpen={!!selectedChallenge} onClose={() => setSelectedChallenge(null)} challenge={selectedChallenge ? {
+        id: selectedChallenge.id,
+        title: selectedChallenge.exercise || selectedChallenge.type,
+        type: selectedChallenge.type,
+        target: String(selectedChallenge.targetValue),
+        deadline: selectedChallenge.deadline,
+        wager: selectedChallenge.bioCoinsReward,
+        status: selectedChallenge.status === "disputed" ? "disputed" :
+                selectedChallenge.status === "active" ? "active" :
+                selectedChallenge.status === "completed" ? "completed" : "pending",
+        challengerId: selectedChallenge.challengerId,
+        challengerName: selectedChallenge.challengerName,
+        challengerAvatar: selectedChallenge.challengerAvatar,
+        challengerValue: selectedChallenge.challengerValue,
+        challengedId: selectedChallenge.challengedId,
+        challengedName: selectedChallenge.challengedName,
+        challengedAvatar: selectedChallenge.challengedAvatar,
+        challengedValue: selectedChallenge.challengedValue,
+        winnerId: selectedChallenge.winnerId,
+      } : undefined} />
     </>
   );
 };
