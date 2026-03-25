@@ -260,7 +260,7 @@ const PRDetailView = ({ lift }: { lift: PREntry }) => {
         </p>
         <p className="text-primary text-sm mt-2">Tahmini 1RM (Epley)</p>
         <p className="text-muted-foreground text-xs mt-1">
-          Gerçek: {lift.maxWeight}kg × {lift.repsAtMax} tekrar
+          PR: {lift.maxWeight}kg × {lift.repsAtMax} tekrar
         </p>
 
         {lift.isRecent && (
