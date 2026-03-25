@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Trophy, Swords, Flame, Target, Calendar, TrendingUp, Award, Dumbbell, X } from "lucide-react";
+import { Trophy, Swords, Flame, Target, Calendar, TrendingUp, Award, Dumbbell, X, Coins } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Skeleton } from "@/components/ui/skeleton";
