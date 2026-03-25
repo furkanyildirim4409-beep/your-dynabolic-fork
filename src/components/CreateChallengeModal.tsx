@@ -60,7 +60,7 @@ const CreateChallengeModal = ({ isOpen, onClose, athletes, preselectedAthlete }:
     const q = exerciseSearch.toLowerCase();
     const historicalNames = topExercises.map((e) => e.name);
     const merged = Array.from(new Set([...historicalNames, ...allExercises]));
-    return merged.filter((name) => name.toLowerCase().includes(q)).slice(0, 8);
+    return merged.filter((name) => name.toLowerCase().includes(q)).slice(0, 100);
   }, [exerciseSearch, topExercises, allExercises]);
 
   // Real user avatar & name
