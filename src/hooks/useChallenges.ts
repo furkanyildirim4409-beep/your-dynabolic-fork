@@ -72,6 +72,7 @@ export const useChallenges = () => {
       completed: "completed",
       expired: "expired",
       declined: "declined",
+      disputed: "active",
     };
 
     return {
