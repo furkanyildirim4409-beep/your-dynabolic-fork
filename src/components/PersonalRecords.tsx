@@ -242,18 +242,18 @@ const PRDetailView = ({ lift }: { lift: PREntry }) => {
           lift.isRecent ? "ring-2 ring-yellow-500/50" : ""
         }`}
       >
-        {lift.isRecent && (
-          <motion.div
-            initial={{ scale: 0 }}
-            animate={{ scale: 1 }}
-            className="absolute top-3 right-3 bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1"
-          >
-            <Sparkles className="w-3 h-3" />
-            TAHMİNİ PR POTANSİYELİ
-          </motion.div>
-        )}
-
-        <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
+        <div className="flex flex-col items-center justify-center">
+          {lift.isRecent && (
+            <motion.div
+              initial={{ scale: 0 }}
+              animate={{ scale: 1 }}
+              className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 mb-3"
+            >
+              <Sparkles className="w-3 h-3" /> YENİ POTANSİYEL
+            </motion.div>
+          )}
+          <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
+        </div>
         <p className="font-display text-6xl text-foreground mt-4 tabular-nums">
           {lift.estimated1RM}
           <span className="text-2xl text-muted-foreground ml-1">kg</span>
