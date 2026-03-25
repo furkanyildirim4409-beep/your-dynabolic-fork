@@ -1,56 +1,61 @@
 
 
-## Plan: Wire Weekly Recap to Real Data (Part 4 of 10)
+## Plan: PR UI/UX Polish (Part 2.5)
 
 ### Summary
-Replace the hardcoded mock data in `useWeeklyRecap` with real database queries that aggregate the athlete's last 7 days of workouts, streak, tonnage, XP/coins, and challenges. The modal UI stays intact -- only the data source changes.
+Three visual fixes in `PersonalRecords.tsx`: (1) remove absolute positioning on list view badges, (2) remove absolute positioning on detail view badge, (3) overhaul stats grid to show actual lifted PR vs theoretical 1RM.
 
----
+### Changes to `src/components/PersonalRecords.tsx`
 
-### Technical Details
+**1. List View Badge Fix (lines 170-181)**
 
-#### 1. Rewrite `src/hooks/useWeeklyRecap.ts`
+Replace the absolutely-positioned badge + standalone emoji with a flex row:
 
-Replace the entire mock hook with a real aggregation engine:
+```tsx
+<div className="flex justify-between items-start mb-2">
+  <span className="text-2xl">{getExerciseEmoji(pr.name)}</span>
+  {pr.isRecent && (
+    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+      className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-[9px] font-bold px-2 py-0.5 rounded-full flex items-center gap-1">
+      <Sparkles className="w-2 h-2" /> YENİ
+    </motion.div>
+  )}
+</div>
+```
 
-- **Keep** the `showRecap` / `dismissRecap` state management pattern.
-- **`triggerRecap()`** now performs real async queries before setting `recapData`:
+**2. Detail View Badge Fix (lines 245-256)**
 
-  - **Workouts Completed**: Query `assigned_workouts` where `athlete_id = auth.uid()`, `status = 'completed'`, and `scheduled_date` falls within the last 7 days. Count the results.
-  
-  - **Streak**: Read directly from `profile.streak` (already available via `useAuth()`).
-  
-  - **Total Tonnage**: Parse the `exercises` JSONB column from completed workouts. Each exercise entry contains sets with `weight` and `reps`. Sum `weight * reps` across all sets of all exercises of all completed workouts in the period. If the JSONB structure doesn't contain logged weights, fallback to `0`.
-  
-  - **Challenges Won/Lost**: Query `challenges` table where `(challenger_id = uid OR opponent_id = uid)`, `status = 'completed'`, and `created_at` within last 7 days. Count wins (`winner_id = uid`) and losses.
-  
-  - **Bio-Coins Earned**: Query `bio_coin_transactions` where `user_id = uid`, `type = 'earn'` (or positive amounts), and `created_at` within last 7 days. Sum amounts.
-  
-  - **Compared to Last Week**: Run the same workout count and tonnage queries for days 8-14 ago. Calculate percentage difference: `((thisWeek - lastWeek) / lastWeek) * 100`. Handle division by zero gracefully.
-  
-  - **Week Date Range**: Calculate `weekStartDate` (7 days ago) and `weekEndDate` (today) as ISO strings.
-  
-  - **Top Exercise**: From completed workout exercises JSONB, count exercise name occurrences. Return the most frequent.
-  
-  - **Personal Records**: For now, hardcode `0` (PR tracking requires a dedicated system not yet built). Can be wired later.
+Replace the absolutely-positioned badge + standalone emoji with a centered flex column:
 
-- Return the same interface: `{ showRecap, recapData, triggerRecap, dismissRecap }`.
+```tsx
+<div className="flex flex-col items-center justify-center">
+  {lift.isRecent && (
+    <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }}
+      className="bg-gradient-to-r from-yellow-400 to-amber-500 text-black text-xs font-bold px-3 py-1 rounded-full flex items-center gap-1 mb-3">
+      <Sparkles className="w-3 h-3" /> YENİ POTANSİYEL
+    </motion.div>
+  )}
+  <span className="text-4xl">{getExerciseEmoji(lift.name)}</span>
+</div>
+```
 
-#### 2. No Changes to `WeeklyRecapModal.tsx`
+**3. Stats Grid Overhaul (lines 226-229, 326-339)**
 
-The modal already consumes `WeeklyRecapData` interface cleanly. As long as the hook returns data matching this interface, the UI renders correctly with real values. No purging needed -- the modal has zero hardcoded data of its own.
+Change calculation logic:
+```typescript
+const realPR = lift.maxWeight;
+const gain = lift.estimated1RM - realPR;
+const pct = realPR > 0 ? Math.round((gain / realPR) * 100) : 0;
+```
 
-#### 3. No Changes to `Kokpit.tsx`
-
-The dashboard already wires `useWeeklyRecap()` and passes `recapData` to `WeeklyRecapModal`. The test button (Calendar icon) triggers `triggerRecap()` which will now perform real queries.
-
----
+Update grid labels:
+- "Başlangıç" → "GERÇEK PR" showing `{realPR}kg`
+- "Artış" → "POTANSİYEL" showing `+{gain}kg`
+- "Yüzde" → "FARK" showing `+{pct}%`
 
 ### Files Changed
 
 | File | Action |
 |------|--------|
-| `src/hooks/useWeeklyRecap.ts` | Rewrite (real DB queries replacing mock data) |
-
-No migration needed. All required tables (`assigned_workouts`, `challenges`, `bio_coin_transactions`, `profiles`) already exist with proper RLS.
+| `src/components/PersonalRecords.tsx` | Fix badge overlaps (list + detail), overhaul stats grid |
 
