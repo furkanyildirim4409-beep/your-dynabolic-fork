@@ -203,7 +203,7 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
       await supabase.from("profiles").update({ readiness_score }).eq("id", user.id);
 
       const checkInData: DailyCheckInType = {
-        date: new Date().toISOString().split("T")[0],
+        date: getIstanbulDateStr(),
         ...values,
         notes,
       };

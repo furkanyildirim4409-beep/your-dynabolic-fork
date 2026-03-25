@@ -65,12 +65,13 @@ export const usePRTracker = () => {
             const r = Number(s.reps) || 0;
             if (w <= 0) continue;
 
-            const epley = Math.round(w * (1 + r / 30));
+            const rawEpley = w * (1 + r / 30);
+            const epley = Math.round(rawEpley / 2.5) * 2.5;
             const existing = prMap.get(name);
 
             if (!existing) {
               const monthly = new Map<string, number>();
-              monthly.set(monthKey, w);
+              monthly.set(monthKey, epley);
               prMap.set(name, {
                 estimated1RM: epley,
                 maxWeight: w,
@@ -79,9 +80,9 @@ export const usePRTracker = () => {
                 monthly,
               });
             } else {
-              // Update monthly max
+              // Update monthly max (store estimated 1RM, not raw weight)
               const curMonthMax = existing.monthly.get(monthKey) ?? 0;
-              if (w > curMonthMax) existing.monthly.set(monthKey, w);
+              if (epley > curMonthMax) existing.monthly.set(monthKey, epley);
 
               // Update all-time PR (by estimated 1RM)
               if (
