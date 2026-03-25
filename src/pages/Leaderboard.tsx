@@ -8,7 +8,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { hapticLight } from "@/lib/haptics";
 import ChallengesSection from "@/components/ChallengesSection";
 import ChallengeHistoryModal from "@/components/ChallengeHistoryModal";
-import { useLeaderboard, LeaderboardMetric, LeaderboardAthlete } from "@/hooks/useLeaderboard";
+import { useLeaderboard, LeaderboardMetric, LeaderboardAthlete, metricAccessor } from "@/hooks/useLeaderboard";
 
 const metricConfig: Record<LeaderboardMetric, { icon: typeof Coins; label: string; format: (a: LeaderboardAthlete) => string }> = {
   bioCoins: { icon: Coins, label: "COİN", format: (a) => a.bioCoins.toLocaleString("tr-TR") },
