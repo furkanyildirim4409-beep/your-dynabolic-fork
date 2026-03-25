@@ -262,5 +262,6 @@ export const useChallenges = () => {
     declineChallenge: declineMutation.mutateAsync,
     createChallenge: createMutation.mutateAsync,
     concludeChallenge: concludeChallengeMutation.mutateAsync,
+    submitResult: submitResultMutation.mutateAsync,
   };
 };
