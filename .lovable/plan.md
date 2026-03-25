@@ -1,58 +1,108 @@
 
 
-## Plan: The Arena UI Overhaul (Part 4 of 6)
+## Plan: The War Room Engine (Part 5 of 6)
 
 ### Summary
 
-Three targeted fixes: (1) hide the sticky ranking banner when on the Challenges tab, (2) expand exercise search results from 8 to 100 with a scrollable container, (3) convert `ChallengeDetailModal` from a bottom sheet to a full-screen layout.
+Create `challenge_messages` table with FK to profiles, build a realtime chat hook, add a result submission mutation, and wire both into the ChallengeDetailModal.
 
 ---
 
-### Technical Details
+### 1. Database Migration — `challenge_messages`
 
-#### 1. Fix Banner Overlap (`src/pages/Leaderboard.tsx`, line 233)
+New migration file with FK to both `challenges` and `profiles`:
 
-Change:
-```tsx
-{currentUser && currentUserRank > 0 && (
+```sql
+CREATE TABLE IF NOT EXISTS public.challenge_messages (
+  id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
+  challenge_id UUID NOT NULL REFERENCES public.challenges(id) ON DELETE CASCADE,
+  user_id UUID NOT NULL REFERENCES public.profiles(id) ON DELETE CASCADE,
+  message TEXT NOT NULL,
+  created_at TIMESTAMPTZ DEFAULT now()
+);
+
+ALTER TABLE public.challenge_messages ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Participants can view messages" ON public.challenge_messages
+  FOR SELECT TO authenticated
+  USING (
+    EXISTS (
+      SELECT 1 FROM public.challenges c
+      WHERE c.id = challenge_messages.challenge_id
+      AND (c.challenger_id = auth.uid() OR c.opponent_id = auth.uid())
+    )
+  );
+
+CREATE POLICY "Participants can insert messages" ON public.challenge_messages
+  FOR INSERT TO authenticated
+  WITH CHECK (
+    auth.uid() = user_id AND
+    EXISTS (
+      SELECT 1 FROM public.challenges c
+      WHERE c.id = challenge_messages.challenge_id
+      AND (c.challenger_id = auth.uid() OR c.opponent_id = auth.uid())
+    )
+  );
 ```
-To:
-```tsx
-{activeTab === "leaderboard" && currentUser && currentUserRank > 0 && (
+
+### 2. New Hook — `src/hooks/useChallengeChat.ts`
+
+- `useQuery` fetches `challenge_messages` ordered by `created_at` asc, selecting `*, profiles(full_name, avatar_url)` via the FK join.
+- `useEffect` subscribes to Supabase Realtime `postgres_changes` (INSERT on `challenge_messages` filtered by `challenge_id`), invalidating the query on new messages.
+- `sendMessage` mutation inserts `{ challenge_id, user_id, message }`.
+- Returns `{ messages, sendMessage, isLoading }`.
+
+### 3. Add `submitResult` to `src/hooks/useChallenges.ts`
+
+New mutation after `concludeChallengeMutation` (before the return block, line ~239):
+
+```typescript
+const submitResultMutation = useMutation({
+  mutationFn: async ({ challengeId, value, isChallenger }: { challengeId: string; value: number; isChallenger: boolean }) => {
+    const field = isChallenger ? "challenger_value" : "opponent_value";
+    const { error } = await supabase
+      .from("challenges")
+      .update({ [field]: value })
+      .eq("id", challengeId);
+    if (error) throw error;
+  },
+  onSuccess: () => {
+    queryClient.invalidateQueries({ queryKey: ["my-challenges"] });
+    toast({ title: "Sonuç kaydedildi! 💪" });
+  },
+});
 ```
 
-#### 2. Fix Exercise Search Limit (`src/components/CreateChallengeModal.tsx`)
+Add `submitResult: submitResultMutation.mutateAsync` to the return object.
 
-**Line 63** — change `.slice(0, 8)` to `.slice(0, 100)`.
+### 4. Wire UI — `src/components/ChallengeDetailModal.tsx`
 
-**Search results list rendering** — wrap `searchResults.map(...)` in a scrollable container:
-```tsx
-<div className="max-h-[200px] overflow-y-auto pr-2">
-  {searchResults.map((name) => ( ... ))}
-</div>
-```
+**Imports:** Add `useRef, useEffect` from React, `Input` from ui, `useChallengeChat` hook.
 
-#### 3. Full-Screen War Room (`src/components/ChallengeDetailModal.tsx`)
+**State:** Add `const [myResult, setMyResult] = useState("")` and `const messagesEndRef = useRef<HTMLDivElement>(null)`.
 
-**Outer overlay (line 56-61):** Remove the `onClick={onClose}` from the backdrop div since the modal is now full-screen — closing is handled by the X button only.
+**VS Tab — Result Submission:**
+- Determine role: `const isChallenger = challenge.challengerId === "current"`.
+- Under each avatar column, if it's the current user's side AND `challenge.status === "active"`:
+  - If value is already > 0, show locked value.
+  - Otherwise, render `<Input type="number" />` + "Sonucu Kaydet" button calling `submitResult`.
 
-**Modal container (line 63-69):** Replace classes:
-- From: `absolute bottom-0 left-0 right-0 bg-background rounded-t-3xl max-h-[90vh] overflow-hidden`
-- To: `fixed inset-0 z-[60] bg-background h-[100dvh] w-full flex flex-col rounded-none`
-
-**Animation:** Change from `y: "100%"` slide-up to a fade+scale entrance for full-screen feel.
-
-**Remove drag handle** if any pill-shaped div exists at the top.
-
-**Content area (line 106):** Change `overflow-y-auto p-4` div to use `flex-1 overflow-y-auto p-4` so it fills remaining space below the fixed header and tabs.
+**Chat Tab — Real-time Messaging:**
+- Call `useChallengeChat(challenge.id)` at hook level.
+- Replace empty state with conditional: show messages list when `messages.length > 0`, empty state otherwise.
+- Messages rendered as bubbles: current user right-aligned with `bg-primary text-primary-foreground`, opponent left-aligned with `bg-secondary`.
+- Show sender name + timestamp on each bubble.
+- `useEffect` scrolls `messagesEndRef` into view when messages change.
+- Chat tab uses flex layout: scrollable messages area (`flex-1 overflow-y-auto`) + sticky input bar at bottom (outside scroll area). The parent content div switches to flex-col for the chat tab.
 
 ---
 
 ### Files Changed
 
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/pages/Leaderboard.tsx` | Add `activeTab === "leaderboard"` guard to bottom bar |
-| `src/components/CreateChallengeModal.tsx` | Expand search slice to 100, wrap results in scrollable div |
-| `src/components/ChallengeDetailModal.tsx` | Convert to full-screen layout with flex column structure |
+| `supabase/migrations/..._challenge_messages.sql` | Create table + RLS with FK to profiles |
+| `src/hooks/useChallengeChat.ts` | New — realtime chat hook |
+| `src/hooks/useChallenges.ts` | Add `submitResult` mutation + export |
+| `src/components/ChallengeDetailModal.tsx` | Wire result submission + live chat UI |
 
