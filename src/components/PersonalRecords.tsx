@@ -224,9 +224,9 @@ const PersonalRecords = ({ isOpen, onClose }: PersonalRecordsProps) => {
 /* ---------- Detail Sub-component ---------- */
 
 const PRDetailView = ({ lift }: { lift: PREntry }) => {
-  const startWeight = lift.history[0]?.weight ?? 0;
-  const gain = lift.estimated1RM - startWeight;
-  const pct = startWeight > 0 ? Math.round((gain / startWeight) * 100) : 0;
+  const realPR = lift.maxWeight;
+  const gain = lift.estimated1RM - realPR;
+  const pct = realPR > 0 ? Math.round((gain / realPR) * 100) : 0;
 
   return (
     <motion.div
