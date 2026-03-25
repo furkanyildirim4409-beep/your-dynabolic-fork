@@ -111,7 +111,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
           </div>
 
           {/* Content */}
-          <div className="overflow-y-auto p-4" style={{ maxHeight: "calc(90vh - 200px)" }}>
+          <div className="flex-1 overflow-y-auto p-4">
             {/* VS Tab */}
             {activeTab === "vs" && (
               <div className="space-y-6">
