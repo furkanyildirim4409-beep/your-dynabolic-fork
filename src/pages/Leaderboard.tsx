@@ -62,7 +62,15 @@ const Leaderboard = () => {
 
   const handleAthleteClick = (athlete: LeaderboardAthlete) => {
     hapticLight();
-    setSelectedAthlete({ id: athlete.id, name: athlete.name, avatar: athlete.avatar });
+    const getRank = (m: LeaderboardMetric) => {
+      const sorted = [...leaderboard].sort((a, b) => metricAccessor[m](b) - metricAccessor[m](a));
+      return sorted.findIndex((a) => a.id === athlete.id) + 1;
+    };
+    setSelectedAthlete({
+      id: athlete.id, name: athlete.name, avatar: athlete.avatar,
+      rankScore: getRank("score"), rankCoins: getRank("bioCoins"),
+      rankVolume: getRank("volume"), rankStreak: getRank("streak"),
+    });
   };
 
   return (
