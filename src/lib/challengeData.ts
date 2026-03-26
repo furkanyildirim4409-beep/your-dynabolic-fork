@@ -24,6 +24,8 @@ export interface Challenge {
   xpReward: number;
   winnerId?: string;
   completedAt?: string;
+  proofUrl?: string;
+  opponentProofUrl?: string;
 }
 
 export const mockChallenges: Challenge[] = [
