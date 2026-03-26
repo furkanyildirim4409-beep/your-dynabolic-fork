@@ -43,11 +43,13 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   }, [messages, isOpen]);
 
   const handleSend = async () => {
-    if (!inputValue.trim() || isSending) return;
+    if ((!inputValue.trim() && !chatFile) || isSending) return;
     setIsSending(true);
     const msg = inputValue;
+    const file = chatFile;
     setInputValue("");
-    await sendMessage(msg);
+    setChatFile(null);
+    await sendMessage({ content: msg, file: file || undefined });
     setIsSending(false);
   };
 
