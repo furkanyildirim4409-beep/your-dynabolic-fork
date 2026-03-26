@@ -1,4 +1,5 @@
 import { useState, useRef, useEffect } from "react";
+import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2, Paperclip, Mic } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
