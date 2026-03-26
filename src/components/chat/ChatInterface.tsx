@@ -207,7 +207,38 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
 
           {/* Input */}
           <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-t border-border p-4 safe-area-inset">
+            {chatFile && (
+              <div className="flex items-center gap-2 mb-2">
+                <div className="flex items-center gap-2 bg-secondary/80 rounded-lg px-3 py-1.5 text-xs text-foreground">
+                  {chatFile.type.startsWith("video") ? <Video className="w-3.5 h-3.5 text-primary" /> : <ImageIcon className="w-3.5 h-3.5 text-primary" />}
+                  <span className="truncate max-w-[200px]">{chatFile.name}</span>
+                  <button onClick={() => setChatFile(null)} className="ml-1 text-muted-foreground hover:text-foreground">
+                    <X className="w-3.5 h-3.5" />
+                  </button>
+                </div>
+              </div>
+            )}
+            <input
+              ref={chatFileInputRef}
+              type="file"
+              accept="image/*,video/*"
+              className="hidden"
+              onChange={(e) => {
+                const f = e.target.files?.[0];
+                if (f) setChatFile(f);
+                e.target.value = "";
+              }}
+            />
             <div className="flex items-center gap-3">
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={() => chatFileInputRef.current?.click()}
+                disabled={!resolvedCoachId}
+                className="p-2 text-muted-foreground hover:text-foreground disabled:opacity-50"
+              >
+                <Paperclip className="w-5 h-5" />
+              </motion.button>
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
@@ -220,7 +251,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 whileHover={{ scale: 1.05 }}
                 whileTap={{ scale: 0.95 }}
                 onClick={handleSend}
-                disabled={!inputValue.trim() || !resolvedCoachId || isSending}
+                disabled={(!inputValue.trim() && !chatFile) || !resolvedCoachId || isSending}
                 className="p-3 bg-primary rounded-full text-primary-foreground disabled:opacity-50"
               >
                 {isSending ? (
