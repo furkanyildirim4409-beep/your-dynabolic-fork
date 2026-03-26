@@ -7,6 +7,7 @@ import { Input } from "@/components/ui/input";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useProofUpload } from "@/hooks/useProofUpload";
 import { useChallengeChat } from "@/hooks/useChallengeChat";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";

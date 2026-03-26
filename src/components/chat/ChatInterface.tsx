@@ -5,6 +5,7 @@ import { X, Send, Loader2, MessageCircleOff, Bell, BellOff, Paperclip, Image as 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useAuth } from "@/context/AuthContext";
 import { useMutedChats } from "@/hooks/useMutedChats";
 
