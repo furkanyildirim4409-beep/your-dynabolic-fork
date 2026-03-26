@@ -179,7 +179,13 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
           .from("chat-media")
           .getPublicUrl(filePath);
         media_url = urlData.publicUrl;
-        media_type = file.type.startsWith("video") ? "video" : "image";
+        if (file.type.startsWith("video")) {
+          media_type = "video";
+        } else if (file.type.startsWith("audio") || file.name.includes(".webm")) {
+          media_type = "audio";
+        } else {
+          media_type = "image";
+        }
       }
 
       const optimisticMsg: Message = {
