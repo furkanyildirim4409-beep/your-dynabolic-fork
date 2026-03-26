@@ -8,9 +8,19 @@ export const useProofUpload = () => {
   const queryClient = useQueryClient();
 
   const uploadProof = async (file: File, challengeId: string, isChallenger: boolean) => {
+    const MAX_FILE_SIZE = 50 * 1024 * 1024;
+    if (file.size > MAX_FILE_SIZE) {
+      toast({ title: "Dosya çok büyük", description: "Lütfen maksimum 50MB boyutunda bir video/görsel yükleyin.", variant: "destructive" });
+      return;
+    }
+
     setIsUploading(true);
     try {
-      const filePath = `${challengeId}/${Date.now()}_${file.name}`;
+      const sanitized = file.name
+        .normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+        .replace(/[^a-zA-Z0-9.\-_]/g, "_")
+        .replace(/_+/g, "_");
+      const filePath = `${challengeId}/${Date.now()}_${sanitized}`;
       const { error: uploadError } = await supabase.storage
         .from("challenge-proofs")
         .upload(filePath, file);
