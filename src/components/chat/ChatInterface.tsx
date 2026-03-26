@@ -2,6 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
 import { X, Send, Loader2, MessageCircleOff, Bell, BellOff, Paperclip, Image as ImageIcon, Video, Mic } from "lucide-react";
+import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
@@ -184,12 +185,9 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                         />
                       )}
                       {message.media_type === "audio" && message.media_url && (
-                        <audio
-                          controls
-                          src={message.media_url}
-                          className="max-w-full mb-1.5"
-                          preload="metadata"
-                        />
+                        <div className="mb-1.5">
+                          <CustomAudioPlayer src={message.media_url} />
+                        </div>
                       )}
                       {message.content && <p className="text-sm">{message.content}</p>}
                       <p
