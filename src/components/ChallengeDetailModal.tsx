@@ -5,6 +5,7 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChallenges } from "@/hooks/useChallenges";
+import { useProofUpload } from "@/hooks/useProofUpload";
 import { useChallengeChat } from "@/hooks/useChallengeChat";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
