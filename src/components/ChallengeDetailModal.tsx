@@ -32,6 +32,8 @@ interface ChallengeDetailModalProps {
     challengedValue?: number;
     winnerId?: string;
     opponentRealId?: string;
+    proofUrl?: string;
+    opponentProofUrl?: string;
   };
 }
 
