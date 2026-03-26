@@ -328,18 +328,89 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
             )}
 
             {/* Proof Tab */}
-            {activeTab === "proof" && (
-              <div className="text-center py-8 px-6">
-                <Camera className="w-12 h-12 text-muted-foreground/30 mx-auto mb-3" />
-                <p className="text-foreground text-sm font-medium mb-3">Kanıt Paylaşımı</p>
-                <p className="text-muted-foreground text-xs leading-relaxed">
-                  Lütfen antrenman videonu veya ekran görüntünü <span className="text-primary font-medium">'Mesajlar'</span> sekmesinden rakibine gönder.
-                </p>
-                <p className="text-muted-foreground text-xs leading-relaxed mt-3">
-                  Eğer rakibinin yalan söylediğini düşünüyorsan <span className="text-destructive font-medium">'VS'</span> sekmesinden <span className="text-destructive font-medium">İtiraz Et</span> butonuna bas.
-                </p>
-              </div>
-            )}
+            {activeTab === "proof" && (() => {
+              const myProofUrl = isChallenger ? challenge.proofUrl : challenge.opponentProofUrl;
+              const theirProofUrl = isChallenger ? challenge.opponentProofUrl : challenge.proofUrl;
+
+              const handleFileSelect = async (e: React.ChangeEvent<HTMLInputElement>) => {
+                const file = e.target.files?.[0];
+                if (!file) return;
+                await uploadProof(file, challenge.id, isChallenger);
+                e.target.value = "";
+              };
+
+              const isVideo = (url: string) => /\.(mp4|mov|webm|avi)/i.test(url);
+
+              return (
+                <div className="space-y-5">
+                  {/* My Proof */}
+                  <div>
+                    <p className="text-xs font-display text-muted-foreground uppercase tracking-wider mb-2">Senin Kanıtın</p>
+                    {!myProofUrl && challenge.status === "active" ? (
+                      <button
+                        onClick={() => fileInputRef.current?.click()}
+                        disabled={isUploading}
+                        className="w-full border-2 border-dashed border-border hover:border-primary/50 rounded-xl p-8 flex flex-col items-center gap-3 transition-colors group relative"
+                      >
+                        {isUploading ? (
+                          <Loader2 className="w-10 h-10 text-primary animate-spin" />
+                        ) : (
+                          <UploadCloud className="w-10 h-10 text-muted-foreground group-hover:text-primary transition-colors" />
+                        )}
+                        <p className="text-sm text-muted-foreground group-hover:text-foreground transition-colors font-medium">
+                          {isUploading ? "Yükleniyor..." : "Buraya Tıkla (Görsel/Video)"}
+                        </p>
+                        <p className="text-[10px] text-muted-foreground">JPG, PNG, MP4, MOV</p>
+                        <input
+                          ref={fileInputRef}
+                          type="file"
+                          accept="image/*,video/*"
+                          className="hidden"
+                          onChange={handleFileSelect}
+                        />
+                      </button>
+                    ) : myProofUrl ? (
+                      <div className="relative rounded-xl overflow-hidden border border-border">
+                        {isVideo(myProofUrl) ? (
+                          <video src={myProofUrl} controls className="w-full max-h-60 object-cover rounded-xl" />
+                        ) : (
+                          <img src={myProofUrl} alt="Kanıt" className="w-full max-h-60 object-cover" />
+                        )}
+                        <div className="absolute top-2 right-2 flex items-center gap-1 bg-green-500/90 text-white text-[10px] font-bold px-2 py-1 rounded-full">
+                          <CheckCircle className="w-3 h-3" /> Kanıt Yüklendi
+                        </div>
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 text-muted-foreground text-xs">
+                        <Camera className="w-8 h-8 mx-auto mb-2 opacity-30" />
+                        Düello aktif değil
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Opponent Proof */}
+                  <div>
+                    <p className="text-xs font-display text-muted-foreground uppercase tracking-wider mb-2">
+                      {opponentName || "Rakip"} Kanıtı
+                    </p>
+                    {theirProofUrl ? (
+                      <div className="relative rounded-xl overflow-hidden border border-border">
+                        {isVideo(theirProofUrl) ? (
+                          <video src={theirProofUrl} controls className="w-full max-h-60 object-cover rounded-xl" />
+                        ) : (
+                          <img src={theirProofUrl} alt="Rakip kanıt" className="w-full max-h-60 object-cover" />
+                        )}
+                      </div>
+                    ) : (
+                      <div className="text-center py-6 backdrop-blur-xl bg-card border border-border rounded-xl">
+                        <Camera className="w-6 h-6 text-muted-foreground/30 mx-auto mb-1" />
+                        <p className="text-muted-foreground text-xs">Rakip henüz kanıt yüklemedi</p>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              );
+            })()}
 
             {/* History Tab */}
             {activeTab === "history" && (
