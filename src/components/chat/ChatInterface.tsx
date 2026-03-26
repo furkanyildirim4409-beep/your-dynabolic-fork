@@ -185,12 +185,9 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                         />
                       )}
                       {message.media_type === "audio" && message.media_url && (
-                        <audio
-                          controls
-                          src={message.media_url}
-                          className="max-w-full mb-1.5"
-                          preload="metadata"
-                        />
+                        <div className="mb-1.5">
+                          <CustomAudioPlayer src={message.media_url} />
+                        </div>
                       )}
                       {message.content && <p className="text-sm">{message.content}</p>}
                       <p

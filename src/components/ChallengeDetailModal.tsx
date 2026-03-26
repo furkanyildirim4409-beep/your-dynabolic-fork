@@ -317,7 +317,9 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                               <video src={msg.media_url} controls className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2" />
                             )}
                             {msg.media_url && msg.media_type === "audio" && (
-                              <audio src={msg.media_url} controls className="max-w-[200px] h-10 mb-1" />
+                              <div className="mb-1">
+                                <CustomAudioPlayer src={msg.media_url} />
+                              </div>
                             )}
                             {msg.message && <p className="text-sm">{msg.message}</p>}
                             <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
