@@ -1,62 +1,53 @@
 
 
-## Plan: Universal Media Chat Engine (Part 3 of 4)
+## Plan: Voice Note System (Part 4 of 4 — The Finale)
 
-### Current State
+### Summary
 
-- **`messages` table**: Already has `media_url` and `media_type` columns.
-- **`ChatInterface.tsx`**: Already renders image/audio media in bubbles. Missing: file attachment input UI, video rendering.
-- **`challenge_messages` table**: No `media_url` or `media_type` columns.
-- **`useChallengeChat.ts`**: `sendMessage` only accepts a plain string. No file upload logic.
-- **`ChallengeDetailModal.tsx`**: Chat tab has plain text input only, no media rendering in bubbles.
-- **`chat-media` bucket**: Already exists and is public.
-- **`useRealtimeChat.ts`**: `sendMessage` only accepts a string. No file upload logic.
+Create a `useAudioRecorder` hook using the MediaRecorder API, then inject a Mic button into both chat interfaces (ChallengeDetailModal duel chat and ChatInterface coach chat). Add audio bubble rendering to the duel chat (already exists in coach chat).
 
-### Changes
+### Technical Details
 
-#### 1. Migration — Add media columns to `challenge_messages`
+#### 1. New Hook — `src/hooks/useAudioRecorder.ts`
 
-```sql
-ALTER TABLE public.challenge_messages ADD COLUMN IF NOT EXISTS media_url TEXT;
-ALTER TABLE public.challenge_messages ADD COLUMN IF NOT EXISTS media_type TEXT;
+- Uses `navigator.mediaDevices.getUserMedia({ audio: true })` to capture audio
+- Returns `{ isRecording, recordingDuration, startRecording, stopRecording }`
+- `startRecording()`: requests mic permission, starts `MediaRecorder`, begins a 1-second interval timer for `recordingDuration`
+- `stopRecording()`: returns a `Promise<File>` — stops recorder, collects chunks into a Blob (`audio/webm`), wraps as `File` named `voice_note_${Date.now()}.webm`
+- Cleans up streams and interval on unmount
+
+#### 2. `src/components/ChallengeDetailModal.tsx` — Duel Chat
+
+**Imports:** Add `Mic` from lucide-react, import `useAudioRecorder`.
+
+**Audio bubble rendering:** Add `audio` media_type case in the message map (between video and text):
+```tsx
+{msg.media_url && msg.media_type === "audio" && (
+  <audio src={msg.media_url} controls className="max-w-[200px] h-10 mb-1" />
+)}
 ```
 
-No bucket creation needed (`chat-media` exists).
+**Mic button in input area:** Add between Paperclip and Input:
+- If not recording: `<Mic>` icon button, onClick calls `startRecording()`
+- If recording: pulsing red `<Mic>` button with `animate-pulse text-destructive`, onClick calls `stopRecording()` then sends the file via `sendMessage({ text: "🎵 Sesli Mesaj", file })`
+- When recording, change input placeholder to `Kaydediliyor... (${duration}s)`
 
-#### 2. `src/hooks/useChallengeChat.ts` — Media-aware send
+#### 3. `src/components/chat/ChatInterface.tsx` — Coach Chat
 
-- Change `sendMessage` signature to accept `{ text: string; file?: File }`.
-- If file provided: enforce 20MB limit, sanitize filename, upload to `chat-media/${challengeId}/...`, get public URL, determine `media_type` from `file.type`.
-- Insert into `challenge_messages` with `media_url` and `media_type`.
-- Update `ChatMessage` interface to include `media_url?` and `media_type?`, map them in the query.
+**Imports:** Add `Mic` from lucide-react, import `useAudioRecorder`.
 
-#### 3. `src/components/ChallengeDetailModal.tsx` — Rich Duel Chat
+**Mic button:** Add between Paperclip button and Input:
+- Same toggle logic as duel chat
+- When recording, update placeholder to show duration
+- On stop, call `handleSend` with the audio file
 
-- Add state: `chatFile` (File | null), `chatFileInputRef`.
-- Chat input area: add Paperclip/Camera button that triggers hidden file input. Show file preview thumbnail above input when file selected (with X to clear).
-- `handleSendMessage`: pass `{ text: message, file: chatFile }` to `sendMessage`.
-- Message bubbles: render `msg.media_url` as `<img>` or `<video>` above text based on `media_type`.
-
-#### 4. `src/hooks/useRealtimeChat.ts` — Media-aware send for Coach Chat
-
-- Change `sendMessage` to accept `{ content: string; file?: File }`.
-- If file provided: same 20MB limit, sanitize, upload to `chat-media/coach/...`, get URL, determine type.
-- Insert with `media_url` and `media_type`. Update optimistic message accordingly.
-
-#### 5. `src/components/chat/ChatInterface.tsx` — Rich Coach Chat Input
-
-- Add state: `chatFile`, `chatFileInputRef`.
-- Add Paperclip button next to input. Show preview strip above input when file attached.
-- Add video rendering in bubbles (currently only image and audio).
-- `handleSend`: pass file alongside content.
+**Audio bubbles:** Already handled (image, video, audio all rendered).
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `supabase/migrations/..._challenge_chat_media.sql` | Add `media_url`, `media_type` to `challenge_messages` |
-| `src/hooks/useChallengeChat.ts` | Media upload in sendMessage, updated types/query |
-| `src/components/ChallengeDetailModal.tsx` | Rich chat input + media bubbles |
-| `src/hooks/useRealtimeChat.ts` | Media upload in sendMessage |
-| `src/components/chat/ChatInterface.tsx` | Attachment button, file preview, video bubbles |
+| `src/hooks/useAudioRecorder.ts` | New — MediaRecorder hook |
+| `src/components/ChallengeDetailModal.tsx` | Add Mic button + audio bubbles in duel chat |
+| `src/components/chat/ChatInterface.tsx` | Add Mic button in coach chat input |
 
