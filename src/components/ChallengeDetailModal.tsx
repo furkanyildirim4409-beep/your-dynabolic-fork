@@ -51,6 +51,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
   const { uploadProof, isUploading } = useProofUpload();
   const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
+  const { isRecording, recordingDuration, startRecording, stopRecording } = useAudioRecorder();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });

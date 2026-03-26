@@ -24,6 +24,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const chatFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
+  const { isRecording, recordingDuration, startRecording, stopRecording } = useAudioRecorder();
 
   const coachName = coachInfo?.full_name || "Koç";
   const coachAvatar = coachInfo?.avatar_url || "";
