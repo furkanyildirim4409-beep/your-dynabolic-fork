@@ -81,9 +81,15 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
-    await sendMessage(message.trim());
-    setMessage("");
+    if (!message.trim() && !chatFile) return;
+    setIsSendingChat(true);
+    try {
+      await sendMessage({ text: message.trim(), file: chatFile || undefined });
+      setMessage("");
+      setChatFile(null);
+    } finally {
+      setIsSendingChat(false);
+    }
   };
 
   const adjustValue = (delta: number) => {
