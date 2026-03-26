@@ -45,6 +45,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
+  const { uploadProof, isUploading } = useProofUpload();
   const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
 
   useEffect(() => {
