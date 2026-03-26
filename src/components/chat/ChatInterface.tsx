@@ -241,12 +241,34 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
               >
                 <Paperclip className="w-5 h-5" />
               </motion.button>
+              <motion.button
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                onClick={async () => {
+                  if (isRecording) {
+                    const file = await stopRecording();
+                    if (file.size > 0) {
+                      setIsSending(true);
+                      setChatFile(null);
+                      setInputValue("");
+                      await sendMessage({ content: "🎵 Sesli Mesaj", file });
+                      setIsSending(false);
+                    }
+                  } else {
+                    startRecording();
+                  }
+                }}
+                disabled={!resolvedCoachId}
+                className={`p-2 hover:text-foreground disabled:opacity-50 ${isRecording ? "animate-pulse text-destructive" : "text-muted-foreground"}`}
+              >
+                <Mic className="w-5 h-5" />
+              </motion.button>
               <Input
                 value={inputValue}
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
-                placeholder={resolvedCoachId ? "Mesaj yaz..." : "Bağlantı Bekleniyor..."}
-                disabled={!resolvedCoachId}
+                placeholder={isRecording ? `Kaydediliyor... (${recordingDuration}s)` : resolvedCoachId ? "Mesaj yaz..." : "Bağlantı Bekleniyor..."}
+                disabled={!resolvedCoachId || isRecording}
                 className="flex-1 bg-secondary/50 border-border rounded-full px-4"
               />
               <motion.button
