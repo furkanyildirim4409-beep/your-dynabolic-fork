@@ -425,6 +425,8 @@ export type Database = {
           challenge_id: string
           created_at: string | null
           id: string
+          media_type: string | null
+          media_url: string | null
           message: string
           user_id: string
         }
@@ -432,6 +434,8 @@ export type Database = {
           challenge_id: string
           created_at?: string | null
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           message: string
           user_id: string
         }
@@ -439,6 +443,8 @@ export type Database = {
           challenge_id?: string
           created_at?: string | null
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           message?: string
           user_id?: string
         }
