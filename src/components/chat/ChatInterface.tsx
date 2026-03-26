@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { createPortal } from "react-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Send, Loader2, MessageCircleOff, Bell, BellOff, Paperclip, Image as ImageIcon, Video } from "lucide-react";
+import { X, Send, Loader2, MessageCircleOff, Bell, BellOff, Paperclip, Image as ImageIcon, Video, Mic } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Input } from "@/components/ui/input";
 import { useRealtimeChat } from "@/hooks/useRealtimeChat";
