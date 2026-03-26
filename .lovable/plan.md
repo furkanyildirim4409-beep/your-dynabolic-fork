@@ -1,47 +1,37 @@
 
 
-## Plan: Audio Player Engine & Bugfix (Part 1 of 2)
+## Plan: Audio Player Integration (Part 2 of 2)
 
-### Summary
-
-Fix the `media_type` detection bug that saves voice notes as `'image'`, and create a premium custom audio player component.
+Replace default `<audio controls>` with `CustomAudioPlayer` in both chat interfaces.
 
 ### Changes
 
-#### 1. Fix `media_type` bug — two hooks
-
-**`src/hooks/useChallengeChat.ts` (line 103)** and **`src/hooks/useRealtimeChat.ts` (line 182)**
-
-Replace:
-```typescript
-media_type = file.type.startsWith("video") ? "video" : "image";
-```
-With:
-```typescript
-if (file.type.startsWith("video")) {
-  media_type = "video";
-} else if (file.type.startsWith("audio") || file.name.includes(".webm")) {
-  media_type = "audio";
-} else {
-  media_type = "image";
-}
+#### 1. `src/components/chat/ChatInterface.tsx`
+- Add import: `import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";`
+- Replace lines 186-193 (the `<audio controls>` block) with:
+```tsx
+{message.media_type === "audio" && message.media_url && (
+  <div className="mb-1.5">
+    <CustomAudioPlayer src={message.media_url} />
+  </div>
+)}
 ```
 
-#### 2. New component — `src/components/ui/CustomAudioPlayer.tsx`
-
-A premium pill-shaped audio player with:
-- Hidden `<audio>` element with `preload="metadata"`
-- Circular Play/Pause button using Lucide icons
-- Clickable progress bar for seeking
-- Time display (current / duration) in `text-[9px]`
-- Styled with `bg-background/50 backdrop-blur-sm border-border/50 rounded-full`
-- Resets progress on ended
+#### 2. `src/components/ChallengeDetailModal.tsx`
+- Add import: `import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";`
+- Replace lines 319-321 (the `<audio>` block) with:
+```tsx
+{msg.media_url && msg.media_type === "audio" && (
+  <div className="mb-1">
+    <CustomAudioPlayer src={msg.media_url} />
+  </div>
+)}
+```
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useChallengeChat.ts` | Fix media_type detection (line 103) |
-| `src/hooks/useRealtimeChat.ts` | Fix media_type detection (line 182) |
-| `src/components/ui/CustomAudioPlayer.tsx` | New — premium audio player component |
+| `src/components/chat/ChatInterface.tsx` | Import + replace audio element (lines 186-193) |
+| `src/components/ChallengeDetailModal.tsx` | Import + replace audio element (lines 319-321) |
 
