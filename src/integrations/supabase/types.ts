@@ -469,7 +469,9 @@ export type Database = {
           exercise_name: string | null
           id: string
           opponent_id: string
+          opponent_proof_url: string | null
           opponent_value: number | null
+          proof_url: string | null
           start_date: string | null
           status: string | null
           wager_coins: number | null
@@ -484,7 +486,9 @@ export type Database = {
           exercise_name?: string | null
           id?: string
           opponent_id: string
+          opponent_proof_url?: string | null
           opponent_value?: number | null
+          proof_url?: string | null
           start_date?: string | null
           status?: string | null
           wager_coins?: number | null
@@ -499,7 +503,9 @@ export type Database = {
           exercise_name?: string | null
           id?: string
           opponent_id?: string
+          opponent_proof_url?: string | null
           opponent_value?: number | null
+          proof_url?: string | null
           start_date?: string | null
           status?: string | null
           wager_coins?: number | null
