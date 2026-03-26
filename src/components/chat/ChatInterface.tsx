@@ -170,8 +170,15 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                         <img
                           src={message.media_url}
                           alt="Paylaşılan görsel"
-                          className="rounded-lg max-w-full max-h-60 object-cover mb-1.5"
+                          className="rounded-lg max-w-[200px] sm:max-w-[250px] max-h-60 object-cover mb-1.5"
                           loading="lazy"
+                        />
+                      )}
+                      {message.media_type === "video" && message.media_url && (
+                        <video
+                          controls
+                          src={message.media_url}
+                          className="rounded-lg max-w-[200px] sm:max-w-[250px] max-h-60 mb-1.5"
                         />
                       )}
                       {message.media_type === "audio" && message.media_url && (
