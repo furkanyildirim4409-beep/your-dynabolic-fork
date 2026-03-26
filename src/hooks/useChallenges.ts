@@ -95,6 +95,8 @@ export const useChallenges = () => {
       xpReward: Math.round((row.wager_coins ?? 0) * 0.2),
       winnerId: row.winner_id || undefined,
       completedAt: row.status === "completed" ? row.end_date || undefined : undefined,
+      proofUrl: (row as any).proof_url || undefined,
+      opponentProofUrl: (row as any).opponent_proof_url || undefined,
     };
   };
 

@@ -124,6 +124,8 @@ const ChallengesSection = ({ athletes }: ChallengesSectionProps) => {
         challengedAvatar: selectedChallenge.challengedAvatar,
         challengedValue: selectedChallenge.challengedValue,
         winnerId: selectedChallenge.winnerId,
+        proofUrl: selectedChallenge.proofUrl,
+        opponentProofUrl: selectedChallenge.opponentProofUrl,
       } : undefined} />
     </>
   );
