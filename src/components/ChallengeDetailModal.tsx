@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus } from "lucide-react";
+import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2 } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
