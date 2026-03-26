@@ -360,11 +360,34 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                   <Button size="icon" variant="ghost" className="rounded-xl shrink-0" onClick={() => chatFileInputRef.current?.click()}>
                     <Paperclip className="w-4 h-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`rounded-xl shrink-0 ${isRecording ? "animate-pulse text-destructive" : ""}`}
+                    onClick={async () => {
+                      if (isRecording) {
+                        const file = await stopRecording();
+                        if (file.size > 0) {
+                          setIsSendingChat(true);
+                          try {
+                            await sendMessage({ text: "🎵 Sesli Mesaj", file });
+                          } finally {
+                            setIsSendingChat(false);
+                          }
+                        }
+                      } else {
+                        startRecording();
+                      }
+                    }}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Mesaj yaz..."
+                    placeholder={isRecording ? `Kaydediliyor... (${recordingDuration}s)` : "Mesaj yaz..."}
+                    disabled={isRecording}
                     className="flex-1 rounded-xl"
                   />
                   <Button size="icon" className="rounded-xl" onClick={handleSendMessage} disabled={isSendingChat || (!message.trim() && !chatFile)}>
