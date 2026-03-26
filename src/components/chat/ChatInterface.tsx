@@ -19,6 +19,8 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   const [coachMuted, setCoachMuted] = useState(false);
   const { messages, isLoading, sendMessage, coachInfo, resolvedCoachId } = useRealtimeChat({ isOpen, isMuted: coachMuted });
   const [inputValue, setInputValue] = useState("");
+  const [chatFile, setChatFile] = useState<File | null>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const [isSending, setIsSending] = useState(false);
 
