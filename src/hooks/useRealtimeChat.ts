@@ -16,6 +16,15 @@ interface RealtimeChatOptions {
   isMuted?: boolean;
 }
 
+const MAX_CHAT_FILE_SIZE = 20 * 1024 * 1024;
+
+const sanitizeFileName = (name: string) =>
+  name
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-zA-Z0-9.\-_]/g, "_")
+    .replace(/_+/g, "_");
+
 export function useRealtimeChat(options: RealtimeChatOptions = {}) {
   const { isOpen, isMuted } = options;
   const { user } = useAuth();
@@ -141,12 +150,36 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
   }, [user]);
 
   const sendMessage = useCallback(
-    async (content: string) => {
-      if (!user || !content.trim()) return;
+    async ({ content, file }: { content: string; file?: File }) => {
+      if (!user || (!content.trim() && !file)) return;
 
       if (!resolvedCoachId) {
         toast.error("Hata: Koç bağlantısı kurulamadı!");
         return;
+      }
+
+      let media_url: string | null = null;
+      let media_type: string | null = null;
+
+      if (file) {
+        if (file.size > MAX_CHAT_FILE_SIZE) {
+          toast.error("Dosya çok büyük – maksimum 20MB.");
+          return;
+        }
+        const sanitized = sanitizeFileName(file.name);
+        const filePath = `coach/${user.id}/${Date.now()}_${sanitized}`;
+        const { error: upErr } = await supabase.storage
+          .from("chat-media")
+          .upload(filePath, file);
+        if (upErr) {
+          toast.error("Dosya yüklenemedi: " + upErr.message);
+          return;
+        }
+        const { data: urlData } = supabase.storage
+          .from("chat-media")
+          .getPublicUrl(filePath);
+        media_url = urlData.publicUrl;
+        media_type = file.type.startsWith("video") ? "video" : "image";
       }
 
       const optimisticMsg: Message = {
@@ -156,8 +189,8 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
         content: content.trim(),
         created_at: new Date().toISOString(),
         is_read: false,
-        media_type: null,
-        media_url: null,
+        media_type,
+        media_url,
       };
 
       setMessages((prev) => [...prev, optimisticMsg]);
@@ -166,6 +199,8 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
         sender_id: user.id,
         receiver_id: resolvedCoachId,
         content: content.trim(),
+        media_url,
+        media_type,
       });
 
       if (error) {
