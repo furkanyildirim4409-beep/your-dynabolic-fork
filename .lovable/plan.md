@@ -1,53 +1,47 @@
 
 
-## Plan: Voice Note System (Part 4 of 4 — The Finale)
+## Plan: Audio Player Engine & Bugfix (Part 1 of 2)
 
 ### Summary
 
-Create a `useAudioRecorder` hook using the MediaRecorder API, then inject a Mic button into both chat interfaces (ChallengeDetailModal duel chat and ChatInterface coach chat). Add audio bubble rendering to the duel chat (already exists in coach chat).
+Fix the `media_type` detection bug that saves voice notes as `'image'`, and create a premium custom audio player component.
 
-### Technical Details
+### Changes
 
-#### 1. New Hook — `src/hooks/useAudioRecorder.ts`
+#### 1. Fix `media_type` bug — two hooks
 
-- Uses `navigator.mediaDevices.getUserMedia({ audio: true })` to capture audio
-- Returns `{ isRecording, recordingDuration, startRecording, stopRecording }`
-- `startRecording()`: requests mic permission, starts `MediaRecorder`, begins a 1-second interval timer for `recordingDuration`
-- `stopRecording()`: returns a `Promise<File>` — stops recorder, collects chunks into a Blob (`audio/webm`), wraps as `File` named `voice_note_${Date.now()}.webm`
-- Cleans up streams and interval on unmount
+**`src/hooks/useChallengeChat.ts` (line 103)** and **`src/hooks/useRealtimeChat.ts` (line 182)**
 
-#### 2. `src/components/ChallengeDetailModal.tsx` — Duel Chat
-
-**Imports:** Add `Mic` from lucide-react, import `useAudioRecorder`.
-
-**Audio bubble rendering:** Add `audio` media_type case in the message map (between video and text):
-```tsx
-{msg.media_url && msg.media_type === "audio" && (
-  <audio src={msg.media_url} controls className="max-w-[200px] h-10 mb-1" />
-)}
+Replace:
+```typescript
+media_type = file.type.startsWith("video") ? "video" : "image";
+```
+With:
+```typescript
+if (file.type.startsWith("video")) {
+  media_type = "video";
+} else if (file.type.startsWith("audio") || file.name.includes(".webm")) {
+  media_type = "audio";
+} else {
+  media_type = "image";
+}
 ```
 
-**Mic button in input area:** Add between Paperclip and Input:
-- If not recording: `<Mic>` icon button, onClick calls `startRecording()`
-- If recording: pulsing red `<Mic>` button with `animate-pulse text-destructive`, onClick calls `stopRecording()` then sends the file via `sendMessage({ text: "🎵 Sesli Mesaj", file })`
-- When recording, change input placeholder to `Kaydediliyor... (${duration}s)`
+#### 2. New component — `src/components/ui/CustomAudioPlayer.tsx`
 
-#### 3. `src/components/chat/ChatInterface.tsx` — Coach Chat
-
-**Imports:** Add `Mic` from lucide-react, import `useAudioRecorder`.
-
-**Mic button:** Add between Paperclip button and Input:
-- Same toggle logic as duel chat
-- When recording, update placeholder to show duration
-- On stop, call `handleSend` with the audio file
-
-**Audio bubbles:** Already handled (image, video, audio all rendered).
+A premium pill-shaped audio player with:
+- Hidden `<audio>` element with `preload="metadata"`
+- Circular Play/Pause button using Lucide icons
+- Clickable progress bar for seeking
+- Time display (current / duration) in `text-[9px]`
+- Styled with `bg-background/50 backdrop-blur-sm border-border/50 rounded-full`
+- Resets progress on ended
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/hooks/useAudioRecorder.ts` | New — MediaRecorder hook |
-| `src/components/ChallengeDetailModal.tsx` | Add Mic button + audio bubbles in duel chat |
-| `src/components/chat/ChatInterface.tsx` | Add Mic button in coach chat input |
+| `src/hooks/useChallengeChat.ts` | Fix media_type detection (line 103) |
+| `src/hooks/useRealtimeChat.ts` | Fix media_type detection (line 182) |
+| `src/components/ui/CustomAudioPlayer.tsx` | New — premium audio player component |
 
