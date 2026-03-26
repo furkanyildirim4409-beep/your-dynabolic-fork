@@ -1,12 +1,13 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2, Paperclip } from "lucide-react";
+import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2, Paperclip, Mic } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useChallenges } from "@/hooks/useChallenges";
 import { useProofUpload } from "@/hooks/useProofUpload";
 import { useChallengeChat } from "@/hooks/useChallengeChat";
+import { useAudioRecorder } from "@/hooks/useAudioRecorder";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
@@ -50,6 +51,7 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
   const { uploadProof, isUploading } = useProofUpload();
   const { messages: chatMessages, sendMessage, isLoading: chatLoading } = useChallengeChat(challenge?.id || "");
+  const { isRecording, recordingDuration, startRecording, stopRecording } = useAudioRecorder();
 
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
@@ -314,6 +316,9 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                             {msg.media_url && msg.media_type === "video" && (
                               <video src={msg.media_url} controls className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2" />
                             )}
+                            {msg.media_url && msg.media_type === "audio" && (
+                              <audio src={msg.media_url} controls className="max-w-[200px] h-10 mb-1" />
+                            )}
                             {msg.message && <p className="text-sm">{msg.message}</p>}
                             <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {timeStr}
@@ -355,11 +360,34 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                   <Button size="icon" variant="ghost" className="rounded-xl shrink-0" onClick={() => chatFileInputRef.current?.click()}>
                     <Paperclip className="w-4 h-4" />
                   </Button>
+                  <Button
+                    size="icon"
+                    variant="ghost"
+                    className={`rounded-xl shrink-0 ${isRecording ? "animate-pulse text-destructive" : ""}`}
+                    onClick={async () => {
+                      if (isRecording) {
+                        const file = await stopRecording();
+                        if (file.size > 0) {
+                          setIsSendingChat(true);
+                          try {
+                            await sendMessage({ text: "🎵 Sesli Mesaj", file });
+                          } finally {
+                            setIsSendingChat(false);
+                          }
+                        }
+                      } else {
+                        startRecording();
+                      }
+                    }}
+                  >
+                    <Mic className="w-4 h-4" />
+                  </Button>
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
                     onKeyDown={(e) => e.key === "Enter" && handleSendMessage()}
-                    placeholder="Mesaj yaz..."
+                    placeholder={isRecording ? `Kaydediliyor... (${recordingDuration}s)` : "Mesaj yaz..."}
+                    disabled={isRecording}
                     className="flex-1 rounded-xl"
                   />
                   <Button size="icon" className="rounded-xl" onClick={handleSendMessage} disabled={isSendingChat || (!message.trim() && !chatFile)}>
