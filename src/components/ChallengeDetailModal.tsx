@@ -1,6 +1,6 @@
 import { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2 } from "lucide-react";
+import { X, Swords, Trophy, MessageCircle, Clock, Camera, Send, History, CheckCircle, Minus, Plus, UploadCloud, Image as ImageIcon, Video, Loader2, Paperclip } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -41,8 +41,11 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   const [activeTab, setActiveTab] = useState<"vs" | "chat" | "proof" | "history">("vs");
   const [message, setMessage] = useState("");
   const [myResult, setMyResult] = useState(0);
+  const [chatFile, setChatFile] = useState<File | null>(null);
+  const [isSendingChat, setIsSendingChat] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const chatFileInputRef = useRef<HTMLInputElement>(null);
   const { user } = useAuth();
   const { completed, submitResult, concludeChallenge, disputeChallenge } = useChallenges();
   const { uploadProof, isUploading } = useProofUpload();
@@ -78,9 +81,15 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
   };
 
   const handleSendMessage = async () => {
-    if (!message.trim()) return;
-    await sendMessage(message.trim());
-    setMessage("");
+    if (!message.trim() && !chatFile) return;
+    setIsSendingChat(true);
+    try {
+      await sendMessage({ text: message.trim(), file: chatFile || undefined });
+      setMessage("");
+      setChatFile(null);
+    } finally {
+      setIsSendingChat(false);
+    }
   };
 
   const adjustValue = (delta: number) => {
@@ -299,7 +308,13 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                             {!isMe && (
                               <p className="text-[10px] font-medium opacity-70 mb-0.5">{msg.sender_name}</p>
                             )}
-                            <p className="text-sm">{msg.message}</p>
+                            {msg.media_url && msg.media_type === "image" && (
+                              <img src={msg.media_url} alt="Media" className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2 object-cover" loading="lazy" />
+                            )}
+                            {msg.media_url && msg.media_type === "video" && (
+                              <video src={msg.media_url} controls className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2" />
+                            )}
+                            {msg.message && <p className="text-sm">{msg.message}</p>}
                             <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {timeStr}
                             </p>
@@ -311,8 +326,35 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                   <div ref={messagesEndRef} />
                 </div>
 
+                {/* File preview strip */}
+                {chatFile && (
+                  <div className="px-3 pt-2 flex items-center gap-2">
+                    <div className="flex items-center gap-2 bg-secondary/80 rounded-lg px-3 py-1.5 text-xs text-foreground">
+                      {chatFile.type.startsWith("video") ? <Video className="w-3.5 h-3.5 text-primary" /> : <ImageIcon className="w-3.5 h-3.5 text-primary" />}
+                      <span className="truncate max-w-[180px]">{chatFile.name}</span>
+                      <button onClick={() => setChatFile(null)} className="ml-1 text-muted-foreground hover:text-foreground">
+                        <X className="w-3.5 h-3.5" />
+                      </button>
+                    </div>
+                  </div>
+                )}
+
                 {/* Sticky input */}
                 <div className="p-3 border-t border-border flex gap-2">
+                  <input
+                    ref={chatFileInputRef}
+                    type="file"
+                    accept="image/*,video/*"
+                    className="hidden"
+                    onChange={(e) => {
+                      const f = e.target.files?.[0];
+                      if (f) setChatFile(f);
+                      e.target.value = "";
+                    }}
+                  />
+                  <Button size="icon" variant="ghost" className="rounded-xl shrink-0" onClick={() => chatFileInputRef.current?.click()}>
+                    <Paperclip className="w-4 h-4" />
+                  </Button>
                   <Input
                     value={message}
                     onChange={(e) => setMessage(e.target.value)}
@@ -320,8 +362,8 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                     placeholder="Mesaj yaz..."
                     className="flex-1 rounded-xl"
                   />
-                  <Button size="icon" className="rounded-xl" onClick={handleSendMessage}>
-                    <Send className="w-4 h-4" />
+                  <Button size="icon" className="rounded-xl" onClick={handleSendMessage} disabled={isSendingChat || (!message.trim() && !chatFile)}>
+                    {isSendingChat ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />}
                   </Button>
                 </div>
               </>
