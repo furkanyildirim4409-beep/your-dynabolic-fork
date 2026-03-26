@@ -308,7 +308,13 @@ const ChallengeDetailModal = ({ isOpen, onClose, challenge }: ChallengeDetailMod
                             {!isMe && (
                               <p className="text-[10px] font-medium opacity-70 mb-0.5">{msg.sender_name}</p>
                             )}
-                            <p className="text-sm">{msg.message}</p>
+                            {msg.media_url && msg.media_type === "image" && (
+                              <img src={msg.media_url} alt="Media" className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2 object-cover" loading="lazy" />
+                            )}
+                            {msg.media_url && msg.media_type === "video" && (
+                              <video src={msg.media_url} controls className="rounded-lg max-w-[200px] sm:max-w-[250px] mb-2" />
+                            )}
+                            {msg.message && <p className="text-sm">{msg.message}</p>}
                             <p className={`text-[9px] mt-1 ${isMe ? "text-primary-foreground/60" : "text-muted-foreground"}`}>
                               {timeStr}
                             </p>
