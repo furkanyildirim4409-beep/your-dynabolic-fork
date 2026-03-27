@@ -36,13 +36,16 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   }, [resolvedCoachId, isMuted]);
 
   const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+    messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
   };
 
   useEffect(() => {
     if (isOpen) {
-      setTimeout(scrollToBottom, 100);
-      setTimeout(scrollToBottom, 400);
+      scrollToBottom();
+      requestAnimationFrame(() => {
+        scrollToBottom();
+        setTimeout(scrollToBottom, 300);
+      });
     }
   }, [messages, isOpen]);
 
@@ -203,7 +206,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 </motion.div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-1 w-full flex-shrink-0" />
           </div>
 
           {/* Input */}
