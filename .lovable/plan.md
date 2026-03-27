@@ -1,37 +1,33 @@
 
 
-## Plan: Audio Player Integration (Part 2 of 2)
+## Plan: Notification Preferences UI Polish
 
-Replace default `<audio controls>` with `CustomAudioPlayer` in both chat interfaces.
+### Current State
+The SettingsPanel already has a push notification toggle (lines 134-142) but it's minimal — just "Sipariş durumu güncellemeleri" with no loading state, no status indicator, and no expanded description. The user wants a more premium, informative notification preferences section.
 
 ### Changes
 
-#### 1. `src/components/chat/ChatInterface.tsx`
-- Add import: `import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";`
-- Replace lines 186-193 (the `<audio controls>` block) with:
-```tsx
-{message.media_type === "audio" && message.media_url && (
-  <div className="mb-1.5">
-    <CustomAudioPlayer src={message.media_url} />
-  </div>
-)}
-```
+#### 1. Enhance the Push Notifications block in `src/components/SettingsPanel.tsx`
 
-#### 2. `src/components/ChallengeDetailModal.tsx`
-- Add import: `import { CustomAudioPlayer } from "@/components/ui/CustomAudioPlayer";`
-- Replace lines 319-321 (the `<audio>` block) with:
-```tsx
-{msg.media_url && msg.media_type === "audio" && (
-  <div className="mb-1">
-    <CustomAudioPlayer src={msg.media_url} />
-  </div>
-)}
-```
+Replace the current single-line push toggle (lines 134-142) with an expanded, premium notification card:
+
+- **Add loading state** to `usePushNotifications` hook and `handlePushToggle` (disable switch while subscribing)
+- **Show permission status** badge (Granted/Denied/Default) using a colored dot indicator
+- **Expand description** to: "Yeni düellolar, mesajlar ve koç uyarıları için anlık bildirim al."
+- **Add denied-state hint**: If `Notification.permission === 'denied'`, show a muted warning text telling the user to enable notifications from browser settings
+- **Visual upgrade**: Give the push section its own distinct sub-card with a gradient border accent to make it stand out from the other toggles
+
+#### 2. Add `isLoading` state to `handlePushToggle` in SettingsPanel
+
+- Track a local `isPushLoading` state
+- Set it `true` before calling `subscribePush()`, `false` after
+- Pass `disabled={isPushLoading || pushSubscribed}` to the Switch
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/chat/ChatInterface.tsx` | Import + replace audio element (lines 186-193) |
-| `src/components/ChallengeDetailModal.tsx` | Import + replace audio element (lines 319-321) |
+| `src/components/SettingsPanel.tsx` | Enhanced push notification UI with loading state, permission badge, denied hint, and premium styling |
+
+No new files, no database changes, no hook modifications needed.
 
