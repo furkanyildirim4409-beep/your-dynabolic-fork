@@ -18,6 +18,8 @@ interface WeeklyRecapModalProps {
 }
 
 const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
+  const [isSharing, setIsSharing] = useState(false);
+
   if (!isOpen || !data) return null;
 
   const formatDateRange = () => {
@@ -39,12 +41,27 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
     return "text-muted-foreground";
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     hapticLight();
-    toast({
-      title: "Paylaşım hazırlanıyor...",
-      description: "Haftalık özet görseli oluşturuluyor",
-    });
+    setIsSharing(true);
+    try {
+      await shareRecapImage(data);
+      hapticSuccess();
+      toast({
+        title: "Paylaşıldı! 🎉",
+        description: "Haftalık özet görselin hazır",
+      });
+    } catch (err: any) {
+      // User cancelled share or error
+      if (err?.name !== "AbortError") {
+        toast({
+          title: "Görsel indirildi 📥",
+          description: "Haftalık özet görselin kaydedildi",
+        });
+      }
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleClose = () => {
