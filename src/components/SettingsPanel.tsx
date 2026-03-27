@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Bell, Globe, Moon, Sun, WifiOff, Download, Smartphone, Lock, 
   HelpCircle, ChevronRight, Dumbbell, MessageSquare, CreditCard, 
-  Users, FileText, AlertTriangle, BellRing, ClipboardCheck
+  Users, FileText, AlertTriangle, BellRing, ClipboardCheck, UtensilsCrossed
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
