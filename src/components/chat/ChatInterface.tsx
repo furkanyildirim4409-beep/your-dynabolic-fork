@@ -80,7 +80,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           className="fixed inset-0 z-50 bg-background border-8 border-solid"
         >
           {/* Header */}
-          <div className="absolute top-0 left-0 right-0 bg-background/95 backdrop-blur-xl border-b border-border p-4 flex items-center gap-4 z-10">
+          <div className="absolute top-0 left-0 right-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -210,7 +210,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           </div>
 
           {/* Input */}
-          <div className="absolute bottom-0 left-0 right-0 bg-background/95 backdrop-blur-xl p-4 safe-area-inset">
+          <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md p-3 safe-area-inset z-10">
             {chatFile && (
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex items-center gap-2 bg-secondary/80 rounded-lg px-3 py-1.5 text-xs text-foreground">
@@ -271,7 +271,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder={isRecording ? `Kaydediliyor... (${recordingDuration}s)` : resolvedCoachId ? "Mesaj yaz..." : "Bağlantı Bekleniyor..."}
                 disabled={!resolvedCoachId || isRecording}
-                className="flex-1 bg-secondary/50 border-border rounded-full px-4"
+                className="flex-1 bg-muted/50 border-0 rounded-full px-4 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
