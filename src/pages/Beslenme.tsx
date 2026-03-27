@@ -748,10 +748,6 @@ const Beslenme = () => {
     [searchFood, setSearchResults],
   );
 
-  const waterGoal = 3.5;
-  const waterIntake = totalMl / 1000;
-  const progress = (waterIntake / waterGoal) * 100;
-
   const openMealScanner = () => {
     setScannerMode("meal");
     setShowCamera(true);
