@@ -155,7 +155,7 @@ Deno.serve(async (req) => {
 
             // Send push to each subscription
             const results = await Promise.allSettled(
-              subs.map((sub: PushSub) => {
+              filteredWorkoutSubs.map((sub: PushSub) => {
                 const workoutName = userWorkoutMap.get(sub.user_id) || "Antrenman";
                 const payload = JSON.stringify({
                   title: `💪 ${workoutName} seni bekliyor!`,
@@ -175,7 +175,7 @@ Deno.serve(async (req) => {
             const expired = results
               .map((r, i) =>
                 r.status === "rejected" && r.reason?.statusCode === 410
-                  ? subs[i].endpoint
+                  ? filteredWorkoutSubs[i].endpoint
                   : null,
               )
               .filter(Boolean);
