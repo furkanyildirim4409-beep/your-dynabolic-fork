@@ -38,6 +38,7 @@ import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import BiometricLogin from "./pages/BiometricLogin";
 import CoachAthletes from "./pages/CoachAthletes";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
