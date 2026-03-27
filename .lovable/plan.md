@@ -1,33 +1,38 @@
 
 
-## Plan: Notification Preferences UI Polish
+## Plan: Edge Function Hotfix — Role Filtering for Scheduled Reminders
 
-### Current State
-The SettingsPanel already has a push notification toggle (lines 134-142) but it's minimal — just "Sipariş durumu güncellemeleri" with no loading state, no status indicator, and no expanded description. The user wants a more premium, informative notification preferences section.
+### Problem
+The `send-scheduled-reminders` edge function sends check-in nudges to ALL users with push subscriptions, including coaches. Only athletes should receive these reminders.
 
 ### Changes
 
-#### 1. Enhance the Push Notifications block in `src/components/SettingsPanel.tsx`
+#### `supabase/functions/send-scheduled-reminders/index.ts`
 
-Replace the current single-line push toggle (lines 134-142) with an expanded, premium notification card:
+**1. Check-in nudge query (line 68-70)** — Add `profiles!inner(role)` join filtered to athletes only:
+```typescript
+const { data: allSubs } = await supabaseAdmin
+  .from("push_subscriptions")
+  .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+  .eq("profiles.role", "athlete");
+```
 
-- **Add loading state** to `usePushNotifications` hook and `handlePushToggle` (disable switch while subscribing)
-- **Show permission status** badge (Granted/Denied/Default) using a colored dot indicator
-- **Expand description** to: "Yeni düellolar, mesajlar ve koç uyarıları için anlık bildirim al."
-- **Add denied-state hint**: If `Notification.permission === 'denied'`, show a muted warning text telling the user to enable notifications from browser settings
-- **Visual upgrade**: Give the push section its own distinct sub-card with a gradient border accent to make it stand out from the other toggles
+**2. Workout reminder subscription query (line 126-129)** — Same defensive filter:
+```typescript
+const { data: subs } = await supabaseAdmin
+  .from("push_subscriptions")
+  .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+  .eq("profiles.role", "athlete")
+  .in("user_id", needReminder);
+```
 
-#### 2. Add `isLoading` state to `handlePushToggle` in SettingsPanel
+**Note**: The `push_subscriptions` table has a `user_id` column that references `profiles(id)`, so the `profiles!inner()` join will work via the existing foreign key relationship. The `profiles!inner` join ensures only rows with a matching profile are returned, and the `.eq` filter restricts to athletes.
 
-- Track a local `isPushLoading` state
-- Set it `true` before calling `subscribePush()`, `false` after
-- Pass `disabled={isPushLoading || pushSubscribed}` to the Switch
+After code update, deploy the edge function.
 
 ### Files Changed
 
 | File | Change |
 |------|--------|
-| `src/components/SettingsPanel.tsx` | Enhanced push notification UI with loading state, permission badge, denied hint, and premium styling |
-
-No new files, no database changes, no hook modifications needed.
+| `supabase/functions/send-scheduled-reminders/index.ts` | Add `profiles!inner(role)` athlete filter to both subscription queries |
 
