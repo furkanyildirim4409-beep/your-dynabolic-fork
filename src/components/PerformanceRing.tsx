@@ -46,13 +46,16 @@ const PerformanceRing = () => {
 
   if (loading) {
     return (
-      <div className="flex flex-col items-center justify-center py-8">
-        <div className="w-64 h-64 rounded-full bg-muted/10 animate-pulse" />
+      <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5">
+        <div className="flex flex-col items-center justify-center py-8">
+          <div className="w-64 h-64 rounded-full bg-muted/10 animate-pulse" />
+        </div>
       </div>
     );
   }
 
   return (
+    <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5">
     <div className="relative flex flex-col items-center justify-center py-8">
       <div className="relative w-64 h-64">
         <svg className="absolute inset-0 w-full h-full -rotate-90" viewBox="0 0 256 256">

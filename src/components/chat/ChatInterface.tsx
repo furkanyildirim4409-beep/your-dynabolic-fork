@@ -42,6 +42,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
   useEffect(() => {
     if (isOpen) {
       setTimeout(scrollToBottom, 100);
+      setTimeout(scrollToBottom, 400);
     }
   }, [messages, isOpen]);
 
