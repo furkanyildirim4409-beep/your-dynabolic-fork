@@ -1,10 +1,10 @@
 import { useState, useEffect, useCallback } from "react";
-import { motion } from "framer-motion";
-import { Send, Moon, Brain, Flame, Heart, Sparkles, Apple, RefreshCw, Clock } from "lucide-react";
-import { Slider } from "@/components/ui/slider";
-import { Input } from "@/components/ui/input";
+import { motion, AnimatePresence } from "framer-motion";
+import { Send, RefreshCw, Sparkles, ChevronLeft, ChevronRight } from "lucide-react";
 import { Textarea } from "@/components/ui/textarea";
+import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { ToggleGroup, ToggleGroupItem } from "@/components/ui/toggle-group";
 import { toast } from "sonner";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useAuth } from "@/context/AuthContext";
@@ -29,49 +29,55 @@ interface DailyCheckInProps {
 
 type SliderKey = "mood" | "sleep" | "soreness" | "stress" | "digestion";
 
-interface SliderConfig {
+interface MetricConfig {
   id: SliderKey;
   label: string;
-  icon: React.ReactNode;
+  emojis: string[];
+  emojiLabels: string[];
   gradient: string;
-  trackColor: string;
+  isNegative?: boolean;
 }
 
-const sliderConfigs: SliderConfig[] = [
+const positiveMetrics: MetricConfig[] = [
   {
     id: "mood",
     label: "RUH HALİ",
-    icon: <Heart className="w-4 h-4" />,
+    emojis: ["😫", "😕", "😐", "🙂", "🤩"],
+    emojiLabels: ["Berbat", "Kötü", "Normal", "İyi", "Harika"],
     gradient: "from-pink-500 to-rose-500",
-    trackColor: "bg-pink-500/20",
   },
   {
     id: "sleep",
     label: "UYKU KALİTESİ",
-    icon: <Moon className="w-4 h-4" />,
+    emojis: ["😴", "🥱", "😐", "😌", "💤"],
+    emojiLabels: ["Çok Kötü", "Kötü", "Normal", "İyi", "Mükemmel"],
     gradient: "from-purple-500 to-violet-500",
-    trackColor: "bg-purple-500/20",
   },
+  {
+    id: "digestion",
+    label: "ENERJİ SEVİYESİ",
+    emojis: ["🪫", "🔋", "⚡", "💥", "🚀"],
+    emojiLabels: ["Tükenmiş", "Düşük", "Normal", "Yüksek", "Patlıyor"],
+    gradient: "from-green-500 to-emerald-500",
+  },
+];
+
+const negativeMetrics: MetricConfig[] = [
   {
     id: "soreness",
     label: "KAS AĞRISI",
-    icon: <Flame className="w-4 h-4" />,
+    emojis: ["🧘", "😐", "😣", "😖", "🤕"],
+    emojiLabels: ["Yok", "Hafif", "Orta", "Şiddetli", "Dayanılmaz"],
     gradient: "from-orange-500 to-amber-500",
-    trackColor: "bg-orange-500/20",
+    isNegative: true,
   },
   {
     id: "stress",
     label: "STRES SEVİYESİ",
-    icon: <Brain className="w-4 h-4" />,
+    emojis: ["🧘‍♂️", "😐", "😰", "😤", "🤯"],
+    emojiLabels: ["Sıfır", "Az", "Orta", "Yüksek", "Aşırı"],
     gradient: "from-blue-500 to-cyan-500",
-    trackColor: "bg-blue-500/20",
-  },
-  {
-    id: "digestion",
-    label: "SİNDİRİM",
-    icon: <Apple className="w-4 h-4" />,
-    gradient: "from-green-500 to-emerald-500",
-    trackColor: "bg-green-500/20",
+    isNegative: true,
   },
 ];
 
@@ -79,7 +85,61 @@ const defaultValues: Record<SliderKey, number> = { mood: 3, sleep: 3, soreness: 
 
 function calculateReadiness(v: Record<SliderKey, number>): number {
   return Math.round(
-    (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((5 - v.soreness) / 5) * 20 + ((5 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
+    (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((6 - v.soreness) / 5) * 20 + ((6 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
+  );
+}
+
+function getScoreTheme(score: number) {
+  if (score >= 80) return { color: "text-green-400", label: "HAZIRSIN 🔥" };
+  if (score >= 60) return { color: "text-yellow-400", label: "DİKKATLİ OL ⚠️" };
+  return { color: "text-red-400", label: "DİNLEN 🛌" };
+}
+
+const STEP_TITLES = ["Pozitif Metrikler", "Negatif Metrikler & Uyku", "Notlar & Özet"];
+
+const slideVariants = {
+  enter: (direction: number) => ({ x: direction > 0 ? 200 : -200, opacity: 0 }),
+  center: { x: 0, opacity: 1 },
+  exit: (direction: number) => ({ x: direction > 0 ? -200 : 200, opacity: 0 }),
+};
+
+function MetricCard({ metric, value, onChange }: { metric: MetricConfig; value: number; onChange: (v: number) => void }) {
+  return (
+    <div className="bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-5 space-y-3">
+      <div className="flex items-center justify-between">
+        <span className="font-display text-xs text-muted-foreground tracking-wider">{metric.label}</span>
+        {metric.isNegative && (
+          <span className="text-[10px] text-muted-foreground/60 bg-muted/30 px-2 py-0.5 rounded-full">1 = En İyi</span>
+        )}
+      </div>
+      <ToggleGroup
+        type="single"
+        value={String(value)}
+        onValueChange={(v) => { if (v) onChange(Number(v)); }}
+        className="flex justify-between gap-1.5"
+      >
+        {metric.emojis.map((emoji, i) => {
+          const val = i + 1;
+          const isActive = value === val;
+          return (
+            <ToggleGroupItem
+              key={val}
+              value={String(val)}
+              className={`flex-1 h-14 rounded-xl flex flex-col items-center justify-center gap-0.5 text-xl transition-all duration-200 border ${
+                isActive
+                  ? `bg-gradient-to-br ${metric.gradient} border-transparent shadow-lg scale-105 text-white`
+                  : "border-border/30 bg-muted/20 hover:bg-muted/40"
+              }`}
+            >
+              <span className="text-lg leading-none">{emoji}</span>
+              <span className={`text-[9px] font-display leading-none ${isActive ? "text-white/90" : "text-muted-foreground/60"}`}>
+                {metric.emojiLabels[i]}
+              </span>
+            </ToggleGroupItem>
+          );
+        })}
+      </ToggleGroup>
+    </div>
   );
 }
 
@@ -95,6 +155,8 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [existingCheckin, setExistingCheckin] = useState<{ id: string; values: Record<SliderKey, number>; notes: string; sleepHours: number | null } | null>(null);
   const [isEditMode, setIsEditMode] = useState(false);
+  const [step, setStep] = useState(0);
+  const [direction, setDirection] = useState(1);
 
   const loadTodayCheckin = useCallback(async () => {
     if (!user?.id || !isOpen) return;
@@ -133,24 +195,23 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
 
   useEffect(() => {
     loadTodayCheckin();
+    setStep(0);
   }, [loadTodayCheckin]);
 
-  const handleSliderChange = (id: SliderKey, newValue: number[]) => {
-    setValues((prev) => ({ ...prev, [id]: newValue[0] }));
+  const handleValueChange = (id: SliderKey, newValue: number) => {
+    setValues((prev) => ({ ...prev, [id]: newValue }));
   };
 
-  const handleSubmit = async () => {
-    if (!user?.id) {
-      toast.error("Lütfen giriş yapın.");
-      return;
-    }
+  const goNext = () => { setDirection(1); setStep((s) => Math.min(s + 1, 2)); };
+  const goBack = () => { setDirection(-1); setStep((s) => Math.max(s - 1, 0)); };
 
+  const handleSubmit = async () => {
+    if (!user?.id) { toast.error("Lütfen giriş yapın."); return; }
     setIsSubmitting(true);
     const readiness_score = calculateReadiness(values);
 
     try {
       if (isEditMode && existingCheckin) {
-        // Update existing record
         const { error: updateErr } = await supabase
           .from("daily_checkins")
           .update({
@@ -163,20 +224,16 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
             notes: notes || null,
           } as any)
           .eq("id", existingCheckin.id);
-
         if (updateErr) throw updateErr;
 
-        // Log the edit
         await supabase.from("checkin_edit_logs").insert({
           checkin_id: existingCheckin.id,
           user_id: user.id,
           previous_values: existingCheckin.values as any,
           new_values: values as any,
         });
-
         toast.success("Check-in güncellendi!");
       } else {
-        // New insert
         const { error: checkinError } = await supabase.from("daily_checkins").insert({
           user_id: user.id,
           mood: values.mood,
@@ -187,26 +244,18 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
           sleep_hours: sleepHours,
           notes: notes || null,
         } as any);
-
         if (checkinError) throw checkinError;
 
-        // Synchronized Engine Triggers (strict order)
         await updateStreak();
         await awardXP(50);
         await processTransaction(10, 'daily_reward', 'Günlük Check-in Ödülü');
         setTimeout(() => { triggerAchievement("daily_checkin"); }, 1000);
-
         toast.success("Check-in tamamlandı! Koçuna iletildi.");
       }
 
-      // Update readiness on profile
       await supabase.from("profiles").update({ readiness_score }).eq("id", user.id);
 
-      const checkInData: DailyCheckInType = {
-        date: getIstanbulDateStr(),
-        ...values,
-        notes,
-      };
+      const checkInData: DailyCheckInType = { date: getIstanbulDateStr(), ...values, notes };
       onSubmit?.(checkInData);
       onClose();
     } catch (err: any) {
@@ -216,133 +265,161 @@ const DailyCheckIn = ({ isOpen, onClose, onSubmit }: DailyCheckInProps) => {
     }
   };
 
+  const readiness = calculateReadiness(values);
+  const theme = getScoreTheme(readiness);
+
   return (
     <Dialog open={isOpen} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[380px] bg-black/95 backdrop-blur-2xl border border-white/10 rounded-2xl p-0 overflow-hidden">
+      <DialogContent className="max-w-md bg-background/95 backdrop-blur-2xl border border-border/50 rounded-2xl p-0 overflow-hidden">
         <div className="absolute inset-0 bg-gradient-to-b from-primary/5 via-transparent to-purple-500/5 pointer-events-none" />
-        <div className="absolute top-0 left-1/2 -translate-x-1/2 w-32 h-1 bg-gradient-to-r from-transparent via-primary to-transparent" />
 
-        <DialogHeader className="p-5 pb-3 border-b border-white/5">
+        <DialogHeader className="p-5 pb-3">
           <DialogTitle className="font-display text-lg text-foreground flex items-center gap-2">
             <Sparkles className="w-5 h-5 text-primary" />
             {isEditMode ? "CHECK-IN GÜNCELLE" : "GÜNLÜK CHECK-IN"}
             {isEditMode && (
-              <span className="ml-auto text-[10px] font-display text-muted-foreground bg-white/5 px-2 py-1 rounded-full flex items-center gap-1">
+              <span className="ml-auto text-[10px] font-display text-muted-foreground bg-muted/30 px-2 py-1 rounded-full flex items-center gap-1">
                 <RefreshCw className="w-3 h-3" /> DÜZENLEME
               </span>
             )}
           </DialogTitle>
+          {/* Step indicator */}
+          <div className="flex items-center gap-2 pt-2">
+            {STEP_TITLES.map((title, i) => (
+              <div key={i} className="flex items-center gap-2 flex-1">
+                <div className={`h-1.5 rounded-full flex-1 transition-colors duration-300 ${i <= step ? "bg-primary" : "bg-muted/30"}`} />
+              </div>
+            ))}
+          </div>
+          <p className="text-xs text-muted-foreground font-display tracking-wider pt-1">
+            {step + 1}/3 — {STEP_TITLES[step]}
+          </p>
         </DialogHeader>
 
-        <div className="p-5 space-y-5 max-h-[60vh] overflow-y-auto">
-          {sliderConfigs.map((config, index) => (
-            <motion.div
-              key={config.id}
-              initial={{ opacity: 0, x: -10 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ delay: index * 0.08 }}
-              className="space-y-3"
-            >
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <div className={`p-1.5 rounded-lg bg-gradient-to-br ${config.gradient}`}>
-                    {config.icon}
+        <div className="px-5 pb-2 min-h-[320px] relative overflow-hidden">
+          <AnimatePresence mode="wait" custom={direction}>
+            {step === 0 && (
+              <motion.div
+                key="step0"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                className="space-y-3"
+              >
+                {positiveMetrics.map((m) => (
+                  <MetricCard key={m.id} metric={m} value={values[m.id]} onChange={(v) => handleValueChange(m.id, v)} />
+                ))}
+              </motion.div>
+            )}
+
+            {step === 1 && (
+              <motion.div
+                key="step1"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                className="space-y-3"
+              >
+                {negativeMetrics.map((m) => (
+                  <MetricCard key={m.id} metric={m} value={values[m.id]} onChange={(v) => handleValueChange(m.id, v)} />
+                ))}
+                {/* Sleep Hours */}
+                <div className="bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-5 space-y-3">
+                  <span className="font-display text-xs text-muted-foreground tracking-wider">UYKU SÜRESİ (SAAT)</span>
+                  <div className="flex items-center gap-3">
+                    <span className="text-2xl">🛏️</span>
+                    <Input
+                      type="number"
+                      min={0}
+                      max={24}
+                      step={0.5}
+                      value={sleepHours ?? ""}
+                      onChange={(e) => setSleepHours(e.target.value ? Number(e.target.value) : null)}
+                      placeholder="Örn: 7.5"
+                      className="bg-muted/20 border-border/30 text-sm focus:border-primary/50 focus:ring-primary/20 flex-1"
+                    />
+                    <span className="font-display text-xl font-bold text-foreground">{sleepHours ?? "--"}h</span>
                   </div>
-                  <span className="font-display text-xs text-muted-foreground tracking-wider">
-                    {config.label}
-                  </span>
                 </div>
-                <div className={`font-display text-xl font-bold bg-gradient-to-r ${config.gradient} bg-clip-text text-transparent`}>
-                  {values[config.id]}
-                </div>
-              </div>
-              <div className="relative">
-                <div className={`absolute inset-0 h-2 rounded-full ${config.trackColor}`} />
-                <Slider
-                  value={[values[config.id]]}
-                  onValueChange={(val) => handleSliderChange(config.id, val)}
-                  min={1}
-                  max={5}
-                  step={1}
-                  className="w-full relative z-10"
-                />
-              </div>
-              <div className="flex items-center justify-between text-[10px] text-muted-foreground/50 font-display">
-                <span>DÜŞÜK</span>
-                <span>YÜKSEK</span>
-              </div>
-            </motion.div>
-          ))}
+              </motion.div>
+            )}
 
-          {/* Sleep Hours Input */}
-          <motion.div
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ delay: 0.45 }}
-            className="space-y-3"
-          >
-            <div className="flex items-center justify-between">
-              <div className="flex items-center gap-2">
-                <div className="p-1.5 rounded-lg bg-gradient-to-br from-indigo-500 to-blue-500">
-                  <Clock className="w-4 h-4" />
+            {step === 2 && (
+              <motion.div
+                key="step2"
+                custom={direction}
+                variants={slideVariants}
+                initial="enter"
+                animate="center"
+                exit="exit"
+                transition={{ duration: 0.25 }}
+                className="space-y-4"
+              >
+                {/* Notes */}
+                <div className="bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-5 space-y-2">
+                  <span className="font-display text-xs text-muted-foreground tracking-wider">NOTLAR</span>
+                  <Textarea
+                    value={notes}
+                    onChange={(e) => setNotes(e.target.value)}
+                    placeholder="Bugün hakkında notlar... (opsiyonel)"
+                    className="bg-muted/20 border-border/30 min-h-[80px] resize-none text-sm focus:border-primary/50 focus:ring-primary/20"
+                  />
                 </div>
-                <span className="font-display text-xs text-muted-foreground tracking-wider">
-                  UYKU SÜRESİ (SAAT)
-                </span>
-              </div>
-              <div className="font-display text-xl font-bold bg-gradient-to-r from-indigo-500 to-blue-500 bg-clip-text text-transparent">
-                {sleepHours ?? "--"}
-              </div>
-            </div>
-            <Input
-              type="number"
-              min={0}
-              max={24}
-              step={0.5}
-              value={sleepHours ?? ""}
-              onChange={(e) => setSleepHours(e.target.value ? Number(e.target.value) : null)}
-              placeholder="Örn: 7.5"
-              className="bg-white/[0.03] border-white/10 text-sm focus:border-indigo-500/50 focus:ring-indigo-500/20"
-            />
-          </motion.div>
 
-          <motion.div
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: 0.5 }}
-            className="space-y-2 pt-2"
-          >
-            <label className="font-display text-xs text-muted-foreground tracking-wider">NOTLAR</label>
-            <Textarea
-              value={notes}
-              onChange={(e) => setNotes(e.target.value)}
-              placeholder="Bugün hakkında notlar... (opsiyonel)"
-              className="bg-white/[0.03] border-white/10 min-h-[80px] resize-none text-sm focus:border-primary/50 focus:ring-primary/20"
-            />
-          </motion.div>
+                {/* Live Readiness Preview */}
+                <div className="bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-6 flex flex-col items-center gap-2">
+                  <span className="font-display text-xs text-muted-foreground tracking-wider">HAZIRLIK SKORU ÖNİZLEME</span>
+                  <motion.span
+                    key={readiness}
+                    initial={{ scale: 0.8, opacity: 0 }}
+                    animate={{ scale: 1, opacity: 1 }}
+                    className={`font-display text-5xl font-extrabold ${theme.color}`}
+                  >
+                    {readiness}
+                  </motion.span>
+                  <span className="text-sm text-muted-foreground">{theme.label}</span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
         </div>
 
-        <div className="p-5 pt-3 border-t border-white/5">
-          <Button
-            onClick={handleSubmit}
-            disabled={isSubmitting}
-            className="w-full h-12 bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-display text-sm tracking-wider rounded-xl transition-all duration-300 shadow-lg shadow-primary/20"
-          >
-            {isSubmitting ? (
-              <motion.div
-                animate={{ rotate: 360 }}
-                transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                className="mr-2"
-              >
-                <Send className="w-4 h-4" />
-              </motion.div>
-            ) : (
-              <>
-                {isEditMode ? <RefreshCw className="w-4 h-4 mr-2" /> : <Send className="w-4 h-4 mr-2" />}
-                {isEditMode ? "GÜNCELLE" : "KAYDET"}
-              </>
-            )}
-          </Button>
+        {/* Navigation */}
+        <div className="p-5 pt-3 border-t border-border/20 flex items-center gap-3">
+          {step > 0 && (
+            <Button variant="outline" onClick={goBack} className="h-11 rounded-xl border-border/30 bg-muted/20">
+              <ChevronLeft className="w-4 h-4 mr-1" /> Geri
+            </Button>
+          )}
+          <div className="flex-1" />
+          {step < 2 ? (
+            <Button onClick={goNext} className="h-11 rounded-xl bg-gradient-to-r from-primary to-primary/80 text-primary-foreground font-display text-sm tracking-wider shadow-lg shadow-primary/20">
+              İleri <ChevronRight className="w-4 h-4 ml-1" />
+            </Button>
+          ) : (
+            <Button
+              onClick={handleSubmit}
+              disabled={isSubmitting}
+              className="h-11 flex-1 rounded-xl bg-gradient-to-r from-primary to-primary/80 hover:from-primary/90 hover:to-primary/70 text-primary-foreground font-display text-sm tracking-wider shadow-lg shadow-primary/20"
+            >
+              {isSubmitting ? (
+                <motion.div animate={{ rotate: 360 }} transition={{ duration: 1, repeat: Infinity, ease: "linear" }} className="mr-2">
+                  <Send className="w-4 h-4" />
+                </motion.div>
+              ) : (
+                <>
+                  {isEditMode ? <RefreshCw className="w-4 h-4 mr-2" /> : <Send className="w-4 h-4 mr-2" />}
+                  {isEditMode ? "GÜNCELLE" : "KAYDET"}
+                </>
+              )}
+            </Button>
+          )}
         </div>
       </DialogContent>
     </Dialog>
