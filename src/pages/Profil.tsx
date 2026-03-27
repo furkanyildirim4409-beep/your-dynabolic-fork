@@ -1,7 +1,7 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2 } from "lucide-react";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -11,13 +11,16 @@ import TransformationTimeline from "@/components/profile/TransformationTimeline"
 import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
 import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
+import AvatarCropperModal from "@/components/profile/AvatarCropperModal";
 
 import { Slider } from "@/components/ui/slider";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
 import { useOfflineMode } from "@/context/OfflineContext";
 import { useAuth } from "@/context/AuthContext";
+import { supabase } from "@/integrations/supabase/client";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
 
 
@@ -26,9 +29,12 @@ const Profil = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
-  
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { isOffline } = useOfflineMode();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
   
@@ -98,6 +104,48 @@ const Profil = () => {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarSrc(reader.result as string);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    if (!user) return;
+    setShowCropper(false);
+    setAvatarUploading(true);
+    try {
+      const filePath = `${user.id}/avatar.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+      if (uploadErr) throw uploadErr;
+
+      const { data: publicData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = `${publicData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+      if (updateErr) throw updateErr;
+
+      await refreshProfile();
+      toast({ title: "Profil fotoğrafı güncellendi! 🎉" });
+    } catch (err: any) {
+      console.error("Avatar upload failed", err);
+      toast({ title: "Yükleme başarısız", description: err.message, variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const isCoach = profile?.role === "coach";
 
   const menuItems = [
@@ -126,11 +174,30 @@ const Profil = () => {
         transition={{ delay: 0.05 }}
         className="glass-card p-4 flex items-center gap-4 border border-primary/30"
       >
-        <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center neon-glow-sm relative">
-          <User className="w-10 h-10 text-primary" />
+        <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+          <Avatar className="w-20 h-20 border-2 border-primary neon-glow-sm">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "Avatar"} />
+            <AvatarFallback className="bg-primary/20 text-primary font-display text-xl">
+              {profile?.full_name ? profile.full_name.slice(0, 2).toUpperCase() : <User className="w-10 h-10" />}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {avatarUploading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </div>
           <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-bold">
             ELİT
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
@@ -517,6 +584,16 @@ const Profil = () => {
         isOpen={showMeasurements}
         onClose={() => setShowMeasurements(false)}
       />
+
+      {/* Avatar Cropper Modal */}
+      {avatarSrc && (
+        <AvatarCropperModal
+          isOpen={showCropper}
+          imageSrc={avatarSrc}
+          onClose={() => setShowCropper(false)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
 
     </div>
   );
