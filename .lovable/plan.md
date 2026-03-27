@@ -1,27 +1,48 @@
 
 
-## Chat Interface Seamless Glassmorphic Fix
+## Water Tracker Overhaul & Backend Wiring (Phase 2 - Epic 3)
 
-### Root Cause
+### Current State
+- **Beslenme page**: Already has a water widget inline (lines 975-1033) wired to `useWaterTracking` — functional but basic (+/- buttons, simple progress bar)
+- **Kokpit page**: Uses `useWaterTracking` for display only via `QuickStatsRow`
+- **QuickActionFAB**: Water button uses LOCAL state (`waterCount`) — completely disconnected from backend
+- **Hook exports**: `{ totalMl, addWater, removeLatestWater, isLoading }`
 
-The header, footer, and input field were already patched in previous hotfixes — they have no `border-b`, `border-t`, or `border-border`. The harsh border you're seeing comes from **line 80**:
+### Plan
 
-```
-className="fixed inset-0 z-50 bg-background border-8 border-solid"
-```
+**1. Create `src/components/WaterTrackerWidget.tsx` — Standalone Premium Widget**
 
-This `border-8 border-solid` was added in a recent edit and draws a thick 8px border around the entire chat overlay, creating visible harsh lines on all sides including between the header/footer and the edges.
+A self-contained glassmorphic card component that can be dropped into any page.
 
-### Fix
+- Wire to `useWaterTracking()` hook for real backend data
+- Circular SVG ring progress indicator with liquid gradient (`from-blue-600 to-cyan-400`)
+- Center display: `{(totalMl/1000).toFixed(1)}L / 2.5L` with 💧 emoji
+- Three quick-add buttons below the ring: `+250ml 🥛`, `+500ml 🚰`, `+1L 💧`
+- Undo button (calls `removeLatestWater`)
+- All buttons wrapped in `motion.button` with `whileTap={{ scale: 0.95 }}`
+- Toast feedback on add/remove
+- Skeleton loader while `isLoading`
+- Card styling: `bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-5 relative overflow-hidden`
+- Decorative background glow: `absolute bg-blue-500/10 blur-3xl`
 
-**File: `src/components/chat/ChatInterface.tsx` — Line 80**
+**2. Replace Beslenme inline water section**
 
-Remove `border-8 border-solid` from the outer `motion.div`:
+- Remove the inline water tracker block (lines ~970-1033) from `Beslenme.tsx`
+- Import and render `<WaterTrackerWidget />` in its place
+- Remove now-unused water-related state/imports from that section
 
-```
-before: "fixed inset-0 z-50 bg-background border-8 border-solid"
-after:  "fixed inset-0 z-50 bg-background"
-```
+**3. Fix QuickActionFAB backend wiring**
 
-That's the only change needed. Everything else (header, footer, input) is already seamless from the previous hotfixes.
+- Import `useWaterTracking` in `QuickActionFAB.tsx`
+- Replace the local `waterCount` state with `addWater(250)` from the hook
+- Show `totalMl` in the toast instead of the fake local counter
+
+**4. No database changes needed**
+
+The `water_logs` table and hook already exist and work correctly.
+
+### Technical Notes
+- The circular SVG ring uses `stroke-dasharray` / `stroke-dashoffset` for the fill animation
+- Daily goal hardcoded to 2500ml (matching existing `2.5L` references); can be made configurable later
+- The widget is stateless aside from the hook — no local water state duplication
 
