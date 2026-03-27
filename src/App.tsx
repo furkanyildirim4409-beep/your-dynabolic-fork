@@ -46,8 +46,8 @@ const AppPage = ({ children }: { children: React.ReactNode }) => (
   <AppShell>{children}</AppShell>
 );
 
-const P = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>{children}</ProtectedRoute>
+const P = ({ children, skipOnboardingCheck }: { children: React.ReactNode; skipOnboardingCheck?: boolean }) => (
+  <ProtectedRoute skipOnboardingCheck={skipOnboardingCheck}>{children}</ProtectedRoute>
 );
 
 const App = () => {
