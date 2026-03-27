@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const nudgeType = url.searchParams.get("type"); // "checkin" | "workout" | null (both)
+    const nudgeType = url.searchParams.get("type"); // "checkin" | "meal" | "workout" | null (all)
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
