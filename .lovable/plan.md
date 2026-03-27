@@ -1,39 +1,44 @@
 
 
-## UI Polish & Chat Auto-Scroll — Plan
+## Chat Auto-Scroll & PerformanceRing Widget Hotfix
 
-### 1. Fix Chat Auto-Scroll (`src/components/chat/ChatInterface.tsx`)
+### 1. Bulletproof Chat Scroll (`src/components/chat/ChatInterface.tsx`)
 
-The auto-scroll logic already exists (lines 38-46) with `messagesEndRef` and a `useEffect`. The issue is the 100ms timeout is too short — on iOS PWA the DOM may not be fully rendered yet, especially with media-heavy messages.
-
-**Fix:** Add a second, longer delayed scroll (300ms) to catch late renders, and use `scrollTo` with `block: "end"` as a fallback. Also ensure scroll fires reliably when `isOpen` transitions from false to true.
+**Lines 38-47** — Replace scroll logic:
 
 ```typescript
+const scrollToBottom = () => {
+  messagesEndRef.current?.scrollIntoView({ behavior: "auto", block: "end" });
+};
+
 useEffect(() => {
   if (isOpen) {
-    // Immediate attempt
-    setTimeout(scrollToBottom, 100);
-    // Delayed attempt for iOS/slow renders
-    setTimeout(scrollToBottom, 400);
+    scrollToBottom();
+    requestAnimationFrame(() => {
+      scrollToBottom();
+      setTimeout(scrollToBottom, 300);
+    });
   }
 }, [messages, isOpen]);
 ```
 
-### 2. Wrap PerformanceRing in Glassmorphic Card (`src/components/PerformanceRing.tsx`)
+Also ensure the anchor div at the bottom of the messages list has physical size: change `<div ref={messagesEndRef} />` to `<div ref={messagesEndRef} className="h-1 w-full flex-shrink-0" />`.
 
-The `PerformanceRing` component renders a bare `div` with `py-8` — no card container. Wrap the entire return in the standard glassmorphic card used across the dashboard.
+### 2. PerformanceRing Widget Visibility (`src/components/PerformanceRing.tsx`)
 
-**Change:** Wrap the outer `div` (line 56) in a container with the project's glass card classes:
+**Lines 49 and 58** — Replace wrapper classes on both the loading skeleton and main return:
 
-```tsx
-<div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5">
-  {/* existing ring content */}
-</div>
+```
+bg-white/[0.02] border border-white/[0.05]
+```
+becomes:
+```
+bg-card border border-border shadow-lg
 ```
 
-Apply the same wrapper to the loading skeleton (line 48).
+Final class string: `rounded-2xl bg-card border border-border shadow-lg p-6 relative overflow-hidden`
 
 ### Files Changed
-- `src/components/chat/ChatInterface.tsx` — Add redundant delayed scroll for iOS reliability
-- `src/components/PerformanceRing.tsx` — Wrap in glassmorphic card container
+- `src/components/chat/ChatInterface.tsx` — `requestAnimationFrame` triple-fire scroll + sized anchor
+- `src/components/PerformanceRing.tsx` — Stronger card styling on wrapper
 
