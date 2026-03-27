@@ -68,7 +68,7 @@ Deno.serve(async (req) => {
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth, user_id");
 
-      console.log(`[checkin] rawSubs=${rawSubs?.length ?? 0}`);
+      
 
       if (rawSubs && rawSubs.length > 0) {
         const uniqueUserIds = [...new Set(rawSubs.map((s: any) => s.user_id))];
