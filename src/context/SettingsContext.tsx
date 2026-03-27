@@ -82,6 +82,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             ...prev,
             checkinReminders: remote.checkin_reminders !== undefined ? Boolean(remote.checkin_reminders) : prev.checkinReminders,
             workoutReminders: remote.workout_reminders !== undefined ? Boolean(remote.workout_reminders) : prev.workoutReminders,
+            mealReminders: remote.meal_reminders !== undefined ? Boolean(remote.meal_reminders) : prev.mealReminders,
           };
           localStorage.setItem("dynabolic-notifications", JSON.stringify(merged));
           return merged;
