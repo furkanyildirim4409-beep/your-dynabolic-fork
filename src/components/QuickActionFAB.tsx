@@ -25,18 +25,25 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { logWeight, isLoading: weightLoading } = useWeightTracking();
-  const { totalMl, addWater: addWaterBackend } = useWaterTracking();
+  const { totalMl, addWater: addWaterBackend, isLoading: isWaterLoading } = useWaterTracking();
   const [isOpen, setIsOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weight, setWeight] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
   const handleAddWater = async () => {
+    if (isWaterLoading) return;
     const err = await addWaterBackend(250);
     if (!err) {
       toast({
         title: "Harika! +250ml su eklendi 💧",
         description: `Bugün toplam: ${((totalMl + 250) / 1000).toFixed(1)}L`,
+      });
+    } else {
+      toast({
+        title: "Hata",
+        description: "Su eklenirken bir sorun oluştu.",
+        variant: "destructive",
       });
     }
     setIsOpen(false);
