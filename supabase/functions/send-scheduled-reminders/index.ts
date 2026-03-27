@@ -81,6 +81,7 @@ Deno.serve(async (req) => {
           return true;
         });
 
+        console.log(`[checkin] filteredSubs=${filteredSubs.length}, needNudge will be calculated`);
         if (filteredSubs.length > 0) {
           const { data: checkins } = await supabaseAdmin
             .from("daily_checkins")
