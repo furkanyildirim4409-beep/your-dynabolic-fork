@@ -681,6 +681,9 @@ const Profil = () => {
         />
       )}
 
+      {/* Weekly Recap Modal (deep link) */}
+      <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
+
     </div>
   );
 };
