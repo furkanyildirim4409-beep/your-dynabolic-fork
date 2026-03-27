@@ -1,34 +1,12 @@
 
 
-## Plan: Edge Function Precision Patch — `.neq("coach")` Fix
+## Plan: Edge Function Role Fix — Use `user_roles` Table (Epic 2.4) ✅ COMPLETED
 
 ### Problem
-Three queries in `send-scheduled-reminders` use `.eq("profiles.role", "athlete")` which excludes users with `role = null` or `role = 'user'`. The select already includes `notification_preferences` (added in previous edit), so only the filter needs changing.
+All three reminder queries used `profiles!inner(role)` to filter athletes, but roles live in the `user_roles` table, not `profiles.role`. This caused 0 matches.
 
-### Changes
-
-#### `supabase/functions/send-scheduled-reminders/index.ts`
-
-**1. Check-in query (line 72)** — change `.eq` to `.neq`:
-```
-.eq("profiles.role", "athlete")  →  .neq("profiles.role", "coach")
-```
-
-**2. Meal query (line 116)** — same fix:
-```
-.eq("profiles.role", "athlete")  →  .neq("profiles.role", "coach")
-```
-
-**3. Workout query (line 181)** — same fix:
-```
-.eq("profiles.role", "athlete")  →  .neq("profiles.role", "coach")
-```
-
-Three single-line changes, then redeploy.
-
-### Files Changed
-
-| File | Change |
-|------|--------|
-| `supabase/functions/send-scheduled-reminders/index.ts` | Change 3x `.eq("profiles.role", "athlete")` → `.neq("profiles.role", "coach")` |
-
+### Solution Applied
+- Added `getAthleteIds()` helper that queries `user_roles` table for `role = 'athlete'`
+- All 3 blocks (check-in, meal, workout) now use 2-step pattern: fetch subs → verify athlete role via `user_roles` → filter preferences in JS
+- Removed `!inner` join and `.neq` SQL filter from all queries
+- Deployed edge function
