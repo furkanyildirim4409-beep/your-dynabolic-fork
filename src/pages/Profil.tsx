@@ -29,7 +29,10 @@ const Profil = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
-  
+  const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
+  const [showCropper, setShowCropper] = useState(false);
+  const [avatarUploading, setAvatarUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
   const { isOffline } = useOfflineMode();
   const { profile, signOut } = useAuth();
   const navigate = useNavigate();
