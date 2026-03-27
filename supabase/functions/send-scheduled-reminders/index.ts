@@ -72,6 +72,7 @@ Deno.serve(async (req) => {
       if (rawSubs && rawSubs.length > 0) {
         const uniqueUserIds = [...new Set(rawSubs.map((s: any) => s.user_id))];
         const athleteIds = await getAthleteIds(supabaseAdmin, uniqueUserIds);
+        console.log(`[checkin] rawSubs=${rawSubs.length}, uniqueUsers=${uniqueUserIds.length}, athletes=${athleteIds.size}`);
 
         const filteredSubs = rawSubs.filter((s: any) => {
           if (!athleteIds.has(s.user_id)) return false;
