@@ -152,7 +152,7 @@ Deno.serve(async (req) => {
       const payload = JSON.stringify({
         title: "📋 Haftalık Özetin Hazır!",
         body,
-        data: { url: "/profil" },
+        data: { url: "/profil?showSummary=true" },
       });
 
       try {
