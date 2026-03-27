@@ -25,6 +25,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
 
 
+const goalTranslations: Record<string, string> = {
+  muscle_gain: "Kas Geliştirme",
+  fat_loss: "Yağ Yakımı",
+  strength: "Güç Kazanımı",
+  endurance: "Dayanıklılık",
+  general_fitness: "Genel Fitness",
+  weight_loss: "Kilo Verme",
+  maintenance: "Koruma",
+};
+
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
   const [showSettings, setShowSettings] = useState(false);
