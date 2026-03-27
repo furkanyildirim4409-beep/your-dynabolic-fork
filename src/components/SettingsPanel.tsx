@@ -25,17 +25,25 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
   const { notifications, updateNotification, language, setLanguage, appearance, setAppearance } = useSettings();
   const { isOffline, setOfflineMode } = useOfflineMode();
   const [isExporting, setIsExporting] = useState(false);
+  const [isPushLoading, setIsPushLoading] = useState(false);
   const { isSupported: pushSupported, isSubscribed: pushSubscribed, subscribe: subscribePush } = usePushNotifications();
+
+  const pushPermission = typeof Notification !== "undefined" ? Notification.permission : "default";
 
   const handlePushToggle = async () => {
     if (pushSubscribed) return;
+    setIsPushLoading(true);
     hapticMedium();
-    const ok = await subscribePush();
-    if (ok) {
-      hapticSuccess();
-      toast({ title: "Push Bildirimleri Aktif 🔔", description: "Sipariş durumu değiştiğinde bildirim alacaksınız." });
-    } else {
-      toast({ title: "İzin Verilmedi", description: "Tarayıcı bildirim izni reddedildi.", variant: "destructive" });
+    try {
+      const ok = await subscribePush();
+      if (ok) {
+        hapticSuccess();
+        toast({ title: "Push Bildirimleri Aktif 🔔", description: "Düello, mesaj ve koç uyarıları için bildirim alacaksınız." });
+      } else {
+        toast({ title: "İzin Verilmedi", description: "Tarayıcı bildirim izni reddedildi.", variant: "destructive" });
+      }
+    } finally {
+      setIsPushLoading(false);
     }
   };
 
