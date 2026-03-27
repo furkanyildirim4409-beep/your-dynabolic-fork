@@ -271,7 +271,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 onKeyDown={(e) => e.key === "Enter" && handleSend()}
                 placeholder={isRecording ? `Kaydediliyor... (${recordingDuration}s)` : resolvedCoachId ? "Mesaj yaz..." : "Bağlantı Bekleniyor..."}
                 disabled={!resolvedCoachId || isRecording}
-                className="flex-1 bg-secondary/50 border-border rounded-full px-4"
+                className="flex-1 bg-muted/50 border-0 rounded-full px-4 focus-visible:ring-1 focus-visible:ring-primary/30 focus-visible:ring-offset-0"
               />
               <motion.button
                 whileHover={{ scale: 1.05 }}
