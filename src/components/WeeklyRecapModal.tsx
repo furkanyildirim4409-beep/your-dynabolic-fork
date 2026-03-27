@@ -440,10 +440,15 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
           <Button
             variant="outline"
             onClick={handleShare}
+            disabled={isSharing}
             className="flex-1"
           >
-            <Share2 className="w-4 h-4 mr-2" />
-            Paylaş
+            {isSharing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4 mr-2" />
+            )}
+            {isSharing ? "Hazırlanıyor..." : "Paylaş"}
           </Button>
           <Button
             onClick={() => { hapticSuccess(); handleClose(); }}
