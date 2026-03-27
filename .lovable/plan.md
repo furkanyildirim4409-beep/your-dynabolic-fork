@@ -1,48 +1,40 @@
 
 
-## Water Tracker Overhaul & Backend Wiring (Phase 2 - Epic 3)
+## QuickActionFAB Water Hotfix
 
-### Current State
-- **Beslenme page**: Already has a water widget inline (lines 975-1033) wired to `useWaterTracking` — functional but basic (+/- buttons, simple progress bar)
-- **Kokpit page**: Uses `useWaterTracking` for display only via `QuickStatsRow`
-- **QuickActionFAB**: Water button uses LOCAL state (`waterCount`) — completely disconnected from backend
-- **Hook exports**: `{ totalMl, addWater, removeLatestWater, isLoading }`
+### What's Wrong
+The FAB already calls `addWaterBackend(250)` correctly, but it's missing:
+1. **No loading guard** — users can spam-click and create duplicate entries
+2. **No error handling** — failures are silently swallowed
+3. **`isLoading` not destructured** from the hook
 
-### Plan
+### Fix (single file: `src/components/QuickActionFAB.tsx`)
 
-**1. Create `src/components/WaterTrackerWidget.tsx` — Standalone Premium Widget**
+**Line 28** — Add `isLoading` to destructuring:
+```ts
+const { totalMl, addWater: addWaterBackend, isLoading: isWaterLoading } = useWaterTracking();
+```
 
-A self-contained glassmorphic card component that can be dropped into any page.
+**Lines 34-43** — Replace `handleAddWater` with guarded version:
+```ts
+const handleAddWater = async () => {
+  if (isWaterLoading) return;
+  const err = await addWaterBackend(250);
+  if (!err) {
+    toast({
+      title: "Harika! +250ml su eklendi 💧",
+      description: `Bugün toplam: ${((totalMl + 250) / 1000).toFixed(1)}L`,
+    });
+  } else {
+    toast({
+      title: "Hata",
+      description: "Su eklenirken bir sorun oluştu.",
+      variant: "destructive",
+    });
+  }
+  setIsOpen(false);
+};
+```
 
-- Wire to `useWaterTracking()` hook for real backend data
-- Circular SVG ring progress indicator with liquid gradient (`from-blue-600 to-cyan-400`)
-- Center display: `{(totalMl/1000).toFixed(1)}L / 2.5L` with 💧 emoji
-- Three quick-add buttons below the ring: `+250ml 🥛`, `+500ml 🚰`, `+1L 💧`
-- Undo button (calls `removeLatestWater`)
-- All buttons wrapped in `motion.button` with `whileTap={{ scale: 0.95 }}`
-- Toast feedback on add/remove
-- Skeleton loader while `isLoading`
-- Card styling: `bg-card/80 backdrop-blur-md border border-border/50 rounded-2xl p-5 relative overflow-hidden`
-- Decorative background glow: `absolute bg-blue-500/10 blur-3xl`
-
-**2. Replace Beslenme inline water section**
-
-- Remove the inline water tracker block (lines ~970-1033) from `Beslenme.tsx`
-- Import and render `<WaterTrackerWidget />` in its place
-- Remove now-unused water-related state/imports from that section
-
-**3. Fix QuickActionFAB backend wiring**
-
-- Import `useWaterTracking` in `QuickActionFAB.tsx`
-- Replace the local `waterCount` state with `addWater(250)` from the hook
-- Show `totalMl` in the toast instead of the fake local counter
-
-**4. No database changes needed**
-
-The `water_logs` table and hook already exist and work correctly.
-
-### Technical Notes
-- The circular SVG ring uses `stroke-dasharray` / `stroke-dashoffset` for the fill animation
-- Daily goal hardcoded to 2500ml (matching existing `2.5L` references); can be made configurable later
-- The widget is stateless aside from the hook — no local water state duplication
+That's the entire change — two edits in one file.
 
