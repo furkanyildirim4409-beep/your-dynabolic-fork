@@ -2,7 +2,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Calendar, Trophy, Flame, Dumbbell, TrendingUp, 
   TrendingDown, Minus, Coins, Target, Award, Swords,
-  ChevronRight, Share2
+  ChevronRight, Share2, ArrowRight
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeeklyRecapData } from "@/hooks/useWeeklyRecap";
@@ -66,6 +66,74 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
   };
 
   const scoreInfo = getScoreLabel(performanceScore);
+
+  // Comparison bar helper
+  const ComparisonRow = ({ 
+    label, 
+    icon: Icon, 
+    iconColor, 
+    current, 
+    previous, 
+    pctChange, 
+    suffix = "" 
+  }: { 
+    label: string; 
+    icon: any; 
+    iconColor: string; 
+    current: string; 
+    previous: string; 
+    pctChange: number; 
+    suffix?: string;
+  }) => {
+    const maxVal = Math.max(Number(current) || 1, Number(previous) || 1);
+    const curWidth = maxVal > 0 ? Math.max(8, (parseFloat(current) / maxVal) * 100) : 8;
+    const prevWidth = maxVal > 0 ? Math.max(8, (parseFloat(previous) / maxVal) * 100) : 8;
+
+    return (
+      <div className="space-y-2">
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Icon className={`w-4 h-4 ${iconColor}`} />
+            <span className="text-xs text-muted-foreground">{label}</span>
+          </div>
+          <div className="flex items-center gap-1">
+            {getTrendIcon(pctChange)}
+            <span className={`text-xs font-medium ${getTrendColor(pctChange)}`}>
+              {pctChange > 0 ? "+" : ""}{pctChange}%
+            </span>
+          </div>
+        </div>
+        <div className="space-y-1.5">
+          {/* Current week */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground w-12 text-right">Bu hafta</span>
+            <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden relative">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${curWidth}%` }}
+                transition={{ duration: 0.8, delay: 0.2, ease: "easeOut" }}
+                className="h-full rounded-full bg-gradient-to-r from-primary to-emerald-500"
+              />
+            </div>
+            <span className="text-xs font-medium text-foreground w-12">{current}{suffix}</span>
+          </div>
+          {/* Previous week */}
+          <div className="flex items-center gap-2">
+            <span className="text-[10px] text-muted-foreground w-12 text-right">Önceki</span>
+            <div className="flex-1 h-5 bg-white/5 rounded-full overflow-hidden relative">
+              <motion.div
+                initial={{ width: 0 }}
+                animate={{ width: `${prevWidth}%` }}
+                transition={{ duration: 0.8, delay: 0.4, ease: "easeOut" }}
+                className="h-full rounded-full bg-white/15"
+              />
+            </div>
+            <span className="text-xs text-muted-foreground w-12">{previous}{suffix}</span>
+          </div>
+        </div>
+      </div>
+    );
+  };
 
   return (
     <AnimatePresence>
@@ -237,6 +305,57 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
                 <span className="text-sm text-muted-foreground">t</span>
               </p>
               <p className="text-muted-foreground text-xs">Toplam Tonaj</p>
+            </div>
+          </motion.div>
+
+          {/* Week-over-Week Comparison */}
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: 0.45 }}
+            className="space-y-3"
+          >
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-sm text-muted-foreground tracking-wide">
+                HAFTALIK KARŞILAŞTIRMA
+              </h3>
+              <div className="flex-1 h-px bg-white/10" />
+            </div>
+
+            <div className="glass-card p-4 space-y-5">
+              <ComparisonRow
+                label="Antrenman"
+                icon={Dumbbell}
+                iconColor="text-primary"
+                current={String(data.workoutsCompleted)}
+                previous={String(data.previousWeek.workouts)}
+                pctChange={data.comparedToLastWeek.workouts}
+              />
+              <ComparisonRow
+                label="Tonaj"
+                icon={Target}
+                iconColor="text-emerald-400"
+                current={(data.totalTonnage / 1000).toFixed(1)}
+                previous={(data.previousWeek.tonnage / 1000).toFixed(1)}
+                pctChange={data.comparedToLastWeek.tonnage}
+                suffix="t"
+              />
+              <ComparisonRow
+                label="Kazanılan"
+                icon={Trophy}
+                iconColor="text-yellow-400"
+                current={String(data.challengesWon)}
+                previous={String(data.previousWeek.challengesWon)}
+                pctChange={data.comparedToLastWeek.challenges}
+              />
+              <ComparisonRow
+                label="Bio-Coin"
+                icon={Coins}
+                iconColor="text-yellow-400"
+                current={String(data.bioCoinsEarned + data.bonusCoinsEarned)}
+                previous={String(data.previousWeek.coins)}
+                pctChange={data.comparedToLastWeek.coins}
+              />
             </div>
           </motion.div>
 
