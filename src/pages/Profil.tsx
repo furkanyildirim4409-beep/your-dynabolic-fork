@@ -1,7 +1,8 @@
 import { useState, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2 } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell } from "lucide-react";
+import { Skeleton } from "@/components/ui/skeleton";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -23,6 +24,16 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { useBodyMeasurements, calcMuscleMass, calcBMR, calcTDEE } from "@/hooks/useBodyMeasurements";
 
+
+const goalTranslations: Record<string, string> = {
+  muscle_gain: "Kas Geliştirme",
+  fat_loss: "Yağ Yakımı",
+  strength: "Güç Kazanımı",
+  endurance: "Dayanıklılık",
+  general_fitness: "Genel Fitness",
+  weight_loss: "Kilo Verme",
+  maintenance: "Koruma",
+};
 
 const Profil = () => {
   const [timelineValue, setTimelineValue] = useState([50]);
@@ -220,6 +231,68 @@ const Profil = () => {
             </div>
           </div>
         </div>
+      </motion.div>
+
+      {/* Gladiator Stats Grid */}
+      <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ delay: 0.07 }}
+        className="grid grid-cols-2 gap-3"
+      >
+        {!profile ? (
+          <>
+            {[...Array(4)].map((_, i) => (
+              <Skeleton key={i} className="h-24 rounded-xl" />
+            ))}
+          </>
+        ) : (
+          <>
+            {/* Boy (Height) */}
+            <div className="bg-secondary/30 backdrop-blur-sm border border-border/20 rounded-xl p-4 text-center flex flex-col items-center justify-center">
+              <Ruler className="w-5 h-5 text-primary mb-2" />
+              <p className="font-display text-xl text-foreground">
+                {profile.height_cm ?? "--"}
+                {profile.height_cm && <span className="text-muted-foreground text-xs font-normal ml-1">cm</span>}
+              </p>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider mt-1">Boy</p>
+            </div>
+
+            {/* Mevcut Kilo */}
+            <div className="bg-secondary/30 backdrop-blur-sm border border-border/20 rounded-xl p-4 text-center flex flex-col items-center justify-center">
+              <Scale className="w-5 h-5 text-primary mb-2" />
+              <p className="font-display text-xl text-foreground">
+                {profile.current_weight ?? "--"}
+                {profile.current_weight && <span className="text-muted-foreground text-xs font-normal ml-1">kg</span>}
+              </p>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider mt-1">Mevcut Kilo</p>
+            </div>
+
+            {/* Hedef Kilo */}
+            <div className="bg-secondary/30 backdrop-blur-sm border border-border/20 rounded-xl p-4 text-center flex flex-col items-center justify-center">
+              <Target className="w-5 h-5 text-primary mb-2" />
+              <p className="font-display text-xl text-foreground">
+                {profile.target_weight ?? "--"}
+                {profile.target_weight && <span className="text-muted-foreground text-xs font-normal ml-1">kg</span>}
+              </p>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider mt-1">Hedef Kilo</p>
+              {profile.current_weight && profile.target_weight && (
+                <span className="text-primary text-[10px] mt-1 bg-primary/10 px-2 py-0.5 rounded-full">
+                  Kalan: {Math.abs(profile.current_weight - profile.target_weight).toFixed(1)} kg
+                </span>
+              )}
+            </div>
+
+            {/* Ana Hedef */}
+            <div className="bg-secondary/30 backdrop-blur-sm border border-border/20 rounded-xl p-4 text-center flex flex-col items-center justify-center">
+              <Dumbbell className="w-5 h-5 text-primary mb-2" />
+              <p className="font-display text-sm text-foreground leading-tight">
+                {profile.fitness_goal ? (goalTranslations[profile.fitness_goal] || profile.fitness_goal) : "Belirtilmedi"}
+              </p>
+              <p className="text-muted-foreground text-[10px] uppercase tracking-wider mt-1">Ana Hedef</p>
+            </div>
+          </>
+        )}
       </motion.div>
 
       {/* 3D Avatar Section - Now Realistic */}
