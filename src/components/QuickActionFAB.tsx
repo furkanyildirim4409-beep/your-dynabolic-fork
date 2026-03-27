@@ -31,13 +31,14 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   const [weight, setWeight] = useState("");
   const [isSaving, setIsSaving] = useState(false);
 
-  const handleAddWater = () => {
-    const newCount = waterCount + 1;
-    setWaterCount(newCount);
-    toast({
-      title: "250ml Su Eklendi 💧",
-      description: `Bugün ${newCount * 250}ml su içtin!`,
-    });
+  const handleAddWater = async () => {
+    const err = await addWaterBackend(250);
+    if (!err) {
+      toast({
+        title: "Harika! +250ml su eklendi 💧",
+        description: `Bugün toplam: ${((totalMl + 250) / 1000).toFixed(1)}L`,
+      });
+    }
     setIsOpen(false);
   };
 
