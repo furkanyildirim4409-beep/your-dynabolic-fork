@@ -113,8 +113,9 @@ const PerformanceRing = () => {
       </div>
 
       <motion.p initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 1.2 }} className="text-muted-foreground text-sm mt-4">
-        {sublabel}
+      {sublabel}
       </motion.p>
+    </div>
     </div>
   );
 };
