@@ -126,7 +126,8 @@ Deno.serve(async (req) => {
           // Get push subs for these users
           const { data: subs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id")
+            .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+            .eq("profiles.role", "athlete")
             .in("user_id", needReminder);
 
           if (subs && subs.length > 0) {
