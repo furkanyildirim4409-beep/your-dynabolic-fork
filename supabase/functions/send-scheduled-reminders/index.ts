@@ -77,8 +77,8 @@ Deno.serve(async (req) => {
         return true;
       });
 
-      if (allSubs && allSubs.length > 0) {
-        const uniqueUserIds = [...new Set(allSubs.map((s: PushSub) => s.user_id))];
+      if (filteredSubs.length > 0) {
+        const uniqueUserIds = [...new Set(filteredSubs.map((s: PushSub) => s.user_id))];
 
         // Get users who already checked in today
         const { data: checkins } = await supabaseAdmin
@@ -89,7 +89,7 @@ Deno.serve(async (req) => {
           .in("user_id", uniqueUserIds);
 
         const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
-        const needNudge = allSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
+        const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
 
         if (needNudge.length > 0) {
           const payload = JSON.stringify({
