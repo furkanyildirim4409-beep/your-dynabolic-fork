@@ -1,8 +1,6 @@
 import { ReactNode } from "react";
 import { motion } from "framer-motion";
 import EliteDock from "./EliteDock";
-import { useAuth } from "@/context/AuthContext";
-import BodyMetricsOnboarding from "./BodyMetricsOnboarding";
 import { useForegroundPush } from "@/hooks/useForegroundPush";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
