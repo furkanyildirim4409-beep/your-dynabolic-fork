@@ -1,4 +1,5 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
+import confetti from "canvas-confetti";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Calendar, Trophy, Flame, Dumbbell, TrendingUp, 
@@ -29,6 +30,20 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
       ));
       if (score >= 80) {
         hapticCelebration();
+        // Staggered confetti bursts
+        const fire = (opts: confetti.Options) =>
+          confetti({
+            ...opts,
+            disableForReducedMotion: true,
+            zIndex: 10000,
+          });
+        setTimeout(() => {
+          fire({ particleCount: 60, angle: 60, spread: 55, origin: { x: 0, y: 0.7 }, colors: ["#D1F526", "#10b981", "#facc15"] });
+          fire({ particleCount: 60, angle: 120, spread: 55, origin: { x: 1, y: 0.7 }, colors: ["#D1F526", "#10b981", "#facc15"] });
+        }, 400);
+        setTimeout(() => {
+          fire({ particleCount: 40, angle: 90, spread: 80, origin: { x: 0.5, y: 0.6 }, colors: ["#D1F526", "#10b981", "#ffffff"] });
+        }, 800);
       } else {
         hapticLight();
       }
