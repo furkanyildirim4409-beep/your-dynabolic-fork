@@ -74,6 +74,7 @@ const App = () => {
                             <Route path="/login" element={<Login />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/biometric-login" element={<BiometricLogin />} />
+                            <Route path="/onboarding" element={<P skipOnboardingCheck><Onboarding /></P>} />
 
                             {/* Protected athlete routes */}
                             <Route path="/" element={<P><AppPage><Kokpit /></AppPage></P>} />

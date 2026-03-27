@@ -5,10 +5,8 @@ import { useForegroundPush } from "@/hooks/useForegroundPush";
 import { usePushNotifications } from "@/hooks/usePushNotifications";
 
 const AppShell = ({ children }: { children: ReactNode }) => {
-  const { profile, isLoading } = useAuth();
   useForegroundPush();
-  usePushNotifications(); // Auto-sync push subscription on login
-  const needsOnboarding = !isLoading && profile && (profile.current_weight == null || profile.height_cm == null);
+  usePushNotifications();
 
   return (
     <div className="relative min-h-screen bg-background">
@@ -26,7 +24,6 @@ const AppShell = ({ children }: { children: ReactNode }) => {
         </motion.main>
         <EliteDock />
       </div>
-      {needsOnboarding && <BodyMetricsOnboarding />}
     </div>
   );
 };
