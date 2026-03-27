@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWeightTracking } from "@/hooks/useWeightTracking";
+import { useWaterTracking } from "@/hooks/useWaterTracking";
 import { useAuth } from "@/context/AuthContext";
 
 interface QuickAction {

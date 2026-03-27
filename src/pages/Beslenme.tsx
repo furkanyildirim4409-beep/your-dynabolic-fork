@@ -971,66 +971,7 @@ const Beslenme = () => {
               </Alert>
             )}
 
-            <div className="bg-secondary border border-white/5 rounded-2xl p-5 relative overflow-hidden">
-              <div className="absolute top-0 right-0 w-32 h-32 bg-blue-500/10 blur-3xl rounded-full pointer-events-none" />
-              <div className="flex justify-between items-center mb-4">
-                <div className="flex items-center gap-2">
-                  <div className="w-8 h-8 rounded-full bg-blue-500/20 flex items-center justify-center">
-                    <Droplets className="w-4 h-4 text-blue-400" />
-                  </div>
-                  <span className="text-foreground font-bold text-sm">SU TAKİBİ</span>
-                </div>
-                <div className="text-right">
-                  <span className="text-2xl font-display font-bold text-foreground">{waterIntake.toFixed(1)}L</span>
-                  <span className="text-muted-foreground text-sm">/{waterGoal}L</span>
-                </div>
-              </div>
-              <div className="h-2 w-full bg-white/5 rounded-full mb-4 overflow-hidden">
-                <motion.div
-                  initial={{ width: 0 }}
-                  animate={{ width: `${progress}%` }}
-                  transition={{ duration: 1 }}
-                  className="h-full bg-blue-500 rounded-full"
-                />
-              </div>
-              <div className="flex justify-between items-center">
-                <div className="flex gap-1">
-                  {Array.from({ length: 8 }).map((_, i) => (
-                    <div
-                      key={i}
-                      className={cn(
-                        "w-3 h-6 rounded-sm border border-white/10 transition-colors",
-                        i < waterIntake * 2.5 ? "bg-blue-500 border-blue-500" : "bg-transparent",
-                      )}
-                    />
-                  ))}
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    disabled={waterLoading || totalMl === 0}
-                    onClick={async () => {
-                      const err = await removeLatestWater();
-                      if (!err) toast({ title: "Su çıkarıldı", description: "Son bardak kaldırıldı" });
-                    }}
-                    className="bg-blue-600/30 hover:bg-blue-500/40 text-blue-300 h-8 w-8 rounded-lg p-0"
-                  >
-                    <Minus size={16} />
-                  </Button>
-                  <Button
-                    size="sm"
-                    disabled={waterLoading}
-                    onClick={async () => {
-                      const err = await addWater(250);
-                      if (!err) toast({ title: "Su eklendi", description: "+250ml kaydedildi" });
-                    }}
-                    className="bg-blue-600 hover:bg-blue-500 text-white h-8 w-8 rounded-lg p-0"
-                  >
-                    <Plus size={16} />
-                  </Button>
-                </div>
-              </div>
-            </div>
+            <WaterTrackerWidget />
 
             {/* MEAL LIST */}
             <div>
