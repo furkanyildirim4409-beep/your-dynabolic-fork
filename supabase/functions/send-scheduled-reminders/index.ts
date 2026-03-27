@@ -69,7 +69,7 @@ Deno.serve(async (req) => {
       const { data: allSubs } = await supabaseAdmin
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-        .eq("profiles.role", "athlete");
+        .neq("profiles.role", "coach");
 
       // Filter out users who opted out of check-in reminders
       const filteredSubs = (allSubs || []).filter((s: any) => {
@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       const { data: mealSubs } = await supabaseAdmin
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-        .eq("profiles.role", "athlete");
+        .neq("profiles.role", "coach");
 
       const filteredMealSubs = (mealSubs || []).filter((s: any) => {
         const prefs = s.profiles?.notification_preferences;
@@ -178,7 +178,7 @@ Deno.serve(async (req) => {
           const { data: subs } = await supabaseAdmin
             .from("push_subscriptions")
             .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-            .eq("profiles.role", "athlete")
+            .neq("profiles.role", "coach")
             .in("user_id", needReminder);
 
           // Filter out users who opted out of workout reminders
