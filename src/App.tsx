@@ -38,6 +38,7 @@ import Leaderboard from "./pages/Leaderboard";
 import NotFound from "./pages/NotFound";
 import BiometricLogin from "./pages/BiometricLogin";
 import CoachAthletes from "./pages/CoachAthletes";
+import Onboarding from "./pages/Onboarding";
 
 const queryClient = new QueryClient();
 
@@ -45,8 +46,8 @@ const AppPage = ({ children }: { children: React.ReactNode }) => (
   <AppShell>{children}</AppShell>
 );
 
-const P = ({ children }: { children: React.ReactNode }) => (
-  <ProtectedRoute>{children}</ProtectedRoute>
+const P = ({ children, skipOnboardingCheck }: { children: React.ReactNode; skipOnboardingCheck?: boolean }) => (
+  <ProtectedRoute skipOnboardingCheck={skipOnboardingCheck}>{children}</ProtectedRoute>
 );
 
 const App = () => {
@@ -73,6 +74,7 @@ const App = () => {
                             <Route path="/login" element={<Login />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/biometric-login" element={<BiometricLogin />} />
+                            <Route path="/onboarding" element={<P skipOnboardingCheck><Onboarding /></P>} />
 
                             {/* Protected athlete routes */}
                             <Route path="/" element={<P><AppPage><Kokpit /></AppPage></P>} />
