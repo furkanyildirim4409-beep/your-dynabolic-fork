@@ -585,6 +585,16 @@ const Profil = () => {
         onClose={() => setShowMeasurements(false)}
       />
 
+      {/* Avatar Cropper Modal */}
+      {avatarSrc && (
+        <AvatarCropperModal
+          isOpen={showCropper}
+          imageSrc={avatarSrc}
+          onClose={() => setShowCropper(false)}
+          onCropComplete={handleCropComplete}
+        />
+      )}
+
     </div>
   );
 };
