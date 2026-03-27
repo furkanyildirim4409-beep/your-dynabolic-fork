@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect, useRef } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Calendar, Trophy, Flame, Dumbbell, TrendingUp, 
@@ -7,7 +7,7 @@ import {
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeeklyRecapData } from "@/hooks/useWeeklyRecap";
-import { hapticLight, hapticSuccess } from "@/lib/haptics";
+import { hapticLight, hapticSuccess, hapticCelebration } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
 import { shareRecapImage } from "@/lib/recapImageGenerator";
 
@@ -19,6 +19,22 @@ interface WeeklyRecapModalProps {
 
 const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
   const [isSharing, setIsSharing] = useState(false);
+  const prevIsOpen = useRef(false);
+
+  useEffect(() => {
+    if (isOpen && !prevIsOpen.current && data) {
+      const score = Math.min(100, Math.round(
+        (data.workoutsCompleted * 12) + (data.streakDays * 8) +
+        (data.challengesWon * 15) + (data.personalRecords * 10)
+      ));
+      if (score >= 80) {
+        hapticCelebration();
+      } else {
+        hapticLight();
+      }
+    }
+    prevIsOpen.current = isOpen;
+  }, [isOpen, data]);
 
   if (!isOpen || !data) return null;
 
