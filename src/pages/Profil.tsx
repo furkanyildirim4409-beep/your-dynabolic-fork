@@ -174,11 +174,30 @@ const Profil = () => {
         transition={{ delay: 0.05 }}
         className="glass-card p-4 flex items-center gap-4 border border-primary/30"
       >
-        <div className="w-20 h-20 rounded-full bg-primary/20 border-2 border-primary flex items-center justify-center neon-glow-sm relative">
-          <User className="w-10 h-10 text-primary" />
+        <div className="relative cursor-pointer group" onClick={() => fileInputRef.current?.click()}>
+          <Avatar className="w-20 h-20 border-2 border-primary neon-glow-sm">
+            <AvatarImage src={profile?.avatar_url || undefined} alt={profile?.full_name || "Avatar"} />
+            <AvatarFallback className="bg-primary/20 text-primary font-display text-xl">
+              {profile?.full_name ? profile.full_name.slice(0, 2).toUpperCase() : <User className="w-10 h-10" />}
+            </AvatarFallback>
+          </Avatar>
+          <div className="absolute inset-0 rounded-full bg-black/40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity">
+            {avatarUploading ? (
+              <Loader2 className="w-6 h-6 text-white animate-spin" />
+            ) : (
+              <Camera className="w-6 h-6 text-white" />
+            )}
+          </div>
           <div className="absolute -bottom-1 -right-1 bg-primary text-primary-foreground text-[8px] px-1.5 py-0.5 rounded-full font-bold">
             ELİT
           </div>
+          <input
+            ref={fileInputRef}
+            type="file"
+            accept="image/*"
+            className="hidden"
+            onChange={handleFileSelect}
+          />
         </div>
         <div className="flex-1">
           <div className="flex items-center gap-2">
