@@ -3,6 +3,22 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { getIstanbulDateStr, getIstanbulDaysAgoStr } from "@/lib/timezone";
 
+export interface WeekComparison {
+  workouts: number;
+  tonnage: number;
+  streak: number;
+  challenges: number;
+  coins: number;
+}
+
+export interface PrevWeekRaw {
+  workouts: number;
+  tonnage: number;
+  challengesWon: number;
+  challengesLost: number;
+  coins: number;
+}
+
 export interface WeeklyRecapData {
   weekStartDate: string;
   weekEndDate: string;
@@ -15,11 +31,8 @@ export interface WeeklyRecapData {
   totalTonnage: number;
   personalRecords: number;
   topExercise: string;
-  comparedToLastWeek: {
-    workouts: number;
-    tonnage: number;
-    streak: number;
-  };
+  comparedToLastWeek: WeekComparison;
+  previousWeek: PrevWeekRaw;
 }
 
 /** Parse workout_logs `details` JSONB to calculate total tonnage */
