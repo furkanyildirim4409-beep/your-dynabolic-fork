@@ -113,7 +113,7 @@ Deno.serve(async (req) => {
       const { data: mealSubs } = await supabaseAdmin
         .from("push_subscriptions")
         .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-        .eq("profiles.role", "athlete");
+        .neq("profiles.role", "coach");
 
       const filteredMealSubs = (mealSubs || []).filter((s: any) => {
         const prefs = s.profiles?.notification_preferences;
