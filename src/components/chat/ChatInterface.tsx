@@ -206,7 +206,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
                 </motion.div>
               );
             })}
-            <div ref={messagesEndRef} />
+            <div ref={messagesEndRef} className="h-1 w-full flex-shrink-0" />
           </div>
 
           {/* Input */}
