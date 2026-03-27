@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Calendar, Trophy, Flame, Dumbbell, TrendingUp, 
   TrendingDown, Minus, Coins, Target, Award, Swords,
-  ChevronRight, Share2, ArrowRight
+  ChevronRight, Share2, ArrowRight, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeeklyRecapData } from "@/hooks/useWeeklyRecap";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { shareRecapImage } from "@/lib/recapImageGenerator";
 
 interface WeeklyRecapModalProps {
   isOpen: boolean;
