@@ -10,12 +10,13 @@ const corsHeaders = {
 /**
  * Scheduled Reminders Edge Function
  *
- * Called by pg_cron twice a day (Europe/Istanbul timezone):
+ * Called by pg_cron (Europe/Istanbul timezone):
  *   - 09:00 → daily check-in nudge
+ *   - 14:00 → meal reminder for athletes who haven't logged food
  *   - 18:00 → workout reminder for today
  *
- * Query param ?type=checkin or ?type=workout to target a specific nudge.
- * Without a type, both are processed.
+ * Query param ?type=checkin|meal|workout to target a specific nudge.
+ * Without a type, all are processed.
  */
 
 interface PushSub {
