@@ -139,7 +139,9 @@ export const useWeeklyRecap = () => {
     const thisLogs = thisWeekWk.data || [];
     const prevLogs = prevWeekWk.data || [];
     const challenges = challengesRes.data || [];
+    const prevChallenges = prevChallengesRes.data || [];
     const coins = coinsRes.data || [];
+    const prevCoins = prevCoinsRes.data || [];
 
     const workoutsCompleted = thisLogs.length;
     const prevWorkoutsCount = prevLogs.length;
@@ -149,9 +151,12 @@ export const useWeeklyRecap = () => {
 
     const challengesWon = challenges.filter(c => c.winner_id === user.id).length;
     const challengesLost = challenges.filter(c => c.winner_id && c.winner_id !== user.id).length;
+    const prevChallengesWon = prevChallenges.filter(c => c.winner_id === user.id).length;
+    const prevChallengesLost = prevChallenges.filter(c => c.winner_id && c.winner_id !== user.id).length;
 
     const earnedCoins = coins.filter(c => c.amount > 0).reduce((s, c) => s + c.amount, 0);
     const bonusCoins = coins.filter(c => c.type === "bonus" || c.type === "challenge_win").reduce((s, c) => s + c.amount, 0);
+    const prevEarnedCoins = prevCoins.filter(c => c.amount > 0).reduce((s, c) => s + c.amount, 0);
 
     const streakDays = profile?.streak || 0;
 
