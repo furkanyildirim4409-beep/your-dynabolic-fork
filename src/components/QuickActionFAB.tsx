@@ -25,11 +25,11 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { logWeight, isLoading: weightLoading } = useWeightTracking();
+  const { totalMl, addWater: addWaterBackend } = useWaterTracking();
   const [isOpen, setIsOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weight, setWeight] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [waterCount, setWaterCount] = useState(0);
 
   const handleAddWater = () => {
     const newCount = waterCount + 1;

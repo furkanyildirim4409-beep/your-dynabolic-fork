@@ -42,6 +42,7 @@ import { tr } from "date-fns/locale";
 import { CalendarClock, AlertTriangle, RefreshCw, CalendarDays, TrendingUp } from "lucide-react";
 import NutritionCalendar from "@/components/NutritionCalendar";
 import { useWeeklyAdherence } from "@/hooks/useWeeklyAdherence";
+import WaterTrackerWidget from "@/components/WaterTrackerWidget";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
