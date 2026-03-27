@@ -1,10 +1,12 @@
-import { createContext, useContext, useState, ReactNode } from "react";
+import { createContext, useContext, useState, useEffect, useCallback, ReactNode } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 export type Language = "tr" | "en" | "de";
 export type AppearanceMode = "dark" | "light";
 
 interface NotificationSettings {
   workoutReminders: boolean;
+  checkinReminders: boolean;
   coachMessages: boolean;
   payments: boolean;
   communityAlerts: boolean;
@@ -21,6 +23,7 @@ interface SettingsContextType {
 
 const defaultNotifications: NotificationSettings = {
   workoutReminders: true,
+  checkinReminders: true,
   coachMessages: true,
   payments: true,
   communityAlerts: false,
@@ -31,7 +34,11 @@ const SettingsContext = createContext<SettingsContextType | undefined>(undefined
 export const SettingsProvider = ({ children }: { children: ReactNode }) => {
   const [notifications, setNotifications] = useState<NotificationSettings>(() => {
     const saved = localStorage.getItem("dynabolic-notifications");
-    return saved ? JSON.parse(saved) : defaultNotifications;
+    if (saved) {
+      const parsed = JSON.parse(saved);
+      return { ...defaultNotifications, ...parsed };
+    }
+    return defaultNotifications;
   });
 
   const [language, setLanguageState] = useState<Language>(() => {
@@ -44,10 +51,50 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
     return (saved as AppearanceMode) || "dark";
   });
 
+  // Sync push-related prefs to profiles.notification_preferences in Supabase
+  const syncToSupabase = useCallback(async (prefs: NotificationSettings) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+    await supabase.from("profiles").update({
+      notification_preferences: {
+        push: true,
+        email: true,
+        alerts: true,
+        checkin_reminders: prefs.checkinReminders,
+        workout_reminders: prefs.workoutReminders,
+      },
+    }).eq("id", user.id);
+  }, []);
+
+  // On mount, load prefs from Supabase profile if available
+  useEffect(() => {
+    (async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return;
+      const { data: profile } = await supabase.from("profiles").select("notification_preferences").eq("id", user.id).single();
+      if (profile?.notification_preferences && typeof profile.notification_preferences === "object") {
+        const remote = profile.notification_preferences as Record<string, unknown>;
+        setNotifications(prev => {
+          const merged = {
+            ...prev,
+            checkinReminders: remote.checkin_reminders !== undefined ? Boolean(remote.checkin_reminders) : prev.checkinReminders,
+            workoutReminders: remote.workout_reminders !== undefined ? Boolean(remote.workout_reminders) : prev.workoutReminders,
+          };
+          localStorage.setItem("dynabolic-notifications", JSON.stringify(merged));
+          return merged;
+        });
+      }
+    })();
+  }, []);
+
   const updateNotification = (key: keyof NotificationSettings, value: boolean) => {
     setNotifications(prev => {
       const updated = { ...prev, [key]: value };
       localStorage.setItem("dynabolic-notifications", JSON.stringify(updated));
+      // Sync push-related prefs to Supabase
+      if (key === "checkinReminders" || key === "workoutReminders") {
+        syncToSupabase(updated);
+      }
       return updated;
     });
   };

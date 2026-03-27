@@ -67,11 +67,18 @@ Deno.serve(async (req) => {
       // Find users who have push subs but NO daily_checkins row for today
       const { data: allSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
         .eq("profiles.role", "athlete");
 
-      if (allSubs && allSubs.length > 0) {
-        const uniqueUserIds = [...new Set(allSubs.map((s: PushSub) => s.user_id))];
+      // Filter out users who opted out of check-in reminders
+      const filteredSubs = (allSubs || []).filter((s: any) => {
+        const prefs = s.profiles?.notification_preferences;
+        if (prefs && typeof prefs === "object" && prefs.checkin_reminders === false) return false;
+        return true;
+      });
+
+      if (filteredSubs.length > 0) {
+        const uniqueUserIds = [...new Set(filteredSubs.map((s: PushSub) => s.user_id))];
 
         // Get users who already checked in today
         const { data: checkins } = await supabaseAdmin
@@ -82,7 +89,7 @@ Deno.serve(async (req) => {
           .in("user_id", uniqueUserIds);
 
         const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
-        const needNudge = allSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
+        const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
 
         if (needNudge.length > 0) {
           const payload = JSON.stringify({
@@ -126,11 +133,18 @@ Deno.serve(async (req) => {
           // Get push subs for these users
           const { data: subs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+            .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
             .eq("profiles.role", "athlete")
             .in("user_id", needReminder);
 
-          if (subs && subs.length > 0) {
+          // Filter out users who opted out of workout reminders
+          const filteredWorkoutSubs = (subs || []).filter((s: any) => {
+            const prefs = s.profiles?.notification_preferences;
+            if (prefs && typeof prefs === "object" && prefs.workout_reminders === false) return false;
+            return true;
+          });
+
+          if (filteredWorkoutSubs.length > 0) {
             // Build personalized payloads grouped by user
             const userWorkoutMap = new Map<string, string>();
             for (const w of todayWorkouts) {
@@ -141,7 +155,7 @@ Deno.serve(async (req) => {
 
             // Send push to each subscription
             const results = await Promise.allSettled(
-              subs.map((sub: PushSub) => {
+              filteredWorkoutSubs.map((sub: PushSub) => {
                 const workoutName = userWorkoutMap.get(sub.user_id) || "Antrenman";
                 const payload = JSON.stringify({
                   title: `💪 ${workoutName} seni bekliyor!`,
@@ -161,7 +175,7 @@ Deno.serve(async (req) => {
             const expired = results
               .map((r, i) =>
                 r.status === "rejected" && r.reason?.statusCode === 410
-                  ? subs[i].endpoint
+                  ? filteredWorkoutSubs[i].endpoint
                   : null,
               )
               .filter(Boolean);
