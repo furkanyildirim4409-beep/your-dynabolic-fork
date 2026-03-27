@@ -25,6 +25,7 @@ interface SettingsContextType {
 const defaultNotifications: NotificationSettings = {
   workoutReminders: true,
   checkinReminders: true,
+  mealReminders: true,
   coachMessages: true,
   payments: true,
   communityAlerts: false,
