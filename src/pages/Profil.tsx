@@ -104,6 +104,48 @@ const Profil = () => {
     }
   };
 
+  const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = () => {
+      setAvatarSrc(reader.result as string);
+      setShowCropper(true);
+    };
+    reader.readAsDataURL(file);
+    e.target.value = "";
+  };
+
+  const handleCropComplete = async (blob: Blob) => {
+    if (!user) return;
+    setShowCropper(false);
+    setAvatarUploading(true);
+    try {
+      const filePath = `${user.id}.jpg`;
+      const { error: uploadErr } = await supabase.storage
+        .from("avatars")
+        .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
+      if (uploadErr) throw uploadErr;
+
+      const { data: publicData } = supabase.storage.from("avatars").getPublicUrl(filePath);
+      const avatarUrl = `${publicData.publicUrl}?t=${Date.now()}`;
+
+      const { error: updateErr } = await supabase
+        .from("profiles")
+        .update({ avatar_url: avatarUrl })
+        .eq("id", user.id);
+      if (updateErr) throw updateErr;
+
+      await refreshProfile();
+      toast({ title: "Profil fotoğrafı güncellendi! 🎉" });
+    } catch (err: any) {
+      console.error("Avatar upload failed", err);
+      toast({ title: "Yükleme başarısız", description: err.message, variant: "destructive" });
+    } finally {
+      setAvatarUploading(false);
+    }
+  };
+
   const isCoach = profile?.role === "coach";
 
   const menuItems = [
