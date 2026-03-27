@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { useWeightTracking } from "@/hooks/useWeightTracking";
+import { useWaterTracking } from "@/hooks/useWaterTracking";
 import { useAuth } from "@/context/AuthContext";
 
 interface QuickAction {
@@ -24,19 +25,20 @@ const QuickActionFAB = ({ onOpenChat }: QuickActionFABProps) => {
   const navigate = useNavigate();
   const { profile } = useAuth();
   const { logWeight, isLoading: weightLoading } = useWeightTracking();
+  const { totalMl, addWater: addWaterBackend } = useWaterTracking();
   const [isOpen, setIsOpen] = useState(false);
   const [showWeightModal, setShowWeightModal] = useState(false);
   const [weight, setWeight] = useState("");
   const [isSaving, setIsSaving] = useState(false);
-  const [waterCount, setWaterCount] = useState(0);
 
-  const handleAddWater = () => {
-    const newCount = waterCount + 1;
-    setWaterCount(newCount);
-    toast({
-      title: "250ml Su Eklendi 💧",
-      description: `Bugün ${newCount * 250}ml su içtin!`,
-    });
+  const handleAddWater = async () => {
+    const err = await addWaterBackend(250);
+    if (!err) {
+      toast({
+        title: "Harika! +250ml su eklendi 💧",
+        description: `Bugün toplam: ${((totalMl + 250) / 1000).toFixed(1)}L`,
+      });
+    }
     setIsOpen(false);
   };
 
