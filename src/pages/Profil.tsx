@@ -49,7 +49,18 @@ const Profil = () => {
   const { isOffline } = useOfflineMode();
   const { profile, signOut, user, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
   const { latest: latestMeasurement } = useBodyMeasurements();
+
+  useEffect(() => {
+    if (searchParams.get("showSummary") === "true") {
+      triggerRecap();
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("showSummary");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams]);
   
   
   // Base values from real data or defaults
