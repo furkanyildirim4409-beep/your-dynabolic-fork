@@ -6,7 +6,6 @@ import {
   Search,
   Plus,
   Minus,
-  Droplets,
   Camera,
   X,
   Focus,
