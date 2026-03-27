@@ -3,7 +3,7 @@ import { useTodayCheckin } from "@/hooks/useTodayCheckin";
 
 function calculateReadiness(v: { mood: number; sleep: number; soreness: number; stress: number; digestion: number }, sleepHours?: number | null): number {
   let base = Math.round(
-    (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((5 - v.soreness) / 5) * 20 + ((5 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
+    (v.mood / 5) * 20 + (v.sleep / 5) * 30 + ((6 - v.soreness) / 5) * 20 + ((6 - v.stress) / 5) * 20 + (v.digestion / 5) * 10
   );
   if (sleepHours != null && sleepHours < 7) {
     base -= Math.round((7 - sleepHours) * 3);
