@@ -1,13 +1,15 @@
+import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Calendar, Trophy, Flame, Dumbbell, TrendingUp, 
   TrendingDown, Minus, Coins, Target, Award, Swords,
-  ChevronRight, Share2, ArrowRight
+  ChevronRight, Share2, ArrowRight, Loader2
 } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { WeeklyRecapData } from "@/hooks/useWeeklyRecap";
 import { hapticLight, hapticSuccess } from "@/lib/haptics";
 import { toast } from "@/hooks/use-toast";
+import { shareRecapImage } from "@/lib/recapImageGenerator";
 
 interface WeeklyRecapModalProps {
   isOpen: boolean;
@@ -16,6 +18,8 @@ interface WeeklyRecapModalProps {
 }
 
 const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
+  const [isSharing, setIsSharing] = useState(false);
+
   if (!isOpen || !data) return null;
 
   const formatDateRange = () => {
@@ -37,12 +41,27 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
     return "text-muted-foreground";
   };
 
-  const handleShare = () => {
+  const handleShare = async () => {
     hapticLight();
-    toast({
-      title: "Paylaşım hazırlanıyor...",
-      description: "Haftalık özet görseli oluşturuluyor",
-    });
+    setIsSharing(true);
+    try {
+      await shareRecapImage(data);
+      hapticSuccess();
+      toast({
+        title: "Paylaşıldı! 🎉",
+        description: "Haftalık özet görselin hazır",
+      });
+    } catch (err: any) {
+      // User cancelled share or error
+      if (err?.name !== "AbortError") {
+        toast({
+          title: "Görsel indirildi 📥",
+          description: "Haftalık özet görselin kaydedildi",
+        });
+      }
+    } finally {
+      setIsSharing(false);
+    }
   };
 
   const handleClose = () => {
@@ -421,10 +440,15 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
           <Button
             variant="outline"
             onClick={handleShare}
+            disabled={isSharing}
             className="flex-1"
           >
-            <Share2 className="w-4 h-4 mr-2" />
-            Paylaş
+            {isSharing ? (
+              <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+            ) : (
+              <Share2 className="w-4 h-4 mr-2" />
+            )}
+            {isSharing ? "Hazırlanıyor..." : "Paylaş"}
           </Button>
           <Button
             onClick={() => { hapticSuccess(); handleClose(); }}
