@@ -67,8 +67,15 @@ Deno.serve(async (req) => {
       // Find users who have push subs but NO daily_checkins row for today
       const { data: allSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
         .eq("profiles.role", "athlete");
+
+      // Filter out users who opted out of check-in reminders
+      const filteredSubs = (allSubs || []).filter((s: any) => {
+        const prefs = s.profiles?.notification_preferences;
+        if (prefs && typeof prefs === "object" && prefs.checkin_reminders === false) return false;
+        return true;
+      });
 
       if (allSubs && allSubs.length > 0) {
         const uniqueUserIds = [...new Set(allSubs.map((s: PushSub) => s.user_id))];
