@@ -1,5 +1,7 @@
-import { useState, useRef } from "react";
-import { useNavigate } from "react-router-dom";
+import { useState, useRef, useEffect } from "react";
+import { useNavigate, useSearchParams } from "react-router-dom";
+import WeeklyRecapModal from "@/components/WeeklyRecapModal";
+import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { motion, AnimatePresence } from "framer-motion";
 import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -47,7 +49,18 @@ const Profil = () => {
   const { isOffline } = useOfflineMode();
   const { profile, signOut, user, refreshProfile } = useAuth();
   const navigate = useNavigate();
+  const [searchParams, setSearchParams] = useSearchParams();
+  const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
   const { latest: latestMeasurement } = useBodyMeasurements();
+
+  useEffect(() => {
+    if (searchParams.get("showSummary") === "true") {
+      triggerRecap();
+      const newParams = new URLSearchParams(searchParams);
+      newParams.delete("showSummary");
+      setSearchParams(newParams, { replace: true });
+    }
+  }, [searchParams]);
   
   
   // Base values from real data or defaults
@@ -667,6 +680,9 @@ const Profil = () => {
           onCropComplete={handleCropComplete}
         />
       )}
+
+      {/* Weekly Recap Modal (deep link) */}
+      <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 
     </div>
   );
