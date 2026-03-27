@@ -7,6 +7,7 @@ export type AppearanceMode = "dark" | "light";
 interface NotificationSettings {
   workoutReminders: boolean;
   checkinReminders: boolean;
+  mealReminders: boolean;
   coachMessages: boolean;
   payments: boolean;
   communityAlerts: boolean;
