@@ -114,9 +114,16 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-primary/10 flex items-center justify-center"><Dumbbell className="w-4 h-4 text-primary" /></div>
-                    <div><p className="text-foreground text-sm font-medium">Antrenman Hatırlatıcıları</p><p className="text-muted-foreground text-xs">Günlük antrenman bildirimleri</p></div>
+                    <div><p className="text-foreground text-sm font-medium">Antrenman Hatırlatıcıları</p><p className="text-muted-foreground text-xs">Akşam antrenman push bildirimi</p></div>
                   </div>
                   <Switch checked={notifications.workoutReminders} onCheckedChange={() => handleNotificationToggle("workoutReminders")} />
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-orange-500/10 flex items-center justify-center"><ClipboardCheck className="w-4 h-4 text-orange-400" /></div>
+                    <div><p className="text-foreground text-sm font-medium">Check-in Hatırlatıcısı</p><p className="text-muted-foreground text-xs">Sabah günlük check-in push bildirimi</p></div>
+                  </div>
+                  <Switch checked={notifications.checkinReminders} onCheckedChange={() => handleNotificationToggle("checkinReminders")} />
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
