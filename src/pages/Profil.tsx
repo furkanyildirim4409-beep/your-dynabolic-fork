@@ -11,8 +11,10 @@ import TransformationTimeline from "@/components/profile/TransformationTimeline"
 import WeightHistoryChart from "@/components/WeightHistoryChart";
 import SettingsPanel from "@/components/SettingsPanel";
 import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
+import AvatarCropperModal from "@/components/profile/AvatarCropperModal";
 
 import { Slider } from "@/components/ui/slider";
+import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { toast } from "@/hooks/use-toast";
