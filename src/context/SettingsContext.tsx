@@ -7,6 +7,7 @@ export type AppearanceMode = "dark" | "light";
 interface NotificationSettings {
   workoutReminders: boolean;
   checkinReminders: boolean;
+  mealReminders: boolean;
   coachMessages: boolean;
   payments: boolean;
   communityAlerts: boolean;
@@ -24,6 +25,7 @@ interface SettingsContextType {
 const defaultNotifications: NotificationSettings = {
   workoutReminders: true,
   checkinReminders: true,
+  mealReminders: true,
   coachMessages: true,
   payments: true,
   communityAlerts: false,
@@ -62,6 +64,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         alerts: true,
         checkin_reminders: prefs.checkinReminders,
         workout_reminders: prefs.workoutReminders,
+        meal_reminders: prefs.mealReminders,
       },
     }).eq("id", user.id);
   }, []);
@@ -79,6 +82,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
             ...prev,
             checkinReminders: remote.checkin_reminders !== undefined ? Boolean(remote.checkin_reminders) : prev.checkinReminders,
             workoutReminders: remote.workout_reminders !== undefined ? Boolean(remote.workout_reminders) : prev.workoutReminders,
+            mealReminders: remote.meal_reminders !== undefined ? Boolean(remote.meal_reminders) : prev.mealReminders,
           };
           localStorage.setItem("dynabolic-notifications", JSON.stringify(merged));
           return merged;
@@ -92,7 +96,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       const updated = { ...prev, [key]: value };
       localStorage.setItem("dynabolic-notifications", JSON.stringify(updated));
       // Sync push-related prefs to Supabase
-      if (key === "checkinReminders" || key === "workoutReminders") {
+      if (key === "checkinReminders" || key === "workoutReminders" || key === "mealReminders") {
         syncToSupabase(updated);
       }
       return updated;

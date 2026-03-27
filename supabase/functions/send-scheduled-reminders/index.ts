@@ -10,12 +10,13 @@ const corsHeaders = {
 /**
  * Scheduled Reminders Edge Function
  *
- * Called by pg_cron twice a day (Europe/Istanbul timezone):
+ * Called by pg_cron (Europe/Istanbul timezone):
  *   - 09:00 → daily check-in nudge
+ *   - 14:00 → meal reminder for athletes who haven't logged food
  *   - 18:00 → workout reminder for today
  *
- * Query param ?type=checkin or ?type=workout to target a specific nudge.
- * Without a type, both are processed.
+ * Query param ?type=checkin|meal|workout to target a specific nudge.
+ * Without a type, all are processed.
  */
 
 interface PushSub {
@@ -32,7 +33,7 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const nudgeType = url.searchParams.get("type"); // "checkin" | "workout" | null (both)
+    const nudgeType = url.searchParams.get("type"); // "checkin" | "meal" | "workout" | null (all)
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -102,6 +103,49 @@ Deno.serve(async (req) => {
           totalSent += result.sent;
           totalFailed += result.failed;
           totalCleaned += result.cleaned;
+        }
+      }
+    }
+
+    // ─── MEAL REMINDER ─────────────────────────────────────────
+    if (!nudgeType || nudgeType === "meal") {
+      // Find athletes with push subs who haven't logged any consumed_foods today
+      const { data: mealSubs } = await supabaseAdmin
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
+        .eq("profiles.role", "athlete");
+
+      const filteredMealSubs = (mealSubs || []).filter((s: any) => {
+        const prefs = s.profiles?.notification_preferences;
+        if (prefs && typeof prefs === "object" && prefs.meal_reminders === false) return false;
+        return true;
+      });
+
+      if (filteredMealSubs.length > 0) {
+        const uniqueMealUserIds = [...new Set(filteredMealSubs.map((s: PushSub) => s.user_id))];
+
+        // Check who already logged food today
+        const { data: foodLogs } = await supabaseAdmin
+          .from("consumed_foods")
+          .select("athlete_id")
+          .gte("logged_at", `${todayStr}T00:00:00`)
+          .lte("logged_at", `${todayStr}T23:59:59`)
+          .in("athlete_id", uniqueMealUserIds);
+
+        const loggedFoodIds = new Set((foodLogs || []).map((f: { athlete_id: string }) => f.athlete_id));
+        const needMealNudge = filteredMealSubs.filter((s: PushSub) => !loggedFoodIds.has(s.user_id));
+
+        if (needMealNudge.length > 0) {
+          const mealPayload = JSON.stringify({
+            title: "🍽️ Öğle yemeğini kaydetmeyi unuttun!",
+            body: "Bugün henüz hiç yemek girişin yok. Makrolarını takip etmeye devam et!",
+            data: { url: "/beslenme" },
+          });
+
+          const mealResult = await sendPushBatch(supabaseAdmin, needMealNudge, mealPayload);
+          totalSent += mealResult.sent;
+          totalFailed += mealResult.failed;
+          totalCleaned += mealResult.cleaned;
         }
       }
     }

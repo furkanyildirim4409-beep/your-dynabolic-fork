@@ -3,7 +3,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { 
   X, Bell, Globe, Moon, Sun, WifiOff, Download, Smartphone, Lock, 
   HelpCircle, ChevronRight, Dumbbell, MessageSquare, CreditCard, 
-  Users, FileText, AlertTriangle, BellRing, ClipboardCheck
+  Users, FileText, AlertTriangle, BellRing, ClipboardCheck, UtensilsCrossed
 } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
@@ -124,6 +124,13 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                     <div><p className="text-foreground text-sm font-medium">Check-in Hatırlatıcısı</p><p className="text-muted-foreground text-xs">Sabah günlük check-in push bildirimi</p></div>
                   </div>
                   <Switch checked={notifications.checkinReminders} onCheckedChange={() => handleNotificationToggle("checkinReminders")} />
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center"><UtensilsCrossed className="w-4 h-4 text-amber-400" /></div>
+                    <div><p className="text-foreground text-sm font-medium">Öğün Hatırlatıcısı</p><p className="text-muted-foreground text-xs">14:00'te yemek kaydı yoksa bildirim</p></div>
+                  </div>
+                  <Switch checked={notifications.mealReminders} onCheckedChange={() => handleNotificationToggle("mealReminders")} />
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
