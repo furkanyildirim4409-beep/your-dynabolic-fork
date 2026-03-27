@@ -28,7 +28,7 @@ import SupplementTracker from "@/components/SupplementTracker";
 import { assignedSupplements as initialSupplements } from "@/lib/mockData";
 import type { Supplement } from "@/components/SupplementTracker";
 import { useAuth } from "@/context/AuthContext";
-import { useWaterTracking } from "@/hooks/useWaterTracking";
+
 import { useMacros } from "@/hooks/useMacros";
 import { useConsumedFoods, type ApiFoodItem, type ConsumedFood } from "@/hooks/useConsumedFoods";
 import WeeklyNutritionChart from "@/components/WeeklyNutritionChart";
