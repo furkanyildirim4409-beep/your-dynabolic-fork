@@ -121,7 +121,7 @@ const Profil = () => {
     setShowCropper(false);
     setAvatarUploading(true);
     try {
-      const filePath = `${user.id}.jpg`;
+      const filePath = `${user.id}/avatar.jpg`;
       const { error: uploadErr } = await supabase.storage
         .from("avatars")
         .upload(filePath, blob, { upsert: true, contentType: "image/jpeg" });
