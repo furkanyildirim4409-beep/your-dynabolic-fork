@@ -176,6 +176,15 @@ export const useWeeklyRecap = () => {
         workouts: pctChange(workoutsCompleted, prevWorkoutsCount),
         tonnage: pctChange(totalTonnage, prevTonnage),
         streak: 0,
+        challenges: pctChange(challengesWon, prevChallengesWon),
+        coins: pctChange(earnedCoins + bonusCoins, prevEarnedCoins),
+      },
+      previousWeek: {
+        workouts: prevWorkoutsCount,
+        tonnage: prevTonnage,
+        challengesWon: prevChallengesWon,
+        challengesLost: prevChallengesLost,
+        coins: prevEarnedCoins,
       },
     });
     setShowRecap(true);
