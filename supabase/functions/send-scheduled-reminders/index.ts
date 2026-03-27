@@ -33,7 +33,7 @@ Deno.serve(async (req) => {
 
   try {
     const url = new URL(req.url);
-    const nudgeType = url.searchParams.get("type"); // "checkin" | "meal" | "workout" | null (all)
+    const nudgeType = url.searchParams.get("type");
 
     const supabaseAdmin = createClient(
       Deno.env.get("SUPABASE_URL")!,
@@ -53,10 +53,9 @@ Deno.serve(async (req) => {
     const istanbulNow = new Date(
       new Date().toLocaleString("en-US", { timeZone: "Europe/Istanbul" }),
     );
-    const todayStr = istanbulNow.toISOString().split("T")[0]; // YYYY-MM-DD
+    const todayStr = istanbulNow.toISOString().split("T")[0];
 
-    // Day of week: 1 (Monday) - 7 (Sunday) matching ISO standard
-    const jsDay = istanbulNow.getDay(); // 0=Sun
+    const jsDay = istanbulNow.getDay();
     const isoDow = jsDay === 0 ? 7 : jsDay;
 
     let totalSent = 0;
@@ -67,21 +66,25 @@ Deno.serve(async (req) => {
     if (!nudgeType || nudgeType === "checkin") {
       const { data: rawSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)");
+        .select("endpoint, p256dh, auth, user_id");
+
+      console.log(`[checkin] rawSubs=${rawSubs?.length ?? 0}`);
 
       if (rawSubs && rawSubs.length > 0) {
         const uniqueUserIds = [...new Set(rawSubs.map((s: any) => s.user_id))];
         const athleteIds = await getAthleteIds(supabaseAdmin, uniqueUserIds);
-        console.log(`[checkin] rawSubs=${rawSubs.length}, uniqueUsers=${uniqueUserIds.length}, athletes=${athleteIds.size}`);
+        const prefsMap = await getNotificationPrefs(supabaseAdmin, uniqueUserIds);
+        console.log(`[checkin] uniqueUsers=${uniqueUserIds.length}, athletes=${athleteIds.size}`);
 
         const filteredSubs = rawSubs.filter((s: any) => {
           if (!athleteIds.has(s.user_id)) return false;
-          const prefs = s.profiles?.notification_preferences;
+          const prefs = prefsMap.get(s.user_id);
           if (prefs && typeof prefs === "object" && prefs.checkin_reminders === false) return false;
           return true;
         });
 
-        console.log(`[checkin] filteredSubs=${filteredSubs.length}, needNudge will be calculated`);
+        console.log(`[checkin] filteredSubs=${filteredSubs.length}`);
+
         if (filteredSubs.length > 0) {
           const { data: checkins } = await supabaseAdmin
             .from("daily_checkins")
@@ -92,6 +95,8 @@ Deno.serve(async (req) => {
 
           const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
           const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
+
+          console.log(`[checkin] checkedIn=${checkedInIds.size}, needNudge=${needNudge.length}`);
 
           if (needNudge.length > 0) {
             const payload = JSON.stringify({
@@ -113,15 +118,16 @@ Deno.serve(async (req) => {
     if (!nudgeType || nudgeType === "meal") {
       const { data: rawMealSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)");
+        .select("endpoint, p256dh, auth, user_id");
 
       if (rawMealSubs && rawMealSubs.length > 0) {
         const uniqueMealUserIds = [...new Set(rawMealSubs.map((s: any) => s.user_id))];
         const mealAthleteIds = await getAthleteIds(supabaseAdmin, uniqueMealUserIds);
+        const mealPrefsMap = await getNotificationPrefs(supabaseAdmin, uniqueMealUserIds);
 
         const filteredMealSubs = rawMealSubs.filter((s: any) => {
           if (!mealAthleteIds.has(s.user_id)) return false;
-          const prefs = s.profiles?.notification_preferences;
+          const prefs = mealPrefsMap.get(s.user_id);
           if (prefs && typeof prefs === "object" && prefs.meal_reminders === false) return false;
           return true;
         });
@@ -161,30 +167,31 @@ Deno.serve(async (req) => {
         .or(`scheduled_date.eq.${todayStr},day_of_week.eq.${isoDow}`);
 
       if (todayWorkouts && todayWorkouts.length > 0) {
-        const athleteIds = [...new Set(todayWorkouts.map((w: { athlete_id: string }) => w.athlete_id).filter(Boolean))] as string[];
+        const rawAthleteIds = [...new Set(todayWorkouts.map((w: { athlete_id: string }) => w.athlete_id).filter(Boolean))] as string[];
 
         const { data: todayLogs } = await supabaseAdmin
           .from("workout_logs")
           .select("user_id")
           .gte("logged_at", `${todayStr}T00:00:00`)
           .lte("logged_at", `${todayStr}T23:59:59`)
-          .in("user_id", athleteIds);
+          .in("user_id", rawAthleteIds);
 
         const loggedIds = new Set((todayLogs || []).map((l: { user_id: string }) => l.user_id));
-        const needReminder = athleteIds.filter((id) => !loggedIds.has(id));
+        const needReminder = rawAthleteIds.filter((id) => !loggedIds.has(id));
 
         if (needReminder.length > 0) {
-          // Verify they are actually athletes via user_roles
           const workoutAthleteIds = await getAthleteIds(supabaseAdmin, needReminder);
 
           const { data: rawWorkoutSubs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)")
+            .select("endpoint, p256dh, auth, user_id")
             .in("user_id", needReminder);
+
+          const workoutPrefsMap = await getNotificationPrefs(supabaseAdmin, needReminder);
 
           const filteredWorkoutSubs = (rawWorkoutSubs || []).filter((s: any) => {
             if (!workoutAthleteIds.has(s.user_id)) return false;
-            const prefs = s.profiles?.notification_preferences;
+            const prefs = workoutPrefsMap.get(s.user_id);
             if (prefs && typeof prefs === "object" && prefs.workout_reminders === false) return false;
             return true;
           });
@@ -271,6 +278,22 @@ async function getAthleteIds(
     .in("user_id", userIds)
     .eq("role", "athlete");
   return new Set((data || []).map((r: any) => r.user_id));
+}
+
+/** Helper: get notification_preferences from profiles for a set of user IDs */
+async function getNotificationPrefs(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userIds: string[],
+): Promise<Map<string, any>> {
+  const { data } = await supabaseAdmin
+    .from("profiles")
+    .select("id, notification_preferences")
+    .in("id", userIds);
+  const map = new Map<string, any>();
+  for (const row of data || []) {
+    map.set(row.id, row.notification_preferences);
+  }
+  return map;
 }
 
 /** Helper: send push to a batch of subscriptions and clean expired */
