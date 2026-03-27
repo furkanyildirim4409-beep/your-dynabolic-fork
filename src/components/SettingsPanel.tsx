@@ -140,12 +140,44 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                   <Switch checked={notifications.communityAlerts} onCheckedChange={() => handleNotificationToggle("communityAlerts")} />
                 </div>
                 {pushSupported && (
-                  <div className="flex items-center justify-between p-4">
-                    <div className="flex items-center gap-3">
-                      <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center"><BellRing className="w-4 h-4 text-amber-400" /></div>
-                      <div><p className="text-foreground text-sm font-medium">Push Bildirimleri</p><p className="text-muted-foreground text-xs">Sipariş durumu güncellemeleri</p></div>
+                  <div className="p-4 space-y-3">
+                    <div className="rounded-xl bg-secondary/30 backdrop-blur border border-border/50 p-4 space-y-3">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="w-10 h-10 rounded-xl bg-gradient-to-br from-primary/20 to-primary/5 flex items-center justify-center ring-1 ring-primary/20">
+                            <BellRing className="w-5 h-5 text-primary" />
+                          </div>
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <p className="text-foreground text-sm font-semibold">Push Bildirimleri</p>
+                              <span className={`inline-flex items-center gap-1 text-[10px] font-medium px-1.5 py-0.5 rounded-full ${
+                                pushPermission === "granted" ? "bg-emerald-500/15 text-emerald-400" :
+                                pushPermission === "denied" ? "bg-destructive/15 text-destructive" :
+                                "bg-muted text-muted-foreground"
+                              }`}>
+                                <span className={`w-1.5 h-1.5 rounded-full ${
+                                  pushPermission === "granted" ? "bg-emerald-400" :
+                                  pushPermission === "denied" ? "bg-destructive" :
+                                  "bg-muted-foreground"
+                                }`} />
+                                {pushPermission === "granted" ? "Aktif" : pushPermission === "denied" ? "Engelli" : "Kapalı"}
+                              </span>
+                            </div>
+                            <p className="text-muted-foreground text-xs mt-0.5">Yeni düellolar, mesajlar ve koç uyarıları için anlık bildirim al.</p>
+                          </div>
+                        </div>
+                        <Switch
+                          checked={pushSubscribed}
+                          onCheckedChange={handlePushToggle}
+                          disabled={isPushLoading || pushSubscribed}
+                        />
+                      </div>
+                      {pushPermission === "denied" && (
+                        <p className="text-[11px] text-muted-foreground/70 bg-destructive/5 rounded-lg px-3 py-2 border border-destructive/10">
+                          ⚠️ Bildirimler tarayıcı ayarlarından engellenmiş. Etkinleştirmek için tarayıcı site ayarlarından bildirimlere izin verin.
+                        </p>
+                      )}
                     </div>
-                    <Switch checked={pushSubscribed} onCheckedChange={handlePushToggle} />
                   </div>
                 )}
               </div>
