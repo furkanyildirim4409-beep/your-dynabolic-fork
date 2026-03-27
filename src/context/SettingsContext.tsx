@@ -96,7 +96,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
       const updated = { ...prev, [key]: value };
       localStorage.setItem("dynabolic-notifications", JSON.stringify(updated));
       // Sync push-related prefs to Supabase
-      if (key === "checkinReminders" || key === "workoutReminders") {
+      if (key === "checkinReminders" || key === "workoutReminders" || key === "mealReminders") {
         syncToSupabase(updated);
       }
       return updated;

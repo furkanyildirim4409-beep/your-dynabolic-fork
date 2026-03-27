@@ -107,6 +107,49 @@ Deno.serve(async (req) => {
       }
     }
 
+    // ─── MEAL REMINDER ─────────────────────────────────────────
+    if (!nudgeType || nudgeType === "meal") {
+      // Find athletes with push subs who haven't logged any consumed_foods today
+      const { data: mealSubs } = await supabaseAdmin
+        .from("push_subscriptions")
+        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
+        .eq("profiles.role", "athlete");
+
+      const filteredMealSubs = (mealSubs || []).filter((s: any) => {
+        const prefs = s.profiles?.notification_preferences;
+        if (prefs && typeof prefs === "object" && prefs.meal_reminders === false) return false;
+        return true;
+      });
+
+      if (filteredMealSubs.length > 0) {
+        const uniqueMealUserIds = [...new Set(filteredMealSubs.map((s: PushSub) => s.user_id))];
+
+        // Check who already logged food today
+        const { data: foodLogs } = await supabaseAdmin
+          .from("consumed_foods")
+          .select("athlete_id")
+          .gte("logged_at", `${todayStr}T00:00:00`)
+          .lte("logged_at", `${todayStr}T23:59:59`)
+          .in("athlete_id", uniqueMealUserIds);
+
+        const loggedFoodIds = new Set((foodLogs || []).map((f: { athlete_id: string }) => f.athlete_id));
+        const needMealNudge = filteredMealSubs.filter((s: PushSub) => !loggedFoodIds.has(s.user_id));
+
+        if (needMealNudge.length > 0) {
+          const mealPayload = JSON.stringify({
+            title: "🍽️ Öğle yemeğini kaydetmeyi unuttun!",
+            body: "Bugün henüz hiç yemek girişin yok. Makrolarını takip etmeye devam et!",
+            data: { url: "/beslenme" },
+          });
+
+          const mealResult = await sendPushBatch(supabaseAdmin, needMealNudge, mealPayload);
+          totalSent += mealResult.sent;
+          totalFailed += mealResult.failed;
+          totalCleaned += mealResult.cleaned;
+        }
+      }
+    }
+
     // ─── WORKOUT REMINDER ────────────────────────────────────────
     if (!nudgeType || nudgeType === "workout") {
       // Find users with assigned workouts for today (by scheduled_date OR day_of_week)

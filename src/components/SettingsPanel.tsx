@@ -127,6 +127,13 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                 </div>
                 <div className="flex items-center justify-between p-4">
                   <div className="flex items-center gap-3">
+                    <div className="w-9 h-9 rounded-lg bg-amber-500/10 flex items-center justify-center"><UtensilsCrossed className="w-4 h-4 text-amber-400" /></div>
+                    <div><p className="text-foreground text-sm font-medium">Öğün Hatırlatıcısı</p><p className="text-muted-foreground text-xs">14:00'te yemek kaydı yoksa bildirim</p></div>
+                  </div>
+                  <Switch checked={notifications.mealReminders} onCheckedChange={() => handleNotificationToggle("mealReminders")} />
+                </div>
+                <div className="flex items-center justify-between p-4">
+                  <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-blue-500/10 flex items-center justify-center"><MessageSquare className="w-4 h-4 text-blue-400" /></div>
                     <div><p className="text-foreground text-sm font-medium">Koç Mesajları</p><p className="text-muted-foreground text-xs">Koçunuzdan gelen mesajlar</p></div>
                   </div>
