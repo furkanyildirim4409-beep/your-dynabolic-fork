@@ -65,95 +65,94 @@ Deno.serve(async (req) => {
 
     // ─── CHECK-IN NUDGE ──────────────────────────────────────────
     if (!nudgeType || nudgeType === "checkin") {
-      // Find users who have push subs but NO daily_checkins row for today
-      const { data: allSubs } = await supabaseAdmin
+      const { data: rawSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-        .neq("profiles.role", "coach");
+        .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)");
 
-      // Filter out users who opted out of check-in reminders
-      const filteredSubs = (allSubs || []).filter((s: any) => {
-        const prefs = s.profiles?.notification_preferences;
-        if (prefs && typeof prefs === "object" && prefs.checkin_reminders === false) return false;
-        return true;
-      });
+      if (rawSubs && rawSubs.length > 0) {
+        const uniqueUserIds = [...new Set(rawSubs.map((s: any) => s.user_id))];
+        const athleteIds = await getAthleteIds(supabaseAdmin, uniqueUserIds);
 
-      if (filteredSubs.length > 0) {
-        const uniqueUserIds = [...new Set(filteredSubs.map((s: PushSub) => s.user_id))];
+        const filteredSubs = rawSubs.filter((s: any) => {
+          if (!athleteIds.has(s.user_id)) return false;
+          const prefs = s.profiles?.notification_preferences;
+          if (prefs && typeof prefs === "object" && prefs.checkin_reminders === false) return false;
+          return true;
+        });
 
-        // Get users who already checked in today
-        const { data: checkins } = await supabaseAdmin
-          .from("daily_checkins")
-          .select("user_id")
-          .gte("created_at", `${todayStr}T00:00:00`)
-          .lte("created_at", `${todayStr}T23:59:59`)
-          .in("user_id", uniqueUserIds);
+        if (filteredSubs.length > 0) {
+          const { data: checkins } = await supabaseAdmin
+            .from("daily_checkins")
+            .select("user_id")
+            .gte("created_at", `${todayStr}T00:00:00`)
+            .lte("created_at", `${todayStr}T23:59:59`)
+            .in("user_id", [...athleteIds]);
 
-        const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
-        const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
+          const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
+          const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
 
-        if (needNudge.length > 0) {
-          const payload = JSON.stringify({
-            title: "🌅 Günaydın! Check-in zamanı",
-            body: "Bugünkü uyku, ruh hali ve enerji durumunu kaydet. 30 saniye sürer!",
-            data: { url: "/" },
-          });
+          if (needNudge.length > 0) {
+            const payload = JSON.stringify({
+              title: "🌅 Günaydın! Check-in zamanı",
+              body: "Bugünkü uyku, ruh hali ve enerji durumunu kaydet. 30 saniye sürer!",
+              data: { url: "/" },
+            });
 
-          const result = await sendPushBatch(supabaseAdmin, needNudge, payload);
-          totalSent += result.sent;
-          totalFailed += result.failed;
-          totalCleaned += result.cleaned;
+            const result = await sendPushBatch(supabaseAdmin, needNudge, payload);
+            totalSent += result.sent;
+            totalFailed += result.failed;
+            totalCleaned += result.cleaned;
+          }
         }
       }
     }
 
     // ─── MEAL REMINDER ─────────────────────────────────────────
     if (!nudgeType || nudgeType === "meal") {
-      // Find athletes with push subs who haven't logged any consumed_foods today
-      const { data: mealSubs } = await supabaseAdmin
+      const { data: rawMealSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-        .neq("profiles.role", "coach");
+        .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)");
 
-      const filteredMealSubs = (mealSubs || []).filter((s: any) => {
-        const prefs = s.profiles?.notification_preferences;
-        if (prefs && typeof prefs === "object" && prefs.meal_reminders === false) return false;
-        return true;
-      });
+      if (rawMealSubs && rawMealSubs.length > 0) {
+        const uniqueMealUserIds = [...new Set(rawMealSubs.map((s: any) => s.user_id))];
+        const mealAthleteIds = await getAthleteIds(supabaseAdmin, uniqueMealUserIds);
 
-      if (filteredMealSubs.length > 0) {
-        const uniqueMealUserIds = [...new Set(filteredMealSubs.map((s: PushSub) => s.user_id))];
+        const filteredMealSubs = rawMealSubs.filter((s: any) => {
+          if (!mealAthleteIds.has(s.user_id)) return false;
+          const prefs = s.profiles?.notification_preferences;
+          if (prefs && typeof prefs === "object" && prefs.meal_reminders === false) return false;
+          return true;
+        });
 
-        // Check who already logged food today
-        const { data: foodLogs } = await supabaseAdmin
-          .from("consumed_foods")
-          .select("athlete_id")
-          .gte("logged_at", `${todayStr}T00:00:00`)
-          .lte("logged_at", `${todayStr}T23:59:59`)
-          .in("athlete_id", uniqueMealUserIds);
+        if (filteredMealSubs.length > 0) {
+          const { data: foodLogs } = await supabaseAdmin
+            .from("consumed_foods")
+            .select("athlete_id")
+            .gte("logged_at", `${todayStr}T00:00:00`)
+            .lte("logged_at", `${todayStr}T23:59:59`)
+            .in("athlete_id", [...mealAthleteIds]);
 
-        const loggedFoodIds = new Set((foodLogs || []).map((f: { athlete_id: string }) => f.athlete_id));
-        const needMealNudge = filteredMealSubs.filter((s: PushSub) => !loggedFoodIds.has(s.user_id));
+          const loggedFoodIds = new Set((foodLogs || []).map((f: { athlete_id: string }) => f.athlete_id));
+          const needMealNudge = filteredMealSubs.filter((s: PushSub) => !loggedFoodIds.has(s.user_id));
 
-        if (needMealNudge.length > 0) {
-          const mealPayload = JSON.stringify({
-            title: "🍽️ Öğle yemeğini kaydetmeyi unuttun!",
-            body: "Bugün henüz hiç yemek girişin yok. Makrolarını takip etmeye devam et!",
-            data: { url: "/beslenme" },
-          });
+          if (needMealNudge.length > 0) {
+            const mealPayload = JSON.stringify({
+              title: "🍽️ Öğle yemeğini kaydetmeyi unuttun!",
+              body: "Bugün henüz hiç yemek girişin yok. Makrolarını takip etmeye devam et!",
+              data: { url: "/beslenme" },
+            });
 
-          const mealResult = await sendPushBatch(supabaseAdmin, needMealNudge, mealPayload);
-          totalSent += mealResult.sent;
-          totalFailed += mealResult.failed;
-          totalCleaned += mealResult.cleaned;
+            const mealResult = await sendPushBatch(supabaseAdmin, needMealNudge, mealPayload);
+            totalSent += mealResult.sent;
+            totalFailed += mealResult.failed;
+            totalCleaned += mealResult.cleaned;
+          }
         }
       }
     }
 
     // ─── WORKOUT REMINDER ────────────────────────────────────────
     if (!nudgeType || nudgeType === "workout") {
-      // Find users with assigned workouts for today (by scheduled_date OR day_of_week)
-      // who have NOT logged a workout today
       const { data: todayWorkouts } = await supabaseAdmin
         .from("assigned_workouts")
         .select("athlete_id, workout_name")
@@ -162,7 +161,6 @@ Deno.serve(async (req) => {
       if (todayWorkouts && todayWorkouts.length > 0) {
         const athleteIds = [...new Set(todayWorkouts.map((w: { athlete_id: string }) => w.athlete_id).filter(Boolean))] as string[];
 
-        // Check who already logged a workout today
         const { data: todayLogs } = await supabaseAdmin
           .from("workout_logs")
           .select("user_id")
@@ -174,22 +172,22 @@ Deno.serve(async (req) => {
         const needReminder = athleteIds.filter((id) => !loggedIds.has(id));
 
         if (needReminder.length > 0) {
-          // Get push subs for these users
-          const { data: subs } = await supabaseAdmin
+          // Verify they are actually athletes via user_roles
+          const workoutAthleteIds = await getAthleteIds(supabaseAdmin, needReminder);
+
+          const { data: rawWorkoutSubs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
-            .neq("profiles.role", "coach")
+            .select("endpoint, p256dh, auth, user_id, profiles(notification_preferences)")
             .in("user_id", needReminder);
 
-          // Filter out users who opted out of workout reminders
-          const filteredWorkoutSubs = (subs || []).filter((s: any) => {
+          const filteredWorkoutSubs = (rawWorkoutSubs || []).filter((s: any) => {
+            if (!workoutAthleteIds.has(s.user_id)) return false;
             const prefs = s.profiles?.notification_preferences;
             if (prefs && typeof prefs === "object" && prefs.workout_reminders === false) return false;
             return true;
           });
 
           if (filteredWorkoutSubs.length > 0) {
-            // Build personalized payloads grouped by user
             const userWorkoutMap = new Map<string, string>();
             for (const w of todayWorkouts) {
               if (w.athlete_id && needReminder.includes(w.athlete_id)) {
@@ -197,7 +195,6 @@ Deno.serve(async (req) => {
               }
             }
 
-            // Send push to each subscription
             const results = await Promise.allSettled(
               filteredWorkoutSubs.map((sub: PushSub) => {
                 const workoutName = userWorkoutMap.get(sub.user_id) || "Antrenman";
@@ -248,7 +245,7 @@ Deno.serve(async (req) => {
         sent: totalSent,
         failed: totalFailed,
         cleaned: totalCleaned,
-        type: nudgeType || "both",
+        type: nudgeType || "all",
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" } },
     );
@@ -260,6 +257,19 @@ Deno.serve(async (req) => {
     });
   }
 });
+
+/** Helper: get user IDs that have the 'athlete' role in user_roles table */
+async function getAthleteIds(
+  supabaseAdmin: ReturnType<typeof createClient>,
+  userIds: string[],
+): Promise<Set<string>> {
+  const { data } = await supabaseAdmin
+    .from("user_roles")
+    .select("user_id")
+    .in("user_id", userIds)
+    .eq("role", "athlete");
+  return new Set((data || []).map((r: any) => r.user_id));
+}
 
 /** Helper: send push to a batch of subscriptions and clean expired */
 async function sendPushBatch(
