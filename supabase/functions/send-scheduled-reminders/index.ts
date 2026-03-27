@@ -96,7 +96,7 @@ Deno.serve(async (req) => {
           const checkedInIds = new Set((checkins || []).map((c: { user_id: string }) => c.user_id));
           const needNudge = filteredSubs.filter((s: PushSub) => !checkedInIds.has(s.user_id));
 
-          console.log(`[checkin] checkedIn=${checkedInIds.size}, needNudge=${needNudge.length}`);
+          
 
           if (needNudge.length > 0) {
             const payload = JSON.stringify({
