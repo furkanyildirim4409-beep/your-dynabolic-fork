@@ -64,6 +64,7 @@ export const SettingsProvider = ({ children }: { children: ReactNode }) => {
         alerts: true,
         checkin_reminders: prefs.checkinReminders,
         workout_reminders: prefs.workoutReminders,
+        meal_reminders: prefs.mealReminders,
       },
     }).eq("id", user.id);
   }, []);
