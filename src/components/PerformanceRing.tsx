@@ -46,7 +46,7 @@ const PerformanceRing = () => {
 
   if (loading) {
     return (
-      <div className="rounded-2xl bg-white/[0.02] border border-white/[0.05] p-5">
+      <div className="rounded-2xl bg-card border border-border shadow-lg p-6 relative overflow-hidden">
         <div className="flex flex-col items-center justify-center py-8">
           <div className="w-64 h-64 rounded-full bg-muted/10 animate-pulse" />
         </div>
