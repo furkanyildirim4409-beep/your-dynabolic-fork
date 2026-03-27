@@ -95,7 +95,7 @@ export const useWeeklyRecap = () => {
     const prevStartISO = `${prevStartDate}T00:00:00+03:00`;
 
     // Parallel queries — using workout_logs (not assigned_workouts)
-    const [thisWeekWk, prevWeekWk, challengesRes, coinsRes] = await Promise.all([
+    const [thisWeekWk, prevWeekWk, challengesRes, prevChallengesRes, coinsRes, prevCoinsRes] = await Promise.all([
       supabase
         .from("workout_logs")
         .select("details, logged_at")
@@ -117,10 +117,23 @@ export const useWeeklyRecap = () => {
         .eq("status", "completed")
         .gte("created_at", weekStartISO),
       supabase
+        .from("challenges")
+        .select("winner_id, challenger_id, opponent_id")
+        .or(`challenger_id.eq.${user.id},opponent_id.eq.${user.id}`)
+        .eq("status", "completed")
+        .gte("created_at", prevStartISO)
+        .lt("created_at", weekStartISO),
+      supabase
         .from("bio_coin_transactions")
         .select("amount, type")
         .eq("user_id", user.id)
         .gte("created_at", weekStartISO),
+      supabase
+        .from("bio_coin_transactions")
+        .select("amount, type")
+        .eq("user_id", user.id)
+        .gte("created_at", prevStartISO)
+        .lt("created_at", weekStartISO),
     ]);
 
     const thisLogs = thisWeekWk.data || [];
