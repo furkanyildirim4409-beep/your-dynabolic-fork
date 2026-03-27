@@ -133,11 +133,18 @@ Deno.serve(async (req) => {
           // Get push subs for these users
           const { data: subs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+            .select("endpoint, p256dh, auth, user_id, profiles!inner(role, notification_preferences)")
             .eq("profiles.role", "athlete")
             .in("user_id", needReminder);
 
-          if (subs && subs.length > 0) {
+          // Filter out users who opted out of workout reminders
+          const filteredWorkoutSubs = (subs || []).filter((s: any) => {
+            const prefs = s.profiles?.notification_preferences;
+            if (prefs && typeof prefs === "object" && prefs.workout_reminders === false) return false;
+            return true;
+          });
+
+          if (filteredWorkoutSubs.length > 0) {
             // Build personalized payloads grouped by user
             const userWorkoutMap = new Map<string, string>();
             for (const w of todayWorkouts) {
