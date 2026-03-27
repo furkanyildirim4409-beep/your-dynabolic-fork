@@ -34,7 +34,7 @@ const Profil = () => {
   const [avatarUploading, setAvatarUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const { isOffline } = useOfflineMode();
-  const { profile, signOut } = useAuth();
+  const { profile, signOut, user, refreshProfile } = useAuth();
   const navigate = useNavigate();
   const { latest: latestMeasurement } = useBodyMeasurements();
   
