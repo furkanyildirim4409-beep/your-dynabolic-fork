@@ -67,7 +67,8 @@ Deno.serve(async (req) => {
       // Find users who have push subs but NO daily_checkins row for today
       const { data: allSubs } = await supabaseAdmin
         .from("push_subscriptions")
-        .select("endpoint, p256dh, auth, user_id");
+        .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+        .eq("profiles.role", "athlete");
 
       if (allSubs && allSubs.length > 0) {
         const uniqueUserIds = [...new Set(allSubs.map((s: PushSub) => s.user_id))];
@@ -125,7 +126,8 @@ Deno.serve(async (req) => {
           // Get push subs for these users
           const { data: subs } = await supabaseAdmin
             .from("push_subscriptions")
-            .select("endpoint, p256dh, auth, user_id")
+            .select("endpoint, p256dh, auth, user_id, profiles!inner(role)")
+            .eq("profiles.role", "athlete")
             .in("user_id", needReminder);
 
           if (subs && subs.length > 0) {
