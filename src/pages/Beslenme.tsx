@@ -681,7 +681,7 @@ const Beslenme = () => {
     ? { calories: dynamicTargets.calories, protein: dynamicTargets.protein, carbs: dynamicTargets.carbs, fat: dynamicTargets.fat }
     : dbMacros;
   const [chartOpen, setChartOpen] = useState(false);
-  const { totalMl, addWater, removeLatestWater, isLoading: waterLoading } = useWaterTracking();
+  const { isLoading: waterLoading } = useWaterTracking();
   const {
     isLoading: foodsLoading,
     searchResults,
