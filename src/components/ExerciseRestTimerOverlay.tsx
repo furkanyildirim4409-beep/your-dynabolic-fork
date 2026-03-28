@@ -3,7 +3,7 @@ import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-
 import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 import { toast } from "sonner";
 import { useStableTimer } from "@/hooks/useStableTimer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ExerciseRestTimerOverlayProps {
   duration: number;
