@@ -5,6 +5,7 @@ interface UseStableTimerOptions {
   initialSeconds?: number;
   autoStart?: boolean;
   onComplete?: () => void;
+  onBeforeComplete?: () => void;
   tickInterval?: number;
 }
 
