@@ -123,7 +123,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
-  const { data: globalPRMap } = useExerciseHistory();
+  const { data: historyData } = useExerciseHistory();
+  const globalPRMap = historyData?.prMap;
+  const historicalLastWeights = historyData?.lastUsedWeights;
+  const lastUsedWeightsRef = useRef<Record<string, number>>({});
   const [userWeight, setUserWeight] = useState(75);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
