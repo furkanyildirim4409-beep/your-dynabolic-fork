@@ -542,7 +542,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         {/* Workout Summary */}
         <AnimatePresence>
           {showWorkoutSummary && (
-            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-background flex flex-col items-center justify-center p-6">
+            <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="absolute inset-0 z-50 bg-background flex flex-col items-center overflow-y-auto py-12 px-6">
               <motion.div initial={{ scale: 0 }} animate={{ scale: 1 }} transition={{ type: "spring", damping: 15 }} className="w-24 h-24 rounded-full bg-primary neon-glow flex items-center justify-center mb-6">
                 <Trophy className="w-12 h-12 text-primary-foreground" />
               </motion.div>
