@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect, useRef, useCallback } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart, List, Dumbbell } from "lucide-react";
@@ -55,6 +55,24 @@ interface Exercise {
   failureSet?: boolean;
   groupId?: string;
 }
+
+const ExerciseThumb = ({ videoUrl, isDone, isCurrent }: { videoUrl?: string; isDone: boolean; isCurrent: boolean }) => {
+  const [imgError, setImgError] = useState(false);
+  const showImg = videoUrl && !imgError;
+  return (
+    <div className={`w-14 h-14 rounded-lg overflow-hidden border flex-shrink-0 flex items-center justify-center ${
+      showImg ? 'bg-black/40 border-border/50' : isDone ? 'bg-primary/20 border-primary/30' : isCurrent ? 'bg-primary/30 border-primary/50' : 'bg-secondary border-border/50'
+    }`}>
+      {showImg ? (
+        <img src={videoUrl} loading="lazy" decoding="async" crossOrigin="anonymous" onError={() => setImgError(true)} className="w-full h-full object-contain" />
+      ) : isDone ? (
+        <Check className="w-5 h-5 text-primary" />
+      ) : (
+        <Dumbbell className={`w-5 h-5 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />
+      )}
+    </div>
+  );
+};
 
 const getRPEColor = (rpe: number): { bg: string; text: string; border: string } => {
   if (rpe <= 5) return { bg: "bg-green-500/20", text: "text-green-400", border: "border-green-500/50" };
@@ -924,11 +942,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                     isCurrent ? 'bg-primary/15 border-primary/40' : isDone ? 'bg-secondary/50 border-border opacity-70' : 'bg-secondary/30 border-border'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    isDone ? 'bg-primary/20' : isCurrent ? 'bg-primary/30 border border-primary/50' : 'bg-secondary'
-                  }`}>
-                    {isDone ? <Check className="w-5 h-5 text-primary" /> : <Dumbbell className={`w-5 h-5 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />}
-                  </div>
+                  <ExerciseThumb videoUrl={ex.videoUrl} isDone={isDone} isCurrent={isCurrent} />
                   <div className="flex-1 min-w-0">
                     <p className={`font-display text-sm truncate ${isCurrent ? 'text-primary' : isDone ? 'text-foreground/60 line-through' : 'text-foreground'}`}>{ex.name}</p>
                     <p className="text-muted-foreground text-xs">{ex.sets} set × {ex.targetReps} tekrar{isDone ? ` • ${completedSets} set tamamlandı` : ''}</p>
