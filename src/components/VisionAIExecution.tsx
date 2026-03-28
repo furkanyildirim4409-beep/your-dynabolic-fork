@@ -470,7 +470,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(60); resumeTimer(); setAchievedFailure(false);
+    const targetEx = exercises[index];
+    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(targetEx ? getSmartWeight(targetEx.name) : 0); resumeTimer(); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
