@@ -123,6 +123,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
+  const [setsVersion, setSetsVersion] = useState(0);
   const { data: historyData } = useExerciseHistory();
   const globalPRMap = historyData?.prMap;
   const historicalLastWeights = historyData?.lastUsedWeights;
@@ -160,13 +161,16 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
-  // Centralized weight sync: fires whenever exercise index changes
-  useEffect(() => {
-    if (exercises.length > 0 && exercises[currentExerciseIndex]) {
-      const w = getSmartWeight(exercises[currentExerciseIndex].name);
-      setWeight(w);
-    }
-  }, [currentExerciseIndex, exercises, getSmartWeight]);
+  // Imperative rehydration: called at every navigation point (no useEffect to avoid loops)
+  const rehydrateExerciseState = useCallback((index: number) => {
+    const ex = exercises[index];
+    if (!ex) return;
+    setWeight(getSmartWeight(ex.name));
+    const pastSets = completedSetsRef.current[index]?.length ?? 0;
+    setCurrentSet(pastSets < ex.sets ? pastSets + 1 : ex.sets);
+    setReps(0);
+    setAchievedFailure(false);
+  }, [exercises, getSmartWeight]);
 
   
   const exercise = exercises[currentExerciseIndex];
@@ -252,6 +256,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     // Store weight in session memory for smart recall
     lastUsedWeightsRef.current[exercise.name] = weight;
     setAchievedFailure(false);
+    setSetsVersion(v => v + 1);
 
     // 🎉 New PR detection — confetti + toast
     const pr = globalPRMap?.get(exercise.name);
@@ -442,23 +447,29 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     resumeTimer();
   };
   const handleExerciseRestComplete = () => {
-    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer();
+    let nextIdx: number;
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
-      setCurrentExerciseIndex(lastGroupIdx + 1);
+      nextIdx = lastGroupIdx + 1;
     } else {
-      setCurrentExerciseIndex(p => p + 1);
+      nextIdx = currentExerciseIndex + 1;
     }
+    setCurrentExerciseIndex(nextIdx);
+    rehydrateExerciseState(nextIdx);
     resumeTimer();
   };
   const handleExerciseRestSkip = () => {
-    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer();
+    let nextIdx: number;
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
-      setCurrentExerciseIndex(lastGroupIdx + 1);
+      nextIdx = lastGroupIdx + 1;
     } else {
-      setCurrentExerciseIndex(p => p + 1);
+      nextIdx = currentExerciseIndex + 1;
     }
+    setCurrentExerciseIndex(nextIdx);
+    rehydrateExerciseState(nextIdx);
     resumeTimer();
   };
 
@@ -472,8 +483,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    const targetEx = exercises[index];
-    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); resumeTimer(); setAchievedFailure(false);
+    setCurrentExerciseIndex(index);
+    rehydrateExerciseState(index);
+    resetTimer();
+    resumeTimer();
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
@@ -671,7 +684,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             const isFirstInGroup = isGrouped && (index === 0 || exercises[index - 1].groupId !== ex.groupId);
             const isLastInGroup = isGrouped && (index === exercises.length - 1 || exercises[index + 1].groupId !== ex.groupId);
             const isCurrent = index === currentExerciseIndex;
-            const isDone = index < currentExerciseIndex;
+            const setsCompletedForDot = completedSetsRef.current[index]?.length ?? 0;
+            const isDone = setsCompletedForDot >= ex.sets;
 
             return (
               <div key={index} className="flex items-center">
@@ -819,6 +833,19 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <p className="text-amber-100 text-[11px] leading-snug line-clamp-2">{exercise.notes}</p>
               </div>
             )}
+
+            {/* Completed Sets Log */}
+            {(completedSetsRef.current[currentExerciseIndex]?.length ?? 0) > 0 && (
+              <div className="space-y-1" key={setsVersion}>
+                {completedSetsRef.current[currentExerciseIndex].map((s, i) => (
+                  <div key={i} className="flex items-center justify-between px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-xs">
+                    <span className="text-muted-foreground">Set {i + 1}</span>
+                    <span className="text-foreground font-display">{s.weight} kg × {s.reps}</span>
+                    {s.isFailure && <span className="text-red-400">🔥</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Controls */}
@@ -964,9 +991,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           </SheetHeader>
           <div className="overflow-y-auto px-4 py-3 space-y-2">
             {exercises.map((ex, index) => {
-              const isDone = index < currentExerciseIndex;
+              const setsCompletedForList = completedSetsRef.current[index]?.length ?? 0;
+              const isDone = setsCompletedForList >= ex.sets;
               const isCurrent = index === currentExerciseIndex;
-              const completedSets = completedSetsRef.current[index]?.length ?? 0;
+              const completedSets = setsCompletedForList;
               return (
                 <motion.button
                   key={ex.id}
