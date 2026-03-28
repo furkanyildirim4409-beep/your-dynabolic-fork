@@ -256,6 +256,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       reps: reps || exercise.targetReps,
       isFailure: achievedFailure || false,
     });
+    setSetsVersion(v => v + 1);
     // Store weight in session memory for smart recall
     lastUsedWeightsRef.current[exercise.name] = weight;
     setAchievedFailure(false);
