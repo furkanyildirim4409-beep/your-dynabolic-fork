@@ -2,6 +2,7 @@ import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { startOfWeek, endOfWeek } from "date-fns";
+import { calculateWorkoutCalories, countFailureSets } from "@/lib/workout";
 
 interface WeeklyWorkoutStats {
   completedCount: number;
