@@ -556,8 +556,26 @@ const Antrenman = () => {
                   onClick={() => setShowHistory(false)}
                   className="p-2 glass-card"
                 >
-                  <X className="w-5 h-5 text-foreground" />
+                 <X className="w-5 h-5 text-foreground" />
                 </motion.button>
+              </div>
+
+              {/* Date Filter */}
+              <div className="mb-4">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-full glass-card border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Zamanlar</SelectItem>
+                    <SelectItem value="this-month">Bu Ay</SelectItem>
+                    <SelectItem value="last-month">Geçen Ay</SelectItem>
+                    <SelectItem value="this-year">Bu Yıl</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* History Stats Summary */}
