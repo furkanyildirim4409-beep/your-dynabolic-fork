@@ -13,14 +13,20 @@ export interface ExerciseGlobalPR {
  * across ALL workout logs (not filtered by workout name).
  * Returns a Map keyed by exercise name.
  */
+export interface ExerciseHistoryResult {
+  prMap: Map<string, ExerciseGlobalPR>;
+  lastUsedWeights: Map<string, number>;
+}
+
 export const useExerciseHistory = () => {
   const { user } = useAuth();
 
   return useQuery({
     queryKey: ["exercise-global-pr", user?.id],
-    queryFn: async (): Promise<Map<string, ExerciseGlobalPR>> => {
-      const map = new Map<string, ExerciseGlobalPR>();
-      if (!user?.id) return map;
+    queryFn: async (): Promise<ExerciseHistoryResult> => {
+      const prMap = new Map<string, ExerciseGlobalPR>();
+      const lastUsedWeights = new Map<string, number>();
+      if (!user?.id) return { prMap, lastUsedWeights };
 
       const { data, error } = await supabase
         .from("workout_logs")
@@ -29,7 +35,7 @@ export const useExerciseHistory = () => {
         .eq("completed", true)
         .order("logged_at", { ascending: false });
 
-      if (error || !data) return map;
+      if (error || !data) return { prMap, lastUsedWeights };
 
       for (const log of data) {
         const details = typeof log.details === "string" ? JSON.parse(log.details) : log.details;
@@ -45,9 +51,15 @@ export const useExerciseHistory = () => {
             const r = Number(s.reps) || 0;
             if (w <= 0) continue;
 
-            const existing = map.get(name);
+            // Track most recent weight (first encounter = most recent due to desc sort)
+            if (!lastUsedWeights.has(name)) {
+              lastUsedWeights.set(name, w);
+            }
+
+            // Track PR
+            const existing = prMap.get(name);
             if (!existing || w > existing.maxWeight || (w === existing.maxWeight && r > existing.repsAtMax)) {
-              map.set(name, {
+              prMap.set(name, {
                 maxWeight: w,
                 repsAtMax: r,
                 date: log.logged_at ?? "",
@@ -57,7 +69,7 @@ export const useExerciseHistory = () => {
         }
       }
 
-      return map;
+      return { prMap, lastUsedWeights };
     },
     enabled: !!user?.id,
     staleTime: 5 * 60 * 1000,

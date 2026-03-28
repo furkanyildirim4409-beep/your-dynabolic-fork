@@ -25,7 +25,8 @@ const Antrenman = () => {
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
-  const { data: globalPRMap } = useExerciseHistory();
+  const { data: historyData } = useExerciseHistory();
+  const globalPRMap = historyData?.prMap;
 
   // Today's date string for comparison
   const todayStr = format(new Date(), "yyyy-MM-dd");

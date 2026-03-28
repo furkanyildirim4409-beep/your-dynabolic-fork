@@ -123,7 +123,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
-  const { data: globalPRMap } = useExerciseHistory();
+  const { data: historyData } = useExerciseHistory();
+  const globalPRMap = historyData?.prMap;
+  const historicalLastWeights = historyData?.lastUsedWeights;
+  const lastUsedWeightsRef = useRef<Record<string, number>>({});
   const [userWeight, setUserWeight] = useState(75);
 
   // Track completed sets per exercise: { [exerciseIndex]: [{weight, reps, isFailure}] }
@@ -136,6 +139,26 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     supabase.from("profiles").select("current_weight").eq("id", user.id).single()
       .then(({ data }) => { if (data?.current_weight) setUserWeight(Number(data.current_weight)); });
   }, [user?.id]);
+
+  // Smart weight resolution: session ref > historical DB > 0
+  const getSmartWeight = useCallback((name: string): number => {
+    return lastUsedWeightsRef.current[name] ?? historicalLastWeights?.get(name) ?? 0;
+  }, [historicalLastWeights]);
+
+  // Pre-populate from historical data on mount & set initial weight
+  useEffect(() => {
+    if (!historicalLastWeights || historicalLastWeights.size === 0) return;
+    historicalLastWeights.forEach((w, name) => {
+      if (!(name in lastUsedWeightsRef.current)) {
+        lastUsedWeightsRef.current[name] = w;
+      }
+    });
+    // Set initial weight for first exercise
+    if (exercises.length > 0) {
+      const initialWeight = getSmartWeight(exercises[0].name);
+      if (initialWeight > 0) setWeight(initialWeight);
+    }
+  }, [historicalLastWeights, exercises, getSmartWeight]);
 
   
   const exercise = exercises[currentExerciseIndex];
@@ -218,6 +241,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       reps: reps || exercise.targetReps,
       isFailure: achievedFailure || false,
     });
+    // Store weight in session memory for smart recall
+    lastUsedWeightsRef.current[exercise.name] = weight;
     setAchievedFailure(false);
 
     // 🎉 New PR detection — confetti + toast
@@ -409,7 +434,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     resumeTimer();
   };
   const handleExerciseRestComplete = () => {
-    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
+    const nextIdx = exercise.groupId ? getGroupBounds(exercise.groupId).lastGroupIdx + 1 : currentExerciseIndex + 1;
+    const nextEx = exercises[nextIdx];
+    setWeight(nextEx ? getSmartWeight(nextEx.name) : 0);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -419,7 +447,10 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     resumeTimer();
   };
   const handleExerciseRestSkip = () => {
-    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setWeight(60); setCurrentSet(1); setAchievedFailure(false);
+    setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
+    const nextIdx = exercise.groupId ? getGroupBounds(exercise.groupId).lastGroupIdx + 1 : currentExerciseIndex + 1;
+    const nextEx = exercises[nextIdx];
+    setWeight(nextEx ? getSmartWeight(nextEx.name) : 0);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -439,7 +470,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
 
   const goToExercise = (index: number) => {
-    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(60); resumeTimer(); setAchievedFailure(false);
+    const targetEx = exercises[index];
+    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(targetEx ? getSmartWeight(targetEx.name) : 0); resumeTimer(); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
