@@ -607,6 +607,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <span className="text-[10px] text-red-400/70">bpm</span>
               <Info className="w-3 h-3 text-red-400/50 ml-0.5" />
             </motion.button>
+            <button onClick={() => setShowExerciseList(true)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><List className="w-4 h-4 text-muted-foreground" /></button>
             <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><X className="w-4 h-4 text-muted-foreground" /></button>
           </div>
         </div>
