@@ -1,9 +1,10 @@
 import { motion } from "framer-motion";
 import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-react";
 import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
+import { playCompletionBeep } from "@/lib/audio";
 import { toast } from "sonner";
 import { useStableTimer } from "@/hooks/useStableTimer";
-import { useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState } from "react";
 
 interface ExerciseRestTimerOverlayProps {
   duration: number;
