@@ -994,7 +994,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               const setsCompletedForList = completedSetsRef.current[index]?.length ?? 0;
               const isDone = setsCompletedForList >= ex.sets;
               const isCurrent = index === currentExerciseIndex;
-              const completedSets = completedSetsRef.current[index]?.length ?? 0;
+              const completedSets = setsCompletedForList;
               return (
                 <motion.button
                   key={ex.id}
