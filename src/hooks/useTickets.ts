@@ -16,7 +16,7 @@ export interface Ticket {
 }
 
 export function useTickets() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const queryClient = useQueryClient();
 
   const ticketsQuery = useQuery({
