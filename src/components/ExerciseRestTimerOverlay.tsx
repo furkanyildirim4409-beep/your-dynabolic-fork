@@ -15,6 +15,7 @@ interface ExerciseRestTimerOverlayProps {
   nextExerciseReps: number;
   currentExerciseNumber: number;
   totalExercises: number;
+  nextExerciseVideoUrl?: string;
 }
 
 const ExerciseRestTimerOverlay = ({
