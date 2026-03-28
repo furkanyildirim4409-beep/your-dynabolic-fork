@@ -161,11 +161,17 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
-  // Centralized weight sync: fires whenever exercise index changes
+  // Centralized rehydration: fires whenever exercise index changes
   useEffect(() => {
     if (exercises.length > 0 && exercises[currentExerciseIndex]) {
-      const w = getSmartWeight(exercises[currentExerciseIndex].name);
-      setWeight(w);
+      const ex = exercises[currentExerciseIndex];
+      setWeight(getSmartWeight(ex.name));
+      // Rehydrate set number from completed history
+      const pastSets = completedSetsRef.current[currentExerciseIndex]?.length ?? 0;
+      setCurrentSet(pastSets < ex.sets ? pastSets + 1 : ex.sets);
+      // Clean input state for the new set
+      setReps(0);
+      setAchievedFailure(false);
     }
   }, [currentExerciseIndex, exercises, getSmartWeight]);
 
