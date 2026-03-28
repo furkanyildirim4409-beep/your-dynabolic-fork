@@ -123,6 +123,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
   const [isSaving, setIsSaving] = useState(false);
   const [achievedFailure, setAchievedFailure] = useState(false);
+  const [setsVersion, setSetsVersion] = useState(0);
   const { data: historyData } = useExerciseHistory();
   const globalPRMap = historyData?.prMap;
   const historicalLastWeights = historyData?.lastUsedWeights;
