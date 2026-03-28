@@ -1,55 +1,64 @@
 
 
-## Background-Proof Timer & Audio Beep (Phase 3 - Epic 7 - Part 4/5)
+## Data Integrity (Kcal) & History Filters (Phase 3 - Epic 7 - Part 5/5)
 
-### Analysis
+### Problem 1: Kcal Mismatch
+The workout summary in `VisionAIExecution.tsx` (line 550-558) calculates calories using only `baseBurn + failCount * 15` — it **omits the mechanical bonus** (tonnage component). Meanwhile, `useWorkoutHistory.ts` (line 83-85) includes all three pillars: `baseBurn + failureSets * 15 + mechanicalBonus`. Since `workout_logs` has no `calories` column, both sides recalculate independently and produce different numbers.
 
-The `useStableTimer` hook **already uses timestamp-based delta time** and has a `visibilitychange` listener that recalculates on return from background. The timer is already background-proof for accuracy. The actual gaps are:
+**Solution**: Add a `calories_burned` column to `workout_logs` and save the calculated value at workout completion time. Both the summary and history then use the same persisted value.
 
-1. **No completion beep** — when timer hits 0, there's no audible alert
-2. **RestTimerOverlay** has a `soundEnabled` toggle but no sound implementation
-3. **ExerciseRestTimerOverlay** plays countdown ticks (3-2-1) but no final completion beep
+### Problem 2: No Date Filter
+The workout history list renders all entries without filtering.
+
+---
 
 ### Changes
 
-**File: `src/hooks/useStableTimer.ts`**
-
-Add an `onBeforeComplete` callback option. When the countdown reaches 0, fire `onBeforeComplete` (for the beep) before `onComplete` (which dismisses the overlay). This ensures the beep plays even if the timer expired while backgrounded — the `visibilitychange` → `update()` path will trigger it on unlock.
-
-**File: `src/lib/haptics.ts` (or new `src/lib/audio.ts`)**
-
-Add a `playCompletionBeep()` utility using Web Audio API:
-- 800Hz sine wave, 0.4s duration, gain fade-out
-- Wrapped in try/catch for environments without AudioContext
-
-**File: `src/components/ExerciseRestTimerOverlay.tsx`**
-
-- Pass `onBeforeComplete` to `useStableTimer` that calls `playCompletionBeep()` + `hapticHeavy()`
-- Keep existing 3-2-1 countdown sounds unchanged
-
-**File: `src/components/RestTimerOverlay.tsx`**
-
-- Pass `onBeforeComplete` that calls `playCompletionBeep()` only when `soundEnabled` is true, plus `hapticHeavy()`
-- Wire the existing `soundEnabled` toggle to actually control sound
-
-### Technical Detail
-
-```text
-Timer fires in background?
-  ├─ setInterval throttled by OS → no tick
-  ├─ User unlocks phone → visibilitychange fires
-  ├─ update() recalculates from timestamp → val = 0
-  ├─ onBeforeComplete() → playCompletionBeep()
-  └─ onComplete() → dismiss overlay
+**1. Migration: Add `calories_burned` column to `workout_logs`**
+```sql
+ALTER TABLE public.workout_logs ADD COLUMN calories_burned integer;
 ```
 
-The `useStableTimer` change: in the `update` function, before calling `onCompleteRef.current?.()`, call `onBeforeCompleteRef.current?.()`.
+**2. `src/lib/workout.ts` (NEW) — Shared calorie calculator**
+```typescript
+export const calculateWorkoutCalories = (
+  durationMinutes: number,
+  weightKg: number,
+  tonnageKg: number,
+  failureSets: number
+): number => {
+  const baseBurn = (durationMinutes / 60) * weightKg * 5.0;
+  const mechanicalBonus = (tonnageKg / 1000) * 20;
+  return Math.round(baseBurn + failureSets * 15 + mechanicalBonus);
+};
+```
+
+**3. `src/components/VisionAIExecution.tsx`**
+- Import `calculateWorkoutCalories`
+- In the workout summary display (line 550): use the shared function with tonnage included
+- In `handleCompleteWorkout` (line 401): save `calories_burned` to the DB insert
+
+**4. `src/hooks/useWorkoutHistory.ts`**
+- Import `calculateWorkoutCalories`
+- Prefer `log.calories_burned` from DB when available; fall back to recalculation for legacy entries
+- Replace inline calorie math with the shared function
+
+**5. `src/hooks/useWeeklyWorkoutStats.ts`**
+- Import and use `calculateWorkoutCalories` for consistency
+
+**6. `src/pages/Antrenman.tsx` — Date Filter**
+- Add `dateFilter` state: `"all" | "this-month" | "last-month" | "this-year"`
+- Add a `Select` dropdown between the history header and the stats summary
+- Filter `workoutHistory` array by `logged_at` before rendering
+- Options: Tüm Zamanlar, Bu Ay, Geçen Ay, Bu Yıl
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/lib/audio.ts` | New — `playCompletionBeep()` Web Audio utility |
-| `src/hooks/useStableTimer.ts` | Add `onBeforeComplete` callback, fire before `onComplete` |
-| `src/components/ExerciseRestTimerOverlay.tsx` | Wire completion beep via `onBeforeComplete` |
-| `src/components/RestTimerOverlay.tsx` | Wire completion beep with `soundEnabled` gate |
+| Migration | Add `calories_burned` column to `workout_logs` |
+| `src/lib/workout.ts` | NEW — shared `calculateWorkoutCalories` |
+| `src/components/VisionAIExecution.tsx` | Use shared calc, save to DB |
+| `src/hooks/useWorkoutHistory.ts` | Read DB value, fallback to shared calc |
+| `src/hooks/useWeeklyWorkoutStats.ts` | Use shared calc |
+| `src/pages/Antrenman.tsx` | Add date filter Select to history overlay |
 
