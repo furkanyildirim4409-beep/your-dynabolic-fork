@@ -39,6 +39,7 @@ import NotFound from "./pages/NotFound";
 import BiometricLogin from "./pages/BiometricLogin";
 import CoachAthletes from "./pages/CoachAthletes";
 import Onboarding from "./pages/Onboarding";
+import Destek from "./pages/Destek";
 
 const queryClient = new QueryClient();
 
@@ -92,6 +93,7 @@ const App = () => {
                             <Route path="/achievements" element={<P><Achievements /></P>} />
                             <Route path="/leaderboard" element={<P><Leaderboard /></P>} />
                             <Route path="/sporcularim" element={<P><CoachAthletes /></P>} />
+                            <Route path="/destek" element={<P><AppPage><Destek /></AppPage></P>} />
 
                             <Route path="/index" element={<Navigate to="/" replace />} />
                             <Route path="*" element={<NotFound />} />

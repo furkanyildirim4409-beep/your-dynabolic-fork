@@ -1687,6 +1687,45 @@ export type Database = {
           },
         ]
       }
+      tickets: {
+        Row: {
+          coach_id: string
+          coach_reply: string | null
+          created_at: string
+          id: string
+          message: string
+          priority: string
+          replied_at: string | null
+          status: string
+          subject: string
+          user_id: string
+        }
+        Insert: {
+          coach_id: string
+          coach_reply?: string | null
+          created_at?: string
+          id?: string
+          message: string
+          priority?: string
+          replied_at?: string | null
+          status?: string
+          subject: string
+          user_id: string
+        }
+        Update: {
+          coach_id?: string
+          coach_reply?: string | null
+          created_at?: string
+          id?: string
+          message?: string
+          priority?: string
+          replied_at?: string | null
+          status?: string
+          subject?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_roles: {
         Row: {
           id: string

@@ -295,7 +295,7 @@ const SettingsPanel = ({ isOpen, onClose }: SettingsPanelProps) => {
                   </div>
                   <ChevronRight className="w-4 h-4 text-muted-foreground" />
                 </button>
-                <button onClick={() => toast({ title: "Yardım & Destek (Demo)" })} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
+                <button onClick={() => { onClose(); window.location.href = "/destek"; }} className="w-full flex items-center justify-between p-4 hover:bg-white/5 transition-colors">
                   <div className="flex items-center gap-3">
                     <div className="w-9 h-9 rounded-lg bg-secondary flex items-center justify-center"><HelpCircle className="w-4 h-4 text-muted-foreground" /></div>
                     <div className="text-left"><p className="text-foreground text-sm font-medium">Yardım & Destek</p><p className="text-muted-foreground text-xs">SSS ve iletişim</p></div>
