@@ -664,7 +664,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           </AnimatePresence>
 
           <div className="absolute inset-0 flex items-center justify-center">
-            {!visionAIActive ? (
               <div className="relative w-full h-full">
                 {exercise?.videoUrl ? (
                   <motion.div key={exercise.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="absolute inset-0">
@@ -673,7 +672,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 ) : (
                   <motion.div className="absolute inset-0 flex items-center justify-center bg-secondary/20" animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }}>
                     <div className="text-center">
-                      <motion.div className="w-24 h-24 mx-auto mb-3 rounded-full bg-secondary/50 border border-white/10 flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                      <motion.div className="w-24 h-24 mx-auto mb-3 rounded-full bg-secondary/50 border border-border flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
                         <Play className="w-10 h-10 text-primary ml-1" />
                       </motion.div>
                       <p className="font-display text-foreground text-sm mb-1">{exercise?.name}</p>
@@ -682,22 +681,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   </motion.div>
                 )}
               </div>
-            ) : (
-              <>
-                <div className="absolute inset-0 grid-pattern opacity-20" />
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid meet">
-                  <g stroke="hsl(var(--primary))" strokeWidth="2" fill="none" className="drop-shadow-[0_0_10px_hsl(var(--primary))]">
-                    <circle cx="100" cy="40" r="15" /><line x1="100" y1="55" x2="100" y2="130" /><line x1="60" y1="70" x2="140" y2="70" />
-                    <line x1="60" y1="70" x2="45" y2="110" /><line x1="45" y1="110" x2="35" y2="150" /><line x1="140" y1="70" x2="155" y2="110" />
-                    <line x1="155" y1="110" x2="165" y2="150" /><line x1="75" y1="130" x2="125" y2="130" /><line x1="75" y1="130" x2="65" y2="190" />
-                    <line x1="65" y1="190" x2="60" y2="260" /><line x1="125" y1="130" x2="135" y2="190" /><line x1="135" y1="190" x2="140" y2="260" />
-                    {[[60,70],[140,70],[45,110],[155,110],[75,130],[125,130],[65,190],[135,190]].map(([cx,cy],i) => (
-                      <circle key={i} cx={cx} cy={cy} r="4" fill="hsl(var(--primary))" />
-                    ))}
-                  </g>
-                </svg>
-              </>
-            )}
           </div>
 
           {/* Vision AI Stats */}
