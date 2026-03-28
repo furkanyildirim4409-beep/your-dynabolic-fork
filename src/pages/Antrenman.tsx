@@ -1,6 +1,7 @@
 import { useState, useMemo } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee, Trophy } from "lucide-react";
+import { Dumbbell, Calendar, TrendingUp, Clock, Target, History, X, CheckCircle2, Timer, Flame, ChevronDown, ChevronUp, AlertCircle, List, CalendarDays, Moon, Coffee, Trophy, Filter } from "lucide-react";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { eachDayOfInterval, startOfWeek, endOfWeek, format as fnsFormat, isSameDay, isWithinInterval, parseISO } from "date-fns";
 import { tr } from "date-fns/locale";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
@@ -23,6 +24,7 @@ const Antrenman = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
   const { data: historyData } = useExerciseHistory();
@@ -154,9 +156,46 @@ const Antrenman = () => {
     { label: "Yakılan Kalori", value: weeklyStatsData?.totalCalories ?? "0", icon: TrendingUp },
   ];
 
-  // Calculate history stats
-  const totalBioCoins = workoutHistory.reduce((acc, w) => acc + w.bioCoins, 0);
-  const totalWorkouts = workoutHistory.length;
+  // Filter workout history by date
+  const filteredHistory = useMemo(() => {
+    if (dateFilter === "all") return workoutHistory;
+    const now = new Date();
+    return workoutHistory.filter((w) => {
+      // Parse the logged_at from the raw date string embedded in `date` field
+      // workoutHistory entries have dateShort like "15 Oca" — use the full `date` field
+      // Actually we need to filter based on the entry's date. Let's parse from the id/date.
+      // The entries have `date` like "15 Ocak 2025" in Turkish locale.
+      // Safer: re-parse from the original data. Since we don't have raw logged_at, approximate from date field.
+      const parts = w.date.split(" ");
+      if (parts.length < 3) return true;
+      const day = parseInt(parts[0]);
+      const year = parseInt(parts[2]);
+      const monthMap: Record<string, number> = {
+        "Ocak": 0, "Şubat": 1, "Mart": 2, "Nisan": 3, "Mayıs": 4, "Haziran": 5,
+        "Temmuz": 6, "Ağustos": 7, "Eylül": 8, "Ekim": 9, "Kasım": 10, "Aralık": 11,
+      };
+      const month = monthMap[parts[1]];
+      if (month === undefined || isNaN(day) || isNaN(year)) return true;
+      const entryDate = new Date(year, month, day);
+
+      switch (dateFilter) {
+        case "this-month":
+          return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
+        case "last-month": {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          return entryDate.getMonth() === lastMonth.getMonth() && entryDate.getFullYear() === lastMonth.getFullYear();
+        }
+        case "this-year":
+          return entryDate.getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+  }, [workoutHistory, dateFilter]);
+
+  // Calculate history stats from filtered list
+  const totalBioCoins = filteredHistory.reduce((acc, w) => acc + w.bioCoins, 0);
+  const totalWorkouts = filteredHistory.length;
 
   const handleWorkoutClick = (workout: WorkoutHistoryEntry) => {
     setSelectedWorkout(workout);
@@ -517,8 +556,26 @@ const Antrenman = () => {
                   onClick={() => setShowHistory(false)}
                   className="p-2 glass-card"
                 >
-                  <X className="w-5 h-5 text-foreground" />
+                 <X className="w-5 h-5 text-foreground" />
                 </motion.button>
+              </div>
+
+              {/* Date Filter */}
+              <div className="mb-4">
+                <Select value={dateFilter} onValueChange={setDateFilter}>
+                  <SelectTrigger className="w-full glass-card border-white/10">
+                    <div className="flex items-center gap-2">
+                      <Filter className="w-4 h-4 text-muted-foreground" />
+                      <SelectValue />
+                    </div>
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="all">Tüm Zamanlar</SelectItem>
+                    <SelectItem value="this-month">Bu Ay</SelectItem>
+                    <SelectItem value="last-month">Geçen Ay</SelectItem>
+                    <SelectItem value="this-year">Bu Yıl</SelectItem>
+                  </SelectContent>
+                </Select>
               </div>
 
               {/* History Stats Summary */}
@@ -554,10 +611,10 @@ const Antrenman = () => {
 
               {/* History List */}
               <div className="space-y-3 pb-8">
-                {workoutHistory.map((workout, index) => {
+                {filteredHistory.map((workout, index) => {
                   // Volume comparison: find previous session with the same workout_name
                   let volumeBadge: React.ReactNode = null;
-                  const prevSameWorkout = workoutHistory
+                  const prevSameWorkout = filteredHistory
                     .slice(index + 1)
                     .find((w) => w.name === workout.name);
 

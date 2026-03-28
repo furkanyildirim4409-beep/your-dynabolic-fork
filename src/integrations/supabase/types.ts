@@ -1790,6 +1790,7 @@ export type Database = {
         Row: {
           assigned_workout_id: string | null
           bio_coins_earned: number | null
+          calories_burned: number | null
           completed: boolean | null
           details: Json | null
           duration_minutes: number | null
@@ -1803,6 +1804,7 @@ export type Database = {
         Insert: {
           assigned_workout_id?: string | null
           bio_coins_earned?: number | null
+          calories_burned?: number | null
           completed?: boolean | null
           details?: Json | null
           duration_minutes?: number | null
@@ -1816,6 +1818,7 @@ export type Database = {
         Update: {
           assigned_workout_id?: string | null
           bio_coins_earned?: number | null
+          calories_burned?: number | null
           completed?: boolean | null
           details?: Json | null
           duration_minutes?: number | null

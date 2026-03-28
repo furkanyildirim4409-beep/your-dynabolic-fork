@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { calculateWorkoutCalories, countFailureSets } from "@/lib/workout";
 
 export interface WorkoutHistoryEntry {
   id: string;
@@ -73,16 +74,10 @@ export const useWorkoutHistory = () => {
           }));
         }
 
-        // Calorie calculation (MET-based + EPOC)
-        let failureSets = 0;
-        for (const d of details) {
-          for (const s of d.sets) {
-            if (s.isFailure || (s as any).rir === 0) failureSets++;
-          }
-        }
-        const baseBurn = (durationMin / 60) * weightKg * 5.0;
-        const mechanicalBonus = (Number(tonnageKg) / 1000) * 20;
-        const calories = Math.round(baseBurn + failureSets * 15 + mechanicalBonus);
+        // Prefer DB-persisted calories; fallback to shared calculator for legacy entries
+        const calories = (log as any).calories_burned
+          ? Number((log as any).calories_burned)
+          : calculateWorkoutCalories(durationMin, weightKg, Number(tonnageKg), countFailureSets(details));
 
         return {
           id: log.id,

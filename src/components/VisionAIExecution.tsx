@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useExerciseHistory } from "@/hooks/useExerciseHistory";
+import { calculateWorkoutCalories } from "@/lib/workout";
 
 interface ProgramExercise {
   id: string;
@@ -398,6 +399,13 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     });
 
     try {
+      // Calculate calories using the unified 3-pillar algorithm
+      let failCount = 0;
+      Object.values(completedSetsRef.current).forEach(sets => {
+        sets.forEach(s => { if (s.isFailure) failCount++; });
+      });
+      const caloriesBurned = calculateWorkoutCalories(durationMinutes, userWeight, tonnage, failCount);
+
       const { error } = await supabase.from("workout_logs").insert({
         user_id: user.id,
         workout_name: workoutTitle,
@@ -408,6 +416,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         completed: true,
         details,
         assigned_workout_id: assignmentId ?? null,
+        calories_burned: caloriesBurned,
       } as any);
 
       if (error) throw error;
@@ -549,12 +558,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   <span className="font-display text-lg text-orange-400">
                     🔥 {(() => {
                       const durationMin = Math.round((Date.now() - workoutStartTime.current) / 60000);
-                      const baseBurn = (durationMin / 60) * userWeight * 5.0;
+                      const tonnage = calculateTotalTonnage();
                       let failCount = 0;
                       Object.values(completedSetsRef.current).forEach(sets => {
                         sets.forEach(s => { if (s.isFailure) failCount++; });
                       });
-                      return Math.round(baseBurn + failCount * 15);
+                      return calculateWorkoutCalories(durationMin, userWeight, tonnage, failCount);
                     })()} kcal
                   </span>
                 </div>
