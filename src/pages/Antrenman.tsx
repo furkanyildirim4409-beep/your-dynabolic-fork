@@ -611,10 +611,10 @@ const Antrenman = () => {
 
               {/* History List */}
               <div className="space-y-3 pb-8">
-                {workoutHistory.map((workout, index) => {
+                {filteredHistory.map((workout, index) => {
                   // Volume comparison: find previous session with the same workout_name
                   let volumeBadge: React.ReactNode = null;
-                  const prevSameWorkout = workoutHistory
+                  const prevSameWorkout = filteredHistory
                     .slice(index + 1)
                     .find((w) => w.name === workout.name);
 
