@@ -161,13 +161,16 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
-  // Centralized weight sync: fires whenever exercise index changes
-  useEffect(() => {
-    if (exercises.length > 0 && exercises[currentExerciseIndex]) {
-      const w = getSmartWeight(exercises[currentExerciseIndex].name);
-      setWeight(w);
-    }
-  }, [currentExerciseIndex, exercises, getSmartWeight]);
+  // Imperative rehydration: called at every navigation point (no useEffect to avoid loops)
+  const rehydrateExerciseState = useCallback((index: number) => {
+    const ex = exercises[index];
+    if (!ex) return;
+    setWeight(getSmartWeight(ex.name));
+    const pastSets = completedSetsRef.current[index]?.length ?? 0;
+    setCurrentSet(pastSets < ex.sets ? pastSets + 1 : ex.sets);
+    setReps(0);
+    setAchievedFailure(false);
+  }, [exercises, getSmartWeight]);
 
   
   const exercise = exercises[currentExerciseIndex];
