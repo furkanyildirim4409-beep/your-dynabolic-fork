@@ -140,6 +140,26 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       .then(({ data }) => { if (data?.current_weight) setUserWeight(Number(data.current_weight)); });
   }, [user?.id]);
 
+  // Smart weight resolution: session ref > historical DB > 0
+  const getSmartWeight = useCallback((name: string): number => {
+    return lastUsedWeightsRef.current[name] ?? historicalLastWeights?.get(name) ?? 0;
+  }, [historicalLastWeights]);
+
+  // Pre-populate from historical data on mount & set initial weight
+  useEffect(() => {
+    if (!historicalLastWeights || historicalLastWeights.size === 0) return;
+    historicalLastWeights.forEach((w, name) => {
+      if (!(name in lastUsedWeightsRef.current)) {
+        lastUsedWeightsRef.current[name] = w;
+      }
+    });
+    // Set initial weight for first exercise
+    if (exercises.length > 0) {
+      const initialWeight = getSmartWeight(exercises[0].name);
+      if (initialWeight > 0) setWeight(initialWeight);
+    }
+  }, [historicalLastWeights, exercises, getSmartWeight]);
+
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);

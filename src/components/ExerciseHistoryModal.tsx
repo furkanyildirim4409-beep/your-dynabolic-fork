@@ -10,8 +10,8 @@ interface ExerciseHistoryModalProps {
 }
 
 const ExerciseHistoryModal = ({ exerciseName, isOpen, onClose }: ExerciseHistoryModalProps) => {
-  const { data: prMap } = useExerciseHistory();
-  const pr = prMap?.get(exerciseName);
+  const { data: historyData } = useExerciseHistory();
+  const pr = historyData?.prMap?.get(exerciseName);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
