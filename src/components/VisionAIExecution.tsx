@@ -398,6 +398,13 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     });
 
     try {
+      // Calculate calories using the unified 3-pillar algorithm
+      let failCount = 0;
+      Object.values(completedSetsRef.current).forEach(sets => {
+        sets.forEach(s => { if (s.isFailure) failCount++; });
+      });
+      const caloriesBurned = calculateWorkoutCalories(durationMinutes, userWeight, tonnage, failCount);
+
       const { error } = await supabase.from("workout_logs").insert({
         user_id: user.id,
         workout_name: workoutTitle,
@@ -408,6 +415,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         completed: true,
         details,
         assigned_workout_id: assignmentId ?? null,
+        calories_burned: caloriesBurned,
       } as any);
 
       if (error) throw error;
