@@ -1689,7 +1689,7 @@ export type Database = {
       }
       tickets: {
         Row: {
-          coach_id: string
+          coach_id: string | null
           coach_reply: string | null
           created_at: string
           id: string
@@ -1701,7 +1701,7 @@ export type Database = {
           user_id: string
         }
         Insert: {
-          coach_id: string
+          coach_id?: string | null
           coach_reply?: string | null
           created_at?: string
           id?: string
@@ -1713,7 +1713,7 @@ export type Database = {
           user_id: string
         }
         Update: {
-          coach_id?: string
+          coach_id?: string | null
           coach_reply?: string | null
           created_at?: string
           id?: string

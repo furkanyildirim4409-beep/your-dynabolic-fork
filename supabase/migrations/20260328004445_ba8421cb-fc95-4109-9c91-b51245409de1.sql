@@ -1,0 +1,1 @@
+ALTER TABLE public.tickets ALTER COLUMN coach_id DROP NOT NULL;
