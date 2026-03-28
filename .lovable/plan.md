@@ -1,46 +1,31 @@
 
 
-## Pivot Ticketing to Admin/App Support (Phase 2 - Epic 5 Hotfix)
+## Enhance Next Exercise Preview Card (Phase 3 - Epic 7 - Part 1.5)
 
 ### Summary
-Repurpose the ticket system from coach-directed support to app/admin support. Two files changed, one migration.
+Enlarge the "Sıradaki Hareket" card in `ExerciseRestTimerOverlay` and display the exercise GIF/video thumbnail.
 
 ### Changes
 
-**1. Migration: Make `coach_id` nullable on `tickets`**
+**1. `ExerciseRestTimerOverlay.tsx` — Add `nextExerciseVideoUrl` prop**
 
-```sql
-ALTER TABLE public.tickets ALTER COLUMN coach_id DROP NOT NULL;
-```
+- Add `nextExerciseVideoUrl?: string` to `ExerciseRestTimerOverlayProps`
+- Enlarge the preview card: `p-4` → `p-5`, thumbnail from `w-14 h-14` → `w-24 h-24`
+- Replace the static `Dumbbell` icon with the exercise GIF when `nextExerciseVideoUrl` is provided:
+  - Render `<img>` with `loading="lazy" decoding="async" crossOrigin="anonymous"` and `object-contain` styling
+  - Fallback to `Dumbbell` icon on error or if no URL
+- Keep glassmorphic styling, add `rounded-2xl` to outer card
 
-**2. `src/hooks/useTickets.ts`**
+**2. `VisionAIExecution.tsx` — Pass `nextExerciseVideoUrl`**
 
-- Remove `profile` from auth destructuring and `coach_id` guard
-- Remove `coach_id` from insert payload
-- Rename `coach_reply` to `admin_reply` in the Ticket interface (or keep DB column name but alias in UI)
-
-Specifically:
-- Line 42: Change guard from `if (!user || !profile?.coach_id)` to `if (!user)`
-- Line 44-45: Remove `coach_id: profile.coach_id` from insert payload
-- Interface: Rename `coach_reply` field display name (keep DB column as-is to avoid migration)
-
-**3. `src/pages/Destek.tsx`**
-
-- Line 58: `"Koçunuza bilet gönderin"` → `"Uygulama destek ekibine ulaşın"`
-- Line 38: `"Koçunuz en kısa sürede yanıtlayacak."` → `"Destek ekibimiz en kısa sürede yanıtlayacak."`
-- Line 86: `"Koçunuza soru veya talep göndermek için yeni bilet oluşturun."` → `"Teknik destek veya bildirimleriniz için yeni bilet oluşturun."`
-- Line 117: `"Koç Yanıtı"` → `"Destek Ekibi Yanıtı"`
-- Lines 143-148: Replace subject options:
-  - `🐛 Teknik Hata / Bug`
-  - `💳 Ödeme & Faturalandırma`
-  - `💡 Öneri & Geri Bildirim`
-  - `🛡️ Hesap Güvenliği`
-  - `📝 Diğer`
+- At the `<ExerciseRestTimerOverlay>` usage (line ~891), add:
+  ```
+  nextExerciseVideoUrl={computedNextExercise?.videoUrl ?? undefined}
+  ```
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| Migration SQL | `ALTER COLUMN coach_id DROP NOT NULL` |
-| `src/hooks/useTickets.ts` | Remove coach_id dependency |
-| `src/pages/Destek.tsx` | Update copy and subject options |
+| `src/components/ExerciseRestTimerOverlay.tsx` | Add prop + enlarge card + render GIF |
+| `src/components/VisionAIExecution.tsx` | Pass `nextExerciseVideoUrl` prop |
 
