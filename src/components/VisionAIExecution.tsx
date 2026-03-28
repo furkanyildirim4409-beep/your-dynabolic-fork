@@ -6,6 +6,7 @@ import RestTimerOverlay from "./RestTimerOverlay";
 import ExerciseRestTimerOverlay from "./ExerciseRestTimerOverlay";
 import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useBioCoin } from "@/hooks/useBioCoin";
