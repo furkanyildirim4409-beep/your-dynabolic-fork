@@ -4,6 +4,7 @@ import { Play, Pause, RotateCcw, Plus, Minus, X, Volume2, VolumeX } from "lucide
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useState } from "react";
 import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
+import { playCompletionBeep } from "@/lib/audio";
 
 interface RestTimerOverlayProps {
   isOpen: boolean;
