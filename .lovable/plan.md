@@ -1,90 +1,46 @@
 
 
-## Student Ticketing & Report System (Phase 2 - Epic 5)
+## Pivot Ticketing to Admin/App Support (Phase 2 - Epic 5 Hotfix)
 
-### Current State
-- No `/destek` route or `Destek.tsx` page exists
-- No `tickets` table in the database
-- The "Yardim & Destek" button in SettingsPanel just shows a demo toast
-- `profiles.coach_id` is available for deriving the coach relationship
+### Summary
+Repurpose the ticket system from coach-directed support to app/admin support. Two files changed, one migration.
 
-### Plan
+### Changes
 
-**1. Create `tickets` table via migration**
+**1. Migration: Make `coach_id` nullable on `tickets`**
 
 ```sql
-CREATE TABLE public.tickets (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  user_id uuid NOT NULL,
-  coach_id uuid NOT NULL,
-  subject text NOT NULL,
-  priority text NOT NULL DEFAULT 'Normal',
-  message text NOT NULL,
-  status text NOT NULL DEFAULT 'Açık',
-  coach_reply text,
-  replied_at timestamptz,
-  created_at timestamptz NOT NULL DEFAULT now()
-);
-
-ALTER TABLE public.tickets ENABLE ROW LEVEL SECURITY;
-
--- Athletes CRUD own tickets
-CREATE POLICY "Athletes manage own tickets" ON public.tickets
-  FOR ALL TO authenticated
-  USING (user_id = auth.uid())
-  WITH CHECK (user_id = auth.uid());
-
--- Coaches can view & reply to tickets from their athletes
-CREATE POLICY "Coaches can view athlete tickets" ON public.tickets
-  FOR SELECT TO authenticated
-  USING (coach_id = auth.uid());
-
-CREATE POLICY "Coaches can update athlete tickets" ON public.tickets
-  FOR UPDATE TO authenticated
-  USING (coach_id = auth.uid());
-
--- Team members access
-CREATE POLICY "Team members can view tickets" ON public.tickets
-  FOR SELECT TO authenticated
-  USING (is_active_team_member_of(coach_id));
-
-CREATE POLICY "Team members can update tickets" ON public.tickets
-  FOR UPDATE TO authenticated
-  USING (is_active_team_member_of(coach_id));
+ALTER TABLE public.tickets ALTER COLUMN coach_id DROP NOT NULL;
 ```
 
-**2. Create `src/hooks/useTickets.ts`**
+**2. `src/hooks/useTickets.ts`**
 
-React Query hook with:
-- `tickets` — fetches all tickets where `user_id = auth.uid()`, ordered by `created_at desc`
-- `createTicket(subject, priority, message)` — inserts with `user_id` from auth and `coach_id` from `profile.coach_id`
-- Mutation invalidates the query on success
+- Remove `profile` from auth destructuring and `coach_id` guard
+- Remove `coach_id` from insert payload
+- Rename `coach_reply` to `admin_reply` in the Ticket interface (or keep DB column name but alias in UI)
 
-**3. Create `src/pages/Destek.tsx`**
+Specifically:
+- Line 42: Change guard from `if (!user || !profile?.coach_id)` to `if (!user)`
+- Line 44-45: Remove `coach_id: profile.coach_id` from insert payload
+- Interface: Rename `coach_reply` field display name (keep DB column as-is to avoid migration)
 
-Premium glassmorphic page with two tabs (Shadcn `Tabs`):
+**3. `src/pages/Destek.tsx`**
 
-- **Tab 1 "Biletlerim"**: Lists tickets as cards showing subject, status badge (Acik=amber, Cevaplanmis=green, Kapali=gray), priority badge, date, and coach reply if present
-- **Tab 2 "Yeni Bilet Olustur"**: Form with Subject Select (Beslenme/Antrenman/Sakatlik/Diger), Priority Select (Normal/Yuksek), Message Textarea, and Submit button with loading state
-- Empty state when no tickets exist
-- Toast feedback on successful creation, auto-switch to "Biletlerim" tab
-
-Styling: Same glassmorphic cards, gradients, and motion animations used throughout the app.
-
-**4. Wire routing in `App.tsx`**
-
-Add `/destek` route pointing to the new page inside `AppPage` + `ProtectedRoute`.
-
-**5. Update SettingsPanel link**
-
-Change the "Yardim & Destek" button from showing a demo toast to navigating to `/destek`.
+- Line 58: `"Koçunuza bilet gönderin"` → `"Uygulama destek ekibine ulaşın"`
+- Line 38: `"Koçunuz en kısa sürede yanıtlayacak."` → `"Destek ekibimiz en kısa sürede yanıtlayacak."`
+- Line 86: `"Koçunuza soru veya talep göndermek için yeni bilet oluşturun."` → `"Teknik destek veya bildirimleriniz için yeni bilet oluşturun."`
+- Line 117: `"Koç Yanıtı"` → `"Destek Ekibi Yanıtı"`
+- Lines 143-148: Replace subject options:
+  - `🐛 Teknik Hata / Bug`
+  - `💳 Ödeme & Faturalandırma`
+  - `💡 Öneri & Geri Bildirim`
+  - `🛡️ Hesap Güvenliği`
+  - `📝 Diğer`
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| Migration | Create `tickets` table + RLS |
-| `src/hooks/useTickets.ts` | Create |
-| `src/pages/Destek.tsx` | Create |
-| `src/App.tsx` | Add route + import |
-| `src/components/SettingsPanel.tsx` | Wire navigation |
+| Migration SQL | `ALTER COLUMN coach_id DROP NOT NULL` |
+| `src/hooks/useTickets.ts` | Remove coach_id dependency |
+| `src/pages/Destek.tsx` | Update copy and subject options |
 
