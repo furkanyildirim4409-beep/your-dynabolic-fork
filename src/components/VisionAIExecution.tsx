@@ -256,6 +256,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     // Store weight in session memory for smart recall
     lastUsedWeightsRef.current[exercise.name] = weight;
     setAchievedFailure(false);
+    setSetsVersion(v => v + 1);
 
     // 🎉 New PR detection — confetti + toast
     const pr = globalPRMap?.get(exercise.name);
