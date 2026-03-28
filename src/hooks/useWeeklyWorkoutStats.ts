@@ -44,29 +44,16 @@ export const useWeeklyWorkoutStats = () => {
       const completedCount = logs.length;
       const totalMinutes = logs.reduce((sum, l) => sum + (l.duration_minutes ?? 0), 0);
 
-      // Dynamic calorie algorithm: Base MET + EPOC intensity bonus
+      // Use persisted calories when available, fallback to shared calculator
       let totalCalories = 0;
       for (const log of logs) {
-        const durationHours = (log.duration_minutes ?? 0) / 60;
-        const baseBurn = durationHours * weightKg * 5.0; // MET 5.0 for resistance training
-
-        let failureSets = 0;
-        if (log.details && Array.isArray(log.details)) {
-          for (const exercise of log.details as any[]) {
-            if (Array.isArray(exercise.sets)) {
-              for (const set of exercise.sets) {
-                if (set.isFailure === true || set.is_failure === true || set.rir === 0) {
-                  failureSets++;
-                }
-              }
-            }
-          }
+        if ((log as any).calories_burned) {
+          totalCalories += Number((log as any).calories_burned);
+        } else {
+          const logTonnage = log.tonnage ? Number(log.tonnage) : 0;
+          const failureSets = countFailureSets(log.details as any[]);
+          totalCalories += calculateWorkoutCalories(log.duration_minutes ?? 0, weightKg, logTonnage, failureSets);
         }
-
-        const epocBonus = failureSets * 15; // +15 kcal per failure/RIR-0 set
-        const logTonnage = log.tonnage ? Number(log.tonnage) : 0;
-        const mechanicalBonus = (logTonnage / 1000) * 20; // +20 kcal per 1,000 kg lifted
-        totalCalories += baseBurn + epocBonus + mechanicalBonus;
       }
 
       // Format duration

@@ -557,12 +557,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   <span className="font-display text-lg text-orange-400">
                     🔥 {(() => {
                       const durationMin = Math.round((Date.now() - workoutStartTime.current) / 60000);
-                      const baseBurn = (durationMin / 60) * userWeight * 5.0;
+                      const tonnage = calculateTotalTonnage();
                       let failCount = 0;
                       Object.values(completedSetsRef.current).forEach(sets => {
                         sets.forEach(s => { if (s.isFailure) failCount++; });
                       });
-                      return Math.round(baseBurn + failCount * 15);
+                      return calculateWorkoutCalories(durationMin, userWeight, tonnage, failCount);
                     })()} kcal
                   </span>
                 </div>
