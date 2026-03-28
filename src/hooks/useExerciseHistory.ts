@@ -46,17 +46,22 @@ export const useExerciseHistory = () => {
           if (!name) continue;
           const sets = Array.isArray(d.sets) ? d.sets : [];
 
+          // 1. Last Used Weight: take the LAST valid set weight (reverse scan)
+          if (!lastUsedWeights.has(name) && sets.length > 0) {
+            for (let i = sets.length - 1; i >= 0; i--) {
+              const w = Number(sets[i].weight) || 0;
+              if (w > 0) {
+                lastUsedWeights.set(name, w);
+                break;
+              }
+            }
+          }
+
+          // 2. PR tracking (forward loop)
           for (const s of sets) {
             const w = Number(s.weight) || 0;
             const r = Number(s.reps) || 0;
             if (w <= 0) continue;
-
-            // Track most recent weight (first encounter = most recent due to desc sort)
-            if (!lastUsedWeights.has(name)) {
-              lastUsedWeights.set(name, w);
-            }
-
-            // Track PR
             const existing = prMap.get(name);
             if (!existing || w > existing.maxWeight || (w === existing.maxWeight && r > existing.repsAtMax)) {
               prMap.set(name, {
