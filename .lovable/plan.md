@@ -1,31 +1,26 @@
 
 
-## Enhance Next Exercise Preview Card (Phase 3 - Epic 7 - Part 1.5)
+## Add Thumbnails to Exercise List Sheet (Phase 3 - Epic 7 - Part 1.6)
 
 ### Summary
-Enlarge the "Sıradaki Hareket" card in `ExerciseRestTimerOverlay` and display the exercise GIF/video thumbnail.
+Replace the status icon container in the "Tüm Hareketler" sheet with exercise GIF thumbnails, falling back to the current icon-based display when no video URL exists.
 
 ### Changes
 
-**1. `ExerciseRestTimerOverlay.tsx` — Add `nextExerciseVideoUrl` prop**
+**`src/components/VisionAIExecution.tsx` — Lines 927-931**
 
-- Add `nextExerciseVideoUrl?: string` to `ExerciseRestTimerOverlayProps`
-- Enlarge the preview card: `p-4` → `p-5`, thumbnail from `w-14 h-14` → `w-24 h-24`
-- Replace the static `Dumbbell` icon with the exercise GIF when `nextExerciseVideoUrl` is provided:
-  - Render `<img>` with `loading="lazy" decoding="async" crossOrigin="anonymous"` and `object-contain` styling
-  - Fallback to `Dumbbell` icon on error or if no URL
-- Keep glassmorphic styling, add `rounded-2xl` to outer card
+Replace the current `w-10 h-10` icon container with a `w-14 h-14` thumbnail container:
 
-**2. `VisionAIExecution.tsx` — Pass `nextExerciseVideoUrl`**
+- If `ex.videoUrl` exists, render `<img src={ex.videoUrl} loading="lazy" decoding="async" crossOrigin="anonymous" className="w-full h-full object-contain" />` with an inline `onError` that hides the image (swap to fallback icon via local state per-item, or simply set the img `style.display='none'` and show sibling icon)
+- Fallback: show `Check` icon (if done) or `Dumbbell` icon (if current/pending) — same as current behavior
+- Container styling: `w-14 h-14 rounded-lg overflow-hidden bg-black/40 border border-border/50 shrink-0 flex items-center justify-center`
 
-- At the `<ExerciseRestTimerOverlay>` usage (line ~891), add:
-  ```
-  nextExerciseVideoUrl={computedNextExercise?.videoUrl ?? undefined}
-  ```
+Since managing per-item error state inside a `.map()` is verbose, extract a small inline approach: render both the `<img>` and a fallback icon, hide the fallback when img loads successfully using CSS (`peer` pattern) or a simple `onError` that swaps `src` to empty and shows the icon.
+
+Cleanest approach: create a tiny `ExerciseThumb` helper component (defined above the return or inline) with its own `useState` for `imgError`.
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/components/ExerciseRestTimerOverlay.tsx` | Add prop + enlarge card + render GIF |
-| `src/components/VisionAIExecution.tsx` | Pass `nextExerciseVideoUrl` prop |
+| `src/components/VisionAIExecution.tsx` | Add thumbnails to exercise list sheet items |
 
