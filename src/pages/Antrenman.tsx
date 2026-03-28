@@ -156,9 +156,46 @@ const Antrenman = () => {
     { label: "Yakılan Kalori", value: weeklyStatsData?.totalCalories ?? "0", icon: TrendingUp },
   ];
 
-  // Calculate history stats
-  const totalBioCoins = workoutHistory.reduce((acc, w) => acc + w.bioCoins, 0);
-  const totalWorkouts = workoutHistory.length;
+  // Filter workout history by date
+  const filteredHistory = useMemo(() => {
+    if (dateFilter === "all") return workoutHistory;
+    const now = new Date();
+    return workoutHistory.filter((w) => {
+      // Parse the logged_at from the raw date string embedded in `date` field
+      // workoutHistory entries have dateShort like "15 Oca" — use the full `date` field
+      // Actually we need to filter based on the entry's date. Let's parse from the id/date.
+      // The entries have `date` like "15 Ocak 2025" in Turkish locale.
+      // Safer: re-parse from the original data. Since we don't have raw logged_at, approximate from date field.
+      const parts = w.date.split(" ");
+      if (parts.length < 3) return true;
+      const day = parseInt(parts[0]);
+      const year = parseInt(parts[2]);
+      const monthMap: Record<string, number> = {
+        "Ocak": 0, "Şubat": 1, "Mart": 2, "Nisan": 3, "Mayıs": 4, "Haziran": 5,
+        "Temmuz": 6, "Ağustos": 7, "Eylül": 8, "Ekim": 9, "Kasım": 10, "Aralık": 11,
+      };
+      const month = monthMap[parts[1]];
+      if (month === undefined || isNaN(day) || isNaN(year)) return true;
+      const entryDate = new Date(year, month, day);
+
+      switch (dateFilter) {
+        case "this-month":
+          return entryDate.getMonth() === now.getMonth() && entryDate.getFullYear() === now.getFullYear();
+        case "last-month": {
+          const lastMonth = new Date(now.getFullYear(), now.getMonth() - 1, 1);
+          return entryDate.getMonth() === lastMonth.getMonth() && entryDate.getFullYear() === lastMonth.getFullYear();
+        }
+        case "this-year":
+          return entryDate.getFullYear() === now.getFullYear();
+        default:
+          return true;
+      }
+    });
+  }, [workoutHistory, dateFilter]);
+
+  // Calculate history stats from filtered list
+  const totalBioCoins = filteredHistory.reduce((acc, w) => acc + w.bioCoins, 0);
+  const totalWorkouts = filteredHistory.length;
 
   const handleWorkoutClick = (workout: WorkoutHistoryEntry) => {
     setSelectedWorkout(workout);
