@@ -683,28 +683,12 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               </div>
           </div>
 
-          {/* Vision AI Stats */}
-          <AnimatePresence>
-            {visionAIActive && (
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="absolute top-3 left-3 flex gap-2">
-                <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5">
-                  <div className="flex items-center gap-1.5 mb-0.5"><Activity className="w-3 h-3 text-primary" /><span className="text-[9px] text-muted-foreground uppercase">ROM</span></div>
-                  <p className="font-display text-base text-primary leading-none">98%</p>
-                </div>
-                <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5">
-                  <div className="flex items-center gap-1.5 mb-0.5"><Target className="w-3 h-3 text-orange-400" /><span className="text-[9px] text-muted-foreground uppercase">Hız</span></div>
-                  <p className="font-display text-base text-orange-400 leading-none">0.45</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
           {/* Top Right Controls */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} onClick={() => setVisionAIActive(!visionAIActive)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${visionAIActive ? "bg-primary/20 border-primary/50 text-primary" : "bg-black/60 border-white/10 text-muted-foreground hover:border-primary/30"}`}>
-              {visionAIActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="text-[9px] font-display tracking-wider">{visionAIActive ? "AI ON" : "AI"}</span>
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} onClick={() => toast.info("Yapay Zeka koç asistanı çok yakında aktif olacak!")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all bg-secondary/60 border-border text-muted-foreground hover:border-primary/30">
+              <EyeOff className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-display tracking-wider">AI</span>
             </motion.button>
             <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5 text-center">
               <span className="text-[9px] text-muted-foreground uppercase block">Set</span>
