@@ -35,7 +35,7 @@ const Destek = () => {
     }
     try {
       await createTicket.mutateAsync({ subject, priority, message: message.trim() });
-      toast({ title: "Bilet Oluşturuldu ✅", description: "Koçunuz en kısa sürede yanıtlayacak." });
+      toast({ title: "Bilet Oluşturuldu ✅", description: "Destek ekibimiz en kısa sürede yanıtlayacak." });
       setSubject("");
       setPriority("Normal");
       setMessage("");
@@ -55,7 +55,7 @@ const Destek = () => {
           </button>
           <div>
             <h1 className="text-lg font-bold text-foreground">Destek & Talepler</h1>
-            <p className="text-xs text-muted-foreground">Koçunuza bilet gönderin</p>
+            <p className="text-xs text-muted-foreground">Uygulama destek ekibine ulaşın</p>
           </div>
         </div>
       </div>
@@ -83,7 +83,7 @@ const Destek = () => {
                   <TicketCheck className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <p className="text-foreground font-semibold">Henüz bilet yok</p>
-                <p className="text-muted-foreground text-sm mt-1">Koçunuza soru veya talep göndermek için yeni bilet oluşturun.</p>
+                <p className="text-muted-foreground text-sm mt-1">Teknik destek veya bildirimleriniz için yeni bilet oluşturun.</p>
               </motion.div>
             ) : (
               tickets.map((ticket, i) => {
@@ -114,7 +114,7 @@ const Destek = () => {
                         <div className="mt-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                           <div className="flex items-center gap-1.5 mb-1">
                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-primary text-xs font-semibold">Koç Yanıtı</span>
+                            <span className="text-primary text-xs font-semibold">Destek Ekibi Yanıtı</span>
                           </div>
                           <p className="text-foreground text-xs">{ticket.coach_reply}</p>
                         </div>
@@ -141,9 +141,10 @@ const Destek = () => {
                       <SelectValue placeholder="Konu seçin..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Beslenme">🥗 Beslenme</SelectItem>
-                      <SelectItem value="Antrenman">💪 Antrenman</SelectItem>
-                      <SelectItem value="Sakatlık">🩹 Sakatlık Raporu</SelectItem>
+                      <SelectItem value="Teknik Hata">🐛 Teknik Hata / Bug</SelectItem>
+                      <SelectItem value="Ödeme">💳 Ödeme & Faturalandırma</SelectItem>
+                      <SelectItem value="Öneri">💡 Öneri & Geri Bildirim</SelectItem>
+                      <SelectItem value="Güvenlik">🛡️ Hesap Güvenliği</SelectItem>
                       <SelectItem value="Diğer">📝 Diğer</SelectItem>
                     </SelectContent>
                   </Select>
