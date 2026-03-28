@@ -678,7 +678,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             const isFirstInGroup = isGrouped && (index === 0 || exercises[index - 1].groupId !== ex.groupId);
             const isLastInGroup = isGrouped && (index === exercises.length - 1 || exercises[index + 1].groupId !== ex.groupId);
             const isCurrent = index === currentExerciseIndex;
-            const isDone = index < currentExerciseIndex;
+            const setsCompleted = completedSetsRef.current[index]?.length ?? 0;
+            const isDone = setsCompleted >= exercises[index].sets;
 
             return (
               <div key={index} className="flex items-center">
