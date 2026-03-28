@@ -141,9 +141,10 @@ const Destek = () => {
                       <SelectValue placeholder="Konu seçin..." />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="Beslenme">🥗 Beslenme</SelectItem>
-                      <SelectItem value="Antrenman">💪 Antrenman</SelectItem>
-                      <SelectItem value="Sakatlık">🩹 Sakatlık Raporu</SelectItem>
+                      <SelectItem value="Teknik Hata">🐛 Teknik Hata / Bug</SelectItem>
+                      <SelectItem value="Ödeme">💳 Ödeme & Faturalandırma</SelectItem>
+                      <SelectItem value="Öneri">💡 Öneri & Geri Bildirim</SelectItem>
+                      <SelectItem value="Güvenlik">🛡️ Hesap Güvenliği</SelectItem>
                       <SelectItem value="Diğer">📝 Diğer</SelectItem>
                     </SelectContent>
                   </Select>

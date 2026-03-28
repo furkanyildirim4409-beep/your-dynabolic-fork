@@ -39,10 +39,9 @@ export function useTickets() {
 
   const createTicket = useMutation({
     mutationFn: async (params: { subject: string; priority: string; message: string }) => {
-      if (!user || !profile?.coach_id) throw new Error("No user or coach");
+      if (!user) throw new Error("No user");
       const { error } = await supabase.from("tickets" as any).insert({
         user_id: user.id,
-        coach_id: profile.coach_id,
         subject: params.subject,
         priority: params.priority,
         message: params.message,
