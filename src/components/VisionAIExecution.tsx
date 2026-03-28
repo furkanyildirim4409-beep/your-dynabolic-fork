@@ -160,6 +160,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
+  // Centralized weight sync: fires whenever exercise index changes
+  useEffect(() => {
+    if (exercises.length > 0 && exercises[currentExerciseIndex]) {
+      const w = getSmartWeight(exercises[currentExerciseIndex].name);
+      setWeight(w);
+    }
+  }, [currentExerciseIndex, exercises, getSmartWeight]);
+
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
