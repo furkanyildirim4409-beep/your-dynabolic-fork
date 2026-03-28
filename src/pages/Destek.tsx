@@ -83,7 +83,7 @@ const Destek = () => {
                   <TicketCheck className="w-8 h-8 text-muted-foreground" />
                 </div>
                 <p className="text-foreground font-semibold">Henüz bilet yok</p>
-                <p className="text-muted-foreground text-sm mt-1">Koçunuza soru veya talep göndermek için yeni bilet oluşturun.</p>
+                <p className="text-muted-foreground text-sm mt-1">Teknik destek veya bildirimleriniz için yeni bilet oluşturun.</p>
               </motion.div>
             ) : (
               tickets.map((ticket, i) => {
