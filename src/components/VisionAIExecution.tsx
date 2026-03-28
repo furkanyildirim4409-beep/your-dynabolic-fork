@@ -902,6 +902,46 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       )}
 
       <ExerciseHistoryModal exerciseName={exercise.name} isOpen={showExerciseHistory} onClose={() => setShowExerciseHistory(false)} />
+
+      {/* Exercise List Sheet */}
+      <Sheet open={showExerciseList} onOpenChange={setShowExerciseList}>
+        <SheetContent side="bottom" className="max-h-[70vh] bg-card border-t border-border rounded-t-2xl px-0">
+          <SheetHeader className="px-4 pb-3 border-b border-border">
+            <SheetTitle className="font-display text-foreground tracking-wider text-base">TÜM HAREKETLER</SheetTitle>
+          </SheetHeader>
+          <div className="overflow-y-auto px-4 py-3 space-y-2">
+            {exercises.map((ex, index) => {
+              const isDone = index < currentExerciseIndex;
+              const isCurrent = index === currentExerciseIndex;
+              const completedSets = completedSetsRef.current[index]?.length ?? 0;
+              return (
+                <motion.button
+                  key={ex.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { goToExercise(index); setShowExerciseList(false); hapticLight(); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                    isCurrent ? 'bg-primary/15 border-primary/40' : isDone ? 'bg-secondary/50 border-border opacity-70' : 'bg-secondary/30 border-border'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    isDone ? 'bg-primary/20' : isCurrent ? 'bg-primary/30 border border-primary/50' : 'bg-secondary'
+                  }`}>
+                    {isDone ? <Check className="w-5 h-5 text-primary" /> : <Dumbbell className={`w-5 h-5 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-display text-sm truncate ${isCurrent ? 'text-primary' : isDone ? 'text-foreground/60 line-through' : 'text-foreground'}`}>{ex.name}</p>
+                    <p className="text-muted-foreground text-xs">{ex.sets} set × {ex.targetReps} tekrar{isDone ? ` • ${completedSets} set tamamlandı` : ''}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {isDone && <span className="text-[10px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">✓</span>}
+                    {isCurrent && <span className="text-[10px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">Aktif</span>}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
