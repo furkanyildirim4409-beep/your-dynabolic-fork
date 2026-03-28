@@ -972,9 +972,9 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           </SheetHeader>
           <div className="overflow-y-auto px-4 py-3 space-y-2">
             {exercises.map((ex, index) => {
-              const isDone = index < currentExerciseIndex;
-              const isCurrent = index === currentExerciseIndex;
               const completedSets = completedSetsRef.current[index]?.length ?? 0;
+              const isDone = completedSets >= ex.sets;
+              const isCurrent = index === currentExerciseIndex;
               return (
                 <motion.button
                   key={ex.id}
