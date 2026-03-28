@@ -15,6 +15,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useWakeLock } from "@/hooks/useWakeLock";
 import { useExerciseHistory } from "@/hooks/useExerciseHistory";
+import { calculateWorkoutCalories } from "@/lib/workout";
 
 interface ProgramExercise {
   id: string;
