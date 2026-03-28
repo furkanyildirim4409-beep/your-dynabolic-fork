@@ -196,7 +196,7 @@ const Akademi = () => {
       {/* Module Video Player */}
       <AnimatePresence>
         {activeModule && (
-          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 bg-background flex flex-col">
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 z-50 h-[100dvh] bg-background flex flex-col">
             <div className="flex items-center justify-between p-4 border-b border-border">
               <button onClick={() => setActiveModule(null)} className="p-2">
                 <ChevronLeft className="w-5 h-5 text-foreground" />

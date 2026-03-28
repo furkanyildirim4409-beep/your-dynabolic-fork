@@ -77,7 +77,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-background flex flex-col"
+          className="fixed inset-0 z-50 h-[100dvh] bg-background flex flex-col"
         >
           {/* Header */}
           <div className="flex-shrink-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10">
