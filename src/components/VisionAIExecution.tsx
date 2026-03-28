@@ -991,7 +991,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           </SheetHeader>
           <div className="overflow-y-auto px-4 py-3 space-y-2">
             {exercises.map((ex, index) => {
-              const isDone = index < currentExerciseIndex;
+              const setsCompletedForList = completedSetsRef.current[index]?.length ?? 0;
+              const isDone = setsCompletedForList >= ex.sets;
               const isCurrent = index === currentExerciseIndex;
               const completedSets = completedSetsRef.current[index]?.length ?? 0;
               return (
