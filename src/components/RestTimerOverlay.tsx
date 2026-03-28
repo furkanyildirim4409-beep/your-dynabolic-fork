@@ -60,7 +60,7 @@ const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, 
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center overflow-y-auto"
+        className="fixed inset-0 z-50 h-[100dvh] bg-background/95 backdrop-blur-xl flex flex-col items-center overflow-y-auto"
       >
         {/* Header */}
         <div className="flex-shrink-0 w-full px-4 pt-4 pb-2 flex items-center justify-between">

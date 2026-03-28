@@ -11,7 +11,7 @@ const SplashScreen = ({ onComplete }: { onComplete: () => void }) => {
   }, [onComplete]);
 
   return (
-    <motion.div className="fixed inset-0 z-[9999] bg-black flex flex-col items-center justify-center overflow-hidden" initial={{ opacity: 1 }} animate={{ opacity: phase === "fading" ? 0 : 1 }} transition={{ duration: 0.5 }}>
+    <motion.div className="fixed inset-0 z-[9999] h-[100dvh] bg-black flex flex-col items-center justify-center overflow-hidden" initial={{ opacity: 1 }} animate={{ opacity: phase === "fading" ? 0 : 1 }} transition={{ duration: 0.5 }}>
       <motion.div className="relative z-10 flex flex-col items-center justify-center" initial={{ scale: 1 }} animate={{ scale: phase === "fading" ? 1.5 : 1, opacity: phase === "fading" ? 0 : 1 }} transition={{ duration: 0.5 }}>
         <svg viewBox="0 0 200 200" fill="none" xmlns="http://www.w3.org/2000/svg" className="w-40 h-40">
           <motion.path d="M 50 20 L 50 180 L 100 180 C 150 180 180 150 180 100 C 180 50 150 20 100 20 Z" stroke="#CCFF00" strokeWidth="5" fill="transparent" initial={{ pathLength: 0 }} animate={{ pathLength: 1, fill: phase !== "drawing" ? "rgba(204, 255, 0, 0.08)" : "transparent" }} transition={{ pathLength: { duration: 1 }, fill: { duration: 0.3 } }} />

@@ -101,7 +101,7 @@ const ExerciseRestTimerOverlay = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center overflow-y-auto"
+      className="fixed inset-0 z-50 h-[100dvh] bg-background/95 backdrop-blur-xl flex flex-col items-center overflow-y-auto"
     >
       {/* Background Pulse */}
       <motion.div
