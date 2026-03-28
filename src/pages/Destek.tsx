@@ -114,7 +114,7 @@ const Destek = () => {
                         <div className="mt-2 p-3 rounded-xl bg-primary/5 border border-primary/10">
                           <div className="flex items-center gap-1.5 mb-1">
                             <MessageSquare className="w-3.5 h-3.5 text-primary" />
-                            <span className="text-primary text-xs font-semibold">Koç Yanıtı</span>
+                            <span className="text-primary text-xs font-semibold">Destek Ekibi Yanıtı</span>
                           </div>
                           <p className="text-foreground text-xs">{ticket.coach_reply}</p>
                         </div>
