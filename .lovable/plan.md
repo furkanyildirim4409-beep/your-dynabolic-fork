@@ -1,34 +1,43 @@
 
 
-## Fix Weight Memory Sync Bug (Phase 3 - Epic 7 - Part 2.1 Hotfix)
+## Fix Smart Weight Algorithm (Phase 3 - Epic 7 - Part 2.2 Hotfix)
 
-### Root Cause
-In `handleExerciseRestComplete` and `handleExerciseRestSkip`, `setWeight(getSmartWeight(nextEx.name))` is called **before** `setCurrentExerciseIndex` updates. React batches these state updates, but the weight calculation uses a manually computed `nextIdx` which can desync — especially with superset group bounds logic. The fix: centralize weight sync via a `useEffect` on `currentExerciseIndex`.
+### Problem
+`lastUsedWeights` captures the **first** valid weight in the sets array (often a warm-up set, e.g. 90kg) instead of the **last** valid weight (the true working weight, e.g. 150kg).
 
-### Changes — `src/components/VisionAIExecution.tsx`
+### Change — `src/hooks/useExerciseHistory.ts` (lines 49-57)
 
-**1. Add centralized weight sync effect (after line ~161)**
+Split the single `for (const s of sets)` loop into two concerns:
+
+1. **Last Used Weight** — reverse-iterate `sets` to find the final valid weight from the most recent workout
+2. **PR tracking** — forward-iterate as before
+
 ```typescript
-useEffect(() => {
-  if (exercises.length > 0 && exercises[currentExerciseIndex]) {
-    const w = getSmartWeight(exercises[currentExerciseIndex].name);
-    setWeight(w);
+// 1. Last Used Weight: take the LAST valid set weight (reverse scan)
+if (!lastUsedWeights.has(name) && sets.length > 0) {
+  for (let i = sets.length - 1; i >= 0; i--) {
+    const w = Number(sets[i].weight) || 0;
+    if (w > 0) {
+      lastUsedWeights.set(name, w);
+      break;
+    }
   }
-}, [currentExerciseIndex, exercises, getSmartWeight]);
+}
+
+// 2. PR tracking (unchanged forward loop)
+for (const s of sets) {
+  const w = Number(s.weight) || 0;
+  const r = Number(s.reps) || 0;
+  if (w <= 0) continue;
+  const existing = prMap.get(name);
+  if (!existing || w > existing.maxWeight || (w === existing.maxWeight && r > existing.repsAtMax)) {
+    prMap.set(name, { maxWeight: w, repsAtMax: r, date: log.logged_at ?? "" });
+  }
+}
 ```
-
-**2. Remove manual `setWeight` calls from 3 locations:**
-- Line 440: `handleExerciseRestComplete` — remove `setWeight(nextEx ? getSmartWeight(nextEx.name) : 0);`
-- Line 453: `handleExerciseRestSkip` — remove same line
-- Line 474: `goToExercise` — remove `setWeight(targetEx ? getSmartWeight(targetEx.name) : 0)` from the chained call
-
-**3. Keep untouched:**
-- `handleSkipRest` (intra-exercise set transitions) — no weight reset
-- `handleConfirmSet` storing weight into `lastUsedWeightsRef` — still needed
-- Mount effect pre-populating from historical data — still needed (but the new effect will also fire on mount for index 0, providing a backup)
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/components/VisionAIExecution.tsx` | Add useEffect, remove 3 manual setWeight calls |
+| `src/hooks/useExerciseHistory.ts` | Reverse-scan sets for lastUsedWeights |
 
