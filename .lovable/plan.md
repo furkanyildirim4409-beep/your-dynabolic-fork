@@ -1,26 +1,68 @@
 
 
-## Add Thumbnails to Exercise List Sheet (Phase 3 - Epic 7 - Part 1.6)
+## Workout Engine V2 - Smart Weight Memory (Phase 3 - Epic 7 - Part 2/5)
 
-### Summary
-Replace the status icon container in the "Tüm Hareketler" sheet with exercise GIF thumbnails, falling back to the current icon-based display when no video URL exists.
+### Problem
+Weight input hardcoded to `60` on every exercise transition, exercise jump, and rest completion. Users must manually re-enter their working weight every single time.
+
+### Current State (5 hardcoded resets found)
+- Line 108: `useState(60)` — initial state
+- Line 412: `handleExerciseRestComplete` — `setWeight(60)`
+- Line 422: `handleExerciseRestSkip` — `setWeight(60)`
+- Line 442: `goToExercise` — `setWeight(60)`
+- Lines 250-255: superset mid-round advance — resets `reps` but not `weight` (this one is OK)
+
+### Solution: Two-Layer Weight Memory
+
+**Layer 1 — Intra-Workout Memory (session state)**
+- New ref: `lastUsedWeightsRef = useRef<Record<string, number>>({})` keyed by exercise name
+- Updated in `handleConfirmSet`: after pushing to `completedSetsRef`, also store `lastUsedWeightsRef.current[exercise.name] = weight`
+- All transition points (`handleExerciseRestComplete`, `handleExerciseRestSkip`, `goToExercise`) read from this ref instead of hardcoding `60`
+
+**Layer 2 — Historical Memory (DB-backed, pre-populated on mount)**
+- Extend `useExerciseHistory` hook to also return `lastUsedWeights: Map<string, number>` — the most recent weight used per exercise (from the most recent workout log, not the PR)
+- Since data is already sorted `descending` by `logged_at`, the first weight encountered for each exercise IS the most recent
+- Pre-populate `lastUsedWeightsRef` on mount from this historical data
+
+**Weight Resolution Logic** (applied at every transition):
+```text
+resolveWeight(exerciseName) =
+  1. lastUsedWeightsRef[exerciseName]  →  intra-session (highest priority)
+  2. historicalLastWeights[exerciseName]  →  from DB
+  3. 0  →  fallback (empty input, user types fresh)
+```
 
 ### Changes
 
-**`src/components/VisionAIExecution.tsx` — Lines 927-931**
+**1. `src/hooks/useExerciseHistory.ts`**
+- Add a second `Map<string, number>` called `lastUsedWeights` to the return value
+- During the existing loop, track the first (most recent) weight seen per exercise name
+- Return both maps: `{ prMap, lastUsedWeights }`
 
-Replace the current `w-10 h-10` icon container with a `w-14 h-14` thumbnail container:
+**2. `src/components/VisionAIExecution.tsx`**
 
-- If `ex.videoUrl` exists, render `<img src={ex.videoUrl} loading="lazy" decoding="async" crossOrigin="anonymous" className="w-full h-full object-contain" />` with an inline `onError` that hides the image (swap to fallback icon via local state per-item, or simply set the img `style.display='none'` and show sibling icon)
-- Fallback: show `Check` icon (if done) or `Dumbbell` icon (if current/pending) — same as current behavior
-- Container styling: `w-14 h-14 rounded-lg overflow-hidden bg-black/40 border border-border/50 shrink-0 flex items-center justify-center`
+State changes:
+- Add `lastUsedWeightsRef = useRef<Record<string, number>>({})`
+- Destructure `lastUsedWeights` from the updated `useExerciseHistory` hook
+- Add a `useEffect` that pre-populates `lastUsedWeightsRef` from historical data on load, and sets the initial weight for the first exercise
 
-Since managing per-item error state inside a `.map()` is verbose, extract a small inline approach: render both the `<img>` and a fallback icon, hide the fallback when img loads successfully using CSS (`peer` pattern) or a simple `onError` that swaps `src` to empty and shows the icon.
+Helper function:
+- `getSmartWeight(name: string): number` — checks ref first, then historical map, falls back to `0`
 
-Cleanest approach: create a tiny `ExerciseThumb` helper component (defined above the return or inline) with its own `useState` for `imgError`.
+Update all transition points:
+- `handleConfirmSet`: after recording set, store weight in ref
+- `handleExerciseRestComplete`: replace `setWeight(60)` with `setWeight(getSmartWeight(nextExercise.name))`
+- `handleExerciseRestSkip`: same replacement
+- `goToExercise(index)`: same replacement using `exercises[index].name`
+- Initial `useState(60)` stays but gets overridden by the mount `useEffect`
+
+Intra-exercise set persistence:
+- `handleSkipRest` (between sets of SAME exercise) already does NOT reset weight — no change needed
+- Superset mid-round advance (line 250-255) already preserves weight — no change needed
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/components/VisionAIExecution.tsx` | Add thumbnails to exercise list sheet items |
+| `src/hooks/useExerciseHistory.ts` | Add `lastUsedWeights` map to return |
+| `src/components/VisionAIExecution.tsx` | Smart weight resolution at all transition points |
 
