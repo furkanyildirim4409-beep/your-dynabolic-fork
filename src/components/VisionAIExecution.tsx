@@ -160,6 +160,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
+  // Centralized weight sync: fires whenever exercise index changes
+  useEffect(() => {
+    if (exercises.length > 0 && exercises[currentExerciseIndex]) {
+      const w = getSmartWeight(exercises[currentExerciseIndex].name);
+      setWeight(w);
+    }
+  }, [currentExerciseIndex, exercises, getSmartWeight]);
+
   
   const exercise = exercises[currentExerciseIndex];
   const rpeColors = getRPEColor(exercise?.rpe || 5);
@@ -435,9 +443,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
   const handleExerciseRestComplete = () => {
     setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
-    const nextIdx = exercise.groupId ? getGroupBounds(exercise.groupId).lastGroupIdx + 1 : currentExerciseIndex + 1;
-    const nextEx = exercises[nextIdx];
-    setWeight(nextEx ? getSmartWeight(nextEx.name) : 0);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -448,9 +453,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   };
   const handleExerciseRestSkip = () => {
     setShowExerciseRestTimer(false); resetTimer(); setReps(0); setCurrentSet(1); setAchievedFailure(false);
-    const nextIdx = exercise.groupId ? getGroupBounds(exercise.groupId).lastGroupIdx + 1 : currentExerciseIndex + 1;
-    const nextEx = exercises[nextIdx];
-    setWeight(nextEx ? getSmartWeight(nextEx.name) : 0);
     if (exercise.groupId) {
       const { lastGroupIdx } = getGroupBounds(exercise.groupId);
       setCurrentExerciseIndex(lastGroupIdx + 1);
@@ -471,7 +473,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
 
   const goToExercise = (index: number) => {
     const targetEx = exercises[index];
-    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); setWeight(targetEx ? getSmartWeight(targetEx.name) : 0); resumeTimer(); setAchievedFailure(false);
+    setCurrentExerciseIndex(index); setCurrentSet(1); resetTimer(); setReps(0); resumeTimer(); setAchievedFailure(false);
     setTimeout(() => setSwipeDirection(null), 300);
   };
 
