@@ -28,7 +28,9 @@ const ExerciseRestTimerOverlay = ({
   nextExerciseReps,
   currentExerciseNumber,
   totalExercises,
+  nextExerciseVideoUrl,
 }: ExerciseRestTimerOverlayProps) => {
+  const [imgError, setImgError] = useState(false);
   const { seconds: timeLeft, addTime } = useStableTimer({
     mode: "down",
     initialSeconds: duration,
