@@ -1,11 +1,12 @@
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart, List, Dumbbell } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
 import ExerciseRestTimerOverlay from "./ExerciseRestTimerOverlay";
 import ExerciseHistoryModal from "./ExerciseHistoryModal";
 import { toast } from "sonner";
+import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { hapticLight, hapticMedium } from "@/lib/haptics";
 import { useAchievements } from "@/hooks/useAchievements";
 import { useBioCoin } from "@/hooks/useBioCoin";
@@ -89,7 +90,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [weight, setWeight] = useState(60);
   const [reps, setReps] = useState(0);
   const [showComplete, setShowComplete] = useState(false);
-  const [visionAIActive, setVisionAIActive] = useState(false);
+  const [showExerciseList, setShowExerciseList] = useState(false);
   const [showRestTimer, setShowRestTimer] = useState(false);
   const [showExerciseRestTimer, setShowExerciseRestTimer] = useState(false);
   const [currentSet, setCurrentSet] = useState(1);
@@ -98,7 +99,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const [exerciseComplete, setExerciseComplete] = useState(false);
   const [showExerciseHistory, setShowExerciseHistory] = useState(false);
   const [simulatedHeartRate, setSimulatedHeartRate] = useState(72);
-  const [showVisionInfo, setShowVisionInfo] = useState(false);
+  const [showVisionInfo, setShowVisionInfo] = useState(false); // kept for potential future use
   const [showRpeInfo, setShowRpeInfo] = useState(false);
   const [showHeartRateInfo, setShowHeartRateInfo] = useState(false);
   const [swipeDirection, setSwipeDirection] = useState<'left' | 'right' | null>(null);
@@ -257,7 +258,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             setShowWorkoutSummary(true);
             triggerAchievement("workout_complete");
             if (new Date().getHours() < 6) triggerAchievement("early_workout");
-            if (visionAIActive) triggerAchievement("vision_ai_workout");
             if (weight >= 100) triggerAchievement("heavy_lift_100kg");
           }
         }, 1500);
@@ -277,7 +277,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             setShowWorkoutSummary(true);
             triggerAchievement("workout_complete");
             if (new Date().getHours() < 6) triggerAchievement("early_workout");
-            if (visionAIActive) triggerAchievement("vision_ai_workout");
             if (weight >= 100) triggerAchievement("heavy_lift_100kg");
           }
         }, 1500);
@@ -608,6 +607,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
               <span className="text-[10px] text-red-400/70">bpm</span>
               <Info className="w-3 h-3 text-red-400/50 ml-0.5" />
             </motion.button>
+            <button onClick={() => setShowExerciseList(true)} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><List className="w-4 h-4 text-muted-foreground" /></button>
             <button onClick={onClose} className="w-8 h-8 rounded-lg bg-secondary flex items-center justify-center"><X className="w-4 h-4 text-muted-foreground" /></button>
           </div>
         </div>
@@ -665,7 +665,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           </AnimatePresence>
 
           <div className="absolute inset-0 flex items-center justify-center">
-            {!visionAIActive ? (
               <div className="relative w-full h-full">
                 {exercise?.videoUrl ? (
                   <motion.div key={exercise.id} initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.3 }} className="absolute inset-0">
@@ -674,7 +673,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 ) : (
                   <motion.div className="absolute inset-0 flex items-center justify-center bg-secondary/20" animate={{ opacity: [0.7, 1, 0.7] }} transition={{ duration: 2, repeat: Infinity }}>
                     <div className="text-center">
-                      <motion.div className="w-24 h-24 mx-auto mb-3 rounded-full bg-secondary/50 border border-white/10 flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
+                      <motion.div className="w-24 h-24 mx-auto mb-3 rounded-full bg-secondary/50 border border-border flex items-center justify-center" animate={{ scale: [1, 1.05, 1] }} transition={{ duration: 2, repeat: Infinity }}>
                         <Play className="w-10 h-10 text-primary ml-1" />
                       </motion.div>
                       <p className="font-display text-foreground text-sm mb-1">{exercise?.name}</p>
@@ -683,46 +682,14 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                   </motion.div>
                 )}
               </div>
-            ) : (
-              <>
-                <div className="absolute inset-0 grid-pattern opacity-20" />
-                <svg className="absolute inset-0 w-full h-full" viewBox="0 0 200 300" preserveAspectRatio="xMidYMid meet">
-                  <g stroke="hsl(var(--primary))" strokeWidth="2" fill="none" className="drop-shadow-[0_0_10px_hsl(var(--primary))]">
-                    <circle cx="100" cy="40" r="15" /><line x1="100" y1="55" x2="100" y2="130" /><line x1="60" y1="70" x2="140" y2="70" />
-                    <line x1="60" y1="70" x2="45" y2="110" /><line x1="45" y1="110" x2="35" y2="150" /><line x1="140" y1="70" x2="155" y2="110" />
-                    <line x1="155" y1="110" x2="165" y2="150" /><line x1="75" y1="130" x2="125" y2="130" /><line x1="75" y1="130" x2="65" y2="190" />
-                    <line x1="65" y1="190" x2="60" y2="260" /><line x1="125" y1="130" x2="135" y2="190" /><line x1="135" y1="190" x2="140" y2="260" />
-                    {[[60,70],[140,70],[45,110],[155,110],[75,130],[125,130],[65,190],[135,190]].map(([cx,cy],i) => (
-                      <circle key={i} cx={cx} cy={cy} r="4" fill="hsl(var(--primary))" />
-                    ))}
-                  </g>
-                </svg>
-              </>
-            )}
           </div>
-
-          {/* Vision AI Stats */}
-          <AnimatePresence>
-            {visionAIActive && (
-              <motion.div initial={{ x: -20, opacity: 0 }} animate={{ x: 0, opacity: 1 }} exit={{ x: -20, opacity: 0 }} className="absolute top-3 left-3 flex gap-2">
-                <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5">
-                  <div className="flex items-center gap-1.5 mb-0.5"><Activity className="w-3 h-3 text-primary" /><span className="text-[9px] text-muted-foreground uppercase">ROM</span></div>
-                  <p className="font-display text-base text-primary leading-none">98%</p>
-                </div>
-                <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5">
-                  <div className="flex items-center gap-1.5 mb-0.5"><Target className="w-3 h-3 text-orange-400" /><span className="text-[9px] text-muted-foreground uppercase">Hız</span></div>
-                  <p className="font-display text-base text-orange-400 leading-none">0.45</p>
-                </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
 
           {/* Top Right Controls */}
           <div className="absolute top-3 right-3 flex flex-col gap-2 items-end">
-            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} onClick={() => setVisionAIActive(!visionAIActive)}
-              className={`flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all ${visionAIActive ? "bg-primary/20 border-primary/50 text-primary" : "bg-black/60 border-white/10 text-muted-foreground hover:border-primary/30"}`}>
-              {visionAIActive ? <Eye className="w-3.5 h-3.5" /> : <EyeOff className="w-3.5 h-3.5" />}
-              <span className="text-[9px] font-display tracking-wider">{visionAIActive ? "AI ON" : "AI"}</span>
+            <motion.button initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ delay: 0.3 }} onClick={() => toast.info("Yapay Zeka koç asistanı çok yakında aktif olacak!")}
+              className="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg border transition-all bg-secondary/60 border-border text-muted-foreground hover:border-primary/30">
+              <EyeOff className="w-3.5 h-3.5" />
+              <span className="text-[9px] font-display tracking-wider">AI</span>
             </motion.button>
             <div className="bg-black/70 backdrop-blur-sm border border-white/10 rounded-lg px-2.5 py-1.5 text-center">
               <span className="text-[9px] text-muted-foreground uppercase block">Set</span>
@@ -935,6 +902,46 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       )}
 
       <ExerciseHistoryModal exerciseName={exercise.name} isOpen={showExerciseHistory} onClose={() => setShowExerciseHistory(false)} />
+
+      {/* Exercise List Sheet */}
+      <Sheet open={showExerciseList} onOpenChange={setShowExerciseList}>
+        <SheetContent side="bottom" className="max-h-[70vh] bg-card border-t border-border rounded-t-2xl px-0">
+          <SheetHeader className="px-4 pb-3 border-b border-border">
+            <SheetTitle className="font-display text-foreground tracking-wider text-base">TÜM HAREKETLER</SheetTitle>
+          </SheetHeader>
+          <div className="overflow-y-auto px-4 py-3 space-y-2">
+            {exercises.map((ex, index) => {
+              const isDone = index < currentExerciseIndex;
+              const isCurrent = index === currentExerciseIndex;
+              const completedSets = completedSetsRef.current[index]?.length ?? 0;
+              return (
+                <motion.button
+                  key={ex.id}
+                  whileTap={{ scale: 0.97 }}
+                  onClick={() => { goToExercise(index); setShowExerciseList(false); hapticLight(); }}
+                  className={`w-full flex items-center gap-3 p-3 rounded-xl border transition-all text-left ${
+                    isCurrent ? 'bg-primary/15 border-primary/40' : isDone ? 'bg-secondary/50 border-border opacity-70' : 'bg-secondary/30 border-border'
+                  }`}
+                >
+                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
+                    isDone ? 'bg-primary/20' : isCurrent ? 'bg-primary/30 border border-primary/50' : 'bg-secondary'
+                  }`}>
+                    {isDone ? <Check className="w-5 h-5 text-primary" /> : <Dumbbell className={`w-5 h-5 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <p className={`font-display text-sm truncate ${isCurrent ? 'text-primary' : isDone ? 'text-foreground/60 line-through' : 'text-foreground'}`}>{ex.name}</p>
+                    <p className="text-muted-foreground text-xs">{ex.sets} set × {ex.targetReps} tekrar{isDone ? ` • ${completedSets} set tamamlandı` : ''}</p>
+                  </div>
+                  <div className="flex-shrink-0">
+                    {isDone && <span className="text-[10px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">✓</span>}
+                    {isCurrent && <span className="text-[10px] text-primary font-medium bg-primary/10 px-2 py-0.5 rounded-full">Aktif</span>}
+                  </div>
+                </motion.button>
+              );
+            })}
+          </div>
+        </SheetContent>
+      </Sheet>
     </>
   );
 };
