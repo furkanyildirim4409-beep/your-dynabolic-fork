@@ -3,7 +3,7 @@ import { Timer, SkipForward, Volume2, Dumbbell, ArrowRight, Plus } from "lucide-
 import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
 import { toast } from "sonner";
 import { useStableTimer } from "@/hooks/useStableTimer";
-import { useEffect, useRef } from "react";
+import { useEffect, useRef, useState } from "react";
 
 interface ExerciseRestTimerOverlayProps {
   duration: number;
@@ -15,6 +15,7 @@ interface ExerciseRestTimerOverlayProps {
   nextExerciseReps: number;
   currentExerciseNumber: number;
   totalExercises: number;
+  nextExerciseVideoUrl?: string;
 }
 
 const ExerciseRestTimerOverlay = ({
@@ -27,7 +28,9 @@ const ExerciseRestTimerOverlay = ({
   nextExerciseReps,
   currentExerciseNumber,
   totalExercises,
+  nextExerciseVideoUrl,
 }: ExerciseRestTimerOverlayProps) => {
+  const [imgError, setImgError] = useState(false);
   const { seconds: timeLeft, addTime } = useStableTimer({
     mode: "down",
     initialSeconds: duration,
@@ -185,19 +188,31 @@ const ExerciseRestTimerOverlay = ({
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
         transition={{ delay: 0.4 }}
-        className="mt-6 glass-card p-4 w-[85%] max-w-sm"
+        className="mt-6 bg-secondary/40 border border-border/50 backdrop-blur-md p-5 w-[90%] max-w-sm rounded-2xl"
       >
         <div className="flex items-center gap-2 text-primary mb-3">
           <ArrowRight className="w-4 h-4" />
           <span className="font-display text-xs tracking-wider">SIRADAKİ HAREKET</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="w-14 h-14 rounded-xl bg-primary/20 border border-primary/30 flex items-center justify-center">
-            <Dumbbell className="w-6 h-6 text-primary" />
+          <div className="w-24 h-24 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
+            {nextExerciseVideoUrl && !imgError ? (
+              <img
+                src={nextExerciseVideoUrl}
+                alt={nextExerciseName}
+                loading="lazy"
+                decoding="async"
+                crossOrigin="anonymous"
+                onError={() => setImgError(true)}
+                className="w-full h-full object-contain"
+              />
+            ) : (
+              <Dumbbell className="w-8 h-8 text-primary" />
+            )}
           </div>
-          <div className="flex-1">
-            <p className="font-display text-lg text-foreground">{nextExerciseName}</p>
-            <p className="text-muted-foreground text-sm">{nextExerciseSets} set × {nextExerciseReps} tekrar</p>
+          <div className="flex-1 min-w-0">
+            <p className="font-display text-lg text-foreground leading-tight">{nextExerciseName}</p>
+            <p className="text-muted-foreground text-sm mt-1">{nextExerciseSets} set × {nextExerciseReps} tekrar</p>
           </div>
         </div>
       </motion.div>

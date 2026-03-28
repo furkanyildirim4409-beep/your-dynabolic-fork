@@ -898,6 +898,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
           nextExerciseReps={computedNextExercise?.targetReps ?? 0}
           currentExerciseNumber={currentExerciseIndex + 1}
           totalExercises={exercises.length}
+          nextExerciseVideoUrl={computedNextExercise?.videoUrl ?? undefined}
         />
       )}
 
