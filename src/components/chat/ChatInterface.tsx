@@ -77,10 +77,10 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-background"
+          className="fixed inset-0 z-50 bg-background flex flex-col"
         >
           {/* Header */}
-          <div className="absolute top-0 left-0 right-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10">
+          <div className="flex-shrink-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10">
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
@@ -123,7 +123,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           </div>
 
           {/* Messages */}
-          <div className="absolute top-[72px] bottom-[80px] left-0 right-0 overflow-y-auto p-4 space-y-4">
+          <div className="flex-1 overflow-y-auto p-4 space-y-4">
             {!resolvedCoachId && (
               <div className="flex flex-col items-center justify-center h-full text-center gap-4">
                 <MessageCircleOff className="w-12 h-12 text-muted-foreground/50" />
@@ -210,7 +210,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           </div>
 
           {/* Input */}
-          <div className="absolute bottom-0 left-0 right-0 bg-card/95 backdrop-blur-md p-3 safe-area-inset z-10">
+          <div className="flex-shrink-0 bg-card/95 backdrop-blur-md p-3 safe-bottom z-10">
             {chatFile && (
               <div className="flex items-center gap-2 mb-2">
                 <div className="flex items-center gap-2 bg-secondary/80 rounded-lg px-3 py-1.5 text-xs text-foreground">

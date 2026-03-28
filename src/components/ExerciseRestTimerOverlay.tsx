@@ -101,21 +101,17 @@ const ExerciseRestTimerOverlay = ({
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
-      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center justify-center"
+      className="fixed inset-0 z-50 bg-background/95 backdrop-blur-xl flex flex-col items-center overflow-y-auto"
     >
       {/* Background Pulse */}
       <motion.div
-        className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent"
+        className="absolute inset-0 bg-gradient-radial from-primary/5 via-transparent to-transparent pointer-events-none"
         animate={{ opacity: [0.3, 0.6, 0.3] }}
         transition={{ duration: 2, repeat: Infinity }}
       />
 
       {/* Header */}
-      <motion.div
-        initial={{ y: -20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        className="absolute top-8 left-0 right-0 text-center"
-      >
+      <div className="flex-shrink-0 pt-8 pb-2 text-center relative z-10">
         <div className="flex items-center justify-center gap-2 text-primary mb-2">
           <Timer className="w-5 h-5" />
           <span className="font-display text-sm tracking-wider">HAREKET ARASI DİNLENME</span>
@@ -123,23 +119,18 @@ const ExerciseRestTimerOverlay = ({
         <p className="text-muted-foreground text-sm">
           Hareket {currentExerciseNumber} / {totalExercises} tamamlandı
         </p>
-      </motion.div>
+      </div>
 
       {/* Completed Exercise */}
-      <motion.div
-        initial={{ opacity: 0, y: -10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="absolute top-28 text-center"
-      >
+      <div className="flex-shrink-0 text-center pb-2 relative z-10">
         <p className="text-muted-foreground text-xs mb-1">Tamamlanan:</p>
         <p className="text-foreground/60 font-display text-sm line-through">{completedExerciseName}</p>
-      </motion.div>
+      </div>
 
       {/* Circular Timer */}
-      <div className="relative mt-8">
+      <div className="relative flex-shrink-0 my-4">
         <motion.div
-          className="absolute inset-0 rounded-full"
+          className="absolute inset-0 rounded-full pointer-events-none"
           style={{
             boxShadow: `0 0 60px hsl(var(--primary) / 0.3), 0 0 120px hsl(var(--primary) / 0.1)`,
           }}
@@ -147,10 +138,10 @@ const ExerciseRestTimerOverlay = ({
           transition={{ duration: 2, repeat: Infinity }}
         />
 
-        <svg width="240" height="240" className="transform -rotate-90">
-          <circle cx="120" cy="120" r="100" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
+        <svg width="192" height="192" className="w-48 h-48 sm:w-60 sm:h-60 transform -rotate-90">
+          <circle cx="50%" cy="50%" r="40%" fill="none" stroke="hsl(var(--muted))" strokeWidth="6" />
           <motion.circle
-            cx="120" cy="120" r="100" fill="none"
+            cx="50%" cy="50%" r="40%" fill="none"
             stroke="hsl(var(--primary))"
             strokeWidth="6"
             strokeLinecap="round"
@@ -167,7 +158,7 @@ const ExerciseRestTimerOverlay = ({
             key={timeLeft}
             initial={{ scale: 1.1, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
-            className={`font-display text-5xl ${timeLeft <= 3 ? "text-destructive" : "text-foreground"}`}
+            className={`font-display text-4xl sm:text-5xl ${timeLeft <= 3 ? "text-destructive" : "text-foreground"}`}
             style={{
               textShadow: timeLeft <= 3
                 ? "0 0 20px hsl(var(--destructive) / 0.5)"
@@ -184,7 +175,7 @@ const ExerciseRestTimerOverlay = ({
       <button
         type="button"
         onClick={(e) => { e.stopPropagation(); handleAdd30Seconds(); }}
-        className="relative z-50 mt-4 flex items-center gap-2 px-6 py-3 rounded-xl bg-primary/20 border border-primary/30 text-primary active:scale-95 active:bg-primary/30 transition-transform cursor-pointer select-none"
+        className="relative z-10 flex-shrink-0 flex items-center gap-2 px-6 py-3 rounded-xl bg-primary/20 border border-primary/30 text-primary active:scale-95 active:bg-primary/30 transition-transform cursor-pointer select-none"
         style={{ pointerEvents: 'auto' }}
       >
         <Plus className="w-5 h-5" />
@@ -192,18 +183,13 @@ const ExerciseRestTimerOverlay = ({
       </button>
 
       {/* Next Exercise Preview */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.4 }}
-        className="mt-6 bg-secondary/40 border border-border/50 backdrop-blur-md p-5 w-[90%] max-w-sm rounded-2xl"
-      >
+      <div className="flex-shrink-0 mt-4 bg-secondary/40 border border-border/50 backdrop-blur-md p-4 w-[90%] max-w-sm rounded-2xl relative z-10">
         <div className="flex items-center gap-2 text-primary mb-3">
           <ArrowRight className="w-4 h-4" />
           <span className="font-display text-xs tracking-wider">SIRADAKİ HAREKET</span>
         </div>
         <div className="flex items-center gap-4">
-          <div className="w-24 h-24 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
+          <div className="w-20 h-20 sm:w-24 sm:h-24 rounded-xl bg-background/60 border border-border/50 flex items-center justify-center overflow-hidden shrink-0">
             {nextExerciseVideoUrl && !imgError ? (
               <img
                 src={nextExerciseVideoUrl}
@@ -219,36 +205,32 @@ const ExerciseRestTimerOverlay = ({
             )}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="font-display text-lg text-foreground leading-tight">{nextExerciseName}</p>
+            <p className="font-display text-base sm:text-lg text-foreground leading-tight">{nextExerciseName}</p>
             <p className="text-muted-foreground text-sm mt-1">{nextExerciseSets} set × {nextExerciseReps} tekrar</p>
           </div>
         </div>
-      </motion.div>
+      </div>
 
       {/* Sound Indicator */}
-      <motion.div
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        transition={{ delay: 0.3 }}
-        className="mt-4 flex items-center gap-2 text-muted-foreground"
-      >
+      <div className="flex-shrink-0 mt-3 flex items-center gap-2 text-muted-foreground relative z-10">
         <Volume2 className="w-4 h-4" />
         <span className="text-xs">Sesli uyarı aktif</span>
-      </motion.div>
+      </div>
 
-      {/* Skip Button */}
-      <motion.button
-        initial={{ y: 20, opacity: 0 }}
-        animate={{ y: 0, opacity: 1 }}
-        transition={{ delay: 0.5 }}
-        whileHover={{ scale: 1.05 }}
-        whileTap={{ scale: 0.95 }}
-        onClick={onSkip}
-        className="absolute bottom-12 flex items-center gap-3 bg-secondary/80 hover:bg-secondary px-8 py-4 rounded-2xl border border-white/10 transition-colors"
-      >
-        <SkipForward className="w-5 h-5 text-primary" />
-        <span className="font-display text-foreground tracking-wide">DİNLENMEYİ ATLA</span>
-      </motion.button>
+      {/* Skip Button — pushed to bottom */}
+      <div className="mt-auto flex-shrink-0 w-full px-4 pb-8 safe-bottom relative z-10">
+        <motion.button
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          transition={{ delay: 0.5 }}
+          whileTap={{ scale: 0.95 }}
+          onClick={onSkip}
+          className="w-full flex items-center justify-center gap-3 bg-secondary/80 hover:bg-secondary px-8 py-4 rounded-2xl border border-white/10 transition-colors"
+        >
+          <SkipForward className="w-5 h-5 text-primary" />
+          <span className="font-display text-foreground tracking-wide">DİNLENMEYİ ATLA</span>
+        </motion.button>
+      </div>
     </motion.div>
   );
 };
