@@ -924,11 +924,7 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                     isCurrent ? 'bg-primary/15 border-primary/40' : isDone ? 'bg-secondary/50 border-border opacity-70' : 'bg-secondary/30 border-border'
                   }`}
                 >
-                  <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${
-                    isDone ? 'bg-primary/20' : isCurrent ? 'bg-primary/30 border border-primary/50' : 'bg-secondary'
-                  }`}>
-                    {isDone ? <Check className="w-5 h-5 text-primary" /> : <Dumbbell className={`w-5 h-5 ${isCurrent ? 'text-primary' : 'text-muted-foreground'}`} />}
-                  </div>
+                  <ExerciseThumb videoUrl={ex.videoUrl} isDone={isDone} isCurrent={isCurrent} />
                   <div className="flex-1 min-w-0">
                     <p className={`font-display text-sm truncate ${isCurrent ? 'text-primary' : isDone ? 'text-foreground/60 line-through' : 'text-foreground'}`}>{ex.name}</p>
                     <p className="text-muted-foreground text-xs">{ex.sets} set × {ex.targetReps} tekrar{isDone ? ` • ${completedSets} set tamamlandı` : ''}</p>
