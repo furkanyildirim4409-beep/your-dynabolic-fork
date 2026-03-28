@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import { calculateWorkoutCalories, countFailureSets } from "@/lib/workout";
 
 export interface WorkoutHistoryEntry {
   id: string;
