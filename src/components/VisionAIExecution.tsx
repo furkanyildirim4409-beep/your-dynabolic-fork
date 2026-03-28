@@ -241,6 +241,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
       reps: reps || exercise.targetReps,
       isFailure: achievedFailure || false,
     });
+    // Store weight in session memory for smart recall
+    lastUsedWeightsRef.current[exercise.name] = weight;
     setAchievedFailure(false);
 
     // 🎉 New PR detection — confetti + toast
