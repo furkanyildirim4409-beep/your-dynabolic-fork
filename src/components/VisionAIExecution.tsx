@@ -277,7 +277,6 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
             setShowWorkoutSummary(true);
             triggerAchievement("workout_complete");
             if (new Date().getHours() < 6) triggerAchievement("early_workout");
-            if (visionAIActive) triggerAchievement("vision_ai_workout");
             if (weight >= 100) triggerAchievement("heavy_lift_100kg");
           }
         }, 1500);
