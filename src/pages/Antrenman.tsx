@@ -24,6 +24,7 @@ const Antrenman = () => {
   const [showHistory, setShowHistory] = useState(false);
   const [selectedWorkout, setSelectedWorkout] = useState<WorkoutHistoryEntry | null>(null);
   const [viewMode, setViewMode] = useState<'list' | 'calendar'>('list');
+  const [dateFilter, setDateFilter] = useState<string>("all");
   const { data: workouts = [], isLoading } = useAssignedWorkouts();
   const { data: workoutHistory = [], isLoading: isHistoryLoading } = useWorkoutHistory();
   const { data: historyData } = useExerciseHistory();
