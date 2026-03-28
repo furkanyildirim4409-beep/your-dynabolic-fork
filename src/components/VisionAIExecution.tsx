@@ -827,6 +827,19 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
                 <p className="text-amber-100 text-[11px] leading-snug line-clamp-2">{exercise.notes}</p>
               </div>
             )}
+
+            {/* Completed Sets Log */}
+            {(completedSetsRef.current[currentExerciseIndex]?.length ?? 0) > 0 && (
+              <div className="space-y-1">
+                {completedSetsRef.current[currentExerciseIndex].map((s, i) => (
+                  <div key={`${currentExerciseIndex}-${i}-${setsVersion}`} className="flex items-center justify-between px-2 py-1 rounded-lg bg-primary/10 border border-primary/20 text-xs">
+                    <span className="text-muted-foreground">Set {i + 1}</span>
+                    <span className="text-foreground font-display">{s.weight} kg × {s.reps}</span>
+                    {s.isFailure && <span className="text-red-400">🔥</span>}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
 
           {/* Controls */}
