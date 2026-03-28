@@ -35,7 +35,7 @@ const Destek = () => {
     }
     try {
       await createTicket.mutateAsync({ subject, priority, message: message.trim() });
-      toast({ title: "Bilet Oluşturuldu ✅", description: "Koçunuz en kısa sürede yanıtlayacak." });
+      toast({ title: "Bilet Oluşturuldu ✅", description: "Destek ekibimiz en kısa sürede yanıtlayacak." });
       setSubject("");
       setPriority("Normal");
       setMessage("");
