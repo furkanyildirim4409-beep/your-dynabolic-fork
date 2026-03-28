@@ -55,7 +55,7 @@ const Destek = () => {
           </button>
           <div>
             <h1 className="text-lg font-bold text-foreground">Destek & Talepler</h1>
-            <p className="text-xs text-muted-foreground">Koçunuza bilet gönderin</p>
+            <p className="text-xs text-muted-foreground">Uygulama destek ekibine ulaşın</p>
           </div>
         </div>
       </div>
