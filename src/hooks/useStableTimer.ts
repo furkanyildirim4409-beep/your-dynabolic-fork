@@ -5,6 +5,7 @@ interface UseStableTimerOptions {
   initialSeconds?: number;
   autoStart?: boolean;
   onComplete?: () => void;
+  onBeforeComplete?: () => void;
   tickInterval?: number;
 }
 
@@ -13,6 +14,7 @@ export function useStableTimer({
   initialSeconds = 0,
   autoStart = true,
   onComplete,
+  onBeforeComplete,
   tickInterval = 250,
 }: UseStableTimerOptions) {
   const [seconds, setSeconds] = useState(mode === "up" ? 0 : initialSeconds);
@@ -22,10 +24,12 @@ export function useStableTimer({
   const accumulatedRef = useRef<number>(0);
   const completedRef = useRef(false);
   const onCompleteRef = useRef(onComplete);
+  const onBeforeCompleteRef = useRef(onBeforeComplete);
   const initialRef = useRef(initialSeconds);
   const modeRef = useRef(mode);
 
   onCompleteRef.current = onComplete;
+  onBeforeCompleteRef.current = onBeforeComplete;
   initialRef.current = initialSeconds;
   modeRef.current = mode;
 
@@ -48,6 +52,7 @@ export function useStableTimer({
     if (modeRef.current === "down" && val <= 0 && !completedRef.current) {
       completedRef.current = true;
       setIsRunning(false);
+      onBeforeCompleteRef.current?.();
       onCompleteRef.current?.();
     }
   }, [computeSeconds]);

@@ -4,6 +4,7 @@ import { Play, Pause, RotateCcw, Plus, Minus, X, Volume2, VolumeX } from "lucide
 import { useStableTimer } from "@/hooks/useStableTimer";
 import { useState } from "react";
 import { hapticLight, hapticMedium, hapticHeavy } from "@/lib/haptics";
+import { playCompletionBeep } from "@/lib/audio";
 
 interface RestTimerOverlayProps {
   isOpen: boolean;
@@ -15,12 +16,22 @@ interface RestTimerOverlayProps {
 
 const RestTimerOverlay = ({ isOpen, onClose, initialSeconds = 90, exerciseName, nextExercise }: RestTimerOverlayProps) => {
   const [soundEnabled, setSoundEnabled] = useState(true);
+  const soundEnabledRef = useRef(soundEnabled);
+  soundEnabledRef.current = soundEnabled;
+
+  const handleBeforeComplete = useCallback(() => {
+    if (soundEnabledRef.current) {
+      playCompletionBeep();
+    }
+    hapticHeavy();
+  }, []);
 
   const { seconds: secondsLeft, isRunning, toggle, reset, addTime, setInitial } = useStableTimer({
     mode: "down",
     initialSeconds,
     autoStart: isOpen,
     onComplete: onClose,
+    onBeforeComplete: handleBeforeComplete,
   });
 
   const totalSeconds = initialSeconds;
