@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
-import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart } from "lucide-react";
+import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart, List, Dumbbell } from "lucide-react";
 import RestTimerOverlay from "./RestTimerOverlay";
 import ExerciseRestTimerOverlay from "./ExerciseRestTimerOverlay";
 import ExerciseHistoryModal from "./ExerciseHistoryModal";
