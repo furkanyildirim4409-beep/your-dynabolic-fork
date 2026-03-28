@@ -52,6 +52,7 @@ export function useStableTimer({
     if (modeRef.current === "down" && val <= 0 && !completedRef.current) {
       completedRef.current = true;
       setIsRunning(false);
+      onBeforeCompleteRef.current?.();
       onCompleteRef.current?.();
     }
   }, [computeSeconds]);

@@ -32,11 +32,18 @@ const ExerciseRestTimerOverlay = ({
   nextExerciseVideoUrl,
 }: ExerciseRestTimerOverlayProps) => {
   const [imgError, setImgError] = useState(false);
+
+  const handleBeforeComplete = useCallback(() => {
+    playCompletionBeep();
+    hapticHeavy();
+  }, []);
+
   const { seconds: timeLeft, addTime } = useStableTimer({
     mode: "down",
     initialSeconds: duration,
     autoStart: true,
     onComplete,
+    onBeforeComplete: handleBeforeComplete,
   });
 
   const totalDuration = duration;
