@@ -1,64 +1,61 @@
 
 
-## Data Integrity (Kcal) & History Filters (Phase 3 - Epic 7 - Part 5/5)
+## Application-Wide Mobile Responsiveness Hotfix
 
-### Problem 1: Kcal Mismatch
-The workout summary in `VisionAIExecution.tsx` (line 550-558) calculates calories using only `baseBurn + failCount * 15` — it **omits the mechanical bonus** (tonnage component). Meanwhile, `useWorkoutHistory.ts` (line 83-85) includes all three pillars: `baseBurn + failureSets * 15 + mechanicalBonus`. Since `workout_logs` has no `calories` column, both sides recalculate independently and produce different numbers.
+### Problem Analysis
+Multiple full-screen overlays use `position: absolute` with fixed pixel offsets (e.g., `top-8`, `top-28`, `bottom-12`) and fixed-size elements (240px timer circle). On small mobile screens (~375px height when keyboard or notch is present), these elements overlap and stack incorrectly. The core issue is **not a missing media query** — the app is already constrained to 430px max-width. The problem is that overlay internals use absolute positioning instead of flex flow.
 
-**Solution**: Add a `calories_burned` column to `workout_logs` and save the calculated value at workout completion time. Both the summary and history then use the same persisted value.
-
-### Problem 2: No Date Filter
-The workout history list renders all entries without filtering.
+### Strategy
+Convert overlay layouts from absolute-positioned elements to **natural flex-column flow with overflow-y-auto**, so content stacks cleanly regardless of viewport height. Scale down fixed-size elements on smaller screens using responsive classes.
 
 ---
 
-### Changes
+### File Changes
 
-**1. Migration: Add `calories_burned` column to `workout_logs`**
-```sql
-ALTER TABLE public.workout_logs ADD COLUMN calories_burned integer;
-```
+**1. `src/components/ExerciseRestTimerOverlay.tsx`**
+- Remove `absolute` positioning from header (`absolute top-8`), completed exercise (`absolute top-28`), and skip button (`absolute bottom-12`)
+- Convert the root container from `flex items-center justify-center` to `flex flex-col` with `overflow-y-auto` and proper padding
+- All children become natural flex items that stack vertically
+- Scale the SVG timer from 240px to a responsive size: `w-48 h-48 sm:w-60 sm:h-60` (192px on mobile, 240px on larger)
+- Skip button becomes a sticky-bottom element with `mt-auto` instead of `absolute bottom-12`
+- Add `safe-area-inset` padding at bottom
 
-**2. `src/lib/workout.ts` (NEW) — Shared calorie calculator**
-```typescript
-export const calculateWorkoutCalories = (
-  durationMinutes: number,
-  weightKg: number,
-  tonnageKg: number,
-  failureSets: number
-): number => {
-  const baseBurn = (durationMinutes / 60) * weightKg * 5.0;
-  const mechanicalBonus = (tonnageKg / 1000) * 20;
-  return Math.round(baseBurn + failureSets * 15 + mechanicalBonus);
-};
-```
+**2. `src/components/RestTimerOverlay.tsx`**
+- Same pattern: remove `absolute` from header and skip button
+- Convert to flex-column flow with `overflow-y-auto`
+- Header becomes a flex-shrink-0 top section
+- Skip button uses `mt-auto` + bottom padding instead of `absolute bottom-8`
+- Timer circle already uses responsive `w-64 h-64` — keep as is
 
 **3. `src/components/VisionAIExecution.tsx`**
-- Import `calculateWorkoutCalories`
-- In the workout summary display (line 550): use the shared function with tonnage included
-- In `handleCompleteWorkout` (line 401): save `calories_burned` to the DB insert
+- **Workout Summary** (line 545): Change from `absolute inset-0 ... justify-center` to `absolute inset-0 ... overflow-y-auto` with `py-12` padding instead of `justify-center`. This ensures the summary scrolls on small screens when content (stats + analytics + overload cards) exceeds viewport
+- **Info Panel** (line 789): The `h-[45%]` panel with `overflow-hidden` — change the inner content div to `overflow-y-auto` so completed sets log + notes + failure button don't get clipped
+- **Exercise List Sheet** (line 997): Already uses `overflow-y-auto` — no change needed
+- **Controls area**: Already uses `grid grid-cols-3` — works fine on mobile. Add `gap-1` on very small screens via responsive class
 
-**4. `src/hooks/useWorkoutHistory.ts`**
-- Import `calculateWorkoutCalories`
-- Prefer `log.calories_burned` from DB when available; fall back to recalculation for legacy entries
-- Replace inline calorie math with the shared function
+**4. `src/components/chat/ChatInterface.tsx`**
+- The chat uses absolute positioning for header/messages/input which is actually correct for a chat layout. The fixed pixel offsets (`top-[72px]`, `bottom-[80px]`) are the issue
+- Change header to use `flex-shrink-0` in a flex container instead of absolute
+- Change the messages area from `absolute top-[72px] bottom-[80px]` to `flex-1 overflow-y-auto`
+- Change input area from `absolute bottom-0` to `flex-shrink-0`
+- This eliminates hardcoded pixel offsets and makes the layout resilient to safe-area insets
 
-**5. `src/hooks/useWeeklyWorkoutStats.ts`**
-- Import and use `calculateWorkoutCalories` for consistency
+**5. `src/index.css` — Global utility additions**
+- Add a `.safe-bottom` utility: `padding-bottom: env(safe-area-inset-bottom)`
+- No global `!important` overrides — those would break intentional absolute positioning in modals
 
-**6. `src/pages/Antrenman.tsx` — Date Filter**
-- Add `dateFilter` state: `"all" | "this-month" | "last-month" | "this-year"`
-- Add a `Select` dropdown between the history header and the stats summary
-- Filter `workoutHistory` array by `logged_at` before rendering
-- Options: Tüm Zamanlar, Bu Ay, Geçen Ay, Bu Yıl
+### Technical Notes
 
-### Files Changed
-| File | Action |
-|------|--------|
-| Migration | Add `calories_burned` column to `workout_logs` |
-| `src/lib/workout.ts` | NEW — shared `calculateWorkoutCalories` |
-| `src/components/VisionAIExecution.tsx` | Use shared calc, save to DB |
-| `src/hooks/useWorkoutHistory.ts` | Read DB value, fallback to shared calc |
-| `src/hooks/useWeeklyWorkoutStats.ts` | Use shared calc |
-| `src/pages/Antrenman.tsx` | Add date filter Select to history overlay |
+| Component | Current Issue | Fix |
+|---|---|---|
+| ExerciseRestTimerOverlay | 3 absolute children overlap on small screens | Flex-column flow, responsive timer size |
+| RestTimerOverlay | Skip button overlaps controls on short viewports | Flex-column flow, mt-auto skip button |
+| VisionAIExecution Summary | Non-scrollable, content clips | Add overflow-y-auto to summary |
+| VisionAIExecution Info Panel | Completed sets log gets clipped | overflow-y-auto on inner content |
+| ChatInterface | Hardcoded pixel offsets for regions | Flex-column layout, no absolute positioning |
+
+### What This Does NOT Change
+- EliteDock (bottom nav) — already works fine with safe-area padding
+- AppShell — already correctly structured with max-w-[430px]
+- Modals (RPE info, heart rate info) — already use `fixed inset-0` with centered content and `max-w-xs`, which works on mobile
 
