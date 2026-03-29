@@ -275,6 +275,8 @@ export function useConsumedFoods() {
     removeFood,
     checkPlannedFood,
     uncheckPlannedFood,
+    updateFoodServing,
+    parseGrams,
     consumedPlannedIds,
     groupedByMeal,
     totals,
