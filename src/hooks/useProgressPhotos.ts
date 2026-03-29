@@ -68,15 +68,17 @@ export function useProgressPhotos() {
 
       if (storageError) throw storageError;
 
-      const { data: urlData } = supabase.storage
+      const { data: urlData } = await supabase.storage
         .from("progress-photos")
-        .getPublicUrl(path);
+        .createSignedUrl(path, 60 * 60 * 24 * 365 * 10); // 10 year signed URL
+
+      if (!urlData?.signedUrl) throw new Error("Failed to create signed URL");
 
       const { error: dbError } = await supabase
         .from("progress_photos" as any)
         .insert({
           user_id: user.id,
-          photo_url: urlData.publicUrl,
+          photo_url: urlData.signedUrl,
           date: metadata.date,
           weight: metadata.weight ?? null,
           body_fat_pct: metadata.bodyFatPct ?? null,

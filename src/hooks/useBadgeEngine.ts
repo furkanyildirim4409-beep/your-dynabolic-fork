@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useXPEngine } from "@/hooks/useXPEngine";
 import { toast } from "sonner";
 import {
   Dumbbell, Sunrise, Flame, Trophy, Zap, Target, Calendar,
@@ -41,7 +40,7 @@ export interface BadgeWithStatus {
 
 export const useBadgeEngine = () => {
   const { user, profile } = useAuth();
-  const { awardXP } = useXPEngine();
+  
   const [badges, setBadges] = useState<BadgeWithStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingBadge, setPendingBadge] = useState<BadgeWithStatus | null>(null);
@@ -123,21 +122,19 @@ export const useBadgeEngine = () => {
 
       const currentValue = stats[badge.condition_type] ?? 0;
       if (currentValue >= badge.condition_value) {
-        // Unlock!
-        const { error } = await supabase.from("athlete_badges").insert({
-          athlete_id: user.id,
-          badge_id: badge.id,
+        // Unlock via server-side validated function
+        const { data: awarded, error } = await supabase.rpc("award_badge_if_earned", {
+          _badge_id: badge.id,
         });
 
         if (error) {
-          console.error("Badge insert error:", error);
+          console.error("Badge award error:", error);
           continue;
         }
 
+        if (!awarded) continue;
+
         const xpReward = badge.xp_reward || 0;
-        if (xpReward > 0) {
-          await awardXP(xpReward);
-        }
 
         const unlockedBadge: BadgeWithStatus = {
           id: badge.id,
@@ -167,7 +164,7 @@ export const useBadgeEngine = () => {
 
     // Refresh badge list
     await fetchBadges();
-  }, [user?.id, profile, awardXP, fetchBadges]);
+  }, [user?.id, profile, fetchBadges]);
 
   const dismissPendingBadge = useCallback(() => setPendingBadge(null), []);
 
