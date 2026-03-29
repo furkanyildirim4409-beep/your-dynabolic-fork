@@ -1,43 +1,39 @@
 
 
-## Rest Day Enforcement via `assigned_diet_days` (Epic 8 - Part 1 Fix)
+## Zero-Latency Nutrition Fetch (Epic 8 - Part 1 Performance Hotfix)
 
 ### Problem
 
-Both `useDietPlan.ts` and `useNutritionCalendar.ts` use blind modulo arithmetic (`(elapsed % totalTemplateDays) + 1`) to determine which template day maps to each calendar date. This means every single day within the program duration gets a diet plan — there are no rest days. The coach panel now writes explicit `assigned_diet_days` rows only for days with food, so the athlete app must respect that.
-
-### Solution
-
-Query `assigned_diet_days` for the athlete and use it as the authoritative day-number lookup. If no row exists for a date, that day is a rest day with zero targets and no planned foods.
+`useDietPlan.ts` makes 3 sequential queries (waterfall): `nutrition_targets` → `assigned_diet_days` → `diet_template_foods`. Steps 1 and 2 have no dependency on each other and can run in parallel. Step 3 depends on the template ID from step 1.
 
 ### Changes
 
-**1. `src/hooks/useDietPlan.ts` — Use `assigned_diet_days` for today's plan**
+**`src/hooks/useDietPlan.ts`**
 
-- Fetch from `assigned_diet_days` where `athlete_id = user.id` and `target_date = today` (single row query)
-- If a row exists, use its `day_number` to filter `allFoods`
-- If no row exists (rest day), set `plannedFoods = []` and `dynamicTargets = null`
-- Remove the modulo-based `currentDayNumber` calculation from `temporalState`
-- Keep `totalTemplateDays` for display purposes (cycle badge)
+1. **Parallelize steps 1 & 2** — Fire `nutrition_targets` and `assigned_diet_days` queries simultaneously via `Promise.all`
+2. **Skip loading spinner on re-renders** — Only set `isLoading(true)` when `allFoods` is empty (first mount), so tab switches don't flash a spinner
+3. Keep step 3 (`diet_template_foods`) sequential since it depends on `templateId` from step 1
 
-**2. `src/hooks/useNutritionCalendar.ts` — Use `assigned_diet_days` for the month**
+```text
+BEFORE (waterfall):
+  nutrition_targets ──────► assigned_diet_days ──────► diet_template_foods
+  ~150ms                    ~150ms                     ~150ms
+  Total: ~450ms
 
-- Fetch all `assigned_diet_days` rows for the athlete within the current month range
-- Build a `Map<string, number>` mapping `target_date → day_number`
-- In the `dayStatsMap` computation, look up each date in this map instead of using modulo arithmetic
-- If no entry exists for a date within the program range, treat it as a rest day (`status: "empty"`, zero targets)
-- Future dates with an assignment get `status: "scheduled"`, future dates without get `status: "no-plan"`
+AFTER (parallel + conditional):
+  nutrition_targets  ┐
+                     ├──► diet_template_foods
+  assigned_diet_days ┘    ~150ms
+  ~150ms (parallel)
+  Total: ~300ms
+```
 
-**3. UI — Rest day indication (minimal)**
+### Specific Code Changes
 
-- In `Beslenme.tsx`, when `plannedFoods` is empty and `hasTemplate` is true and the diet is active, show a subtle "Dinlenme Günü" (Rest Day) badge instead of the meal cards
-- The calendar already handles empty days via the `"empty"` status dot
+- Lines 55-90: Replace the two sequential awaits with a single `Promise.all([targetsQuery, assignmentQuery])`
+- Line 56: Change `setIsLoading(true)` to `setIsLoading(allFoods.length === 0)` to avoid flashing spinner on re-fetches
+- Move `todayStr` calculation before the `Promise.all` block
+- Destructure both results and proceed with the existing template foods fetch
 
-### Files Changed
-
-| File | Action |
-|------|--------|
-| `src/hooks/useDietPlan.ts` | Query `assigned_diet_days` for today, replace modulo logic |
-| `src/hooks/useNutritionCalendar.ts` | Query `assigned_diet_days` for month, replace modulo logic |
-| `src/pages/Beslenme.tsx` | Add rest day badge when active template has no foods for today |
+No other files changed. Pure performance optimization, no behavior change.
 
