@@ -87,6 +87,8 @@ export function useDietPlan() {
         setDietStartDate(null);
         setDietDurationWeeks(null);
         setTodayDayNumber(null);
+        _foodsCache.delete(cacheKey);
+        _metaCache.delete(cacheKey);
         setIsLoading(false);
         return;
       }
