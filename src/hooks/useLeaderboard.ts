@@ -34,12 +34,16 @@ export const useLeaderboard = (metric: LeaderboardMetric = "score") => {
     queryKey: ["leaderboard"],
     queryFn: async () => {
       const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, xp, streak, total_volume_kg, bio_coins, level")
-        .eq("role", "athlete");
+        .from("leaderboard_profiles" as any)
+        .select("id, full_name, avatar_url, xp, streak, total_volume_kg, bio_coins, level");
 
       if (error) throw error;
-      return (data ?? []).map((p): LeaderboardAthlete => {
+      const rows = ((data ?? []) as unknown) as Array<{
+        id: string; full_name: string | null; avatar_url: string | null;
+        xp: number | null; streak: number | null; total_volume_kg: number | null;
+        bio_coins: number | null; level: number | null;
+      }>;
+      return rows.map((p): LeaderboardAthlete => {
         const xp = p.xp ?? 0;
         const streak = p.streak ?? 0;
         const volume = Number(p.total_volume_kg ?? 0);
