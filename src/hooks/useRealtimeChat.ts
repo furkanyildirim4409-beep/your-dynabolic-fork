@@ -175,10 +175,10 @@ export function useRealtimeChat(options: RealtimeChatOptions = {}) {
           toast.error("Dosya yüklenemedi: " + upErr.message);
           return;
         }
-        const { data: urlData } = supabase.storage
+        const { data: urlData } = await supabase.storage
           .from("chat-media")
-          .getPublicUrl(filePath);
-        media_url = urlData.publicUrl;
+          .createSignedUrl(filePath, 60 * 60 * 24 * 365 * 10);
+        media_url = urlData?.signedUrl ?? null;
         if (file.type.startsWith("video")) {
           media_type = "video";
         } else if (file.type.startsWith("audio") || file.name.includes(".webm")) {
