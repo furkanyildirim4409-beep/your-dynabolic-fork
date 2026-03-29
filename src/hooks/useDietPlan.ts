@@ -43,12 +43,13 @@ const MEAL_LABELS: Record<string, string> = {
 
 export function useDietPlan() {
   const { user } = useAuth();
-  const [allFoods, setAllFoods] = useState<PlannedFood[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasTemplate, setHasTemplate] = useState(false);
-  const [dietStartDate, setDietStartDate] = useState<string | null>(null);
-  const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(null);
-  const [todayDayNumber, setTodayDayNumber] = useState<number | null>(null);
+  const cacheKey = user?.id || "";
+  const [allFoods, setAllFoods] = useState<PlannedFood[]>(() => _foodsCache.get(cacheKey) || []);
+  const [isLoading, setIsLoading] = useState(() => !_foodsCache.has(cacheKey));
+  const [hasTemplate, setHasTemplate] = useState(() => _metaCache.get(cacheKey)?.hasTemplate ?? false);
+  const [dietStartDate, setDietStartDate] = useState<string | null>(() => _metaCache.get(cacheKey)?.startDate ?? null);
+  const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(() => _metaCache.get(cacheKey)?.durationWeeks ?? null);
+  const [todayDayNumber, setTodayDayNumber] = useState<number | null>(() => _metaCache.get(cacheKey)?.todayDay ?? null);
 
   useEffect(() => {
     if (!user) {
