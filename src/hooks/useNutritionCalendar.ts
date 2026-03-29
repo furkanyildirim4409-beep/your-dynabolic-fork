@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 
 // Module-level cache — survives Dialog unmounts
 const globalLogsCache = new Map<string, Map<string, { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[]>>();
+const globalAssignedCache = new Map<string, Map<string, number>>();
 import {
   startOfMonth,
   endOfMonth,
