@@ -1,64 +1,58 @@
 
 
-## Data Integrity (Kcal) & History Filters (Phase 3 - Epic 7 - Part 5/5)
+## Dynamic Grammage Override & Macro Recalculation (Epic 8 - Part 2/6)
 
-### Problem 1: Kcal Mismatch
-The workout summary in `VisionAIExecution.tsx` (line 550-558) calculates calories using only `baseBurn + failCount * 15` — it **omits the mechanical bonus** (tonnage component). Meanwhile, `useWorkoutHistory.ts` (line 83-85) includes all three pillars: `baseBurn + failureSets * 15 + mechanicalBonus`. Since `workout_logs` has no `calories` column, both sides recalculate independently and produce different numbers.
+### Summary
 
-**Solution**: Add a `calories_burned` column to `workout_logs` and save the calculated value at workout completion time. Both the summary and history then use the same persisted value.
-
-### Problem 2: No Date Filter
-The workout history list renders all entries without filtering.
-
----
+Athletes can edit the serving size of consumed foods (both checked planned foods and manually added foods). When changed, macros are recalculated proportionally and saved to the `consumed_foods` table using the `target_serving` and `consumed_serving` columns.
 
 ### Changes
 
-**1. Migration: Add `calories_burned` column to `workout_logs`**
-```sql
-ALTER TABLE public.workout_logs ADD COLUMN calories_burned integer;
+**1. `src/hooks/useConsumedFoods.ts` — Add `updateFoodServing` mutation**
+
+- New function: `updateFoodServing(id, newGrams, originalGrams, originalMacros)`
+- Calculates `ratio = newGrams / originalGrams`
+- Updates `consumed_foods` row: `calories`, `protein`, `carbs`, `fat`, `consumed_serving` (`"120g"`), and preserves `target_serving` (the coach-assigned original)
+- Optimistically updates local `foods` state so UI refreshes instantly
+
+**2. `src/pages/Beslenme.tsx` — Add edit UI to `CheckedPlannedFoodRow` and `ManualFoodRow`**
+
+- Add a small pencil (`Pencil` icon) button next to each consumed food row
+- On click, open a `Popover` with:
+  - Current serving display (e.g., "Koç hedefi: 100g")
+  - An `Input` field for the new gram amount
+  - Live macro preview showing recalculated values
+  - Save button
+- When saved, call `updateFoodServing` from the hook
+- Show toast confirmation
+- Both `CheckedPlannedFoodRow` and `ManualFoodRow` get the edit capability
+
+**3. Serving parsing utility (inline)**
+
+- `parseGrams(str)`: extracts number from strings like `"100g"`, `"150 g"`, `"200ml"` → returns the number or `100` as fallback
+
+**4. When checking a planned food (`checkPlannedFood`)**
+
+- Also save `target_serving` = planned food's `serving_size` so we always know the coach's original amount for ratio calculation
+
+### Data Flow
+
+```text
+Athlete taps pencil → Popover opens
+  → Types "120" → Live preview: 449 kcal, 16.8g P, ...
+  → Taps "Kaydet"
+  → updateFoodServing() called
+    → ratio = 120 / 100 = 1.2
+    → new macros = original * 1.2
+    → UPDATE consumed_foods SET calories=449, protein=16.8, ...
+       consumed_serving='120g'
+    → Optimistic state update
+    → Toast: "Porsiyon güncellendi"
 ```
-
-**2. `src/lib/workout.ts` (NEW) — Shared calorie calculator**
-```typescript
-export const calculateWorkoutCalories = (
-  durationMinutes: number,
-  weightKg: number,
-  tonnageKg: number,
-  failureSets: number
-): number => {
-  const baseBurn = (durationMinutes / 60) * weightKg * 5.0;
-  const mechanicalBonus = (tonnageKg / 1000) * 20;
-  return Math.round(baseBurn + failureSets * 15 + mechanicalBonus);
-};
-```
-
-**3. `src/components/VisionAIExecution.tsx`**
-- Import `calculateWorkoutCalories`
-- In the workout summary display (line 550): use the shared function with tonnage included
-- In `handleCompleteWorkout` (line 401): save `calories_burned` to the DB insert
-
-**4. `src/hooks/useWorkoutHistory.ts`**
-- Import `calculateWorkoutCalories`
-- Prefer `log.calories_burned` from DB when available; fall back to recalculation for legacy entries
-- Replace inline calorie math with the shared function
-
-**5. `src/hooks/useWeeklyWorkoutStats.ts`**
-- Import and use `calculateWorkoutCalories` for consistency
-
-**6. `src/pages/Antrenman.tsx` — Date Filter**
-- Add `dateFilter` state: `"all" | "this-month" | "last-month" | "this-year"`
-- Add a `Select` dropdown between the history header and the stats summary
-- Filter `workoutHistory` array by `logged_at` before rendering
-- Options: Tüm Zamanlar, Bu Ay, Geçen Ay, Bu Yıl
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| Migration | Add `calories_burned` column to `workout_logs` |
-| `src/lib/workout.ts` | NEW — shared `calculateWorkoutCalories` |
-| `src/components/VisionAIExecution.tsx` | Use shared calc, save to DB |
-| `src/hooks/useWorkoutHistory.ts` | Read DB value, fallback to shared calc |
-| `src/hooks/useWeeklyWorkoutStats.ts` | Use shared calc |
-| `src/pages/Antrenman.tsx` | Add date filter Select to history overlay |
+| `src/hooks/useConsumedFoods.ts` | Add `updateFoodServing`, save `target_serving` on check |
+| `src/pages/Beslenme.tsx` | Add edit popover to `CheckedPlannedFoodRow` and `ManualFoodRow`, pass handler through `ExpandableMealCard` |
 
