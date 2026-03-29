@@ -350,30 +350,144 @@ const PlannedFoodRow = ({
   </button>
 );
 
+// --- SERVING EDIT POPOVER ---
+const ServingEditPopover = ({
+  food,
+  parseGrams,
+  onSave,
+}: {
+  food: ConsumedFood;
+  parseGrams: (str: string | null | undefined) => number;
+  onSave: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
+}) => {
+  // Use target_serving (coach original) if available, else serving_size
+  const originalServing = (food as any).target_serving || food.serving_size || "100g";
+  const originalGrams = parseGrams(originalServing);
+  const currentGrams = parseGrams(food.serving_size);
+  const [newGrams, setNewGrams] = useState(String(currentGrams));
+  const [open, setOpen] = useState(false);
+  const [saving, setSaving] = useState(false);
+
+  // Base macros (per originalGrams)
+  const baseMacros = {
+    calories: Math.round((food.calories || 0) / (currentGrams / originalGrams)),
+    protein: Math.round(((food.protein || 0) / (currentGrams / originalGrams)) * 10) / 10,
+    carbs: Math.round(((food.carbs || 0) / (currentGrams / originalGrams)) * 10) / 10,
+    fat: Math.round(((food.fat || 0) / (currentGrams / originalGrams)) * 10) / 10,
+  };
+
+  const gramsNum = parseFloat(newGrams) || 0;
+  const ratio = originalGrams > 0 ? gramsNum / originalGrams : 0;
+  const preview = {
+    calories: Math.round(baseMacros.calories * ratio),
+    protein: Math.round(baseMacros.protein * ratio * 10) / 10,
+    carbs: Math.round(baseMacros.carbs * ratio * 10) / 10,
+    fat: Math.round(baseMacros.fat * ratio * 10) / 10,
+  };
+
+  const handleSave = async () => {
+    if (gramsNum <= 0) return;
+    setSaving(true);
+    try {
+      await onSave(food.id, gramsNum, originalGrams, baseMacros);
+      setOpen(false);
+      toast({ title: "Porsiyon güncellendi ✅", description: `${food.food_name}: ${gramsNum}g` });
+    } catch {
+      toast({ title: "Hata", description: "Porsiyon güncellenemedi.", variant: "destructive" });
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  return (
+    <Popover open={open} onOpenChange={setOpen}>
+      <PopoverTrigger asChild>
+        <button
+          onClick={(e) => e.stopPropagation()}
+          className="w-7 h-7 flex items-center justify-center rounded-lg bg-secondary/60 hover:bg-secondary text-muted-foreground hover:text-foreground transition-colors"
+        >
+          <Pencil size={12} />
+        </button>
+      </PopoverTrigger>
+      <PopoverContent
+        className="w-64 p-3 bg-card border-border"
+        side="left"
+        align="center"
+        onClick={(e) => e.stopPropagation()}
+      >
+        <p className="text-xs font-bold text-muted-foreground uppercase tracking-wide mb-2">Porsiyon Düzenle</p>
+        {(food as any).target_serving && (
+          <p className="text-[10px] text-muted-foreground mb-2">Koç hedefi: {(food as any).target_serving}</p>
+        )}
+        <Input
+          type="number"
+          value={newGrams}
+          onChange={(e) => setNewGrams(e.target.value)}
+          className="h-9 text-sm mb-2"
+          placeholder="Gram"
+          min={1}
+        />
+        {gramsNum > 0 && (
+          <div className="grid grid-cols-4 gap-1 text-center mb-2 bg-secondary/30 rounded-lg p-2">
+            <div>
+              <p className="text-xs font-bold text-primary">{preview.calories}</p>
+              <p className="text-[8px] text-muted-foreground">kcal</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-yellow-500">{preview.protein}g</p>
+              <p className="text-[8px] text-muted-foreground">P</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-blue-500">{preview.carbs}g</p>
+              <p className="text-[8px] text-muted-foreground">K</p>
+            </div>
+            <div>
+              <p className="text-xs font-bold text-orange-500">{preview.fat}g</p>
+              <p className="text-[8px] text-muted-foreground">Y</p>
+            </div>
+          </div>
+        )}
+        <Button
+          size="sm"
+          className="w-full h-8 text-xs"
+          onClick={handleSave}
+          disabled={saving || gramsNum <= 0}
+        >
+          {saving ? <Loader2 size={14} className="animate-spin" /> : "Kaydet"}
+        </Button>
+      </PopoverContent>
+    </Popover>
+  );
+};
+
 // --- CHECKED PLANNED FOOD ROW ---
 const CheckedPlannedFoodRow = ({
   food,
   onUncheck,
   isToggling,
+  parseGrams,
+  onUpdateServing,
 }: {
   food: ConsumedFood;
   onUncheck: () => void;
   isToggling: boolean;
+  parseGrams: (str: string | null | undefined) => number;
+  onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
 }) => (
-  <button
-    onClick={onUncheck}
-    disabled={isToggling}
-    className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 hover:bg-primary/10 transition-all group"
-  >
-    <div className="flex items-center gap-3">
+  <div className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 transition-all group">
+    <button
+      onClick={onUncheck}
+      disabled={isToggling}
+      className="flex items-center gap-3 flex-1 min-w-0"
+    >
       <div className="w-6 h-6 rounded-full flex items-center justify-center bg-emerald-500 text-white flex-shrink-0">
         {isToggling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
       </div>
-      <div className="text-left">
-        <p className="text-sm font-medium text-foreground">{food.food_name}</p>
+      <div className="text-left min-w-0">
+        <p className="text-sm font-medium text-foreground truncate">{food.food_name}</p>
         {food.serving_size && <p className="text-[10px] text-muted-foreground">{food.serving_size}</p>}
       </div>
-    </div>
+    </button>
     <div className="flex items-center gap-2 flex-shrink-0">
       <div className="text-right">
         <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
@@ -382,12 +496,23 @@ const CheckedPlannedFoodRow = ({
           <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
         </div>
       </div>
+      <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
     </div>
-  </button>
+  </div>
 );
 
 // --- MANUAL CONSUMED FOOD ROW ---
-const ManualFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () => void }) => (
+const ManualFoodRow = ({
+  food,
+  onRemove,
+  parseGrams,
+  onUpdateServing,
+}: {
+  food: ConsumedFood;
+  onRemove: () => void;
+  parseGrams: (str: string | null | undefined) => number;
+  onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
+}) => (
   <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
     <div className="flex items-center gap-3">
       <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
@@ -398,7 +523,7 @@ const ManualFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () =>
         <p className="text-xs text-muted-foreground">{food.serving_size || "100g"}</p>
       </div>
     </div>
-    <div className="flex items-center gap-3">
+    <div className="flex items-center gap-2">
       <div className="text-right flex-shrink-0">
         <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
         <div className="flex gap-2 text-[10px] text-muted-foreground justify-end">
@@ -406,6 +531,7 @@ const ManualFoodRow = ({ food, onRemove }: { food: ConsumedFood; onRemove: () =>
           <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
         </div>
       </div>
+      <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
       <button
         onClick={(e) => {
           e.stopPropagation();
