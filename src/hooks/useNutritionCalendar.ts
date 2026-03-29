@@ -138,6 +138,7 @@ export function useNutritionCalendar({
       (assignedResult.data || []).forEach((row) => {
         adMap.set(row.target_date, row.day_number);
       });
+      globalAssignedCache.set(cacheKey, adMap);
       setAssignedDaysMap(adMap);
 
       setIsLoading(false);
