@@ -38,7 +38,7 @@ export const useLeaderboard = (metric: LeaderboardMetric = "score") => {
         .select("id, full_name, avatar_url, xp, streak, total_volume_kg, bio_coins, level");
 
       if (error) throw error;
-      const rows = (data ?? []) as Array<{
+      const rows = ((data ?? []) as unknown) as Array<{
         id: string; full_name: string | null; avatar_url: string | null;
         xp: number | null; streak: number | null; total_volume_kg: number | null;
         bio_coins: number | null; level: number | null;
