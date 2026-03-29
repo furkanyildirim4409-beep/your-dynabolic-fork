@@ -58,7 +58,7 @@ export function useDietPlan() {
     }
 
     const fetchData = async () => {
-      setIsLoading(allFoods.length === 0);
+      setIsLoading(!_foodsCache.has(cacheKey));
 
       const todayStr = getIstanbulDateStr();
 
