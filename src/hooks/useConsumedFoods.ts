@@ -126,6 +126,52 @@ export function useConsumedFoods() {
     [user],
   );
 
+  // Parse grams from serving string like "100g", "150 g", "200ml"
+  const parseGrams = useCallback((str: string | null | undefined): number => {
+    if (!str) return 100;
+    const match = str.match(/([\d.]+)/);
+    return match ? parseFloat(match[1]) || 100 : 100;
+  }, []);
+
+  // Update consumed food serving & recalculate macros
+  const updateFoodServing = useCallback(
+    async (
+      id: string,
+      newGrams: number,
+      originalGrams: number,
+      originalMacros: { calories: number; protein: number; carbs: number; fat: number },
+    ) => {
+      const ratio = newGrams / originalGrams;
+      const updated = {
+        calories: Math.round(originalMacros.calories * ratio),
+        protein: Math.round(originalMacros.protein * ratio * 10) / 10,
+        carbs: Math.round(originalMacros.carbs * ratio * 10) / 10,
+        fat: Math.round(originalMacros.fat * ratio * 10) / 10,
+        consumed_serving: `${newGrams}g`,
+        serving_size: `${newGrams}g`,
+      };
+
+      // Optimistic update
+      setFoods((prev) =>
+        prev.map((f) =>
+          f.id === id ? { ...f, ...updated } : f,
+        ),
+      );
+
+      const { error } = await supabase
+        .from("consumed_foods")
+        .update(updated)
+        .eq("id", id);
+
+      if (error) {
+        // Revert on error
+        await fetchToday();
+        throw error;
+      }
+    },
+    [fetchToday],
+  );
+
   // Check a planned food (insert into consumed_foods with planned_food_id)
   const checkPlannedFood = useCallback(
     async (planned: {
@@ -150,6 +196,7 @@ export function useConsumedFoods() {
         fat: planned.fat,
         serving_size: planned.serving_size,
         planned_food_id: planned.id,
+        target_serving: planned.serving_size,
       };
 
       const { data, error } = await supabase
