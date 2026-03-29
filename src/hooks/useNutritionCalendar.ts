@@ -73,8 +73,17 @@ export function useNutritionCalendar({
     const cacheKey = `${user.id}-${format(monthStart, "yyyy-MM")}`;
 
     // Instant cache hit (zero latency on re-open)
-    if (globalLogsCache.has(cacheKey)) {
+    const hasLogsCached = globalLogsCache.has(cacheKey);
+    const hasAssignedCached = globalAssignedCache.has(cacheKey);
+
+    if (hasLogsCached) {
       setLogsMap(globalLogsCache.get(cacheKey)!);
+    }
+    if (hasAssignedCached) {
+      setAssignedDaysMap(globalAssignedCache.get(cacheKey)!);
+    }
+
+    if (hasLogsCached && hasAssignedCached) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
