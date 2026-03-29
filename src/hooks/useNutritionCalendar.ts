@@ -57,6 +57,9 @@ export function useNutritionCalendar({
   >(new Map());
   const [isLoading, setIsLoading] = useState(false);
 
+  // assigned_diet_days for the month: Map<target_date, day_number>
+  const [assignedDaysMap, setAssignedDaysMap] = useState<Map<string, number>>(new Map());
+
   useEffect(() => {
     if (!user) return;
 
@@ -72,24 +75,36 @@ export function useNutritionCalendar({
       setIsLoading(true);
     }
 
-    // Background fetch (SWR revalidation)
-    const fetchLogs = async () => {
-      const { data, error } = await supabase
-        .from("nutrition_logs")
-        .select("logged_at, meal_name, total_calories, total_protein, total_carbs, total_fat")
-        .eq("user_id", user.id)
-        .gte("logged_at", format(monthStart, "yyyy-MM-dd"))
-        .lt("logged_at", format(addDays(monthEnd, 1), "yyyy-MM-dd"))
-        .order("logged_at", { ascending: true });
+    const startStr = format(monthStart, "yyyy-MM-dd");
+    const endStr = format(addDays(monthEnd, 1), "yyyy-MM-dd");
 
-      if (error) {
-        console.error("Nutrition calendar fetch error:", error.message);
+    // Fetch logs + assigned_diet_days in parallel
+    const fetchLogs = async () => {
+      const [logsResult, assignedResult] = await Promise.all([
+        supabase
+          .from("nutrition_logs")
+          .select("logged_at, meal_name, total_calories, total_protein, total_carbs, total_fat")
+          .eq("user_id", user.id)
+          .gte("logged_at", startStr)
+          .lt("logged_at", endStr)
+          .order("logged_at", { ascending: true }),
+        supabase
+          .from("assigned_diet_days")
+          .select("target_date, day_number")
+          .eq("athlete_id", user.id)
+          .gte("target_date", startStr)
+          .lt("target_date", endStr),
+      ]);
+
+      // Process logs
+      if (logsResult.error) {
+        console.error("Nutrition calendar fetch error:", logsResult.error.message);
         setIsLoading(false);
         return;
       }
 
       const map = new Map<string, { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[]>();
-      (data || []).forEach((row) => {
+      (logsResult.data || []).forEach((row) => {
         const dateKey = (row.logged_at || "").slice(0, 10);
         if (!map.has(dateKey)) map.set(dateKey, []);
         map.get(dateKey)!.push({
@@ -103,6 +118,14 @@ export function useNutritionCalendar({
 
       globalLogsCache.set(cacheKey, map);
       setLogsMap(map);
+
+      // Process assigned_diet_days
+      const adMap = new Map<string, number>();
+      (assignedResult.data || []).forEach((row) => {
+        adMap.set(row.target_date, row.day_number);
+      });
+      setAssignedDaysMap(adMap);
+
       setIsLoading(false);
     };
 
@@ -170,24 +193,36 @@ export function useNutritionCalendar({
         const isWithinProgram = elapsed >= 0 && elapsed < durationDays;
 
         if (isWithinProgram) {
-          const historicalDayNumber = (elapsed % totalTemplateDays) + 1;
-          const targets = targetsByDayNumber.get(historicalDayNumber);
-          targetCalories = targets?.calories || 0;
-          targetProtein = targets?.protein || 0;
-          targetCarbs = targets?.carbs || 0;
-          targetFat = targets?.fat || 0;
-          plannedFoods = foodsByDayNumber.get(historicalDayNumber) || [];
+          // Use assigned_diet_days as authoritative source instead of modulo
+          const assignedDayNumber = assignedDaysMap.get(dateStr);
 
-          if (isFuture) {
-            status = "scheduled";
-          } else {
-            if (consumedCalories === 0 && dayLogs.length === 0) {
-              status = "empty";
+          if (assignedDayNumber !== undefined) {
+            // This date has an explicit assignment
+            const targets = targetsByDayNumber.get(assignedDayNumber);
+            targetCalories = targets?.calories || 0;
+            targetProtein = targets?.protein || 0;
+            targetCarbs = targets?.carbs || 0;
+            targetFat = targets?.fat || 0;
+            plannedFoods = foodsByDayNumber.get(assignedDayNumber) || [];
+
+            if (isFuture) {
+              status = "scheduled";
             } else {
-              const delta = consumedCalories - targetCalories;
-              if (delta < -150) status = "under";
-              else if (delta > 150) status = "over";
-              else status = "completed";
+              if (consumedCalories === 0 && dayLogs.length === 0) {
+                status = "empty";
+              } else {
+                const delta = consumedCalories - targetCalories;
+                if (delta < -150) status = "under";
+                else if (delta > 150) status = "over";
+                else status = "completed";
+              }
+            }
+          } else {
+            // No assignment = rest day (coach intentionally left it empty)
+            if (isFuture) {
+              status = "no-plan";
+            } else {
+              status = consumedCalories > 0 ? "completed" : "empty";
             }
           }
         } else {
@@ -225,7 +260,7 @@ export function useNutritionCalendar({
     });
 
     return result;
-  }, [currentMonth, logsMap, allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate, targetsByDayNumber, foodsByDayNumber]);
+  }, [currentMonth, logsMap, assignedDaysMap, allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate, targetsByDayNumber, foodsByDayNumber]);
 
   return { dayStatsMap, isLoading };
 }

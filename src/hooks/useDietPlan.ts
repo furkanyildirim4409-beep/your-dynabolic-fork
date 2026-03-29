@@ -2,6 +2,7 @@ import { useState, useEffect, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { differenceInDays, startOfDay, parseISO } from "date-fns";
+import { getIstanbulDateStr } from "@/lib/timezone";
 
 export interface PlannedFood {
   id: string;
@@ -43,6 +44,7 @@ export function useDietPlan() {
   const [hasTemplate, setHasTemplate] = useState(false);
   const [dietStartDate, setDietStartDate] = useState<string | null>(null);
   const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(null);
+  const [todayDayNumber, setTodayDayNumber] = useState<number | null>(null);
 
   useEffect(() => {
     if (!user) {
@@ -68,6 +70,7 @@ export function useDietPlan() {
         setAllFoods([]);
         setDietStartDate(null);
         setDietDurationWeeks(null);
+        setTodayDayNumber(null);
         setIsLoading(false);
         return;
       }
@@ -75,7 +78,18 @@ export function useDietPlan() {
       setDietStartDate(targets.diet_start_date ?? null);
       setDietDurationWeeks(targets.diet_duration_weeks ?? null);
 
-      // 2. Fetch ALL template foods (no day_number filter)
+      // 2. Fetch today's assigned_diet_days entry (authoritative source)
+      const todayStr = getIstanbulDateStr();
+      const { data: todayAssignment } = await supabase
+        .from("assigned_diet_days")
+        .select("day_number")
+        .eq("athlete_id", user.id)
+        .eq("target_date", todayStr)
+        .maybeSingle();
+
+      setTodayDayNumber(todayAssignment?.day_number ?? null);
+
+      // 3. Fetch ALL template foods
       const { data: foods, error } = await supabase
         .from("diet_template_foods")
         .select("*")
@@ -124,18 +138,20 @@ export function useDietPlan() {
       ? Math.max(1, ...allFoods.map((f) => f.day_number || 1))
       : 1;
 
-    const currentDayNumber = isActive ? (elapsedDays % totalTemplateDays) + 1 : 1;
+    // Use todayDayNumber from assigned_diet_days (authoritative), NOT modulo
+    const currentDayNumber = todayDayNumber;
+    const isRestDay = isActive && hasTemplate && currentDayNumber === null;
 
-    return { isFuture, isExpired, isActive, currentDayNumber, totalTemplateDays };
-  }, [allFoods, dietStartDate, dietDurationWeeks]);
+    return { isFuture, isExpired, isActive, currentDayNumber, totalTemplateDays, isRestDay };
+  }, [allFoods, dietStartDate, dietDurationWeeks, todayDayNumber, hasTemplate]);
 
-  // --- STRICT GUARD: Only populate meals if active ---
+  // --- STRICT GUARD: Only populate meals if active AND assigned ---
   const plannedFoods = useMemo(() => {
-    if (!temporalState.isActive || allFoods.length === 0) return [];
+    if (!temporalState.isActive || allFoods.length === 0 || temporalState.currentDayNumber === null) return [];
     return allFoods.filter((f) => (f.day_number || 1) === temporalState.currentDayNumber);
   }, [allFoods, temporalState]);
 
-  // Dynamic targets = sum of today's planned foods (null if inactive)
+  // Dynamic targets = sum of today's planned foods (null if inactive or rest day)
   const dynamicTargets = useMemo<DynamicTargets | null>(() => {
     if (!hasTemplate || plannedFoods.length === 0) return null;
     return plannedFoods.reduce(
@@ -172,6 +188,7 @@ export function useDietPlan() {
     // Temporal exports
     isFuture: temporalState.isFuture,
     isExpired: temporalState.isExpired,
+    isRestDay: temporalState.isRestDay,
     currentDayNumber: temporalState.currentDayNumber,
     totalTemplateDays: temporalState.totalTemplateDays,
     dietStartDate,
