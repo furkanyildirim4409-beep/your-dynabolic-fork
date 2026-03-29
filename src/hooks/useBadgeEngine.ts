@@ -164,7 +164,7 @@ export const useBadgeEngine = () => {
 
     // Refresh badge list
     await fetchBadges();
-  }, [user?.id, profile, awardXP, fetchBadges]);
+  }, [user?.id, profile, fetchBadges]);
 
   const dismissPendingBadge = useCallback(() => setPendingBadge(null), []);
 
