@@ -554,6 +554,8 @@ const ExpandableMealCard = ({
   onRemoveFood,
   onCheckPlanned,
   onUncheckPlanned,
+  parseGrams,
+  onUpdateServing,
 }: {
   slot: MealSlot;
   consumedFoods: ConsumedFood[];
@@ -562,6 +564,8 @@ const ExpandableMealCard = ({
   onRemoveFood: (id: string) => void;
   onCheckPlanned: (food: PlannedFood) => void;
   onUncheckPlanned: (consumedFoodId: string) => void;
+  parseGrams: (str: string | null | undefined) => number;
+  onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [togglingIds, setTogglingIds] = useState<Set<string>>(new Set());
