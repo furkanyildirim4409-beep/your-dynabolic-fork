@@ -809,7 +809,7 @@ const FoodDetailWizard = ({
 const Beslenme = () => {
   const { user } = useAuth();
   const dbMacros = useMacros();
-  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, currentDayNumber, totalTemplateDays, dietStartDate, allFoods, dietDurationWeeks } = useDietPlan();
+  const { dynamicTargets, plannedFoods, hasTemplate, isLoading: dietLoading, isFuture, isExpired, isRestDay, currentDayNumber, totalTemplateDays, dietStartDate, allFoods, dietDurationWeeks } = useDietPlan();
   const [calendarOpen, setCalendarOpen] = useState(false);
   const weeklyAdherence = useWeeklyAdherence({ allFoods, dietStartDate, dietDurationWeeks, totalTemplateDays, hasTemplate });
   // Priority: dynamic (diet template sum) > coach DB targets > null
