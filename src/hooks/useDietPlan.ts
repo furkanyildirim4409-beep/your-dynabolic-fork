@@ -4,6 +4,10 @@ import { useAuth } from "@/context/AuthContext";
 import { differenceInDays, startOfDay, parseISO } from "date-fns";
 import { getIstanbulDateStr } from "@/lib/timezone";
 
+// Module-level caches — survive unmounts for zero-latency remount
+const _foodsCache = new Map<string, PlannedFood[]>();
+const _metaCache = new Map<string, { hasTemplate: boolean; startDate: string | null; durationWeeks: number | null; todayDay: number | null }>();
+
 export interface PlannedFood {
   id: string;
   food_name: string;
