@@ -53,17 +53,28 @@ export function useDietPlan() {
     }
 
     const fetchData = async () => {
-      setIsLoading(true);
+      setIsLoading(allFoods.length === 0);
 
-      // 1. Get targets including temporal fields
-      const { data: targets } = await supabase
-        .from("nutrition_targets")
-        .select("active_diet_template_id, diet_start_date, diet_duration_weeks")
-        .eq("athlete_id", user.id)
-        .not("active_diet_template_id", "is", null)
-        .limit(1)
-        .maybeSingle();
+      const todayStr = getIstanbulDateStr();
 
+      // 1. Parallel fetch: targets + today's assignment (no dependency)
+      const [targetsRes, assignmentRes] = await Promise.all([
+        supabase
+          .from("nutrition_targets")
+          .select("active_diet_template_id, diet_start_date, diet_duration_weeks")
+          .eq("athlete_id", user.id)
+          .not("active_diet_template_id", "is", null)
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("assigned_diet_days")
+          .select("day_number")
+          .eq("athlete_id", user.id)
+          .eq("target_date", todayStr)
+          .maybeSingle(),
+      ]);
+
+      const targets = targetsRes.data;
       const templateId = targets?.active_diet_template_id;
       if (!templateId) {
         setHasTemplate(false);
@@ -77,17 +88,7 @@ export function useDietPlan() {
 
       setDietStartDate(targets.diet_start_date ?? null);
       setDietDurationWeeks(targets.diet_duration_weeks ?? null);
-
-      // 2. Fetch today's assigned_diet_days entry (authoritative source)
-      const todayStr = getIstanbulDateStr();
-      const { data: todayAssignment } = await supabase
-        .from("assigned_diet_days")
-        .select("day_number")
-        .eq("athlete_id", user.id)
-        .eq("target_date", todayStr)
-        .maybeSingle();
-
-      setTodayDayNumber(todayAssignment?.day_number ?? null);
+      setTodayDayNumber(assignmentRes.data?.day_number ?? null);
 
       // 3. Fetch ALL template foods
       const { data: foods, error } = await supabase
