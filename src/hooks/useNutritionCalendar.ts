@@ -59,7 +59,11 @@ export function useNutritionCalendar({
   const [isLoading, setIsLoading] = useState(false);
 
   // assigned_diet_days for the month: Map<target_date, day_number>
-  const [assignedDaysMap, setAssignedDaysMap] = useState<Map<string, number>>(new Map());
+  const [assignedDaysMap, setAssignedDaysMap] = useState<Map<string, number>>(() => {
+    if (!user) return new Map();
+    const ck = `${user.id}-${format(startOfMonth(currentMonth), "yyyy-MM")}`;
+    return globalAssignedCache.get(ck) || new Map();
+  });
 
   useEffect(() => {
     if (!user) return;
