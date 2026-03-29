@@ -108,6 +108,8 @@ export function useDietPlan() {
         console.error("Diet plan fetch error:", error.message);
         setHasTemplate(false);
         setAllFoods([]);
+        _foodsCache.delete(cacheKey);
+        _metaCache.delete(cacheKey);
       } else {
         setHasTemplate(true);
         setAllFoods(
