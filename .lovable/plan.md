@@ -1,39 +1,40 @@
 
 
-## Zero-Latency Nutrition Fetch (Epic 8 - Part 1 Performance Hotfix)
+## Zero-Latency Cache for Diet Plan & Calendar (Epic 8)
 
 ### Problem
 
-`useDietPlan.ts` makes 3 sequential queries (waterfall): `nutrition_targets` → `assigned_diet_days` → `diet_template_foods`. Steps 1 and 2 have no dependency on each other and can run in parallel. Step 3 depends on the template ID from step 1.
+`useNutritionCalendar` already has a global logs cache but `assignedDaysMap` resets to empty on every mount, causing stale calendar renders until the fetch completes. `useDietPlan` has no global cache at all — `allFoods` resets to `[]` on unmount, triggering the loading spinner every tab switch.
 
 ### Changes
 
-**`src/hooks/useDietPlan.ts`**
+**1. `src/hooks/useNutritionCalendar.ts` — Add global cache for assigned days**
 
-1. **Parallelize steps 1 & 2** — Fire `nutrition_targets` and `assigned_diet_days` queries simultaneously via `Promise.all`
-2. **Skip loading spinner on re-renders** — Only set `isLoading(true)` when `allFoods` is empty (first mount), so tab switches don't flash a spinner
-3. Keep step 3 (`diet_template_foods`) sequential since it depends on `templateId` from step 1
+- Add a second module-level cache: `const globalAssignedCache = new Map<string, Map<string, number>>()`
+- Initialize `assignedDaysMap` state from this cache (same pattern as existing `globalLogsCache`)
+- In the SWR check (lines 71-76), also check `globalAssignedCache` — only show spinner if BOTH caches miss
+- After fetch, write to `globalAssignedCache` alongside the existing `globalLogsCache` write
 
-```text
-BEFORE (waterfall):
-  nutrition_targets ──────► assigned_diet_days ──────► diet_template_foods
-  ~150ms                    ~150ms                     ~150ms
-  Total: ~450ms
+**2. `src/hooks/useDietPlan.ts` — Add module-level cache**
 
-AFTER (parallel + conditional):
-  nutrition_targets  ┐
-                     ├──► diet_template_foods
-  assigned_diet_days ┘    ~150ms
-  ~150ms (parallel)
-  Total: ~300ms
-```
+- Add two module-level caches outside the hook:
+  - `const _foodsCache = new Map<string, PlannedFood[]>()`
+  - `const _metaCache = new Map<string, { hasTemplate, startDate, durationWeeks, todayDay }>()`
+- Initialize all `useState` calls from cache using lazy initializer `() => cache.get(key) ?? default`
+- Cache key = `user.id`
+- After successful fetch, write mapped foods + metadata to caches
+- On no-template path, clear that user's cache entry
+- `isLoading` init: `() => !_foodsCache.has(key)` — false if cache exists
 
-### Specific Code Changes
+### Result
 
-- Lines 55-90: Replace the two sequential awaits with a single `Promise.all([targetsQuery, assignmentQuery])`
-- Line 56: Change `setIsLoading(true)` to `setIsLoading(allFoods.length === 0)` to avoid flashing spinner on re-fetches
-- Move `todayStr` calculation before the `Promise.all` block
-- Destructure both results and proceed with the existing template foods fetch
+- First load: brief spinner while fetching
+- All subsequent mounts (tab switches, dialog open/close): instant render from module-level memory, silent background refresh
 
-No other files changed. Pure performance optimization, no behavior change.
+### Files Changed
+
+| File | Change |
+|------|--------|
+| `src/hooks/useDietPlan.ts` | Add `_foodsCache` + `_metaCache`, init state from cache, write after fetch |
+| `src/hooks/useNutritionCalendar.ts` | Add `globalAssignedCache`, init `assignedDaysMap` from it, update SWR check |
 
