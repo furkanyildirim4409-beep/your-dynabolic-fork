@@ -131,18 +131,6 @@ export function useDietPlan() {
           durationWeeks: targets.diet_duration_weeks ?? null,
           todayDay: assignmentRes.data?.day_number ?? null,
         });
-          (foods || []).map((f) => ({
-            id: f.id,
-            food_name: f.food_name,
-            meal_type: f.meal_type,
-            serving_size: f.serving_size,
-            calories: f.calories ?? 0,
-            protein: Number(f.protein ?? 0),
-            carbs: Number(f.carbs ?? 0),
-            fat: Number(f.fat ?? 0),
-            day_number: f.day_number ?? 1,
-          }))
-        );
       }
 
       setIsLoading(false);
