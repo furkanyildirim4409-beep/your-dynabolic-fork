@@ -1,58 +1,43 @@
 
 
-## Dynamic Grammage Override & Macro Recalculation (Epic 8 - Part 2/6)
+## Rest Day Enforcement via `assigned_diet_days` (Epic 8 - Part 1 Fix)
 
-### Summary
+### Problem
 
-Athletes can edit the serving size of consumed foods (both checked planned foods and manually added foods). When changed, macros are recalculated proportionally and saved to the `consumed_foods` table using the `target_serving` and `consumed_serving` columns.
+Both `useDietPlan.ts` and `useNutritionCalendar.ts` use blind modulo arithmetic (`(elapsed % totalTemplateDays) + 1`) to determine which template day maps to each calendar date. This means every single day within the program duration gets a diet plan — there are no rest days. The coach panel now writes explicit `assigned_diet_days` rows only for days with food, so the athlete app must respect that.
+
+### Solution
+
+Query `assigned_diet_days` for the athlete and use it as the authoritative day-number lookup. If no row exists for a date, that day is a rest day with zero targets and no planned foods.
 
 ### Changes
 
-**1. `src/hooks/useConsumedFoods.ts` — Add `updateFoodServing` mutation**
+**1. `src/hooks/useDietPlan.ts` — Use `assigned_diet_days` for today's plan**
 
-- New function: `updateFoodServing(id, newGrams, originalGrams, originalMacros)`
-- Calculates `ratio = newGrams / originalGrams`
-- Updates `consumed_foods` row: `calories`, `protein`, `carbs`, `fat`, `consumed_serving` (`"120g"`), and preserves `target_serving` (the coach-assigned original)
-- Optimistically updates local `foods` state so UI refreshes instantly
+- Fetch from `assigned_diet_days` where `athlete_id = user.id` and `target_date = today` (single row query)
+- If a row exists, use its `day_number` to filter `allFoods`
+- If no row exists (rest day), set `plannedFoods = []` and `dynamicTargets = null`
+- Remove the modulo-based `currentDayNumber` calculation from `temporalState`
+- Keep `totalTemplateDays` for display purposes (cycle badge)
 
-**2. `src/pages/Beslenme.tsx` — Add edit UI to `CheckedPlannedFoodRow` and `ManualFoodRow`**
+**2. `src/hooks/useNutritionCalendar.ts` — Use `assigned_diet_days` for the month**
 
-- Add a small pencil (`Pencil` icon) button next to each consumed food row
-- On click, open a `Popover` with:
-  - Current serving display (e.g., "Koç hedefi: 100g")
-  - An `Input` field for the new gram amount
-  - Live macro preview showing recalculated values
-  - Save button
-- When saved, call `updateFoodServing` from the hook
-- Show toast confirmation
-- Both `CheckedPlannedFoodRow` and `ManualFoodRow` get the edit capability
+- Fetch all `assigned_diet_days` rows for the athlete within the current month range
+- Build a `Map<string, number>` mapping `target_date → day_number`
+- In the `dayStatsMap` computation, look up each date in this map instead of using modulo arithmetic
+- If no entry exists for a date within the program range, treat it as a rest day (`status: "empty"`, zero targets)
+- Future dates with an assignment get `status: "scheduled"`, future dates without get `status: "no-plan"`
 
-**3. Serving parsing utility (inline)**
+**3. UI — Rest day indication (minimal)**
 
-- `parseGrams(str)`: extracts number from strings like `"100g"`, `"150 g"`, `"200ml"` → returns the number or `100` as fallback
-
-**4. When checking a planned food (`checkPlannedFood`)**
-
-- Also save `target_serving` = planned food's `serving_size` so we always know the coach's original amount for ratio calculation
-
-### Data Flow
-
-```text
-Athlete taps pencil → Popover opens
-  → Types "120" → Live preview: 449 kcal, 16.8g P, ...
-  → Taps "Kaydet"
-  → updateFoodServing() called
-    → ratio = 120 / 100 = 1.2
-    → new macros = original * 1.2
-    → UPDATE consumed_foods SET calories=449, protein=16.8, ...
-       consumed_serving='120g'
-    → Optimistic state update
-    → Toast: "Porsiyon güncellendi"
-```
+- In `Beslenme.tsx`, when `plannedFoods` is empty and `hasTemplate` is true and the diet is active, show a subtle "Dinlenme Günü" (Rest Day) badge instead of the meal cards
+- The calendar already handles empty days via the `"empty"` status dot
 
 ### Files Changed
+
 | File | Action |
 |------|--------|
-| `src/hooks/useConsumedFoods.ts` | Add `updateFoodServing`, save `target_serving` on check |
-| `src/pages/Beslenme.tsx` | Add edit popover to `CheckedPlannedFoodRow` and `ManualFoodRow`, pass handler through `ExpandableMealCard` |
+| `src/hooks/useDietPlan.ts` | Query `assigned_diet_days` for today, replace modulo logic |
+| `src/hooks/useNutritionCalendar.ts` | Query `assigned_diet_days` for month, replace modulo logic |
+| `src/pages/Beslenme.tsx` | Add rest day badge when active template has no foods for today |
 
