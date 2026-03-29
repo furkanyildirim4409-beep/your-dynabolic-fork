@@ -827,6 +827,8 @@ const Beslenme = () => {
     removeFood,
     checkPlannedFood,
     uncheckPlannedFood,
+    updateFoodServing,
+    parseGrams,
     consumedPlannedIds,
     groupedByMeal,
     totals,
