@@ -1,7 +1,6 @@
 import { useState, useCallback, useEffect } from "react";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
-import { useXPEngine } from "@/hooks/useXPEngine";
 import { toast } from "sonner";
 import {
   Dumbbell, Sunrise, Flame, Trophy, Zap, Target, Calendar,
