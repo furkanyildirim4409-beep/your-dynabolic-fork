@@ -40,7 +40,7 @@ export interface BadgeWithStatus {
 
 export const useBadgeEngine = () => {
   const { user, profile } = useAuth();
-  const { awardXP } = useXPEngine();
+  
   const [badges, setBadges] = useState<BadgeWithStatus[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [pendingBadge, setPendingBadge] = useState<BadgeWithStatus | null>(null);
