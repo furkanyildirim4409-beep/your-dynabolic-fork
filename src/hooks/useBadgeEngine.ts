@@ -123,21 +123,19 @@ export const useBadgeEngine = () => {
 
       const currentValue = stats[badge.condition_type] ?? 0;
       if (currentValue >= badge.condition_value) {
-        // Unlock!
-        const { error } = await supabase.from("athlete_badges").insert({
-          athlete_id: user.id,
-          badge_id: badge.id,
+        // Unlock via server-side validated function
+        const { data: awarded, error } = await supabase.rpc("award_badge_if_earned", {
+          _badge_id: badge.id,
         });
 
         if (error) {
-          console.error("Badge insert error:", error);
+          console.error("Badge award error:", error);
           continue;
         }
 
+        if (!awarded) continue;
+
         const xpReward = badge.xp_reward || 0;
-        if (xpReward > 0) {
-          await awardXP(xpReward);
-        }
 
         const unlockedBadge: BadgeWithStatus = {
           id: badge.id,
