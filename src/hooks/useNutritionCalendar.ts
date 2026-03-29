@@ -4,6 +4,7 @@ import { useAuth } from "@/context/AuthContext";
 
 // Module-level cache — survives Dialog unmounts
 const globalLogsCache = new Map<string, Map<string, { meal_name: string; total_calories: number; total_protein: number; total_carbs: number; total_fat: number }[]>>();
+const globalAssignedCache = new Map<string, Map<string, number>>();
 import {
   startOfMonth,
   endOfMonth,
@@ -58,7 +59,11 @@ export function useNutritionCalendar({
   const [isLoading, setIsLoading] = useState(false);
 
   // assigned_diet_days for the month: Map<target_date, day_number>
-  const [assignedDaysMap, setAssignedDaysMap] = useState<Map<string, number>>(new Map());
+  const [assignedDaysMap, setAssignedDaysMap] = useState<Map<string, number>>(() => {
+    if (!user) return new Map();
+    const ck = `${user.id}-${format(startOfMonth(currentMonth), "yyyy-MM")}`;
+    return globalAssignedCache.get(ck) || new Map();
+  });
 
   useEffect(() => {
     if (!user) return;
@@ -68,8 +73,17 @@ export function useNutritionCalendar({
     const cacheKey = `${user.id}-${format(monthStart, "yyyy-MM")}`;
 
     // Instant cache hit (zero latency on re-open)
-    if (globalLogsCache.has(cacheKey)) {
+    const hasLogsCached = globalLogsCache.has(cacheKey);
+    const hasAssignedCached = globalAssignedCache.has(cacheKey);
+
+    if (hasLogsCached) {
       setLogsMap(globalLogsCache.get(cacheKey)!);
+    }
+    if (hasAssignedCached) {
+      setAssignedDaysMap(globalAssignedCache.get(cacheKey)!);
+    }
+
+    if (hasLogsCached && hasAssignedCached) {
       setIsLoading(false);
     } else {
       setIsLoading(true);
@@ -124,6 +138,7 @@ export function useNutritionCalendar({
       (assignedResult.data || []).forEach((row) => {
         adMap.set(row.target_date, row.day_number);
       });
+      globalAssignedCache.set(cacheKey, adMap);
       setAssignedDaysMap(adMap);
 
       setIsLoading(false);

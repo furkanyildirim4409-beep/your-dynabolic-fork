@@ -4,6 +4,10 @@ import { useAuth } from "@/context/AuthContext";
 import { differenceInDays, startOfDay, parseISO } from "date-fns";
 import { getIstanbulDateStr } from "@/lib/timezone";
 
+// Module-level caches — survive unmounts for zero-latency remount
+const _foodsCache = new Map<string, PlannedFood[]>();
+const _metaCache = new Map<string, { hasTemplate: boolean; startDate: string | null; durationWeeks: number | null; todayDay: number | null }>();
+
 export interface PlannedFood {
   id: string;
   food_name: string;
@@ -39,12 +43,13 @@ const MEAL_LABELS: Record<string, string> = {
 
 export function useDietPlan() {
   const { user } = useAuth();
-  const [allFoods, setAllFoods] = useState<PlannedFood[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [hasTemplate, setHasTemplate] = useState(false);
-  const [dietStartDate, setDietStartDate] = useState<string | null>(null);
-  const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(null);
-  const [todayDayNumber, setTodayDayNumber] = useState<number | null>(null);
+  const cacheKey = user?.id || "";
+  const [allFoods, setAllFoods] = useState<PlannedFood[]>(() => _foodsCache.get(cacheKey) || []);
+  const [isLoading, setIsLoading] = useState(() => !_foodsCache.has(cacheKey));
+  const [hasTemplate, setHasTemplate] = useState(() => _metaCache.get(cacheKey)?.hasTemplate ?? false);
+  const [dietStartDate, setDietStartDate] = useState<string | null>(() => _metaCache.get(cacheKey)?.startDate ?? null);
+  const [dietDurationWeeks, setDietDurationWeeks] = useState<number | null>(() => _metaCache.get(cacheKey)?.durationWeeks ?? null);
+  const [todayDayNumber, setTodayDayNumber] = useState<number | null>(() => _metaCache.get(cacheKey)?.todayDay ?? null);
 
   useEffect(() => {
     if (!user) {
@@ -53,7 +58,7 @@ export function useDietPlan() {
     }
 
     const fetchData = async () => {
-      setIsLoading(allFoods.length === 0);
+      setIsLoading(!_foodsCache.has(cacheKey));
 
       const todayStr = getIstanbulDateStr();
 
@@ -82,6 +87,8 @@ export function useDietPlan() {
         setDietStartDate(null);
         setDietDurationWeeks(null);
         setTodayDayNumber(null);
+        _foodsCache.delete(cacheKey);
+        _metaCache.delete(cacheKey);
         setIsLoading(false);
         return;
       }
@@ -101,21 +108,29 @@ export function useDietPlan() {
         console.error("Diet plan fetch error:", error.message);
         setHasTemplate(false);
         setAllFoods([]);
+        _foodsCache.delete(cacheKey);
+        _metaCache.delete(cacheKey);
       } else {
+        const mappedFoods = (foods || []).map((f) => ({
+          id: f.id,
+          food_name: f.food_name,
+          meal_type: f.meal_type,
+          serving_size: f.serving_size,
+          calories: f.calories ?? 0,
+          protein: Number(f.protein ?? 0),
+          carbs: Number(f.carbs ?? 0),
+          fat: Number(f.fat ?? 0),
+          day_number: f.day_number ?? 1,
+        }));
         setHasTemplate(true);
-        setAllFoods(
-          (foods || []).map((f) => ({
-            id: f.id,
-            food_name: f.food_name,
-            meal_type: f.meal_type,
-            serving_size: f.serving_size,
-            calories: f.calories ?? 0,
-            protein: Number(f.protein ?? 0),
-            carbs: Number(f.carbs ?? 0),
-            fat: Number(f.fat ?? 0),
-            day_number: f.day_number ?? 1,
-          }))
-        );
+        setAllFoods(mappedFoods);
+        _foodsCache.set(cacheKey, mappedFoods);
+        _metaCache.set(cacheKey, {
+          hasTemplate: true,
+          startDate: targets.diet_start_date ?? null,
+          durationWeeks: targets.diet_duration_weeks ?? null,
+          todayDay: assignmentRes.data?.day_number ?? null,
+        });
       }
 
       setIsLoading(false);
