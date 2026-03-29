@@ -680,6 +680,8 @@ const ExpandableMealCard = ({
                   food={food}
                   onUncheck={() => handleUncheck(food.id, food.planned_food_id!)}
                   isToggling={togglingIds.has(food.planned_food_id!)}
+                  parseGrams={parseGrams}
+                  onUpdateServing={onUpdateServing}
                 />
               ))}
 
@@ -689,6 +691,8 @@ const ExpandableMealCard = ({
                   key={`manual-${food.id}`}
                   food={food}
                   onRemove={() => onRemoveFood(food.id)}
+                  parseGrams={parseGrams}
+                  onUpdateServing={onUpdateServing}
                 />
               ))}
 
