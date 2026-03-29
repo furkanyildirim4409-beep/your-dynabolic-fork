@@ -1133,6 +1133,8 @@ const Beslenme = () => {
                     onRemoveFood={handleRemoveFood}
                     onCheckPlanned={handleCheckPlanned}
                     onUncheckPlanned={handleUncheckPlanned}
+                    parseGrams={parseGrams}
+                    onUpdateServing={updateFoodServing}
                   />
                 ))}
               </div>
