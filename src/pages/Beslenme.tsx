@@ -1105,6 +1105,16 @@ const Beslenme = () => {
               </Alert>
             )}
 
+            {/* REST DAY BANNER */}
+            {isRestDay && (
+              <Alert className="border-muted/30 bg-muted/10">
+                <Utensils className="h-4 w-4 text-muted-foreground" />
+                <AlertDescription className="text-sm text-muted-foreground">
+                  Bugün <span className="font-bold">Dinlenme Günü</span> — koçun bu gün için öğün planlamadı. Serbest beslenme günü! 🧘
+                </AlertDescription>
+              </Alert>
+            )}
+
             <WaterTrackerWidget />
 
             {/* MEAL LIST */}
