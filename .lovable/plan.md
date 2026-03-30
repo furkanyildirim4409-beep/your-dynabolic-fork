@@ -1,42 +1,27 @@
 
 
-# Part 3: Scroll Indicator + Phase 3 (Institutional & Finance)
+# Standardize CoachWaitlist Initial Load Animation
 
-## Single file edit: `src/pages/CoachWaitlist.tsx`
+## Problem
+The `CoachWaitlist` page uses heavy custom `container`/`item` stagger variants (0.2s stagger, 0.4s delay, custom cubic-bezier) applied to every element in the Hero, causing Chromium to batch-animate many GPU-promoted elements simultaneously on mount. Other pages use the simple `AppShell` pattern: a single `motion.main` with `opacity: 0→1, y: 20→0` over 0.3s — no stagger, no variants.
 
-### 1. Add new imports (line 3)
-Add `Wallet`, `UserPlus`, `ShieldCheck`, `FileText`, `Medal` to the lucide-react import.
+## Changes — `src/pages/CoachWaitlist.tsx`
 
-### 2. Add `financeFeatures` array (after `operationsFeatures`, ~line 72)
+### 1. Remove `container` and `item` variant objects (lines 106-113)
+Delete both variant definitions entirely.
 
-| # | Icon | colSpan | Title |
-|---|------|---------|-------|
-| 11 | `Wallet` | 2 | Ciro & Hak Ediş Merkezi |
-| 12 | `UserPlus` | 1 | Asistan & Alt Koç Atama |
-| 13 | `ShieldCheck` | 1 | Super Admin Dashboard |
-| 14 | `FileText` | 1 | Gelişmiş PDF Raporlama |
-| 15 | `Medal` | 1 | Kurumsal Otorite & White-Label |
+### 2. Replace Hero animation with a single wrapper fade
+- Remove `variants={container} initial="hidden" animate="show"` from the Hero `motion.section` (line 207-211).
+- Replace with the standard AppShell pattern: `initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}`.
+- Remove all `variants={item}` from child elements inside the Hero (eyebrow, headline, sub-headline, CTA button, scroll indicator). Convert those `motion.*` elements to plain HTML tags (`p`, `h1`, `button`, `div`) where they don't need independent animation. Keep `motion.button` only for the CTA (it uses `whileHover`/`whileTap`) and `motion.div` for the scroll indicator bounce.
 
-### 3. Animated Scroll Indicator (inside Hero section, after CTA button ~line 235)
+### 3. Simplify Top Nav animation
+- The `motion.nav` (line 186-189) has its own `initial/animate` which is fine and lightweight. Keep it as-is since it's a single element.
 
-A `motion.div` with:
-- `ChevronDown` icon + "Mühendisliği Keşfet" text (neon green, `text-[10px]`, mono, uppercase)
-- Floating bounce animation: `animate={{ y: [0, 8, 0] }}` with `repeat: Infinity`
-- `onClick` scrolls to `#phase-1`
-- Positioned at bottom of hero with `mt-16`
+### 4. Bento Grid sections remain untouched
+- Phase 1/2/3 grids already use `whileInView` (scroll-triggered), not mount animation. No changes needed — they only animate when scrolled into view, which is already performant.
 
-### 4. Add `id="phase-1"` to Phase 1 section (line 239)
-
-Add the anchor ID to the Core Engine `motion.section`.
-
-### 5. Insert Phase 3 JSX section (between Phase 2 closing tag and Trust Banner)
-
-New `motion.section` matching Phase 1/2 styling:
-- Eyebrow: "Faz 3: Kurumsallaşma & Finans"
-- Headline: "Bir Antrenörden Daha Fazlası Olun"
-- Same 3-col grid, same card styling with GPU classes and radial gradient glow
-- Same `whileInView` stagger animation
-
-### 6. Everything else untouched
-Trust banner, form, footer remain in place. GPU optimizations preserved on all cards.
+### 5. Net result
+- Mount triggers exactly 2 lightweight animations (nav fade + hero fade) instead of 6+ staggered GPU-promoted element animations.
+- All content, layout, CSS, GPU classes, and scroll-triggered Bento animations are preserved.
 
