@@ -40,6 +40,7 @@ import BiometricLogin from "./pages/BiometricLogin";
 import CoachAthletes from "./pages/CoachAthletes";
 import Onboarding from "./pages/Onboarding";
 import Destek from "./pages/Destek";
+import Waitlist from "./pages/Waitlist";
 
 const queryClient = new QueryClient();
 
