@@ -77,36 +77,42 @@ const ecosystemFeatures = [
   },
 ];
 
-const financeFeatures = [
+const engineeringFeatures = [
   {
-    icon: Wallet,
-    title: "Ciro & Hak Ediş Merkezi",
-    description: "Finansal şeffaflık. Aktif abonelikler, aylık gelir tahminleri ve alt koçlarınızın hak ediş hesaplamalarını tek bir ekrandan, profesyonelce yönetin.",
-    colSpan: 2,
+    icon: Accessibility,
+    title: "3D Dijital İkiz & Vücut Kompozisyonu",
+    description: "Sporcularınızın sadece kilosunu değil; boyun, omuz, bel ve kalça ölçümlerini 3D dijital bir model (Avatar) üzerinde takip edin. Değişimi milimetrik olarak kanıtlayın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: UserPlus,
-    title: "Asistan & Alt Koç Atama",
-    description: "Operasyonu büyüt. Sistemine asistanlar ve alt antrenörler ekle, yetkilerini sen belirle, iş yükünü profesyonelce dağıt.",
-    colSpan: 1,
+    icon: Dumbbell,
+    title: "Makro-Saykıl Antrenman Planlayıcı",
+    description: "Sürükle-bırak (Drag & Drop) arayüzü ile periodizasyon yapın. Set, tekrar, RPE (Zorluk Derecesi), RIR ve spesifik tempo ayarlarını profesyonelce kurgulayın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: ShieldCheck,
-    title: "Super Admin Dashboard",
-    description: "Tüm sistemin kuş bakışı görünümü. Hangi koç kaç sporcu yönetiyor, hangi bölge daha karlı? Veriye dayalı büyüme kararları al.",
-    colSpan: 1,
+    icon: Utensils,
+    title: "Mikro & Makro Beslenme Matrisi",
+    description: "Sıradan kalori hedeflerini aşın. Karbonhidrat döngüsü (Carb-cycling), yarışma öncesi su/sodyum atımı protokolleri ve detaylı mikrobesin (Lif, Şeker) hedefleri belirleyin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: FileText,
-    title: "Gelişmiş PDF Raporlama",
-    description: "Öğrencilerine sadece mesaj değil, profesyonel gelişim raporları sun. Antrenman ve beslenme verilerini şık PDF dosyalarına dönüştür.",
-    colSpan: 1,
+    icon: TrendingUp,
+    title: "Volume Load & Progressive Overload Radarı",
+    description: "Her antrenmanda kaldırılan toplam tonajı (Volume) grafiklerle izleyin. Gelişimi duran (Plato) veya aşırı antrenman (Overtraining) riski taşıyan sporcuları algoritma anında tespit etsin.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: Medal,
-    title: "Kurumsal Otorite & White-Label",
-    description: "Sıradan bir uygulamayı değil, kendi yönettiğin teknolojik bir ekosistemi sun. Teknolojin, markanın en büyük referansı olsun.",
-    colSpan: 1,
+    icon: Watch,
+    title: "Giyilebilir Teknoloji & Cihaz Senkronizasyonu",
+    description: "Apple Health, Garmin ve Oura Ring entegrasyonu ile sporcunun uyku kalitesini, HRV (Kalp Atış Hızı Değişkenliği) ve adım sayısını panelinizde canlı görün.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Camera,
+    title: "Vision AI Form & Postür Analizi",
+    description: "Sporcunun gönderdiği egzersiz videolarını veya postür fotoğraflarını sistem analiz etsin. Eklem açılarını hesaplayarak sakatlık riskini minimize edin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
 const heroContainer = {
