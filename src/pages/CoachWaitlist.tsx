@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Store, GraduationCap, LayoutTemplate, Pill, MessageSquare, Trophy, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
+import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Store, GraduationCap, LayoutTemplate, Pill, MessageSquare, Trophy, Accessibility, Dumbbell, Utensils, TrendingUp, Watch, Camera } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
@@ -77,36 +77,42 @@ const ecosystemFeatures = [
   },
 ];
 
-const financeFeatures = [
+const engineeringFeatures = [
   {
-    icon: Wallet,
-    title: "Ciro & Hak Ediş Merkezi",
-    description: "Finansal şeffaflık. Aktif abonelikler, aylık gelir tahminleri ve alt koçlarınızın hak ediş hesaplamalarını tek bir ekrandan, profesyonelce yönetin.",
-    colSpan: 2,
+    icon: Accessibility,
+    title: "3D Dijital İkiz & Vücut Kompozisyonu",
+    description: "Sporcularınızın sadece kilosunu değil; boyun, omuz, bel ve kalça ölçümlerini 3D dijital bir model (Avatar) üzerinde takip edin. Değişimi milimetrik olarak kanıtlayın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: UserPlus,
-    title: "Asistan & Alt Koç Atama",
-    description: "Operasyonu büyüt. Sistemine asistanlar ve alt antrenörler ekle, yetkilerini sen belirle, iş yükünü profesyonelce dağıt.",
-    colSpan: 1,
+    icon: Dumbbell,
+    title: "Makro-Saykıl Antrenman Planlayıcı",
+    description: "Sürükle-bırak (Drag & Drop) arayüzü ile periodizasyon yapın. Set, tekrar, RPE (Zorluk Derecesi), RIR ve spesifik tempo ayarlarını profesyonelce kurgulayın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: ShieldCheck,
-    title: "Super Admin Dashboard",
-    description: "Tüm sistemin kuş bakışı görünümü. Hangi koç kaç sporcu yönetiyor, hangi bölge daha karlı? Veriye dayalı büyüme kararları al.",
-    colSpan: 1,
+    icon: Utensils,
+    title: "Mikro & Makro Beslenme Matrisi",
+    description: "Sıradan kalori hedeflerini aşın. Karbonhidrat döngüsü (Carb-cycling), yarışma öncesi su/sodyum atımı protokolleri ve detaylı mikrobesin (Lif, Şeker) hedefleri belirleyin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: FileText,
-    title: "Gelişmiş PDF Raporlama",
-    description: "Öğrencilerine sadece mesaj değil, profesyonel gelişim raporları sun. Antrenman ve beslenme verilerini şık PDF dosyalarına dönüştür.",
-    colSpan: 1,
+    icon: TrendingUp,
+    title: "Volume Load & Progressive Overload Radarı",
+    description: "Her antrenmanda kaldırılan toplam tonajı (Volume) grafiklerle izleyin. Gelişimi duran (Plato) veya aşırı antrenman (Overtraining) riski taşıyan sporcuları algoritma anında tespit etsin.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: Medal,
-    title: "Kurumsal Otorite & White-Label",
-    description: "Sıradan bir uygulamayı değil, kendi yönettiğin teknolojik bir ekosistemi sun. Teknolojin, markanın en büyük referansı olsun.",
-    colSpan: 1,
+    icon: Watch,
+    title: "Giyilebilir Teknoloji & Cihaz Senkronizasyonu",
+    description: "Apple Health, Garmin ve Oura Ring entegrasyonu ile sporcunun uyku kalitesini, HRV (Kalp Atış Hızı Değişkenliği) ve adım sayısını panelinizde canlı görün.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Camera,
+    title: "Vision AI Form & Postür Analizi",
+    description: "Sporcunun gönderdiği egzersiz videolarını veya postür fotoğraflarını sistem analiz etsin. Eklem açılarını hesaplayarak sakatlık riskini minimize edin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
 const heroContainer = {
@@ -387,37 +393,37 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* Phase 3: Institutional & Finance */}
+      {/* Phase 3: İleri Düzey Mühendislik & Biyometri */}
       <motion.section
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.15 }}
-        className="relative z-10 px-6 md:px-12 pt-8 md:pt-12 pb-32 max-w-6xl mx-auto"
+        className="relative z-10 mt-32 max-w-[1400px] mx-auto px-6"
       >
         <motion.p
           variants={item}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
           style={{ color: "#CCFF00" }}
         >
-          Faz 3: Kurumsallaşma & Finans
+          Faz 3: İleri Düzey Mühendislik & Biyometri
         </motion.p>
         <motion.h2
           variants={item}
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+          className="text-3xl md:text-5xl font-bold text-white text-center mb-12"
         >
-          Bir Antrenörden Daha Fazlası Olun
+          Sınırları Zorlayan Atletik Performans Yönetimi
         </motion.h2>
 
         <motion.div
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {financeFeatures.map((feature) => (
+          {engineeringFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
               style={{
                 background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
               }}
