@@ -75,8 +75,8 @@ const container = {
   show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
 };
 const item = {
-  hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.8, ease: "easeOut" as const } },
+  hidden: { opacity: 0, y: 24, willChange: "transform, opacity" as const },
+  show: { opacity: 1, y: 0, willChange: "auto" as const, transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] as [number, number, number, number] } },
 };
 
 const CoachWaitlist = () => {
@@ -265,7 +265,7 @@ const CoachWaitlist = () => {
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
               style={{
                 background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
               }}
@@ -310,7 +310,7 @@ const CoachWaitlist = () => {
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
               style={{
                 background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
               }}
