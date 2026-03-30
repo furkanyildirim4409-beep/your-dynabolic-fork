@@ -1,49 +1,26 @@
 
 
-# Part 3: B2B Capture Form for Coach Waitlist
+# Part 4: Polish & Footer
 
-## Database Migration
+## Changes to `src/pages/CoachWaitlist.tsx`
 
-Add three columns to the existing `waitlist` table plus an INSERT policy for authenticated users:
+### 1. Trust Banner
+Insert a `motion.div` between the Feature Matrix section (line 240) and the Coach Form section (line 242):
+- Muted, centered text block with neon lime accent on "50 Elit Antrenör"
+- Text: "Sınırlı Beta Kontenjanı: Sadece 50 Elit Antrenör kabul edilecektir. Erken erişim ve ömür boyu kurucu avantajları için yerinizi ayırtın."
+- Styled as `text-sm text-white/40` with the key phrase highlighted in `text-[#CCFF00]/70`
+- `whileInView` fade-in animation, `max-w-2xl mx-auto`, `pb-20`
 
-```sql
-ALTER TABLE public.waitlist
-  ADD COLUMN role text NOT NULL DEFAULT 'athlete',
-  ADD COLUMN athlete_count text,
-  ADD COLUMN specialty text;
+### 2. Footer
+Insert after the Coach Form closing `</motion.section>` (line 388), before the closing `</div>`:
+- A `<footer>` with top border `border-t border-white/[0.06]`
+- Left/center: `© 2026 Dynabolic OS. All Systems Operational.` in `text-xs text-white/20 font-mono`
+- Right/below on mobile: `Gizlilik Politikası | Kullanım Koşulları` as `<span>` elements (no real links), `text-xs text-white/15 hover:text-white/40 cursor-pointer`
+- Padding: `px-6 md:px-12 py-8`, `max-w-5xl mx-auto`, flex row on desktop, stacked on mobile
 
-CREATE POLICY "Authenticated users can insert into waitlist"
-  ON public.waitlist
-  FOR INSERT
-  TO authenticated
-  WITH CHECK (true);
-```
+### 3. Focus ring polish
+All inputs and selects already have `focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30` — confirmed, no changes needed.
 
-## Code Changes — `src/pages/CoachWaitlist.tsx`
-
-Replace the `#coach-form` anchor div with a full form section:
-
-1. **New imports**: `useState` from React, `supabase` client, `toast` from sonner, `Loader2`/`Mail`/`User`/`Instagram`/`ChevronDown` from lucide-react, plus UI components (`Select`, `Input`, `Label`)
-
-2. **State**: `name`, `email`, `specialty`, `athleteCount`, `instagram`, `isSubmitting`, `submitted`
-
-3. **Form UI** matching the existing dark/neon aesthetic:
-   - Eyebrow: "Erken Erişim" + headline "Komuta Merkezine Geçiş"
-   - Glassmorphic card (`bg-white/[0.03] border border-white/[0.08]`)
-   - 5 fields: Name (input), Email (input), Specialty (native select styled dark), Athlete Count (native select), Instagram (input, optional)
-   - Submit button: neon lime, shows "Sisteme Kaydediliyor..." spinner when loading
-   - Success state replaces form with confirmation message
-
-4. **handleSubmit logic**:
-   - Insert to `waitlist` with `role: 'coach'`, `specialty`, `athlete_count`
-   - Handle duplicate email error code `23505` with Turkish toast
-   - Loading/success states
-
-5. **Animation**: Same `whileInView` stagger pattern as Feature Matrix section
-
-### Single file edit + one migration
-| Resource | Action |
-|----------|--------|
-| Migration SQL | Add 3 columns + auth INSERT policy |
-| `src/pages/CoachWaitlist.tsx` | Add form section at bottom |
+### Single file edit
+Only `src/pages/CoachWaitlist.tsx` is modified.
 
