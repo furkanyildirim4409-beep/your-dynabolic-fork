@@ -287,6 +287,7 @@ const CoachWaitlist = () => {
 
       {/* Core Engine Bento Grid */}
       <motion.section
+        id="phase-1"
         variants={container}
         initial="hidden"
         whileInView="show"
