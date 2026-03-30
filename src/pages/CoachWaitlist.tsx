@@ -1,5 +1,33 @@
 import { motion } from "framer-motion";
+import { Zap, Gauge, Target, Users } from "lucide-react";
 import DynabolicLogo from "@/components/DynabolicLogo";
+
+const features = [
+  {
+    icon: Zap,
+    title: "Dinamik Gramaj Motoru",
+    description:
+      "Sporcun 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, tüm günlük makroları ve kaloriyi milisaniyeler içinde baştan hesaplar.",
+  },
+  {
+    icon: Gauge,
+    title: "Sıfır Gecikme (SWR Cache)",
+    description:
+      "Loading ekranlarına son. SWR mimarimiz sayesinde sporcularının veri girişleri anında komuta panelinde belirir.",
+  },
+  {
+    icon: Target,
+    title: "Otonom Uyum Skoru",
+    description:
+      "Kim diyeti bozdu, kim antrenmanı astı? Akıllı algoritmamız 'Haftalık Uyum Kartı'nı otomatik hesaplar, sana sadece müdahale etmen gerekenleri gösterir.",
+  },
+  {
+    icon: Users,
+    title: "Merkezi İstihbarat",
+    description:
+      "Beslenme takvimi, makro hedefleri, su tüketimi ve dinlenme günleri. 100+ atleti tek bir ekrandan, profesyonel kurumsal kimliğinle yönet.",
+  },
+];
 
 const container = {
   hidden: { opacity: 0 },
