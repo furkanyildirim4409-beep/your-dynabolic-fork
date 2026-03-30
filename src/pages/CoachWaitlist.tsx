@@ -239,8 +239,153 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* Form anchor for Part 3 */}
-      <div id="coach-form" />
+      {/* Coach Form */}
+      <motion.section
+        id="coach-form"
+        variants={container}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.2 }}
+        className="relative z-10 px-6 md:px-12 pb-32 max-w-xl mx-auto"
+      >
+        <motion.p
+          variants={item}
+          className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
+          style={{ color: "#CCFF00" }}
+        >
+          Erken Erişim
+        </motion.p>
+        <motion.h2
+          variants={item}
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+        >
+          Komuta Merkezine Geçiş
+        </motion.h2>
+
+        {submitted ? (
+          <motion.div
+            initial={{ opacity: 0, scale: 0.9 }}
+            animate={{ opacity: 1, scale: 1 }}
+            className="text-center space-y-4 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-10"
+          >
+            <div className="w-16 h-16 mx-auto rounded-full border-2 border-[#CCFF00] flex items-center justify-center">
+              <Rocket className="w-7 h-7 text-[#CCFF00]" />
+            </div>
+            <h3 className="text-white font-mono font-bold text-lg tracking-wider uppercase">
+              Kayıt Alındı
+            </h3>
+            <p className="text-white/60 text-sm">
+              Koç Komuta Merkezi hazır olduğunda seninle iletişime geçeceğiz.
+            </p>
+          </motion.div>
+        ) : (
+          <motion.form
+            variants={item}
+            onSubmit={handleSubmit}
+            className="w-full space-y-4 bg-white/[0.03] border border-white/[0.08] rounded-2xl p-6 md:p-10"
+          >
+            {/* Name */}
+            <div className="relative">
+              <User className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <input
+                type="text"
+                placeholder="Adınız Soyadınız"
+                value={name}
+                onChange={(e) => setName(e.target.value)}
+                required
+                className="w-full h-12 rounded-lg bg-white/[0.05] border border-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30 transition-colors"
+              />
+            </div>
+
+            {/* Email */}
+            <div className="relative">
+              <Mail className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <input
+                type="email"
+                placeholder="Profesyonel E-posta"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                className="w-full h-12 rounded-lg bg-white/[0.05] border border-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30 transition-colors"
+              />
+            </div>
+
+            {/* Specialty */}
+            <div className="relative">
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+              <select
+                value={specialty}
+                onChange={(e) => setSpecialty(e.target.value)}
+                className="w-full h-12 rounded-lg bg-white/[0.05] border border-white/10 px-4 text-sm text-white/70 appearance-none focus:outline-none focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30 transition-colors"
+              >
+                <option value="" disabled className="bg-black text-white/40">
+                  Uzmanlık Alanınız
+                </option>
+                <option value="bodybuilding" className="bg-black text-white">Vücut Geliştirme</option>
+                <option value="strength" className="bg-black text-white">Güç / Kondisyon</option>
+                <option value="functional" className="bg-black text-white">Fonksiyonel Fitness</option>
+                <option value="dietitian" className="bg-black text-white">Diyetisyen</option>
+              </select>
+            </div>
+
+            {/* Athlete Count */}
+            <div className="relative">
+              <ChevronDown className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30 pointer-events-none" />
+              <select
+                value={athleteCount}
+                onChange={(e) => setAthleteCount(e.target.value)}
+                className="w-full h-12 rounded-lg bg-white/[0.05] border border-white/10 px-4 text-sm text-white/70 appearance-none focus:outline-none focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30 transition-colors"
+              >
+                <option value="" disabled className="bg-black text-white/40">
+                  Aktif Sporcu Sayınız
+                </option>
+                <option value="1-10" className="bg-black text-white">1 – 10</option>
+                <option value="11-50" className="bg-black text-white">11 – 50</option>
+                <option value="50+" className="bg-black text-white">50+</option>
+              </select>
+            </div>
+
+            {/* Instagram */}
+            <div className="relative">
+              <Instagram className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-white/30" />
+              <input
+                type="text"
+                placeholder="@instagram (opsiyonel)"
+                value={instagram}
+                onChange={(e) => setInstagram(e.target.value)}
+                className="w-full h-12 rounded-lg bg-white/[0.05] border border-white/10 pl-10 pr-4 text-sm text-white placeholder:text-white/30 focus:outline-none focus:border-[#CCFF00]/50 focus:ring-1 focus:ring-[#CCFF00]/30 transition-colors"
+              />
+            </div>
+
+            {/* Submit */}
+            <motion.button
+              type="submit"
+              disabled={isSubmitting}
+              whileHover={isSubmitting ? {} : { scale: 1.02 }}
+              whileTap={isSubmitting ? {} : { scale: 0.98 }}
+              className="relative w-full h-14 mt-4 rounded-xl font-bold text-sm tracking-wider uppercase text-black bg-[#CCFF00] overflow-hidden transition-shadow hover:shadow-[0_0_30px_hsla(68,100%,50%,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
+            >
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Sisteme Kaydediliyor...
+                  </>
+                ) : (
+                  "Koç Bekleme Listesine Katıl 🚀"
+                )}
+              </span>
+              {!isSubmitting && (
+                <motion.span
+                  className="absolute inset-0 rounded-xl border-2 border-[#CCFF00]"
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
+            </motion.button>
+          </motion.form>
+        )}
+      </motion.section>
     </div>
   );
 };
