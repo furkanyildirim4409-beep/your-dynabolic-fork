@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,11 +19,39 @@ const Waitlist = () => {
   const [goal, setGoal] = useState("");
   const [instagram, setInstagram] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-    setSubmitted(true);
+    if (!name.trim() || !email.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("waitlist").insert([
+        {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          goal: goal || null,
+          instagram: instagram.trim() || null,
+        },
+      ]);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Bu e-posta adresi zaten kayıtlı!");
+        } else {
+          toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+        return;
+      }
+
+      setSubmitted(true);
+      toast.success("Kayıt başarılı! 🚀");
+    } catch {
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -197,17 +227,28 @@ const Waitlist = () => {
             {/* CTA */}
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative w-full h-14 mt-4 rounded-xl font-bold text-sm tracking-wider uppercase text-black bg-[#CCFF00] overflow-hidden transition-shadow hover:shadow-[0_0_30px_hsla(68,100%,50%,0.5)]"
+              disabled={isSubmitting}
+              whileHover={isSubmitting ? {} : { scale: 1.02 }}
+              whileTap={isSubmitting ? {} : { scale: 0.98 }}
+              className="relative w-full h-14 mt-4 rounded-xl font-bold text-sm tracking-wider uppercase text-black bg-[#CCFF00] overflow-hidden transition-shadow hover:shadow-[0_0_30px_hsla(68,100%,50%,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <span className="relative z-10">Bekleme Listesine Katıl 🚀</span>
-              {/* Pulse ring */}
-              <motion.span
-                className="absolute inset-0 rounded-xl border-2 border-[#CCFF00]"
-                animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  "Bekleme Listesine Katıl 🚀"
+                )}
+              </span>
+              {!isSubmitting && (
+                <motion.span
+                  className="absolute inset-0 rounded-xl border-2 border-[#CCFF00]"
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
             </motion.button>
           </motion.form>
         )}
