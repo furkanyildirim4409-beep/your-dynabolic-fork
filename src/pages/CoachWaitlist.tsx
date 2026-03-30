@@ -280,6 +280,51 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
+      {/* Phase 2: Operations */}
+      <motion.section
+        variants={container}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.15 }}
+        className="relative z-10 px-6 md:px-12 pt-8 md:pt-12 pb-32 max-w-6xl mx-auto"
+      >
+        <motion.p
+          variants={item}
+          className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
+          style={{ color: "#CCFF00" }}
+        >
+          Faz 2: Operasyon
+        </motion.p>
+        <motion.h2
+          variants={item}
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+        >
+          Saha Kontrolü ve Atlet Yönetimi
+        </motion.h2>
+
+        <motion.div
+          variants={container}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+        >
+          {operationsFeatures.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={item}
+              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              style={{
+                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+              }}
+            >
+              <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
+                <feature.icon className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
       {/* Trust Banner */}
       <motion.div
         initial={{ opacity: 0 }}
