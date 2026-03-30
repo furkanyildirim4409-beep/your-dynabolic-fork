@@ -1,31 +1,26 @@
 
 
-# Part 2: Operations Bento Grid
+# GPU Acceleration Fix for Chromium
 
-## Single file edit: `src/pages/CoachWaitlist.tsx`
+## Problem
+Chromium stutters when animating multiple `backdrop-blur` + `radial-gradient` cards via Framer Motion because they aren't promoted to compositor layers.
 
-### 1. Add new imports (line 3)
-Add `Users`, `RefreshCw`, `Pill`, `TrendingUp`, `Camera` to the lucide-react import.
+## Changes — `src/pages/CoachWaitlist.tsx`
 
-### 2. Add `operationsFeatures` array (after `coreEngineFeatures`, ~line 39)
+### 1. Update `item` variant (line 77-80)
+Add `willChange` hints to help Chromium promote layers during animation, then release after:
+```ts
+const item = {
+  hidden: { opacity: 0, y: 24, willChange: "transform, opacity" },
+  show: { opacity: 1, y: 0, willChange: "auto", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
+};
+```
+- Shorter `y` offset (24 vs 30) and snappier cubic-bezier for less paint work
+- `willChange: "auto"` on show state releases the layer hint after animation completes
 
-| # | Icon | colSpan | Title | Description |
-|---|------|---------|-------|-------------|
-| 6 | `Users` | 2 | Merkezi Komuta Paneli | Yüzlerce sporcuyu tek ekranda... WhatsApp karmaşasına son |
-| 7 | `RefreshCw` | 1 | Canlı Program Revizesi | Değişiklikler anında sporcunun telefonunda güncellenir |
-| 8 | `Pill` | 1 | Gelişmiş Supplement Protokolleri | Kreatin, vitamin, kür döngüleri... miligramına kadar planla |
-| 9 | `TrendingUp` | 1 | Progressive Overload Takibi | Volume Load haftalık grafikler... platoya giren sporcuları bildir |
-| 10 | `Camera` | 1 | Form & Postür Analizi | Ön/arka/yan form fotoğrafları... slider ile görselleştir |
+### 2. Add GPU classes to both Bento Grid card `motion.div` elements
+Append `transform-gpu will-change-transform backface-hidden [transform:translateZ(0)]` to both Phase 1 and Phase 2 card classNames. This forces Chromium to composite these elements on the GPU.
 
-### 3. Insert Phase 2 JSX section (between Core Engine closing `</motion.section>` at line 248 and Trust Banner at line 250)
-
-New `motion.section` with `pt-8 md:pt-12 pb-32` spacing:
-- Eyebrow: "Faz 2: Operasyon" — same neon green mono style
-- Headline: "Saha Kontrolü ve Atlet Yönetimi"
-- Grid: identical 3-col layout, same card styling with radial gradient glow
-- Card 6 spans `md:col-span-2`, rest span 1
-- Same `whileInView` stagger animation using existing `container`/`item` variants
-
-### 4. Everything else untouched
-Trust banner, form, footer remain in place below Phase 2.
+### 3. No visual changes
+Identical layout, colors, spacing, and hover effects. Only rendering pipeline is affected.
 
