@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, Pill, TrendingUp, Camera, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
+import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Store, GraduationCap, LayoutTemplate, Pill, MessageSquare, Trophy, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
@@ -38,36 +38,42 @@ const aiDoctorFeatures = [
   },
 ];
 
-const operationsFeatures = [
+const ecosystemFeatures = [
   {
-    icon: Users,
-    title: "Merkezi Komuta Paneli",
-    description: "Yüzlerce sporcuyu tek bir ekranda toplayın. Yeni gelenler, aktif aboneler ve uyarı veren sporcuları renk kodlarıyla anında filtreleyin. WhatsApp karmaşasına son verin.",
-    colSpan: 2,
+    icon: Store,
+    title: "Entegre E-Ticaret & Mini Mağaza",
+    description: "Sadece antrenman satmayın. Kendi e-kitaplarınızı, özel video serilerinizi veya ekipman linklerinizi doğrudan uygulamanın içindeki kendi mağazanızda satın. Gelir kapılarınızı çoğaltın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: RefreshCw,
-    title: "Canlı Program Revizesi",
-    description: "Sporcunun antrenman veya beslenme planında yaptığın değişiklikler, o an sporcunun telefonunda sayfayı yenilemesine gerek kalmadan anında güncellenir.",
-    colSpan: 1,
+    icon: GraduationCap,
+    title: "Akademi & Eğitim Modülü",
+    description: "Öğrencileriniz için video kurslar ve makaleler hazırlayın. Kendi 'Netflix' tarzı eğitim kütüphanenizi oluşturarak marka değerinizi zirveye taşıyın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "İçerik & Sosyal Medya Stüdyosu",
+    description: "Instagram Story şablonları oluşturun, Feed (Akış) planlaması yapın. Öğrencilerinizin 'Öncesi/Sonrası' fotoğraflarını tek tıkla profesyonel bir sosyal medya gönderisine çevirin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
     icon: Pill,
-    title: "Gelişmiş Supplement Protokolleri",
-    description: "Kreatin, vitamin ve özel kür döngüleri. Sadece yemek değil, tüm ek gıda takvimini miligramına ve saatine kadar profesyonelce planla.",
-    colSpan: 1,
+    title: "Kapsamlı Supplement & Kür Shop",
+    description: "Sporcunun kullanması gereken vitaminleri, kreatin döngülerini veya ileri seviye protokolleri miligram ve saat bazında planlayın. Akıllı bildirimlerle onlara hatırlatın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: TrendingUp,
-    title: "Progressive Overload Takibi",
-    description: "Sporcunun kaldırdığı ağırlık hacmini (Volume Load) haftalık grafiklerle izle. Platoya (gelişim duraklamasına) giren sporcuları algoritma sana bildirsin.",
-    colSpan: 1,
+    icon: MessageSquare,
+    title: "Merkezi İletişim Ağı (Chat)",
+    description: "WhatsApp karmaşasına son. Sporcularınızla veya alt koçlarınızla doğrudan uygulama içinden yazışın, sesli mesaj gönderin ve antrenman notlarını paylaşın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: Camera,
-    title: "Form & Postür Analizi",
-    description: "Ön, arka ve yan form fotoğraflarını tarih damgasıyla arşivle. Sporcularının değişimini kanıta dayalı, profesyonel slider'lar ile görselleştir.",
-    colSpan: 1,
+    icon: Trophy,
+    title: "Topluluk & Liderlik Tablosu",
+    description: "Öğrencileriniz arasında tatlı bir rekabet yaratın. En çok antrenman yapanlar veya diyetine en çok uyanlar liderlik tablosunda yükselsin, rozetler kazansın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
 
@@ -336,37 +342,37 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* Phase 2: Operations */}
+      {/* Phase 2: Ekosistem & Ticaret */}
       <motion.section
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.15 }}
-        className="relative z-10 px-6 md:px-12 pt-8 md:pt-12 pb-32 max-w-6xl mx-auto"
+        className="relative z-10 px-6 md:px-12 pt-8 md:pt-12 pb-32 max-w-[1400px] mx-auto"
       >
         <motion.p
           variants={item}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
           style={{ color: "#CCFF00" }}
         >
-          Faz 2: Operasyon
+          Faz 2: Ekosistem & Ticaret
         </motion.p>
         <motion.h2
           variants={item}
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+          className="text-3xl md:text-5xl font-bold text-white text-center mb-12"
         >
-          Saha Kontrolü ve Atlet Yönetimi
+          Kendi Markanızı, Mağazanızı ve Akademisinizi Kurun
         </motion.h2>
 
         <motion.div
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {operationsFeatures.map((feature) => (
+          {ecosystemFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan}`}
               style={{
                 background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
               }}
