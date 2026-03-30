@@ -1,40 +1,40 @@
 
 
-## Zero-Latency Cache for Diet Plan & Calendar (Epic 8)
+# Dynabolic Waitlist Landing Page
 
-### Problem
+## Overview
+A standalone, public, full-screen waitlist page at `/waitlist` — ultra-premium dark aesthetic with neon lime (#CCFF00) accents matching the existing Dynabolic brand. Mobile-first, no auth required.
 
-`useNutritionCalendar` already has a global logs cache but `assignedDaysMap` resets to empty on every mount, causing stale calendar renders until the fetch completes. `useDietPlan` has no global cache at all — `allFoods` resets to `[]` on unmount, triggering the loading spinner every tab switch.
+## What Gets Built
 
-### Changes
+### 1. New Page: `src/pages/Waitlist.tsx`
+- Full-screen black background with subtle radial neon green glow
+- Animated Dynabolic logo (reuse the SVG from SplashScreen with glow effect)
+- Bold headline: "DYNABOLIC | Ozel Beta On Kayit" with text-glow
+- Sub-headline paragraph
+- **Form fields** (UI-only, no backend wiring yet):
+  - Name input (User icon)
+  - Email input (Mail icon)
+  - Goal select dropdown (3 Turkish options)
+  - Instagram handle input (Instagram icon, optional)
+- Neon green CTA button "Bekleme Listesine Katil" with pulse/glow hover animation
+- Particle/grid background effect using CSS for the matrix vibe
+- Framer Motion entrance animations on all sections
 
-**1. `src/hooks/useNutritionCalendar.ts` — Add global cache for assigned days**
+### 2. Route Registration in `src/App.tsx`
+- Add `/waitlist` as a **public route** (no ProtectedRoute wrapper), placed alongside `/login`
 
-- Add a second module-level cache: `const globalAssignedCache = new Map<string, Map<string, number>>()`
-- Initialize `assignedDaysMap` state from this cache (same pattern as existing `globalLogsCache`)
-- In the SWR check (lines 71-76), also check `globalAssignedCache` — only show spinner if BOTH caches miss
-- After fetch, write to `globalAssignedCache` alongside the existing `globalLogsCache` write
+## Technical Details
 
-**2. `src/hooks/useDietPlan.ts` — Add module-level cache**
+- **Styling**: Tailwind utilities + custom CSS glow classes already in the design system. Brand color `#CCFF00` / `hsl(68 100% 50%)` from existing CSS variables.
+- **Icons**: `User`, `Mail`, `Instagram` from `lucide-react`
+- **Animations**: `framer-motion` (already installed) for staggered fade-in
+- **Responsive**: `max-w-md mx-auto px-6` container, mobile-first sizing
+- **No new dependencies required**
 
-- Add two module-level caches outside the hook:
-  - `const _foodsCache = new Map<string, PlannedFood[]>()`
-  - `const _metaCache = new Map<string, { hasTemplate, startDate, durationWeeks, todayDay }>()`
-- Initialize all `useState` calls from cache using lazy initializer `() => cache.get(key) ?? default`
-- Cache key = `user.id`
-- After successful fetch, write mapped foods + metadata to caches
-- On no-template path, clear that user's cache entry
-- `isLoading` init: `() => !_foodsCache.has(key)` — false if cache exists
-
-### Result
-
-- First load: brief spinner while fetching
-- All subsequent mounts (tab switches, dialog open/close): instant render from module-level memory, silent background refresh
-
-### Files Changed
-
-| File | Change |
+## Files Changed
+| File | Action |
 |------|--------|
-| `src/hooks/useDietPlan.ts` | Add `_foodsCache` + `_metaCache`, init state from cache, write after fetch |
-| `src/hooks/useNutritionCalendar.ts` | Add `globalAssignedCache`, init `assignedDaysMap` from it, update SWR check |
+| `src/pages/Waitlist.tsx` | Create — full landing page component |
+| `src/App.tsx` | Edit — add public `/waitlist` route |
 
