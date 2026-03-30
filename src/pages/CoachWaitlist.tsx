@@ -42,9 +42,52 @@ const item = {
 };
 
 const CoachWaitlist = () => {
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [specialty, setSpecialty] = useState("");
+  const [athleteCount, setAthleteCount] = useState("");
+  const [instagram, setInstagram] = useState("");
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [submitted, setSubmitted] = useState(false);
+
   const scrollToForm = () => {
     const el = document.getElementById("coach-form");
     if (el) el.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!name.trim() || !email.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("waitlist").insert([
+        {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          role: "coach",
+          specialty: specialty || null,
+          athlete_count: athleteCount || null,
+          instagram: instagram.trim() || null,
+        },
+      ]);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Bu e-posta zaten koç listemizde!");
+        } else {
+          toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+        return;
+      }
+
+      setSubmitted(true);
+      toast.success("Kayıt başarılı! 🚀");
+    } catch {
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
