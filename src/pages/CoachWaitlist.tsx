@@ -290,40 +290,40 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* Core Engine Bento Grid */}
+      {/* Phase 1: AI Doctor & Otonom Zekâ */}
       <motion.section
         id="phase-1"
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.15 }}
-        className="relative z-10 px-6 md:px-12 pb-32 max-w-6xl mx-auto"
+        className="relative z-10 px-6 md:px-12 pb-32 max-w-[1400px] mx-auto"
       >
         <motion.p
           variants={item}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
           style={{ color: "#CCFF00" }}
         >
-          Faz 1: Mühendislik
+          FAZ 1: AI DOCTOR & OTONOM ZEKÂ
         </motion.p>
         <motion.h2
           variants={item}
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+          className="text-3xl sm:text-3xl md:text-5xl font-bold text-white text-center mb-12"
         >
-          Sınırları Zorlayan Çekirdek Motor
+          Sizin İçin Düşünen, Analiz Eden ve Uyaran Bir Asistan
         </motion.h2>
 
         <motion.div
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {coreEngineFeatures.map((feature) => (
+          {aiDoctorFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
               style={{
-                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%), #0a0a0a",
               }}
             >
               <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
