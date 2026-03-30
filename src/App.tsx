@@ -41,6 +41,7 @@ import CoachAthletes from "./pages/CoachAthletes";
 import Onboarding from "./pages/Onboarding";
 import Destek from "./pages/Destek";
 import Waitlist from "./pages/Waitlist";
+import CoachWaitlist from "./pages/CoachWaitlist";
 
 const queryClient = new QueryClient();
 
