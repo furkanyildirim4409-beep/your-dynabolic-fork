@@ -1,40 +1,40 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, RefreshCw, Pill, TrendingUp, Camera, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
+import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, Pill, TrendingUp, Camera, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
 
-const coreEngineFeatures = [
+const aiDoctorFeatures = [
   {
-    icon: Cpu,
-    title: "Otonom Uyum Skoru & Sapma Radarı",
-    description: "Öğrencilerin makrolarına ve antrenmanlarına sadakatini yapay zeka ile ölçün. Kim diyeti bozdu, kim antrenmanı astı? Sistem sapmaları anında tespit eder ve size 'Kritik Müdahale' listesi sunar.",
-    colSpan: 2,
+    icon: Microscope,
+    title: "AI Destekli Kan Tahlili Analizi",
+    description: "Sporcunun kan tahlili PDF'ini sisteme yükle. Yapay zeka değerleri (Testosteron, Kortizol, AST, ALT) okusun, referans aralıklarını karşılaştırsın ve sana özel beslenme/supplement protokolü önersin.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: Zap,
-    title: "Sıfır Gecikmeli SWR Mimari",
-    description: "Loading ekranlarını tarihe gömün. Sen programı güncellediğin an, öğrencinin ekranındaki veriler sayfa yenilenmeden, milisaniyeler içinde canlı olarak değişir.",
-    colSpan: 1,
+    icon: Activity,
+    title: "Otonom Uyum Skoru (Adherence)",
+    description: "Kim diyeti bozdu, kim antrenmanı astı? Sistem, tüm öğrencilerin verilerini anlık tarar ve 'Haftalık Uyum Puanı' düşük olanları kırmızı alarm ile önüne düşürür.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Wand2,
+    title: "AI Program Jeneratörü",
+    description: "Boş sayfaya bakmaya son. Sporcunun hedefini, sakatlık geçmişini ve tahlillerini seç; AI sana 10 saniyede kişiselleştirilmiş 4 haftalık taslak program üretsin. Sen sadece ince ayar yap.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
     icon: Calculator,
-    title: "Dinamik Gramaj Algoritması",
-    description: "Öğrenci 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, o günkü tüm makroları ve kalan kaloriyi baştan hesaplar.",
-    colSpan: 1,
+    title: "Dinamik Gramaj Matematiği",
+    description: "Sporcu 100g pirinç yerine 120g mı yedi? Uygulama sana sormaz. Anında aradaki 20g farkı hesaplar, o günkü protein, yağ ve kalori limitlerini otonom olarak yeniden dengeler.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: BatteryCharging,
-    title: "Akıllı Rest Day Optimizasyonu",
-    description: "Dinlenme günlerinde makro ve kalori hedeflerini otomatik düşüren, metabolik hıza (BMR) duyarlı akıllı takvim yönetimi.",
-    colSpan: 1,
-  },
-  {
-    icon: Database,
-    title: "Kurumsal Veri İzolasyonu",
-    description: "Her koçun veritabanı Row Level Security (RLS) ile şifrelenir. Sporcularının verileri ve senin stratejilerin askeri düzeyde korunur.",
-    colSpan: 1,
+    icon: RefreshCw,
+    title: "AI Destekli Canlı Revizyon",
+    description: "Sporcu platoya (gelişim duraklamasına) mı girdi? AI bunu hacim grafiklerinden tespit eder ve sana 'Kaloriyi %10 Düşür' veya 'Volume Load'u Artır' gibi spesifik aksiyonlar sunar.",
+    colSpan: "md:col-span-1 lg:col-span-2",
   },
 ];
 
@@ -290,40 +290,40 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* Core Engine Bento Grid */}
+      {/* Phase 1: AI Doctor & Otonom Zekâ */}
       <motion.section
         id="phase-1"
         variants={container}
         initial="hidden"
         whileInView="show"
         viewport={{ once: true, amount: 0.15 }}
-        className="relative z-10 px-6 md:px-12 pb-32 max-w-6xl mx-auto"
+        className="relative z-10 px-6 md:px-12 pb-32 max-w-[1400px] mx-auto"
       >
         <motion.p
           variants={item}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
           style={{ color: "#CCFF00" }}
         >
-          Faz 1: Mühendislik
+          FAZ 1: AI DOCTOR & OTONOM ZEKÂ
         </motion.p>
         <motion.h2
           variants={item}
-          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+          className="text-3xl sm:text-3xl md:text-5xl font-bold text-white text-center mb-12"
         >
-          Sınırları Zorlayan Çekirdek Motor
+          Sizin İçin Düşünen, Analiz Eden ve Uyaran Bir Asistan
         </motion.h2>
 
         <motion.div
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
-          {coreEngineFeatures.map((feature) => (
+          {aiDoctorFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              className={`bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
               style={{
-                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%), #0a0a0a",
               }}
             >
               <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
