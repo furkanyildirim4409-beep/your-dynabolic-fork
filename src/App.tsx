@@ -40,6 +40,7 @@ import BiometricLogin from "./pages/BiometricLogin";
 import CoachAthletes from "./pages/CoachAthletes";
 import Onboarding from "./pages/Onboarding";
 import Destek from "./pages/Destek";
+import Waitlist from "./pages/Waitlist";
 
 const queryClient = new QueryClient();
 
@@ -75,6 +76,7 @@ const App = () => {
                             <Route path="/login" element={<Login />} />
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/biometric-login" element={<BiometricLogin />} />
+                            <Route path="/waitlist" element={<Waitlist />} />
                             <Route path="/onboarding" element={<P skipOnboardingCheck><Onboarding /></P>} />
 
                             {/* Protected athlete routes */}
