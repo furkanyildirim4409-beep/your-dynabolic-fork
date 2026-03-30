@@ -227,17 +227,28 @@ const Waitlist = () => {
             {/* CTA */}
             <motion.button
               type="submit"
-              whileHover={{ scale: 1.02 }}
-              whileTap={{ scale: 0.98 }}
-              className="relative w-full h-14 mt-4 rounded-xl font-bold text-sm tracking-wider uppercase text-black bg-[#CCFF00] overflow-hidden transition-shadow hover:shadow-[0_0_30px_hsla(68,100%,50%,0.5)]"
+              disabled={isSubmitting}
+              whileHover={isSubmitting ? {} : { scale: 1.02 }}
+              whileTap={isSubmitting ? {} : { scale: 0.98 }}
+              className="relative w-full h-14 mt-4 rounded-xl font-bold text-sm tracking-wider uppercase text-black bg-[#CCFF00] overflow-hidden transition-shadow hover:shadow-[0_0_30px_hsla(68,100%,50%,0.5)] disabled:opacity-70 disabled:cursor-not-allowed"
             >
-              <span className="relative z-10">Bekleme Listesine Katıl 🚀</span>
-              {/* Pulse ring */}
-              <motion.span
-                className="absolute inset-0 rounded-xl border-2 border-[#CCFF00]"
-                animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0, 0.6] }}
-                transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
-              />
+              <span className="relative z-10 flex items-center justify-center gap-2">
+                {isSubmitting ? (
+                  <>
+                    <Loader2 className="w-4 h-4 animate-spin" />
+                    Kaydediliyor...
+                  </>
+                ) : (
+                  "Bekleme Listesine Katıl 🚀"
+                )}
+              </span>
+              {!isSubmitting && (
+                <motion.span
+                  className="absolute inset-0 rounded-xl border-2 border-[#CCFF00]"
+                  animate={{ scale: [1, 1.05, 1], opacity: [0.6, 0, 0.6] }}
+                  transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+                />
+              )}
             </motion.button>
           </motion.form>
         )}
