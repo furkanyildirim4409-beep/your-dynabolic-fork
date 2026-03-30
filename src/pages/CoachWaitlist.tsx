@@ -401,6 +401,24 @@ const CoachWaitlist = () => {
           </motion.form>
         )}
       </motion.section>
+
+      {/* Footer */}
+      <footer className="relative z-10 border-t border-white/[0.06]">
+        <div className="max-w-5xl mx-auto px-6 md:px-12 py-8 flex flex-col md:flex-row items-center justify-between gap-4">
+          <p className="text-xs text-white/20 font-mono tracking-wide">
+            © 2026 Dynabolic OS. All Systems Operational.
+          </p>
+          <div className="flex items-center gap-4">
+            <span className="text-xs text-white/15 hover:text-white/40 cursor-pointer transition-colors">
+              Gizlilik Politikası
+            </span>
+            <span className="text-xs text-white/20">|</span>
+            <span className="text-xs text-white/15 hover:text-white/40 cursor-pointer transition-colors">
+              Kullanım Koşulları
+            </span>
+          </div>
+        </div>
+      </footer>
     </div>
   );
 };
