@@ -266,6 +266,23 @@ const CoachWaitlist = () => {
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.button>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          variants={item}
+          onClick={() => document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" })}
+          className="mt-16 flex flex-col items-center gap-2 cursor-pointer group"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-5 h-5 text-[#CCFF00]/60 group-hover:text-[#CCFF00] transition-colors" />
+          </motion.div>
+          <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#CCFF00]/50 group-hover:text-[#CCFF00]/80 transition-colors">
+            Mühendisliği Keşfet
+          </span>
+        </motion.div>
       </motion.section>
 
       {/* Core Engine Bento Grid */}
