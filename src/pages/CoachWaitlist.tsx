@@ -5,33 +5,38 @@ import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
 
-const features = [
+const coreEngineFeatures = [
+  {
+    icon: Cpu,
+    title: "Otonom Uyum Skoru & Sapma Radarı",
+    description: "Öğrencilerin makrolarına ve antrenmanlarına sadakatini yapay zeka ile ölçün. Kim diyeti bozdu, kim antrenmanı astı? Sistem sapmaları anında tespit eder ve size 'Kritik Müdahale' listesi sunar.",
+    colSpan: 2,
+  },
   {
     icon: Zap,
-    title: "Dinamik Gramaj Motoru",
-    description:
-      "Sporcun 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, tüm günlük makroları ve kaloriyi milisaniyeler içinde baştan hesaplar.",
+    title: "Sıfır Gecikmeli SWR Mimari",
+    description: "Loading ekranlarını tarihe gömün. Sen programı güncellediğin an, öğrencinin ekranındaki veriler sayfa yenilenmeden, milisaniyeler içinde canlı olarak değişir.",
+    colSpan: 1,
   },
   {
-    icon: Gauge,
-    title: "Sıfır Gecikme (SWR Cache)",
-    description:
-      "Loading ekranlarına son. SWR mimarimiz sayesinde sporcularının veri girişleri anında komuta panelinde belirir.",
+    icon: Calculator,
+    title: "Dinamik Gramaj Algoritması",
+    description: "Öğrenci 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, o günkü tüm makroları ve kalan kaloriyi baştan hesaplar.",
+    colSpan: 1,
   },
   {
-    icon: Target,
-    title: "Otonom Uyum Skoru",
-    description:
-      "Kim diyeti bozdu, kim antrenmanı astı? Akıllı algoritmamız 'Haftalık Uyum Kartı'nı otomatik hesaplar, sana sadece müdahale etmen gerekenleri gösterir.",
+    icon: BatteryCharging,
+    title: "Akıllı Rest Day Optimizasyonu",
+    description: "Dinlenme günlerinde makro ve kalori hedeflerini otomatik düşüren, metabolik hıza (BMR) duyarlı akıllı takvim yönetimi.",
+    colSpan: 1,
   },
   {
-    icon: Users,
-    title: "Merkezi İstihbarat",
-    description:
-      "Beslenme takvimi, makro hedefleri, su tüketimi ve dinlenme günleri. 100+ atleti tek bir ekrandan, profesyonel kurumsal kimliğinle yönet.",
+    icon: Database,
+    title: "Kurumsal Veri İzolasyonu",
+    description: "Her koçun veritabanı Row Level Security (RLS) ile şifrelenir. Sporcularının verileri ve senin stratejilerin askeri düzeyde korunur.",
+    colSpan: 1,
   },
 ];
-
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
