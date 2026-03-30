@@ -20,8 +20,14 @@ export function useUnreadMessages() {
     if (!user) return;
     fetchCount();
 
+    const channelName = `unread-msg-${user.id}`;
+    // Remove any stale channel with the same name (StrictMode / HMR)
+    supabase.getChannels()
+      .filter((c) => c.topic === `realtime:${channelName}`)
+      .forEach((c) => supabase.removeChannel(c));
+
     const channel = supabase
-      .channel(`unread-msg-${user.id}`)
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
@@ -39,7 +45,7 @@ export function useUnreadMessages() {
     return () => {
       supabase.removeChannel(channel);
     };
-  }, [user, fetchCount]);
+  }, [user?.id, fetchCount]);
 
   const markAllRead = () => setUnreadCount(0);
 
