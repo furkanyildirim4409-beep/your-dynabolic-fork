@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, RefreshCw, Pill, TrendingUp, Camera } from "lucide-react";
+import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, RefreshCw, Pill, TrendingUp, Camera, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
@@ -67,6 +67,39 @@ const operationsFeatures = [
     icon: Camera,
     title: "Form & Postür Analizi",
     description: "Ön, arka ve yan form fotoğraflarını tarih damgasıyla arşivle. Sporcularının değişimini kanıta dayalı, profesyonel slider'lar ile görselleştir.",
+    colSpan: 1,
+  },
+];
+
+const financeFeatures = [
+  {
+    icon: Wallet,
+    title: "Ciro & Hak Ediş Merkezi",
+    description: "Finansal şeffaflık. Aktif abonelikler, aylık gelir tahminleri ve alt koçlarınızın hak ediş hesaplamalarını tek bir ekrandan, profesyonelce yönetin.",
+    colSpan: 2,
+  },
+  {
+    icon: UserPlus,
+    title: "Asistan & Alt Koç Atama",
+    description: "Operasyonu büyüt. Sistemine asistanlar ve alt antrenörler ekle, yetkilerini sen belirle, iş yükünü profesyonelce dağıt.",
+    colSpan: 1,
+  },
+  {
+    icon: ShieldCheck,
+    title: "Super Admin Dashboard",
+    description: "Tüm sistemin kuş bakışı görünümü. Hangi koç kaç sporcu yönetiyor, hangi bölge daha karlı? Veriye dayalı büyüme kararları al.",
+    colSpan: 1,
+  },
+  {
+    icon: FileText,
+    title: "Gelişmiş PDF Raporlama",
+    description: "Öğrencilerine sadece mesaj değil, profesyonel gelişim raporları sun. Antrenman ve beslenme verilerini şık PDF dosyalarına dönüştür.",
+    colSpan: 1,
+  },
+  {
+    icon: Medal,
+    title: "Kurumsal Otorite & White-Label",
+    description: "Sıradan bir uygulamayı değil, kendi yönettiğin teknolojik bir ekosistemi sun. Teknolojin, markanın en büyük referansı olsun.",
     colSpan: 1,
   },
 ];
@@ -233,10 +266,28 @@ const CoachWaitlist = () => {
             transition={{ duration: 2.5, repeat: Infinity, ease: "easeInOut" }}
           />
         </motion.button>
+
+        {/* Scroll Indicator */}
+        <motion.div
+          variants={item}
+          onClick={() => document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" })}
+          className="mt-16 flex flex-col items-center gap-2 cursor-pointer group"
+        >
+          <motion.div
+            animate={{ y: [0, 8, 0] }}
+            transition={{ duration: 2, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-5 h-5 text-[#CCFF00]/60 group-hover:text-[#CCFF00] transition-colors" />
+          </motion.div>
+          <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#CCFF00]/50 group-hover:text-[#CCFF00]/80 transition-colors">
+            Mühendisliği Keşfet
+          </span>
+        </motion.div>
       </motion.section>
 
       {/* Core Engine Bento Grid */}
       <motion.section
+        id="phase-1"
         variants={container}
         initial="hidden"
         whileInView="show"
@@ -307,6 +358,51 @@ const CoachWaitlist = () => {
           className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
         >
           {operationsFeatures.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={item}
+              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform backface-hidden [transform:translateZ(0)] ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              style={{
+                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+              }}
+            >
+              <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
+                <feature.icon className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* Phase 3: Institutional & Finance */}
+      <motion.section
+        variants={container}
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.15 }}
+        className="relative z-10 px-6 md:px-12 pt-8 md:pt-12 pb-32 max-w-6xl mx-auto"
+      >
+        <motion.p
+          variants={item}
+          className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
+          style={{ color: "#CCFF00" }}
+        >
+          Faz 3: Kurumsallaşma & Finans
+        </motion.p>
+        <motion.h2
+          variants={item}
+          className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
+        >
+          Bir Antrenörden Daha Fazlası Olun
+        </motion.h2>
+
+        <motion.div
+          variants={container}
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
+        >
+          {financeFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
