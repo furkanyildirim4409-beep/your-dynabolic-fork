@@ -38,36 +38,42 @@ const aiDoctorFeatures = [
   },
 ];
 
-const operationsFeatures = [
+const ecosystemFeatures = [
   {
-    icon: Users,
-    title: "Merkezi Komuta Paneli",
-    description: "Yüzlerce sporcuyu tek bir ekranda toplayın. Yeni gelenler, aktif aboneler ve uyarı veren sporcuları renk kodlarıyla anında filtreleyin. WhatsApp karmaşasına son verin.",
-    colSpan: 2,
+    icon: Store,
+    title: "Entegre E-Ticaret & Mini Mağaza",
+    description: "Sadece antrenman satmayın. Kendi e-kitaplarınızı, özel video serilerinizi veya ekipman linklerinizi doğrudan uygulamanın içindeki kendi mağazanızda satın. Gelir kapılarınızı çoğaltın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: RefreshCw,
-    title: "Canlı Program Revizesi",
-    description: "Sporcunun antrenman veya beslenme planında yaptığın değişiklikler, o an sporcunun telefonunda sayfayı yenilemesine gerek kalmadan anında güncellenir.",
-    colSpan: 1,
+    icon: GraduationCap,
+    title: "Akademi & Eğitim Modülü",
+    description: "Öğrencileriniz için video kurslar ve makaleler hazırlayın. Kendi 'Netflix' tarzı eğitim kütüphanenizi oluşturarak marka değerinizi zirveye taşıyın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: LayoutTemplate,
+    title: "İçerik & Sosyal Medya Stüdyosu",
+    description: "Instagram Story şablonları oluşturun, Feed (Akış) planlaması yapın. Öğrencilerinizin 'Öncesi/Sonrası' fotoğraflarını tek tıkla profesyonel bir sosyal medya gönderisine çevirin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
     icon: Pill,
-    title: "Gelişmiş Supplement Protokolleri",
-    description: "Kreatin, vitamin ve özel kür döngüleri. Sadece yemek değil, tüm ek gıda takvimini miligramına ve saatine kadar profesyonelce planla.",
-    colSpan: 1,
+    title: "Kapsamlı Supplement & Kür Shop",
+    description: "Sporcunun kullanması gereken vitaminleri, kreatin döngülerini veya ileri seviye protokolleri miligram ve saat bazında planlayın. Akıllı bildirimlerle onlara hatırlatın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
   },
   {
-    icon: TrendingUp,
-    title: "Progressive Overload Takibi",
-    description: "Sporcunun kaldırdığı ağırlık hacmini (Volume Load) haftalık grafiklerle izle. Platoya (gelişim duraklamasına) giren sporcuları algoritma sana bildirsin.",
-    colSpan: 1,
+    icon: MessageSquare,
+    title: "Merkezi İletişim Ağı (Chat)",
+    description: "WhatsApp karmaşasına son. Sporcularınızla veya alt koçlarınızla doğrudan uygulama içinden yazışın, sesli mesaj gönderin ve antrenman notlarını paylaşın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
   {
-    icon: Camera,
-    title: "Form & Postür Analizi",
-    description: "Ön, arka ve yan form fotoğraflarını tarih damgasıyla arşivle. Sporcularının değişimini kanıta dayalı, profesyonel slider'lar ile görselleştir.",
-    colSpan: 1,
+    icon: Trophy,
+    title: "Topluluk & Liderlik Tablosu",
+    description: "Öğrencileriniz arasında tatlı bir rekabet yaratın. En çok antrenman yapanlar veya diyetine en çok uyanlar liderlik tablosunda yükselsin, rozetler kazansın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
 
