@@ -1,42 +1,31 @@
 
 
-# Part 1: Core Engine Bento Grid
-
-## What changes
-
-Replace the old 4-card Feature Matrix section (lines 8-33 data + lines 200-240 JSX) with a new 5-card "Core Engine & AI" Bento Grid using a 3-column layout.
+# Part 2: Operations Bento Grid
 
 ## Single file edit: `src/pages/CoachWaitlist.tsx`
 
-### 1. Replace the `features` array (lines 8-33) with `coreEngineFeatures`
+### 1. Add new imports (line 3)
+Add `Users`, `RefreshCw`, `Pill`, `TrendingUp`, `Camera` to the lucide-react import.
 
-5 entries, each with `icon`, `title`, `description`, and `colSpan` (1 or 2):
+### 2. Add `operationsFeatures` array (after `coreEngineFeatures`, ~line 39)
 
-| # | Icon | colSpan | Title | Description (truncated) |
-|---|------|---------|-------|------------------------|
-| 1 | `Cpu` | 2 | Otonom Uyum Skoru & Sapma Radarı | Yapay zeka ile makro/antrenman sadakati... Kritik Mudahale listesi |
-| 2 | `Zap` | 1 | Sıfır Gecikmeli SWR Mimari | Loading ekranlarını tarihe gomun... milisaniyeler |
-| 3 | `Calculator` | 1 | Dinamik Gramaj Algoritması | 100g yulaf yerine 150g... 1.5x carpan |
-| 4 | `BatteryCharging` | 1 | Akıllı Rest Day Optimizasyonu | Dinlenme gunlerinde makro/kalori... BMR duyarli |
-| 5 | `Database` | 1 | Kurumsal Veri Izolasyonu | RLS ile sifreleme... askeri duzey koruma |
+| # | Icon | colSpan | Title | Description |
+|---|------|---------|-------|-------------|
+| 6 | `Users` | 2 | Merkezi Komuta Paneli | Yüzlerce sporcuyu tek ekranda... WhatsApp karmaşasına son |
+| 7 | `RefreshCw` | 1 | Canlı Program Revizesi | Değişiklikler anında sporcunun telefonunda güncellenir |
+| 8 | `Pill` | 1 | Gelişmiş Supplement Protokolleri | Kreatin, vitamin, kür döngüleri... miligramına kadar planla |
+| 9 | `TrendingUp` | 1 | Progressive Overload Takibi | Volume Load haftalık grafikler... platoya giren sporcuları bildir |
+| 10 | `Camera` | 1 | Form & Postür Analizi | Ön/arka/yan form fotoğrafları... slider ile görselleştir |
 
-### 2. Update imports
+### 3. Insert Phase 2 JSX section (between Core Engine closing `</motion.section>` at line 248 and Trust Banner at line 250)
 
-Remove `Gauge`, `Target`, `Users`. Add `Cpu`, `Calculator`, `BatteryCharging`, `Database`.
-
-### 3. Replace Feature Matrix JSX (lines 200-240)
-
-New section with:
-- Eyebrow: `"FAZ 1: MUHENDİSLİK"` — neon green, `tracking-[0.3em]`, `text-xs`, `font-mono`, uppercase
-- Headline: `"Sınırları Zorlayan Cekirdek Motor"` — `text-2xl sm:text-3xl md:text-4xl`, bold, white
-- Grid: `grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6 max-w-6xl mx-auto`
-- Each card: `bg-white/[0.02] border border-white/[0.05] backdrop-blur-md rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden`
-- Inner radial gradient pseudo-glow via inline style: `radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)`
-- Card 1 spans `md:col-span-2`, rest `md:col-span-1`
-- Icon in neon-bordered circle (same pattern as before), title, description
-- `whileInView` stagger animation on the section and each card
+New `motion.section` with `pt-8 md:pt-12 pb-32` spacing:
+- Eyebrow: "Faz 2: Operasyon" — same neon green mono style
+- Headline: "Saha Kontrolü ve Atlet Yönetimi"
+- Grid: identical 3-col layout, same card styling with radial gradient glow
+- Card 6 spans `md:col-span-2`, rest span 1
+- Same `whileInView` stagger animation using existing `container`/`item` variants
 
 ### 4. Everything else untouched
-
-Trust banner, form, footer remain identical.
+Trust banner, form, footer remain in place below Phase 2.
 
