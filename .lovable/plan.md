@@ -1,26 +1,42 @@
 
 
-# GPU Acceleration Fix for Chromium
+# Part 3: Scroll Indicator + Phase 3 (Institutional & Finance)
 
-## Problem
-Chromium stutters when animating multiple `backdrop-blur` + `radial-gradient` cards via Framer Motion because they aren't promoted to compositor layers.
+## Single file edit: `src/pages/CoachWaitlist.tsx`
 
-## Changes — `src/pages/CoachWaitlist.tsx`
+### 1. Add new imports (line 3)
+Add `Wallet`, `UserPlus`, `ShieldCheck`, `FileText`, `Medal` to the lucide-react import.
 
-### 1. Update `item` variant (line 77-80)
-Add `willChange` hints to help Chromium promote layers during animation, then release after:
-```ts
-const item = {
-  hidden: { opacity: 0, y: 24, willChange: "transform, opacity" },
-  show: { opacity: 1, y: 0, willChange: "auto", transition: { duration: 0.6, ease: [0.22, 1, 0.36, 1] } },
-};
-```
-- Shorter `y` offset (24 vs 30) and snappier cubic-bezier for less paint work
-- `willChange: "auto"` on show state releases the layer hint after animation completes
+### 2. Add `financeFeatures` array (after `operationsFeatures`, ~line 72)
 
-### 2. Add GPU classes to both Bento Grid card `motion.div` elements
-Append `transform-gpu will-change-transform backface-hidden [transform:translateZ(0)]` to both Phase 1 and Phase 2 card classNames. This forces Chromium to composite these elements on the GPU.
+| # | Icon | colSpan | Title |
+|---|------|---------|-------|
+| 11 | `Wallet` | 2 | Ciro & Hak Ediş Merkezi |
+| 12 | `UserPlus` | 1 | Asistan & Alt Koç Atama |
+| 13 | `ShieldCheck` | 1 | Super Admin Dashboard |
+| 14 | `FileText` | 1 | Gelişmiş PDF Raporlama |
+| 15 | `Medal` | 1 | Kurumsal Otorite & White-Label |
 
-### 3. No visual changes
-Identical layout, colors, spacing, and hover effects. Only rendering pipeline is affected.
+### 3. Animated Scroll Indicator (inside Hero section, after CTA button ~line 235)
+
+A `motion.div` with:
+- `ChevronDown` icon + "Mühendisliği Keşfet" text (neon green, `text-[10px]`, mono, uppercase)
+- Floating bounce animation: `animate={{ y: [0, 8, 0] }}` with `repeat: Infinity`
+- `onClick` scrolls to `#phase-1`
+- Positioned at bottom of hero with `mt-16`
+
+### 4. Add `id="phase-1"` to Phase 1 section (line 239)
+
+Add the anchor ID to the Core Engine `motion.section`.
+
+### 5. Insert Phase 3 JSX section (between Phase 2 closing tag and Trust Banner)
+
+New `motion.section` matching Phase 1/2 styling:
+- Eyebrow: "Faz 3: Kurumsallaşma & Finans"
+- Headline: "Bir Antrenörden Daha Fazlası Olun"
+- Same 3-col grid, same card styling with GPU classes and radial gradient glow
+- Same `whileInView` stagger animation
+
+### 6. Everything else untouched
+Trust banner, form, footer remain in place. GPU optimizations preserved on all cards.
 
