@@ -239,6 +239,21 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
+      {/* Trust Banner */}
+      <motion.div
+        initial={{ opacity: 0 }}
+        whileInView={{ opacity: 1 }}
+        viewport={{ once: true }}
+        transition={{ duration: 1 }}
+        className="relative z-10 max-w-2xl mx-auto px-6 pb-20 text-center"
+      >
+        <p className="text-sm text-white/40 leading-relaxed">
+          Sınırlı Beta Kontenjanı: Sadece{" "}
+          <span className="text-[#CCFF00]/70 font-semibold">50 Elit Antrenör</span>{" "}
+          kabul edilecektir. Erken erişim ve ömür boyu kurucu avantajları için yerinizi ayırtın.
+        </p>
+      </motion.div>
+
       {/* Coach Form */}
       <motion.section
         id="coach-form"
