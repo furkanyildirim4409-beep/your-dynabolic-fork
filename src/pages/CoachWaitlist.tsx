@@ -1,37 +1,42 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Gauge, Target, Users, User, Mail, Instagram, ChevronDown, Loader2, Rocket } from "lucide-react";
+import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
 
-const features = [
+const coreEngineFeatures = [
+  {
+    icon: Cpu,
+    title: "Otonom Uyum Skoru & Sapma Radarı",
+    description: "Öğrencilerin makrolarına ve antrenmanlarına sadakatini yapay zeka ile ölçün. Kim diyeti bozdu, kim antrenmanı astı? Sistem sapmaları anında tespit eder ve size 'Kritik Müdahale' listesi sunar.",
+    colSpan: 2,
+  },
   {
     icon: Zap,
-    title: "Dinamik Gramaj Motoru",
-    description:
-      "Sporcun 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, tüm günlük makroları ve kaloriyi milisaniyeler içinde baştan hesaplar.",
+    title: "Sıfır Gecikmeli SWR Mimari",
+    description: "Loading ekranlarını tarihe gömün. Sen programı güncellediğin an, öğrencinin ekranındaki veriler sayfa yenilenmeden, milisaniyeler içinde canlı olarak değişir.",
+    colSpan: 1,
   },
   {
-    icon: Gauge,
-    title: "Sıfır Gecikme (SWR Cache)",
-    description:
-      "Loading ekranlarına son. SWR mimarimiz sayesinde sporcularının veri girişleri anında komuta panelinde belirir.",
+    icon: Calculator,
+    title: "Dinamik Gramaj Algoritması",
+    description: "Öğrenci 100g yulaf yerine 150g mı yedi? Sistem anında 1.5x çarpanı uygular, o günkü tüm makroları ve kalan kaloriyi baştan hesaplar.",
+    colSpan: 1,
   },
   {
-    icon: Target,
-    title: "Otonom Uyum Skoru",
-    description:
-      "Kim diyeti bozdu, kim antrenmanı astı? Akıllı algoritmamız 'Haftalık Uyum Kartı'nı otomatik hesaplar, sana sadece müdahale etmen gerekenleri gösterir.",
+    icon: BatteryCharging,
+    title: "Akıllı Rest Day Optimizasyonu",
+    description: "Dinlenme günlerinde makro ve kalori hedeflerini otomatik düşüren, metabolik hıza (BMR) duyarlı akıllı takvim yönetimi.",
+    colSpan: 1,
   },
   {
-    icon: Users,
-    title: "Merkezi İstihbarat",
-    description:
-      "Beslenme takvimi, makro hedefleri, su tüketimi ve dinlenme günleri. 100+ atleti tek bir ekrandan, profesyonel kurumsal kimliğinle yönet.",
+    icon: Database,
+    title: "Kurumsal Veri İzolasyonu",
+    description: "Her koçun veritabanı Row Level Security (RLS) ile şifrelenir. Sporcularının verileri ve senin stratejilerin askeri düzeyde korunur.",
+    colSpan: 1,
   },
 ];
-
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
@@ -197,37 +202,40 @@ const CoachWaitlist = () => {
         </motion.button>
       </motion.section>
 
-      {/* Feature Matrix */}
+      {/* Core Engine Bento Grid */}
       <motion.section
         variants={container}
         initial="hidden"
         whileInView="show"
-        viewport={{ once: true, amount: 0.2 }}
-        className="relative z-10 px-6 md:px-12 pb-32 max-w-5xl mx-auto"
+        viewport={{ once: true, amount: 0.15 }}
+        className="relative z-10 px-6 md:px-12 pb-32 max-w-6xl mx-auto"
       >
         <motion.p
           variants={item}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-4 text-center"
           style={{ color: "#CCFF00" }}
         >
-          Neden Dynabolic?
+          Faz 1: Mühendislik
         </motion.p>
         <motion.h2
           variants={item}
           className="text-2xl sm:text-3xl md:text-4xl font-bold text-white text-center mb-12"
         >
-          Koçlar İçin İnşa Edildi.
+          Sınırları Zorlayan Çekirdek Motor
         </motion.h2>
 
         <motion.div
           variants={container}
-          className="grid grid-cols-1 md:grid-cols-2 gap-5"
+          className="grid grid-cols-1 md:grid-cols-3 gap-4 md:gap-6"
         >
-          {features.map((feature) => (
+          {coreEngineFeatures.map((feature) => (
             <motion.div
               key={feature.title}
               variants={item}
-              className="bg-white/[0.03] backdrop-blur-sm border border-white/[0.06] rounded-2xl p-6 md:p-8 hover:border-[#CCFF00]/30 transition-colors"
+              className={`bg-white/[0.02] backdrop-blur-md border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden ${feature.colSpan === 2 ? "md:col-span-2" : "md:col-span-1"}`}
+              style={{
+                background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+              }}
             >
               <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
                 <feature.icon className="w-5 h-5 text-[#CCFF00]" />
