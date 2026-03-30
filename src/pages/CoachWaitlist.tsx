@@ -213,21 +213,23 @@ const CoachWaitlist = () => {
 
       {/* Hero */}
       <motion.section
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        variants={heroContainer}
+        initial="hidden"
+        animate="show"
         className="relative z-10 flex flex-col items-center justify-center text-center px-6 pt-16 pb-32 md:pt-28 md:pb-44 max-w-5xl mx-auto"
       >
         {/* Eyebrow */}
-        <p
+        <motion.p
+          variants={heroItem}
           className="text-[10px] sm:text-xs font-mono tracking-[0.3em] uppercase mb-6"
           style={{ color: "#CCFF00" }}
         >
           Elit Antrenör İşletim Sistemi
-        </p>
+        </motion.p>
 
         {/* Headline */}
-        <h1
+        <motion.h1
+          variants={heroItem}
           className="text-3xl sm:text-4xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight mb-8"
           style={{
             color: "#fff",
@@ -246,16 +248,17 @@ const CoachWaitlist = () => {
           >
             Kurun.
           </span>
-        </h1>
+        </motion.h1>
 
         {/* Sub-headline */}
-        <p className="text-base sm:text-lg md:text-xl text-white/50 leading-relaxed max-w-2xl mb-12">
+        <motion.p variants={heroItem} className="text-base sm:text-lg md:text-xl text-white/50 leading-relaxed max-w-2xl mb-12">
           100'den fazla sporcuyu sıfır hata, sıfır gecikme ve yapay zeka destekli
           otonom takip sistemiyle tek bir merkezden yönetin.
-        </p>
+        </motion.p>
 
         {/* CTA */}
         <motion.button
+          variants={heroItem}
           onClick={scrollToForm}
           whileHover={{ scale: 1.03 }}
           whileTap={{ scale: 0.97 }}
@@ -270,7 +273,8 @@ const CoachWaitlist = () => {
         </motion.button>
 
         {/* Scroll Indicator */}
-        <div
+        <motion.div
+          variants={heroItem}
           onClick={() => document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" })}
           className="mt-16 flex flex-col items-center gap-2 cursor-pointer group"
         >
@@ -283,7 +287,7 @@ const CoachWaitlist = () => {
           <span className="text-[10px] font-mono tracking-[0.3em] uppercase text-[#CCFF00]/50 group-hover:text-[#CCFF00]/80 transition-colors">
             Mühendisliği Keşfet
           </span>
-        </div>
+        </motion.div>
       </motion.section>
 
       {/* Core Engine Bento Grid */}
