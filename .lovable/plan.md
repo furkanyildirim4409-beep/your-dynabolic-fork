@@ -1,42 +1,19 @@
 
 
-# Part 3: Scroll Indicator + Phase 3 (Institutional & Finance)
+# No-Blur Chromium Performance Fix
 
-## Single file edit: `src/pages/CoachWaitlist.tsx`
+## Problem
+`backdrop-blur-md` on 15 animated cards over a grid background causes heavy compositing in Chromium, killing scroll performance.
 
-### 1. Add new imports (line 3)
-Add `Wallet`, `UserPlus`, `ShieldCheck`, `FileText`, `Medal` to the lucide-react import.
+## Changes — `src/pages/CoachWaitlist.tsx`
 
-### 2. Add `financeFeatures` array (after `operationsFeatures`, ~line 72)
+Three identical edits on lines 319, 364, and 409:
 
-| # | Icon | colSpan | Title |
-|---|------|---------|-------|
-| 11 | `Wallet` | 2 | Ciro & Hak Ediş Merkezi |
-| 12 | `UserPlus` | 1 | Asistan & Alt Koç Atama |
-| 13 | `ShieldCheck` | 1 | Super Admin Dashboard |
-| 14 | `FileText` | 1 | Gelişmiş PDF Raporlama |
-| 15 | `Medal` | 1 | Kurumsal Otorite & White-Label |
+**Before:** `bg-white/[0.02] backdrop-blur-md border border-white/[0.05]`
+**After:** `bg-[#0a0a0a] border border-white/[0.06]`
 
-### 3. Animated Scroll Indicator (inside Hero section, after CTA button ~line 235)
-
-A `motion.div` with:
-- `ChevronDown` icon + "Mühendisliği Keşfet" text (neon green, `text-[10px]`, mono, uppercase)
-- Floating bounce animation: `animate={{ y: [0, 8, 0] }}` with `repeat: Infinity`
-- `onClick` scrolls to `#phase-1`
-- Positioned at bottom of hero with `mt-16`
-
-### 4. Add `id="phase-1"` to Phase 1 section (line 239)
-
-Add the anchor ID to the Core Engine `motion.section`.
-
-### 5. Insert Phase 3 JSX section (between Phase 2 closing tag and Trust Banner)
-
-New `motion.section` matching Phase 1/2 styling:
-- Eyebrow: "Faz 3: Kurumsallaşma & Finans"
-- Headline: "Bir Antrenörden Daha Fazlası Olun"
-- Same 3-col grid, same card styling with GPU classes and radial gradient glow
-- Same `whileInView` stagger animation
-
-### 6. Everything else untouched
-Trust banner, form, footer remain in place. GPU optimizations preserved on all cards.
+- Removes `backdrop-blur-md` entirely (eliminates the expensive filter)
+- Swaps translucent `bg-white/[0.02]` for opaque `bg-[#0a0a0a]` (solid dark panel, no compositing needed)
+- Bumps border opacity slightly (`0.05` → `0.06`) to compensate for the lost blur halo
+- All GPU classes, hover effects, radial gradient glow, and animations remain untouched
 
