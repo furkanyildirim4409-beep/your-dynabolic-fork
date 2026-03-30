@@ -1,6 +1,8 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const container = {
   hidden: { opacity: 0 },
@@ -17,11 +19,39 @@ const Waitlist = () => {
   const [goal, setGoal] = useState("");
   const [instagram, setInstagram] = useState("");
   const [submitted, setSubmitted] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim() || !email.trim()) return;
-    setSubmitted(true);
+    if (!name.trim() || !email.trim() || isSubmitting) return;
+
+    setIsSubmitting(true);
+    try {
+      const { error } = await supabase.from("waitlist").insert([
+        {
+          name: name.trim(),
+          email: email.trim().toLowerCase(),
+          goal: goal || null,
+          instagram: instagram.trim() || null,
+        },
+      ]);
+
+      if (error) {
+        if (error.code === "23505") {
+          toast.error("Bu e-posta adresi zaten kayıtlı!");
+        } else {
+          toast.error("Bir hata oluştu, lütfen tekrar deneyin.");
+        }
+        return;
+      }
+
+      setSubmitted(true);
+      toast.success("Kayıt başarılı! 🚀");
+    } catch {
+      toast.error("Bağlantı hatası, lütfen tekrar deneyin.");
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
