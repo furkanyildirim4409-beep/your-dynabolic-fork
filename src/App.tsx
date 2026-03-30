@@ -78,6 +78,7 @@ const App = () => {
                             <Route path="/reset-password" element={<ResetPassword />} />
                             <Route path="/biometric-login" element={<BiometricLogin />} />
                             <Route path="/waitlist" element={<Waitlist />} />
+                            <Route path="/coach-waitlist" element={<CoachWaitlist />} />
                             <Route path="/onboarding" element={<P skipOnboardingCheck><Onboarding /></P>} />
 
                             {/* Protected athlete routes */}
