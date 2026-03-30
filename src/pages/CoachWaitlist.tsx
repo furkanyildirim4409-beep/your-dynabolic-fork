@@ -37,6 +37,39 @@ const coreEngineFeatures = [
     colSpan: 1,
   },
 ];
+
+const operationsFeatures = [
+  {
+    icon: Users,
+    title: "Merkezi Komuta Paneli",
+    description: "Yüzlerce sporcuyu tek bir ekranda toplayın. Yeni gelenler, aktif aboneler ve uyarı veren sporcuları renk kodlarıyla anında filtreleyin. WhatsApp karmaşasına son verin.",
+    colSpan: 2,
+  },
+  {
+    icon: RefreshCw,
+    title: "Canlı Program Revizesi",
+    description: "Sporcunun antrenman veya beslenme planında yaptığın değişiklikler, o an sporcunun telefonunda sayfayı yenilemesine gerek kalmadan anında güncellenir.",
+    colSpan: 1,
+  },
+  {
+    icon: Pill,
+    title: "Gelişmiş Supplement Protokolleri",
+    description: "Kreatin, vitamin ve özel kür döngüleri. Sadece yemek değil, tüm ek gıda takvimini miligramına ve saatine kadar profesyonelce planla.",
+    colSpan: 1,
+  },
+  {
+    icon: TrendingUp,
+    title: "Progressive Overload Takibi",
+    description: "Sporcunun kaldırdığı ağırlık hacmini (Volume Load) haftalık grafiklerle izle. Platoya (gelişim duraklamasına) giren sporcuları algoritma sana bildirsin.",
+    colSpan: 1,
+  },
+  {
+    icon: Camera,
+    title: "Form & Postür Analizi",
+    description: "Ön, arka ve yan form fotoğraflarını tarih damgasıyla arşivle. Sporcularının değişimini kanıta dayalı, profesyonel slider'lar ile görselleştir.",
+    colSpan: 1,
+  },
+];
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
