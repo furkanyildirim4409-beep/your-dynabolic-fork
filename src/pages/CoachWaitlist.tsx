@@ -70,6 +70,39 @@ const operationsFeatures = [
     colSpan: 1,
   },
 ];
+
+const financeFeatures = [
+  {
+    icon: Wallet,
+    title: "Ciro & Hak Ediş Merkezi",
+    description: "Finansal şeffaflık. Aktif abonelikler, aylık gelir tahminleri ve alt koçlarınızın hak ediş hesaplamalarını tek bir ekrandan, profesyonelce yönetin.",
+    colSpan: 2,
+  },
+  {
+    icon: UserPlus,
+    title: "Asistan & Alt Koç Atama",
+    description: "Operasyonu büyüt. Sistemine asistanlar ve alt antrenörler ekle, yetkilerini sen belirle, iş yükünü profesyonelce dağıt.",
+    colSpan: 1,
+  },
+  {
+    icon: ShieldCheck,
+    title: "Super Admin Dashboard",
+    description: "Tüm sistemin kuş bakışı görünümü. Hangi koç kaç sporcu yönetiyor, hangi bölge daha karlı? Veriye dayalı büyüme kararları al.",
+    colSpan: 1,
+  },
+  {
+    icon: FileText,
+    title: "Gelişmiş PDF Raporlama",
+    description: "Öğrencilerine sadece mesaj değil, profesyonel gelişim raporları sun. Antrenman ve beslenme verilerini şık PDF dosyalarına dönüştür.",
+    colSpan: 1,
+  },
+  {
+    icon: Medal,
+    title: "Kurumsal Otorite & White-Label",
+    description: "Sıradan bir uygulamayı değil, kendi yönettiğin teknolojik bir ekosistemi sun. Teknolojin, markanın en büyük referansı olsun.",
+    colSpan: 1,
+  },
+];
 const container = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
