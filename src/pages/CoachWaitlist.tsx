@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, RefreshCw, Pill, TrendingUp, Camera } from "lucide-react";
+import { Zap, Cpu, Calculator, BatteryCharging, Database, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Users, RefreshCw, Pill, TrendingUp, Camera, Wallet, UserPlus, ShieldCheck, FileText, Medal } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
