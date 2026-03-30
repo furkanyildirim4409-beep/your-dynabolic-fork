@@ -1,27 +1,46 @@
 
 
-# Standardize CoachWaitlist Initial Load Animation
+# Part 1: Replace Phase 1 with "AI Doctor & Otonom Zekâ" (6 Features, 4-col Grid)
 
-## Problem
-The `CoachWaitlist` page uses heavy custom `container`/`item` stagger variants (0.2s stagger, 0.4s delay, custom cubic-bezier) applied to every element in the Hero, causing Chromium to batch-animate many GPU-promoted elements simultaneously on mount. Other pages use the simple `AppShell` pattern: a single `motion.main` with `opacity: 0→1, y: 20→0` over 0.3s — no stagger, no variants.
+## Single file: `src/pages/CoachWaitlist.tsx`
 
-## Changes — `src/pages/CoachWaitlist.tsx`
+### 1. Update imports (line 3)
+Add `Microscope`, `Activity`, `Wand2` to lucide-react imports. Keep all existing icons (needed for Phase 2, 3, form).
 
-### 1. Remove `container` and `item` variant objects (lines 106-113)
-Delete both variant definitions entirely.
+### 2. Replace `coreEngineFeatures` array (lines 8-39)
+Delete the current 5-feature array. Replace with new 6-feature `aiDoctorFeatures` array using a 4-column grid system:
 
-### 2. Replace Hero animation with a single wrapper fade
-- Remove `variants={container} initial="hidden" animate="show"` from the Hero `motion.section` (line 207-211).
-- Replace with the standard AppShell pattern: `initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.3 }}`.
-- Remove all `variants={item}` from child elements inside the Hero (eyebrow, headline, sub-headline, CTA button, scroll indicator). Convert those `motion.*` elements to plain HTML tags (`p`, `h1`, `button`, `div`) where they don't need independent animation. Keep `motion.button` only for the CTA (it uses `whileHover`/`whileTap`) and `motion.div` for the scroll indicator bounce.
+| # | Icon | colSpan | Title |
+|---|------|---------|-------|
+| 1 | `Microscope` | 2 | AI Destekli Kan Tahlili Analizi |
+| 2 | `Activity` | 1 | Otonom Uyum Skoru (Adherence) |
+| 3 | `Wand2` | 1 | AI Program Jeneratörü |
+| 4 | `Calculator` | 2 | Dinamik Gramaj Matematiği |
+| 5 | `RefreshCw` | 2 | AI Destekli Canlı Revizyon |
 
-### 3. Simplify Top Nav animation
-- The `motion.nav` (line 186-189) has its own `initial/animate` which is fine and lightweight. Keep it as-is since it's a single element.
+Note: The user listed 5 features (not 6). We implement exactly the 5 specified, using `lg:col-span` values from the request. Feature 5 gets `lg:col-span-2` as specified.
 
-### 4. Bento Grid sections remain untouched
-- Phase 1/2/3 grids already use `whileInView` (scroll-triggered), not mount animation. No changes needed — they only animate when scrolled into view, which is already performant.
+### 3. Update Phase 1 section header (lines 302-314)
+- Eyebrow text: "FAZ 1: AI DOCTOR & OTONOM ZEKÂ"
+- Headline: "Sizin İçin Düşünen, Analiz Eden ve Uyaran Bir Asistan"
+- Headline sizing: `text-3xl md:text-5xl` (upgraded from md:text-4xl)
 
-### 5. Net result
-- Mount triggers exactly 2 lightweight animations (nav fade + hero fade) instead of 6+ staggered GPU-promoted element animations.
-- All content, layout, CSS, GPU classes, and scroll-triggered Bento animations are preserved.
+### 4. Update Phase 1 grid layout (line 318)
+Change from `grid-cols-1 md:grid-cols-3` to `grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6 max-w-[1400px]`.
+
+### 5. Update card className logic (lines 321-334)
+Update the dynamic colSpan classes to include both `md:col-span-X` and `lg:col-span-X` from the feature data. Update `bg-white/[0.02]` to `bg-[#0a0a0a]` per the spec.
+
+### 6. Update Phase 1 section container width
+Change `max-w-6xl` to `max-w-[1400px]` to accommodate the 4-column layout.
+
+### 7. Scroll indicator target
+Keep `id="phase-1"` on the Phase 1 section — no change needed.
+
+### What stays untouched
+- Hero section, scroll indicator, nav
+- Phase 2 (operations), Phase 3 (finance) — arrays and JSX unchanged
+- Trust banner, form, footer
+- All animation variants (`heroContainer`, `heroItem`, `container`, `item`)
+- GPU acceleration classes on all cards
 
