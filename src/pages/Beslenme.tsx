@@ -550,38 +550,46 @@ const ManualFoodRow = ({
   onRemove: () => void;
   parseGrams: (str: string | null | undefined) => number;
   onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
-}) => (
-  <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
-    <div className="flex items-center gap-3">
-      <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
-        <Check size={14} strokeWidth={3} />
-      </div>
-      <div>
-        <p className="text-sm font-medium text-foreground">{food.food_name}</p>
-        <p className="text-xs text-muted-foreground">{food.serving_size || "100g"}</p>
-      </div>
-    </div>
-    <div className="flex items-center gap-2">
-      <div className="text-right flex-shrink-0">
-        <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
-        <div className="flex gap-2 text-[10px] text-muted-foreground justify-end">
-          <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
-          <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
+) => {
+  const targetServing = (food as any).target_serving as string | null;
+  const isDeviated = targetServing && parseGrams(food.serving_size) !== parseGrams(targetServing);
+
+  return (
+    <div className="flex items-center justify-between p-3 rounded-xl border border-white/5 bg-primary/5 border-primary/20 transition-all group">
+      <div className="flex items-center gap-3">
+        <div className="w-6 h-6 rounded-full flex items-center justify-center border bg-primary border-primary text-primary-foreground flex-shrink-0">
+          <Check size={14} strokeWidth={3} />
+        </div>
+        <div>
+          <p className="text-sm font-medium text-foreground">{food.food_name}</p>
+          <div className="flex items-center gap-1">
+            <p className={`text-xs ${isDeviated ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>{food.serving_size || "100g"}{isDeviated && ' ±'}</p>
+            {isDeviated && <p className="text-[9px] text-muted-foreground/50 line-through">{targetServing}</p>}
+          </div>
         </div>
       </div>
-      <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
-      <button
-        onClick={(e) => {
-          e.stopPropagation();
-          onRemove();
-        }}
-        className="w-8 h-8 flex items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
-      >
-        <Trash2 size={16} />
-      </button>
+      <div className="flex items-center gap-2">
+        <div className="text-right flex-shrink-0">
+          <p className={`text-sm font-bold ${isDeviated ? 'text-amber-400' : 'text-foreground'}`}>{food.calories} kcal</p>
+          <div className="flex gap-2 text-[10px] justify-end">
+            <span className={isDeviated ? 'text-amber-400/80' : 'text-yellow-500/80'}>P:{Math.round(food.protein || 0)}</span>
+            <span className={isDeviated ? 'text-amber-400/80' : 'text-blue-500/80'}>K:{Math.round(food.carbs || 0)}</span>
+          </div>
+        </div>
+        <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
+        <button
+          onClick={(e) => {
+            e.stopPropagation();
+            onRemove();
+          }}
+          className="w-8 h-8 flex items-center justify-center rounded-lg bg-destructive/10 hover:bg-destructive/20 text-destructive transition-colors"
+        >
+          <Trash2 size={16} />
+        </button>
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // --- EXPANDABLE MEAL CARD (with checklist) ---
 const ExpandableMealCard = ({
