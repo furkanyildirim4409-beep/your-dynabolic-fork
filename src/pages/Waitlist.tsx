@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText, HeartPulse, Pill, Droplets, Flame, Video, ImagePlus } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText, HeartPulse, Pill, Droplets, Flame, Video, ImagePlus, Coins, Trophy, Swords, GraduationCap, MessageSquare, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -135,6 +135,45 @@ const lifestyleFeaturesAthletes = [
     icon: ImagePlus,
     title: "Form Fotoğrafı Arşivi",
     desc: "Ön, yan ve arka pozlarını standartlara göre sakla. Yan yana karşılaştırma aracıyla değişimini kanıtla.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
+const ecosystemFeaturesAthletes = [
+  {
+    icon: Coins,
+    title: "BioCoin & Dijital Cüzdan",
+    desc: "Antrenman yaptıkça ve diyetine uydukça sanal para (BioCoin) kazan. Bu paraları koçunun mağazasında e-kitap veya indirim için harca.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Trophy,
+    title: "Global Liderlik Tablosu",
+    desc: "Sadece kendinle değil, tüm Dynabolic topluluğuyla yarış. Haftanın en disiplinli atleti ol, rozetleri topla.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Swords,
+    title: "Sosyal Meydan Okumalar",
+    desc: "'30 Gün Şekersiz' veya '1000 Şınav' gibi topluluk etkinliklerine (Challenges) katıl, ödüller kazan.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: GraduationCap,
+    title: "Özel Eğitim Akademisi",
+    desc: "Koçunun hazırladığı özel video kurslara ve makalelere doğrudan uygulama içinden eriş. Sadece spor yapma, öğren.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: MessageSquare,
+    title: "Anlık Koç Chat & Sesli Not",
+    desc: "WhatsApp ile uğraşma. Doğrudan uygulama içinden koçuna sesli not gönder, programındaki soruları anında çöz.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: WifiOff,
+    title: "Çevrimdışı (Offline) Mod",
+    desc: "İnternetin çekmediği yeraltı spor salonlarında bile antrenmanını kaydet, internet geldiği an veriler otomatik senkronize olsun.",
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
@@ -403,6 +442,49 @@ const Waitlist = () => {
           className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
           {lifestyleFeaturesAthletes.map((f) => (
+            <motion.div
+              key={f.title}
+              variants={gridItem}
+              className={`${f.colSpan} bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] group`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <f.icon className="w-8 h-8 text-[#CCFF00] mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <h3 className="text-white font-semibold text-base md:text-lg mb-2">{f.title}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* ═══════ PHASE 4: EKOSİSTEM, OYUNLAŞTIRMA & SOSYAL ═══════ */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={gridStagger}
+        className="max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32"
+      >
+        <motion.p
+          variants={gridItem}
+          className="text-center text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00] mb-4"
+        >
+          FAZ 4: EKOSİSTEM, OYUNLAŞTIRMA & SOSYAL
+        </motion.p>
+        <motion.h2
+          variants={gridItem}
+          className="text-center text-3xl md:text-5xl font-bold text-white mb-12 md:mb-16"
+        >
+          Bir Uygulama Değil, Yeni Yaşam Tarzınız
+        </motion.h2>
+
+        <motion.div
+          variants={gridStagger}
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          {ecosystemFeaturesAthletes.map((f) => (
             <motion.div
               key={f.title}
               variants={gridItem}
