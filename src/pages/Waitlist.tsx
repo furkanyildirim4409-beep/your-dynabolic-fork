@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -57,6 +57,45 @@ const analysisFeaturesAthletes = [
     icon: Target,
     title: "Otonom Uyum Algoritması",
     desc: "Diyetine ve antrenmanına ne kadar sadıksın? Haftalık 'Uyum Skorunu' hesaplayan ve seni motive eden akıllı radar.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
+const performanceFeaturesAthletes = [
+  {
+    icon: TrendingUp,
+    title: "Progressive Overload Radarı",
+    desc: "Hangi harekette kaç kg arttırdın? Toplam tonajını (Volume Load) grafiklerle izle, gelişiminin durduğu anı (plato) önceden fark et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Medal,
+    title: "PR & Rekor Arşivi",
+    desc: "Kişisel rekorlarını (Personal Records) tarih ve video kanıtıyla arşivle. Her yeni rekorda BioCoin kazan.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Timer,
+    title: "Gelişmiş Rest Timer",
+    desc: "Hangi egzersiz için ne kadar dinlenmen gerektiğini bilen, sesli ve haptik (titreşimli) uyarı veren akıllı mola sistemi.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Gauge,
+    title: "RPE & Tempo Kontrolü",
+    desc: "Sadece set/tekrar değil; setin zorluk derecesini (RPE) ve hareketin hızını (Tempo) profesyonel vücut geliştiriciler düzeyinde takip et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Watch,
+    title: "Giyilebilir Cihaz Senkronu",
+    desc: "Apple Health, Garmin ve Oura entegrasyonu. Adım sayın, uykun ve kalp atış hızın otomatik olarak uygulamaya aksın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: FileText,
+    title: "Özel Antrenman Notları",
+    desc: "Her set için özel notlar al, bir sonraki antrenmanda 'Geçen hafta burada ne yapmıştım?' karmaşasını bitir.",
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
@@ -256,7 +295,49 @@ const Waitlist = () => {
         </motion.div>
       </motion.section>
 
-      {/* ═══════ FORM ═══════ */}
+      {/* ═══════ PHASE 2: HARDCORE PERFORMANS ═══════ */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={gridStagger}
+        className="max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32"
+      >
+        <motion.p
+          variants={gridItem}
+          className="text-center text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00] mb-4"
+        >
+          FAZ 2: HARDCORE PERFORMANS & TAKİP
+        </motion.p>
+        <motion.h2
+          variants={gridItem}
+          className="text-center text-3xl md:text-5xl font-bold text-white mb-12 md:mb-16"
+        >
+          Antrenmanınızı Bilimsel Bir Şova Dönüştürün
+        </motion.h2>
+
+        <motion.div
+          variants={gridStagger}
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          {performanceFeaturesAthletes.map((f) => (
+            <motion.div
+              key={f.title}
+              variants={gridItem}
+              className={`${f.colSpan} bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] group`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <f.icon className="w-8 h-8 text-[#CCFF00] mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <h3 className="text-white font-semibold text-base md:text-lg mb-2">{f.title}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
       <div className="relative z-10 max-w-md mx-auto px-6 py-24 flex flex-col items-center">
         {submitted ? (
           <motion.div
