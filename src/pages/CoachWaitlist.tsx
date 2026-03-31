@@ -115,6 +115,46 @@ const engineeringFeatures = [
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
+
+const adminFeatures = [
+  {
+    icon: Wallet,
+    title: "Otonom Fatura & Hak Ediş Merkezi",
+    description: "Sporcuların ödemelerini, yaklaşan taksitleri ve alt koçlarınızın hak ediş (komisyon) hesaplamalarını otomatikleştirin. Excel'e sonsuza dek elveda deyin.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Hiyerarşik İzin Matrisi",
+    description: "Asistanlarınıza sadece spesifik sporcuları veya sadece 'Beslenme' yetkisini verin. Kimin neye erişeceğini mikro düzeyde (Permission Matrix) kontrol edin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Radar,
+    title: "Churn (Kayıp) Risk Radarı",
+    description: "Sisteme girmeyi unutan veya motivasyonu düşen öğrencileri algoritma tespit etsin, abonelik iptalinden önce sizi 'Kırmızı Alarm' ile uyarsın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Coins,
+    title: "BioCoin & Gelişmiş Oyunlaştırma",
+    description: "Öğrencilerinize antrenman yaptıkça 'BioCoin' kazandırın. Bu sanal paraları sizin mağazanızdaki e-kitaplar veya indirimler için harcasınlar. Sadakati zirveye taşıyın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Scale,
+    title: "Anlaşmazlık Çözüm Merkezi",
+    description: "Sakatlık veya tatil durumlarında üyelik dondurma, süre uzatma ve öğrenci itiraz (Dispute) süreçlerini tek bir profesyonel ekrandan yönetin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Building2,
+    title: "Kurumsal White-Label Otoritesi",
+    description: "Öğrencilerinize sıradan bir uygulama değil, kendi kurumsal kimliğinizle tasarlanmış özel, premium bir ekosistem sunun.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
 const heroContainer = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.3 } },
