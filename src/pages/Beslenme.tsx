@@ -503,33 +503,41 @@ const CheckedPlannedFoodRow = ({
   isToggling: boolean;
   parseGrams: (str: string | null | undefined) => number;
   onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
-}) => (
-  <div className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 transition-all group">
-    <button
-      onClick={onUncheck}
-      disabled={isToggling}
-      className="flex items-center gap-3 flex-1 min-w-0"
-    >
-      <div className="w-6 h-6 rounded-full flex items-center justify-center bg-emerald-500 text-white flex-shrink-0">
-        {isToggling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
-      </div>
-      <div className="text-left min-w-0">
-        <p className="text-sm font-medium text-foreground truncate">{food.food_name}</p>
-        {food.serving_size && <p className="text-[10px] text-muted-foreground">{food.serving_size}</p>}
-      </div>
-    </button>
-    <div className="flex items-center gap-2 flex-shrink-0">
-      <div className="text-right">
-        <p className="text-sm font-bold text-foreground">{food.calories} kcal</p>
-        <div className="flex gap-1.5 text-[10px] text-muted-foreground justify-end">
-          <span className="text-yellow-500/80">P:{Math.round(food.protein || 0)}</span>
-          <span className="text-blue-500/80">K:{Math.round(food.carbs || 0)}</span>
+) => {
+  const targetServing = (food as any).target_serving as string | null;
+  const isDeviated = targetServing && parseGrams(food.serving_size) !== parseGrams(targetServing);
+
+  return (
+    <div className="w-full flex items-center justify-between p-3 rounded-xl border border-primary/20 bg-primary/5 transition-all group">
+      <button
+        onClick={onUncheck}
+        disabled={isToggling}
+        className="flex items-center gap-3 flex-1 min-w-0"
+      >
+        <div className="w-6 h-6 rounded-full flex items-center justify-center bg-emerald-500 text-white flex-shrink-0">
+          {isToggling ? <Loader2 size={14} className="animate-spin" /> : <CheckCircle2 size={14} />}
         </div>
+        <div className="text-left min-w-0">
+          <p className="text-sm font-medium text-foreground truncate">{food.food_name}</p>
+          <div className="flex items-center gap-1">
+            {food.serving_size && <p className={`text-[10px] ${isDeviated ? 'text-amber-400 font-semibold' : 'text-muted-foreground'}`}>{food.serving_size}{isDeviated && ' ±'}</p>}
+            {isDeviated && <p className="text-[9px] text-muted-foreground/50 line-through">{targetServing}</p>}
+          </div>
+        </div>
+      </button>
+      <div className="flex items-center gap-2 flex-shrink-0">
+        <div className="text-right">
+          <p className={`text-sm font-bold ${isDeviated ? 'text-amber-400' : 'text-foreground'}`}>{food.calories} kcal</p>
+          <div className="flex gap-1.5 text-[10px] justify-end">
+            <span className={isDeviated ? 'text-amber-400/80' : 'text-yellow-500/80'}>P:{Math.round(food.protein || 0)}</span>
+            <span className={isDeviated ? 'text-amber-400/80' : 'text-blue-500/80'}>K:{Math.round(food.carbs || 0)}</span>
+          </div>
+        </div>
+        <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
       </div>
-      <ServingEditPopover food={food} parseGrams={parseGrams} onSave={onUpdateServing} />
     </div>
-  </div>
-);
+  );
+};
 
 // --- MANUAL CONSUMED FOOD ROW ---
 const ManualFoodRow = ({
