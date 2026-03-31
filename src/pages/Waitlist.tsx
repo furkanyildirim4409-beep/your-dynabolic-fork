@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText, HeartPulse, Pill, Droplets, Flame, Video, ImagePlus } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -96,6 +96,45 @@ const performanceFeaturesAthletes = [
     icon: FileText,
     title: "Özel Antrenman Notları",
     desc: "Her set için özel notlar al, bir sonraki antrenmanda 'Geçen hafta burada ne yapmıştım?' karmaşasını bitir.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
+const lifestyleFeaturesAthletes = [
+  {
+    icon: HeartPulse,
+    title: "HRV & Rejenerasyon Analizi",
+    desc: "Vücudun bugün antrenmana hazır mı? Kalp atış hızı değişkenliği (HRV) üzerinden günlük enerji bankanı kontrol et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Pill,
+    title: "Supplement Takvimi",
+    desc: "Kreatin, vitamin veya omega-3. Hangi takviyeyi, hangi saatte içmen gerektiğini söyleyen akıllı bildirimler.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Droplets,
+    title: "Su & Hidrasyon",
+    desc: "Günlük su hedefini belirle, dehidrasyon riskine karşı sistem seni gün içinde otomatik uyarsın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Flame,
+    title: "Carb-Cycling (Karbonhidrat Döngüsü)",
+    desc: "Koçunla birlikte yüksek, orta ve düşük karbonhidrat günlerini belirle; sistem makrolarını o güne göre otomatik ayarlasın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Video,
+    title: "Haftalık Otomatik Recap",
+    desc: "Pazar geceleri o haftaki tüm performansını, yediğin kaçamakları ve kazandığın başarıları içeren sinematik bir özet video al.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: ImagePlus,
+    title: "Form Fotoğrafı Arşivi",
+    desc: "Ön, yan ve arka pozlarını standartlara göre sakla. Yan yana karşılaştırma aracıyla değişimini kanıtla.",
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
@@ -321,6 +360,49 @@ const Waitlist = () => {
           className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
         >
           {performanceFeaturesAthletes.map((f) => (
+            <motion.div
+              key={f.title}
+              variants={gridItem}
+              className={`${f.colSpan} bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] group`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <f.icon className="w-8 h-8 text-[#CCFF00] mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <h3 className="text-white font-semibold text-base md:text-lg mb-2">{f.title}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* ═══════ PHASE 3: BİYOMETRİ & YAŞAM TARZI ═══════ */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={gridStagger}
+        className="max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32"
+      >
+        <motion.p
+          variants={gridItem}
+          className="text-center text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00] mb-4"
+        >
+          FAZ 3: BİYOMETRİ & YAŞAM TARZI
+        </motion.p>
+        <motion.h2
+          variants={gridItem}
+          className="text-center text-3xl md:text-5xl font-bold text-white mb-12 md:mb-16"
+        >
+          Sadece Salonda Değil, 7/24 Kusursuz Takip
+        </motion.h2>
+
+        <motion.div
+          variants={gridStagger}
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          {lifestyleFeaturesAthletes.map((f) => (
             <motion.div
               key={f.title}
               variants={gridItem}
