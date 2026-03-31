@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Store, GraduationCap, LayoutTemplate, Pill, MessageSquare, Trophy, Accessibility, Dumbbell, Utensils, TrendingUp, Watch, Camera } from "lucide-react";
+import { Microscope, Activity, Wand2, Calculator, RefreshCw, User, Mail, Instagram, ChevronDown, Loader2, Rocket, Store, GraduationCap, LayoutTemplate, Pill, MessageSquare, Trophy, Accessibility, Dumbbell, Utensils, TrendingUp, Watch, Camera, Wallet, ShieldCheck, Radar, Coins, Scale, Building2 } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import DynabolicLogo from "@/components/DynabolicLogo";
@@ -115,6 +115,46 @@ const engineeringFeatures = [
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
+
+const adminFeatures = [
+  {
+    icon: Wallet,
+    title: "Otonom Fatura & Hak Ediş Merkezi",
+    description: "Sporcuların ödemelerini, yaklaşan taksitleri ve alt koçlarınızın hak ediş (komisyon) hesaplamalarını otomatikleştirin. Excel'e sonsuza dek elveda deyin.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: ShieldCheck,
+    title: "Hiyerarşik İzin Matrisi",
+    description: "Asistanlarınıza sadece spesifik sporcuları veya sadece 'Beslenme' yetkisini verin. Kimin neye erişeceğini mikro düzeyde (Permission Matrix) kontrol edin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Radar,
+    title: "Churn (Kayıp) Risk Radarı",
+    description: "Sisteme girmeyi unutan veya motivasyonu düşen öğrencileri algoritma tespit etsin, abonelik iptalinden önce sizi 'Kırmızı Alarm' ile uyarsın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Coins,
+    title: "BioCoin & Gelişmiş Oyunlaştırma",
+    description: "Öğrencilerinize antrenman yaptıkça 'BioCoin' kazandırın. Bu sanal paraları sizin mağazanızdaki e-kitaplar veya indirimler için harcasınlar. Sadakati zirveye taşıyın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Scale,
+    title: "Anlaşmazlık Çözüm Merkezi",
+    description: "Sakatlık veya tatil durumlarında üyelik dondurma, süre uzatma ve öğrenci itiraz (Dispute) süreçlerini tek bir profesyonel ekrandan yönetin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Building2,
+    title: "Kurumsal White-Label Otoritesi",
+    description: "Öğrencilerinize sıradan bir uygulama değil, kendi kurumsal kimliğinizle tasarlanmış özel, premium bir ekosistem sunun.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
 const heroContainer = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.15, delayChildren: 0.3 } },
@@ -426,6 +466,40 @@ const CoachWaitlist = () => {
               className={`bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 relative overflow-hidden transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
               style={{
                 background: "radial-gradient(ellipse at 30% 0%, hsla(68,100%,50%,0.04), transparent 70%)",
+              }}
+            >
+              <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
+                <feature.icon className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* Phase 4: Kurumsallaşma & Süper Admin */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={container}
+        className="relative z-10 max-w-[1400px] mx-auto mt-32 px-6 pb-32"
+      >
+        <motion.p variants={item} className="text-center text-xs font-mono tracking-[0.3em] text-[#CCFF00] mb-4">
+          FAZ 4: KURUMSALLAŞMA & SÜPER ADMİN
+        </motion.p>
+        <motion.h2 variants={item} className="text-center text-3xl md:text-5xl font-bold text-white mb-12">
+          Bir Antrenörden Çok, Bir Teknoloji Şirketi Olun
+        </motion.h2>
+        <motion.div variants={container} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {adminFeatures.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={item}
+              className={`relative bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
+              style={{
+                background: "radial-gradient(ellipse at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
               }}
             >
               <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
