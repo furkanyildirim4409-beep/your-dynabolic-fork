@@ -1,32 +1,44 @@
 
 
-# Nutrition Epic Part 1: Water Tracker Fix & Compact Adherence
+# Nutrition Epic Part 2: Dynamic Grammage Engine — Enhancement
 
-## 1. Fix Water Tracker Rounding (`src/components/WaterTrackerWidget.tsx`)
+## Current State
 
-**Problem**: Line 97 uses `.toFixed(1)` which rounds `3.75` → `3.8`.
+The core grammage engine **already exists**: `ServingEditPopover` (line 383) provides editable gram input with ratio-based macro recalculation, live preview, and DB persistence via `updateFoodServing`. It's wired into both `CheckedPlannedFoodRow` and `ManualFoodRow`.
 
-**Fix**: Change the display logic to show 2 decimal places when the value isn't a clean multiple, or more precisely — always divide ml by 1000 and use a smart formatter:
+What's **missing** from the user's request:
 
-- Line 97: Replace `{(totalMl / 1000).toFixed(1)}L` with a formatter that uses `.toFixed(2)` but trims trailing zeros after the first decimal (e.g. `4.00` → `4.0`, `3.75` → `3.75`, `1.50` → `1.5`).
-- Implementation: inline expression `{(totalMl / 1000).toFixed(2).replace(/0$/, '')}L`
-- Line 100: Same fix for the goal display (currently fine at `2.5` but apply consistency).
-- Line 31 toast: Fix the toast in `handleAdd` — change `.toFixed(1)` to same formatter.
+1. **Deviation indicator** — no visual signal when serving differs from coach target
+2. **Macro color change** — edited macros look identical to original ones
 
-## 2. Compact Weekly Adherence (`src/pages/Beslenme.tsx`)
+## Changes — Single file: `src/pages/Beslenme.tsx`
 
-**Current state** (lines 1011-1049): The adherence widget is already a horizontal card with a ring + text + 7 mini bars. It's actually fairly compact but sits between the MacroDashboard and the Tabs.
+### 1. Add Deviation Indicator to `CheckedPlannedFoodRow` (lines 506-531)
 
-**Improvement**: Merge the adherence strip *into* the MacroDashboard card to eliminate an entire card's vertical footprint. Specifically:
+When a consumed food has `target_serving` and its current `serving_size` differs:
+- Show the serving text in **amber** (`text-amber-400`) instead of muted
+- Append a small `±` badge next to the serving size (e.g., `120g ±`)
+- Show the original coach target as strikethrough text below: `~~100g~~`
 
-- Remove the standalone adherence block (lines 1011-1049).
-- Add a slim adherence row at the bottom of the `MacroDashboard` component (lines 78-150), shown only when `weeklyAdherence` data is passed as an optional prop.
-- The row: a single `flex items-center gap-2` line with the percentage badge, "Haftalık Uyum" label, adherent/total text, and the 7 mini bars — all in one tight `py-2 border-t border-white/5` strip inside the existing card.
+Detection logic: compare `parseGrams(food.serving_size)` vs `parseGrams((food as any).target_serving)`. If they differ and `target_serving` exists → deviation = true.
 
-### Files to edit
+### 2. Add Deviation Indicator to `ManualFoodRow` (lines 534-576)
 
-| File | Change |
-|---|---|
-| `src/components/WaterTrackerWidget.tsx` | Fix `.toFixed(1)` → smart 2-decimal formatter (lines 97, 100, 31) |
-| `src/pages/Beslenme.tsx` | Remove standalone adherence widget (lines 1011-1049); pass `weeklyAdherence` to `MacroDashboard`; add compact adherence row inside `MacroDashboard` |
+Same amber treatment when `target_serving` exists and differs from `serving_size`.
+
+### 3. Amber macro text on deviation
+
+In both row components, when deviation is detected, change the macro values' text from default colors to amber tints:
+- Calories: `text-amber-400` instead of `text-foreground`
+- P/K/F labels: `text-amber-400/80` instead of their default colors
+
+### 4. MacroDashboard totals (already correct)
+
+The `totals` prop comes from `useConsumedFoods().totals`, which already reflects the actual DB values (updated by `updateFoodServing`). No change needed — totals auto-update.
+
+## Technical notes
+
+- No new files, hooks, or dependencies
+- All changes are purely presentational (the math engine and persistence already work)
+- ~30 lines of JSX changes across two row components
 
