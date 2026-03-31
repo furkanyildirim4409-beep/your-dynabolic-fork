@@ -139,6 +139,45 @@ const lifestyleFeaturesAthletes = [
   },
 ];
 
+const ecosystemFeaturesAthletes = [
+  {
+    icon: Coins,
+    title: "BioCoin & Dijital Cüzdan",
+    desc: "Antrenman yaptıkça ve diyetine uydukça sanal para (BioCoin) kazan. Bu paraları koçunun mağazasında e-kitap veya indirim için harca.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Trophy,
+    title: "Global Liderlik Tablosu",
+    desc: "Sadece kendinle değil, tüm Dynabolic topluluğuyla yarış. Haftanın en disiplinli atleti ol, rozetleri topla.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Swords,
+    title: "Sosyal Meydan Okumalar",
+    desc: "'30 Gün Şekersiz' veya '1000 Şınav' gibi topluluk etkinliklerine (Challenges) katıl, ödüller kazan.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: GraduationCap,
+    title: "Özel Eğitim Akademisi",
+    desc: "Koçunun hazırladığı özel video kurslara ve makalelere doğrudan uygulama içinden eriş. Sadece spor yapma, öğren.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: MessageSquare,
+    title: "Anlık Koç Chat & Sesli Not",
+    desc: "WhatsApp ile uğraşma. Doğrudan uygulama içinden koçuna sesli not gönder, programındaki soruları anında çöz.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: WifiOff,
+    title: "Çevrimdışı (Offline) Mod",
+    desc: "İnternetin çekmediği yeraltı spor salonlarında bile antrenmanını kaydet, internet geldiği an veriler otomatik senkronize olsun.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
 const Waitlist = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
