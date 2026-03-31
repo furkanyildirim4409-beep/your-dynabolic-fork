@@ -1027,7 +1027,7 @@ const Beslenme = () => {
         <Dialog open={chartOpen} onOpenChange={setChartOpen}>
           <DialogTrigger asChild>
             <div className="cursor-pointer hover:opacity-80 transition-opacity">
-              <MacroDashboard totals={totals} macroGoals={macroGoals} />
+              <MacroDashboard totals={totals} macroGoals={macroGoals} weeklyAdherence={hasTemplate && weeklyAdherence.totalDays > 0 ? weeklyAdherence : undefined} />
             </div>
           </DialogTrigger>
           <DialogContent className="max-w-lg max-h-[90vh] overflow-y-auto">
