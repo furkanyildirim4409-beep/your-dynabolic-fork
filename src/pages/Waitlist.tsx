@@ -13,6 +13,25 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
+const heroContainer = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
+};
+const heroItem = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] } },
+};
+
+const particleNodes = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  x: `${5 + Math.random() * 90}%`,
+  y: `${5 + Math.random() * 90}%`,
+  size: Math.random() > 0.5 ? "w-1.5 h-1.5" : "w-1 h-1",
+  duration: 3 + Math.random() * 3,
+  delay: Math.random() * 2,
+  drift: 15 + Math.random() * 15,
+}));
+
 const gridStagger = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
