@@ -1,36 +1,39 @@
 
 
-# Part 4: Athlete Waitlist — "Ekosistem, Oyunlaştırma & Sosyal" Bento Grid
+# Upgrade Athlete Hero Section — Premium Cinematic Experience
 
 ## Single file: `src/pages/Waitlist.tsx`
 
-### 1. Update imports (line 3)
-Add `Coins`, `Trophy`, `Swords`, `GraduationCap`, `MessageSquare`, `WifiOff` to the existing lucide-react import.
+### What changes
 
-### 2. Add `ecosystemFeaturesAthletes` array (after `lifestyleFeaturesAthletes`, before `const Waitlist`)
+**Replace lines 243-328** (the entire HERO section) with a new cinematic hero while keeping the `min-h-[100dvh]` wrapper, grid overlay, and radial glow (lines 223-241) untouched.
 
-| # | Icon | colSpan | Title |
-|---|------|---------|-------|
-| 1 | `Coins` | `md:col-span-2 lg:col-span-2` | BioCoin & Dijital Cüzdan |
-| 2 | `Trophy` | `md:col-span-1 lg:col-span-1` | Global Liderlik Tablosu |
-| 3 | `Swords` | `md:col-span-1 lg:col-span-1` | Sosyal Meydan Okumalar |
-| 4 | `GraduationCap` | `md:col-span-2 lg:col-span-2` | Özel Eğitim Akademisi |
-| 5 | `MessageSquare` | `md:col-span-1 lg:col-span-1` | Anlık Koç Chat & Sesli Not |
-| 6 | `WifiOff` | `md:col-span-1 lg:col-span-1` | Çevrimdışı (Offline) Mod |
+### New Hero structure
 
-Full descriptions from the spec included.
+1. **Slower cinematic stagger** — new `heroContainer` / `heroItem` variants with `staggerChildren: 0.2`, `delayChildren: 0.4`, `duration: 0.7` for a deliberate Apple-style entrance.
 
-### 3. Insert Phase 4 section JSX (after Phase 3 closing `</motion.section>` at line 421, before the form `<div>` at line 423)
-- `motion.section` with `whileInView` stagger using existing `gridStagger`/`gridItem` variants
-- Container: `max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32`
-- Eyebrow: "FAZ 4: EKOSİSTEM, OYUNLAŞTIRMA & SOSYAL"
-- Headline: "Bir Uygulama Değil, Yeni Yaşam Tarzınız" (`text-3xl md:text-5xl`)
-- Grid: `grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6`
-- Cards: identical styling to Phases 1-3 (`bg-[#0a0a0a]`, radial gradient, GPU classes, neon hover)
-- Maps over `ecosystemFeaturesAthletes`
+2. **Animated radial glow** — a dedicated `motion.div` inside the hero that fades from `opacity: 0` to `opacity: 1` over 1s with a large neon-lime radial gradient centered behind the headline.
+
+3. **Subtle particle/node field** — 12-15 small circles (`w-1 h-1` to `w-2 h-2`, `bg-[#CCFF00]/20`) scattered with randomized `framer-motion` float animations (translateY ±20px, opacity 0.1-0.4, duration 3-6s, infinite). Wrapped in a `pointer-events-none absolute inset-0 overflow-hidden` container.
+
+4. **Content stack (centered, max-w-3xl)**:
+   - **Logo SVG** — keep existing animated D + lightning bolt, unchanged.
+   - **Eyebrow**: `"Sınırlı Beta Kontenjanı"` — `text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00]`.
+   - **Main Headline**: `"WhatsApp'ı Kapatın. Excel'i Çöpe Atın."` — `text-5xl md:text-7xl lg:text-8xl font-bold tracking-tight text-white` with `textShadow` neon glow.
+   - **Subheadline**: The provided Turkish copy with `[Yapay Zeka, Otonom Revize, Kan Analizi]` highlighted in `text-[#CCFF00]`. `text-base md:text-lg text-white/60 max-w-xl leading-relaxed`.
+   - **CTA Button**: `"Süper Güçlerini Keşfet"` — styled with `bg-[#CCFF00] text-black font-semibold rounded-full px-8 py-4` plus a pulsing `box-shadow` animation (`animate-pulse-glow` using existing keyframe, applied to a wrapping glow ring via `shadow-[0_0_30px_hsla(68,100%,50%,0.5)]`). `onClick` smooth-scrolls to `#phase-1`.
+   - **Scroll indicator** — existing bouncing `ChevronDown` with "Mühendisliği Keşfet" label, preserved.
+
+5. **Each element wrapped in `motion.div variants={heroItem}`** for the staggered cinematic entrance.
 
 ### What stays untouched
-- Hero, scroll indicator, Phases 1-3
+- Grid overlay & radial glow backgrounds (lines 223-241)
+- All four Phase sections (Faz 1-4)
 - Form logic, success state, footer
-- All animation variants
+- All feature data arrays
+
+### Technical notes
+- No new dependencies; uses existing `framer-motion` and `lucide-react`
+- Particle nodes generated via a small inline array mapped with randomized positions/delays
+- The `heroContainer`/`heroItem` variants defined alongside existing `container`/`item` at the top of the file
 
