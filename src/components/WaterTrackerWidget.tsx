@@ -97,7 +97,7 @@ const WaterTrackerWidget = () => {
               {(totalMl / 1000).toFixed(2).replace(/0$/, '')}L
             </span>
             <span className="text-muted-foreground text-xs">
-              / {(DAILY_GOAL_ML / 1000).toFixed(1)}L
+              / {(DAILY_GOAL_ML / 1000).toFixed(2).replace(/0$/, '')}L
             </span>
           </div>
         </div>

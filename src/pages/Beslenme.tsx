@@ -1038,46 +1038,6 @@ const Beslenme = () => {
           </DialogContent>
         </Dialog>
 
-        {/* WEEKLY ADHERENCE WIDGET */}
-        {hasTemplate && weeklyAdherence.totalDays > 0 && (
-          <div className="bg-card border border-white/5 rounded-2xl p-4 flex items-center gap-4">
-            <div className="relative w-12 h-12 flex-shrink-0">
-              <svg className="w-12 h-12 -rotate-90" viewBox="0 0 36 36">
-                <circle cx="18" cy="18" r="15.5" fill="none" className="stroke-secondary" strokeWidth="3" />
-                <circle
-                  cx="18" cy="18" r="15.5" fill="none"
-                  className={weeklyAdherence.percentage >= 70 ? "stroke-emerald-500" : weeklyAdherence.percentage >= 40 ? "stroke-orange-500" : "stroke-destructive"}
-                  strokeWidth="3"
-                  strokeDasharray={`${weeklyAdherence.percentage * 0.9742} 97.42`}
-                  strokeLinecap="round"
-                />
-              </svg>
-              <span className="absolute inset-0 flex items-center justify-center text-[10px] font-bold text-foreground">
-                %{weeklyAdherence.percentage}
-              </span>
-            </div>
-            <div className="flex-1 min-w-0">
-              <div className="flex items-center gap-1.5 mb-1">
-                <TrendingUp className="w-3.5 h-3.5 text-primary" />
-                <span className="text-xs font-bold text-foreground uppercase tracking-wider">Haftalık Uyum</span>
-              </div>
-              <p className="text-[11px] text-muted-foreground">
-                Son 7 günde <span className="font-semibold text-foreground">{weeklyAdherence.adherentDays}/{weeklyAdherence.totalDays}</span> gün hedefte (±150 kcal)
-              </p>
-            </div>
-            <div className="flex gap-0.5">
-              {weeklyAdherence.dayResults.map((d) => (
-                <div
-                  key={d.date}
-                  className={`w-2 h-6 rounded-sm ${
-                    d.adherent === true ? "bg-emerald-500" : d.adherent === false ? "bg-destructive/60" : "bg-muted-foreground/20"
-                  }`}
-                />
-              ))}
-            </div>
-          </div>
-        )}
-
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full grid grid-cols-2 bg-white/[0.03] border border-white/5 p-1 h-12">
