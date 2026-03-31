@@ -149,6 +149,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     return lastUsedWeightsRef.current[name] ?? historicalLastWeights?.get(name) ?? 0;
   }, [historicalLastWeights]);
 
+  const isInitialized = useRef(false);
+
   // Pre-populate from historical data on mount & set initial weight
   useEffect(() => {
     if (!historicalLastWeights || historicalLastWeights.size === 0) return;
@@ -157,10 +159,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         lastUsedWeightsRef.current[name] = w;
       }
     });
-    // Set initial weight for first exercise
-    if (exercises.length > 0) {
+    // Set initial weight for first exercise ONLY ONCE
+    if (!isInitialized.current && exercises.length > 0) {
       const initialWeight = getSmartWeight(exercises[0].name);
       if (initialWeight > 0) setWeight(initialWeight);
+      isInitialized.current = true;
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
