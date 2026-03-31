@@ -1,36 +1,36 @@
 
 
-# Part 3: Athlete Waitlist — "Biyometri & Yaşam Tarzı" Bento Grid
+# Part 4: Athlete Waitlist — "Ekosistem, Oyunlaştırma & Sosyal" Bento Grid
 
 ## Single file: `src/pages/Waitlist.tsx`
 
 ### 1. Update imports (line 3)
-Add `HeartPulse`, `Pill`, `Droplets`, `Flame`, `Video`, `ImagePlus` to the existing lucide-react import.
+Add `Coins`, `Trophy`, `Swords`, `GraduationCap`, `MessageSquare`, `WifiOff` to the existing lucide-react import.
 
-### 2. Add `lifestyleFeaturesAthletes` array (after line 101, before `const Waitlist`)
+### 2. Add `ecosystemFeaturesAthletes` array (after `lifestyleFeaturesAthletes`, before `const Waitlist`)
 
 | # | Icon | colSpan | Title |
 |---|------|---------|-------|
-| 1 | `HeartPulse` | `md:col-span-2 lg:col-span-2` | HRV & Rejenerasyon Analizi |
-| 2 | `Pill` | `md:col-span-1 lg:col-span-1` | Supplement Takvimi |
-| 3 | `Droplets` | `md:col-span-1 lg:col-span-1` | Su & Hidrasyon |
-| 4 | `Flame` | `md:col-span-2 lg:col-span-2` | Carb-Cycling (Karbonhidrat Döngüsü) |
-| 5 | `Video` | `md:col-span-1 lg:col-span-1` | Haftalık Otomatik Recap |
-| 6 | `ImagePlus` | `md:col-span-1 lg:col-span-1` | Form Fotoğrafı Arşivi |
+| 1 | `Coins` | `md:col-span-2 lg:col-span-2` | BioCoin & Dijital Cüzdan |
+| 2 | `Trophy` | `md:col-span-1 lg:col-span-1` | Global Liderlik Tablosu |
+| 3 | `Swords` | `md:col-span-1 lg:col-span-1` | Sosyal Meydan Okumalar |
+| 4 | `GraduationCap` | `md:col-span-2 lg:col-span-2` | Özel Eğitim Akademisi |
+| 5 | `MessageSquare` | `md:col-span-1 lg:col-span-1` | Anlık Koç Chat & Sesli Not |
+| 6 | `WifiOff` | `md:col-span-1 lg:col-span-1` | Çevrimdışı (Offline) Mod |
 
 Full descriptions from the spec included.
 
-### 3. Insert Phase 3 section JSX (after line 339, before the form `<div>` at line 341)
+### 3. Insert Phase 4 section JSX (after Phase 3 closing `</motion.section>` at line 421, before the form `<div>` at line 423)
 - `motion.section` with `whileInView` stagger using existing `gridStagger`/`gridItem` variants
 - Container: `max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32`
-- Eyebrow: "FAZ 3: BİYOMETRİ & YAŞAM TARZI"
-- Headline: "Sadece Salonda Değil, 7/24 Kusursuz Takip" (`text-3xl md:text-5xl`)
+- Eyebrow: "FAZ 4: EKOSİSTEM, OYUNLAŞTIRMA & SOSYAL"
+- Headline: "Bir Uygulama Değil, Yeni Yaşam Tarzınız" (`text-3xl md:text-5xl`)
 - Grid: `grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6`
-- Cards: identical styling to Phases 1-2 (`bg-[#0a0a0a]`, radial gradient, GPU classes, neon hover)
-- Maps over `lifestyleFeaturesAthletes`
+- Cards: identical styling to Phases 1-3 (`bg-[#0a0a0a]`, radial gradient, GPU classes, neon hover)
+- Maps over `ecosystemFeaturesAthletes`
 
 ### What stays untouched
-- Hero, scroll indicator, Phases 1-2
+- Hero, scroll indicator, Phases 1-3
 - Form logic, success state, footer
 - All animation variants
 
