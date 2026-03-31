@@ -478,6 +478,40 @@ const CoachWaitlist = () => {
         </motion.div>
       </motion.section>
 
+      {/* Phase 4: Kurumsallaşma & Süper Admin */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={container}
+        className="relative z-10 max-w-[1400px] mx-auto mt-32 px-6 pb-32"
+      >
+        <motion.p variants={item} className="text-center text-xs font-mono tracking-[0.3em] text-[#CCFF00] mb-4">
+          FAZ 4: KURUMSALLAŞMA & SÜPER ADMİN
+        </motion.p>
+        <motion.h2 variants={item} className="text-center text-3xl md:text-5xl font-bold text-white mb-12">
+          Bir Antrenörden Çok, Bir Teknoloji Şirketi Olun
+        </motion.h2>
+        <motion.div variants={container} className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6">
+          {adminFeatures.map((feature) => (
+            <motion.div
+              key={feature.title}
+              variants={item}
+              className={`relative bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] ${feature.colSpan}`}
+              style={{
+                background: "radial-gradient(ellipse at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <div className="w-10 h-10 rounded-full border border-[#CCFF00]/30 flex items-center justify-center mb-4">
+                <feature.icon className="w-5 h-5 text-[#CCFF00]" />
+              </div>
+              <h3 className="text-lg font-semibold text-white mb-2">{feature.title}</h3>
+              <p className="text-sm text-white/50 leading-relaxed">{feature.description}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
       {/* Trust Banner */}
       <motion.div
         initial={{ opacity: 0 }}
