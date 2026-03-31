@@ -100,6 +100,45 @@ const performanceFeaturesAthletes = [
   },
 ];
 
+const lifestyleFeaturesAthletes = [
+  {
+    icon: HeartPulse,
+    title: "HRV & Rejenerasyon Analizi",
+    desc: "Vücudun bugün antrenmana hazır mı? Kalp atış hızı değişkenliği (HRV) üzerinden günlük enerji bankanı kontrol et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Pill,
+    title: "Supplement Takvimi",
+    desc: "Kreatin, vitamin veya omega-3. Hangi takviyeyi, hangi saatte içmen gerektiğini söyleyen akıllı bildirimler.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Droplets,
+    title: "Su & Hidrasyon",
+    desc: "Günlük su hedefini belirle, dehidrasyon riskine karşı sistem seni gün içinde otomatik uyarsın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Flame,
+    title: "Carb-Cycling (Karbonhidrat Döngüsü)",
+    desc: "Koçunla birlikte yüksek, orta ve düşük karbonhidrat günlerini belirle; sistem makrolarını o güne göre otomatik ayarlasın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Video,
+    title: "Haftalık Otomatik Recap",
+    desc: "Pazar geceleri o haftaki tüm performansını, yediğin kaçamakları ve kazandığın başarıları içeren sinematik bir özet video al.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: ImagePlus,
+    title: "Form Fotoğrafı Arşivi",
+    desc: "Ön, yan ve arka pozlarını standartlara göre sakla. Yan yana karşılaştırma aracıyla değişimini kanıtla.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
+
 const Waitlist = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
