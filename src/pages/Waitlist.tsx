@@ -13,6 +13,25 @@ const item = {
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
 
+const heroContainer = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.2, delayChildren: 0.4 } },
+};
+const heroItem = {
+  hidden: { opacity: 0, y: 30 },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
+};
+
+const particleNodes = Array.from({ length: 14 }, (_, i) => ({
+  id: i,
+  x: `${5 + Math.random() * 90}%`,
+  y: `${5 + Math.random() * 90}%`,
+  size: Math.random() > 0.5 ? "w-1.5 h-1.5" : "w-1 h-1",
+  duration: 3 + Math.random() * 3,
+  delay: Math.random() * 2,
+  drift: 15 + Math.random() * 15,
+}));
+
 const gridStagger = {
   hidden: { opacity: 0 },
   show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
@@ -242,31 +261,56 @@ const Waitlist = () => {
 
       {/* ═══════ HERO ═══════ */}
       <motion.div
-        variants={container}
+        variants={heroContainer}
         initial="hidden"
         animate="show"
         className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-6"
       >
+        {/* Animated radial glow behind headline */}
+        <motion.div
+          className="pointer-events-none absolute inset-0"
+          initial={{ opacity: 0 }}
+          animate={{ opacity: 1 }}
+          transition={{ duration: 1.2, ease: "easeOut" }}
+          style={{
+            background:
+              "radial-gradient(ellipse 50% 40% at 50% 45%, hsla(68,100%,50%,0.12) 0%, hsla(68,100%,50%,0.04) 40%, transparent 70%)",
+          }}
+        />
+
+        {/* Particle / node field */}
+        <div className="pointer-events-none absolute inset-0 overflow-hidden">
+          {particleNodes.map((p) => (
+            <motion.div
+              key={p.id}
+              className={`absolute rounded-full bg-[hsl(var(--neon-lime))]/20 ${p.size}`}
+              style={{ left: p.x, top: p.y }}
+              animate={{ y: [-p.drift, p.drift, -p.drift], opacity: [0.1, 0.4, 0.1] }}
+              transition={{ duration: p.duration, delay: p.delay, repeat: Infinity, ease: "easeInOut" }}
+            />
+          ))}
+        </div>
+
         {/* Logo */}
-        <motion.div variants={item} className="mb-8">
+        <motion.div variants={heroItem} className="mb-6">
           <svg
             viewBox="0 0 200 200"
             fill="none"
             xmlns="http://www.w3.org/2000/svg"
-            className="w-28 h-28 drop-shadow-[0_0_30px_hsla(68,100%,50%,0.4)]"
+            className="w-24 h-24 md:w-28 md:h-28 drop-shadow-[0_0_30px_hsla(68,100%,50%,0.4)]"
           >
             <motion.path
               d="M 50 20 L 50 180 L 100 180 C 150 180 180 150 180 100 C 180 50 150 20 100 20 Z"
-              stroke="#CCFF00"
+              stroke="hsl(var(--neon-lime))"
               strokeWidth="5"
               fill="transparent"
               initial={{ pathLength: 0 }}
-              animate={{ pathLength: 1, fill: "rgba(204,255,0,0.06)" }}
+              animate={{ pathLength: 1, fill: "hsla(68,100%,50%,0.06)" }}
               transition={{ pathLength: { duration: 1.2 }, fill: { duration: 0.4, delay: 1 } }}
             />
             <motion.path
               d="M 110 50 L 90 95 L 115 95 L 95 150 L 135 105 L 110 105 Z"
-              fill="#CCFF00"
+              fill="hsl(var(--neon-lime))"
               initial={{ opacity: 0, scale: 0.8 }}
               animate={{ opacity: 1, scale: 1 }}
               transition={{ duration: 0.4, delay: 1 }}
@@ -275,54 +319,71 @@ const Waitlist = () => {
           </svg>
         </motion.div>
 
-        {/* Headline */}
-        <motion.h1
-          variants={item}
-          className="text-center font-mono font-bold text-xl sm:text-2xl tracking-[0.2em] uppercase mb-3"
-          style={{
-            color: "#CCFF00",
-            textShadow: "0 0 20px hsla(68,100%,50%,0.5), 0 0 60px hsla(68,100%,50%,0.2)",
-          }}
-        >
-          DYNABOLIC
-        </motion.h1>
+        {/* Eyebrow */}
         <motion.p
-          variants={item}
-          className="text-center font-mono text-xs tracking-[0.15em] uppercase text-white/60 mb-6"
+          variants={heroItem}
+          className="text-xs font-mono tracking-[0.3em] uppercase text-[hsl(var(--neon-lime))] mb-6"
         >
-          Özel Beta Ön Kayıt
+          Sınırlı Beta Kontenjanı
         </motion.p>
 
-        {/* Sub-headline */}
-        <motion.p
-          variants={item}
-          className="text-center text-white/70 text-sm leading-relaxed mb-10 max-w-xs"
+        {/* Main Headline */}
+        <motion.h1
+          variants={heroItem}
+          className="text-center font-bold text-5xl md:text-7xl lg:text-8xl tracking-tight text-foreground mb-6 max-w-4xl leading-[1.05]"
+          style={{
+            textShadow: "0 0 40px hsla(68,100%,50%,0.15), 0 0 80px hsla(68,100%,50%,0.08)",
+          }}
         >
-          Sıradan kalori sayıcıları ve işe yaramayan programları unut.{" "}
-          <span className="text-[#CCFF00]/90 font-semibold">
-            Elit Sporcu İşletim Sistemi
+          WhatsApp'ı Kapatın.
+          <br />
+          <span className="text-[hsl(var(--neon-lime))]">Excel'i Çöpe Atın.</span>
+        </motion.h1>
+
+        {/* Subheadline */}
+        <motion.p
+          variants={heroItem}
+          className="text-center text-muted-foreground text-base md:text-lg max-w-xl leading-relaxed mb-10"
+        >
+          WhatsApp'ta kaybolan karmaşık mesajlara ve manuel Excel takibine son.
+          Süper insan gelişiminiz için{" "}
+          <span className="text-[hsl(var(--neon-lime))] font-medium">
+            Yapay Zeka, Otonom Revize, Kan Analizi
           </span>{" "}
-          yükleniyor… İlk deneyimleyen sen ol.
+          ile mühürlenmiş altyapı yükleniyor.
         </motion.p>
+
+        {/* CTA Button */}
+        <motion.div variants={heroItem}>
+          <button
+            onClick={() => document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" })}
+            className="relative bg-[hsl(var(--neon-lime))] text-primary-foreground font-semibold rounded-full px-8 py-4 text-sm md:text-base transition-all duration-300 hover:scale-105 active:scale-95 animate-pulse-glow"
+            style={{
+              boxShadow: "0 0 30px hsla(68,100%,50%,0.4), 0 0 60px hsla(68,100%,50%,0.15)",
+            }}
+          >
+            Süper Güçlerini Keşfet
+          </button>
+        </motion.div>
 
         {/* Scroll indicator */}
         <motion.a
-          variants={item}
+          variants={heroItem}
           href="#phase-1"
           onClick={(e) => {
             e.preventDefault();
             document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" });
           }}
-          className="mt-8 flex flex-col items-center gap-2 cursor-pointer group"
+          className="mt-12 flex flex-col items-center gap-2 cursor-pointer group"
         >
-          <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white/40 group-hover:text-[#CCFF00]/70 transition-colors">
-            Süper Güçlerini Keşfet
+          <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-muted-foreground group-hover:text-[hsl(var(--neon-lime))]/70 transition-colors">
+            Mühendisliği Keşfet
           </span>
           <motion.div
             animate={{ y: [0, 6, 0] }}
             transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
           >
-            <ChevronDown className="w-5 h-5 text-[#CCFF00]/60" />
+            <ChevronDown className="w-5 h-5 text-[hsl(var(--neon-lime))]/60" />
           </motion.div>
         </motion.a>
       </motion.div>
