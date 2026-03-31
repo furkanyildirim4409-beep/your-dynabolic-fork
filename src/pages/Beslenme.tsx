@@ -503,7 +503,7 @@ const CheckedPlannedFoodRow = ({
   isToggling: boolean;
   parseGrams: (str: string | null | undefined) => number;
   onUpdateServing: (id: string, newGrams: number, originalGrams: number, originalMacros: { calories: number; protein: number; carbs: number; fat: number }) => Promise<void>;
-) => {
+}) => {
   const targetServing = (food as any).target_serving as string | null;
   const isDeviated = targetServing && parseGrams(food.serving_size) !== parseGrams(targetServing);
 
