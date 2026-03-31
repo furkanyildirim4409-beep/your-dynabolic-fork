@@ -79,9 +79,11 @@ const MEAL_TYPE_TO_SLOT: Record<string, string> = {
 const MacroDashboard = ({
   totals,
   macroGoals,
+  weeklyAdherence,
 }: {
   totals: { protein: number; carbs: number; fat: number; calories: number };
   macroGoals: { protein: number; carbs: number; fat: number; calories: number } | null;
+  weeklyAdherence?: { percentage: number; adherentDays: number; totalDays: number; dayResults: { date: string; adherent: boolean | null }[] };
 }) => {
   const hasGoals = macroGoals && macroGoals.calories > 0;
 
