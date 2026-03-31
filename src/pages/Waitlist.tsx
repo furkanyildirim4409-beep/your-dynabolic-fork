@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText, HeartPulse, Pill, Droplets, Flame, Video, ImagePlus } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target, TrendingUp, Medal, Timer, Gauge, Watch, FileText, HeartPulse, Pill, Droplets, Flame, Video, ImagePlus, Coins, Trophy, Swords, GraduationCap, MessageSquare, WifiOff } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
