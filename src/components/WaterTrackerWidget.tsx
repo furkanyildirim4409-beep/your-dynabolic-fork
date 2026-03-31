@@ -25,7 +25,7 @@ const WaterTrackerWidget = () => {
     if (!err) {
       toast({
         title: `Harika! +${ml}ml su eklendi 💧`,
-        description: `Bugün toplam: ${((totalMl + ml) / 1000).toFixed(1)}L`,
+        description: `Bugün toplam: ${((totalMl + ml) / 1000).toFixed(2).replace(/0$/, '')}L`,
       });
     }
   };
