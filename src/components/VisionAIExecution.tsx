@@ -87,22 +87,24 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
   
-  const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
-    id: ex.id,
-    name: ex.name,
-    sets: ex.sets ?? 3,
-    targetReps: parseInt(ex.reps) || 10,
-    reps: parseInt(ex.reps) || 10,
-    tempo: "3-1-2",
-    restDuration: parseInt(ex.restTime) || 60,
-    rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
-    notes: ex.notes ?? undefined,
-    videoUrl: ex.videoUrl ?? undefined,
-    rir: ex.rir,
-    rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
-    failureSet: ex.failureSet,
-    groupId: ex.groupId,
-  }));
+  const exercises: Exercise[] = useMemo(() => {
+    return (propExercises ?? []).map(ex => ({
+      id: ex.id,
+      name: ex.name,
+      sets: ex.sets ?? 3,
+      targetReps: parseInt(ex.reps) || 10,
+      reps: parseInt(ex.reps) || 10,
+      tempo: "3-1-2",
+      restDuration: parseInt(ex.restTime) || 60,
+      rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
+      notes: ex.notes ?? undefined,
+      videoUrl: ex.videoUrl ?? undefined,
+      rir: ex.rir,
+      rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
+      failureSet: ex.failureSet,
+      groupId: ex.groupId,
+    }));
+  }, [propExercises]);
   
   const { seconds: timer, isRunning, pause: pauseTimer, resume: resumeTimer, toggle: toggleTimer, reset: resetTimer } = useStableTimer({ mode: "up", autoStart: true });
   useWakeLock();
