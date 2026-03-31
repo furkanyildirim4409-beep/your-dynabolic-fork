@@ -1,6 +1,6 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
-import { User, Mail, Instagram, ChevronDown, Rocket, Loader2 } from "lucide-react";
+import { User, Mail, Instagram, ChevronDown, Rocket, Loader2, ScanLine, Activity, Microscope, Calculator, Target } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
@@ -12,6 +12,54 @@ const item = {
   hidden: { opacity: 0, y: 20 },
   show: { opacity: 1, y: 0, transition: { duration: 0.5, ease: "easeOut" as const } },
 };
+
+const gridStagger = {
+  hidden: { opacity: 0 },
+  show: { opacity: 1, transition: { staggerChildren: 0.1, delayChildren: 0.15 } },
+};
+const gridItem = {
+  hidden: { opacity: 0, y: 30, willChange: "transform, opacity" },
+  show: { opacity: 1, y: 0, willChange: "auto", transition: { duration: 0.5, ease: "easeOut" as const } },
+};
+
+const analysisFeaturesAthletes = [
+  {
+    icon: ScanLine,
+    title: "AI Beslenme Tarayıcı (NutriScanner)",
+    desc: "Tabağının fotoğrafını çek, yapay zeka içindeki protein, karbonhidrat ve yağ miktarını saniyeler içinde analiz etsin. Manuel veri girişine son.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: User,
+    title: "3D Dijital İkiz (Avatar)",
+    desc: "Sadece rakamlara bakma. Ölçümlerini gir, vücudunun 3D modelini oluştur ve değişimi milimetrik bir avatar üzerinden canlı izle.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Activity,
+    title: "Vision AI Form Analizi",
+    desc: "Kamerayı önüne koy, setini yap. Yapay zeka eklem açılarını hesaplasın, formundaki hataları anlık olarak düzeltsin.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Microscope,
+    title: "AI Doktor & Kan Tahlili",
+    desc: "Kan tahlili PDF'ini yükle. Sistem hormon ve vitamin değerlerini okusun, sağlığın için en optimize beslenme ve supplement planını çıkarsın.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Calculator,
+    title: "Dinamik Gramaj Motoru",
+    desc: "100g pirinç yerine yanlışlıkla 130g mı yedin? Sistem o günkü diğer öğünlerini saniyeler içinde revize eder, hedefini korur.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Target,
+    title: "Otonom Uyum Algoritması",
+    desc: "Diyetine ve antrenmanına ne kadar sadıksın? Haftalık 'Uyum Skorunu' hesaplayan ve seni motive eden akıllı radar.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
 
 const Waitlist = () => {
   const [name, setName] = useState("");
@@ -55,10 +103,10 @@ const Waitlist = () => {
   };
 
   return (
-    <div className="relative min-h-[100dvh] w-full bg-black overflow-hidden flex items-center justify-center">
+    <div className="relative min-h-[100dvh] w-full bg-black overflow-x-hidden">
       {/* Grid background */}
       <div
-        className="pointer-events-none absolute inset-0 opacity-[0.04]"
+        className="pointer-events-none fixed inset-0 opacity-[0.04]"
         style={{
           backgroundImage:
             "linear-gradient(hsl(68 100% 50%) 1px, transparent 1px), linear-gradient(90deg, hsl(68 100% 50%) 1px, transparent 1px)",
@@ -68,19 +116,19 @@ const Waitlist = () => {
 
       {/* Radial glow */}
       <div
-        className="pointer-events-none absolute inset-0"
+        className="pointer-events-none fixed inset-0"
         style={{
           background:
             "radial-gradient(ellipse 60% 50% at 50% 20%, hsla(68,100%,50%,0.08) 0%, transparent 70%)",
         }}
       />
 
-      {/* Content */}
+      {/* ═══════ HERO ═══════ */}
       <motion.div
         variants={container}
         initial="hidden"
         animate="show"
-        className="relative z-10 w-full max-w-md mx-auto px-6 py-12 flex flex-col items-center"
+        className="relative z-10 min-h-[100dvh] flex flex-col items-center justify-center px-6"
       >
         {/* Logo */}
         <motion.div variants={item} className="mb-8">
@@ -140,7 +188,76 @@ const Waitlist = () => {
           yükleniyor… İlk deneyimleyen sen ol.
         </motion.p>
 
-        {/* Form or Success */}
+        {/* Scroll indicator */}
+        <motion.a
+          variants={item}
+          href="#phase-1"
+          onClick={(e) => {
+            e.preventDefault();
+            document.getElementById("phase-1")?.scrollIntoView({ behavior: "smooth" });
+          }}
+          className="mt-8 flex flex-col items-center gap-2 cursor-pointer group"
+        >
+          <span className="text-[10px] font-mono tracking-[0.25em] uppercase text-white/40 group-hover:text-[#CCFF00]/70 transition-colors">
+            Süper Güçlerini Keşfet
+          </span>
+          <motion.div
+            animate={{ y: [0, 6, 0] }}
+            transition={{ duration: 1.8, repeat: Infinity, ease: "easeInOut" }}
+          >
+            <ChevronDown className="w-5 h-5 text-[#CCFF00]/60" />
+          </motion.div>
+        </motion.a>
+      </motion.div>
+
+      {/* ═══════ PHASE 1: AI & ANALYSIS ═══════ */}
+      <motion.section
+        id="phase-1"
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={gridStagger}
+        className="max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32"
+      >
+        {/* Header */}
+        <motion.p
+          variants={gridItem}
+          className="text-center text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00] mb-4"
+        >
+          FAZ 1: YENİ NESİL ANALİZ & AI
+        </motion.p>
+        <motion.h2
+          variants={gridItem}
+          className="text-center text-3xl md:text-5xl font-bold text-white mb-12 md:mb-16"
+        >
+          Sizin İçin Düşünen Dijital İkiziniz
+        </motion.h2>
+
+        {/* Bento Grid */}
+        <motion.div
+          variants={gridStagger}
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          {analysisFeaturesAthletes.map((f) => (
+            <motion.div
+              key={f.title}
+              variants={gridItem}
+              className={`${f.colSpan} bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] group`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <f.icon className="w-8 h-8 text-[#CCFF00] mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <h3 className="text-white font-semibold text-base md:text-lg mb-2">{f.title}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
+      {/* ═══════ FORM ═══════ */}
+      <div className="relative z-10 max-w-md mx-auto px-6 py-24 flex flex-col items-center">
         {submitted ? (
           <motion.div
             initial={{ opacity: 0, scale: 0.9 }}
@@ -159,7 +276,10 @@ const Waitlist = () => {
           </motion.div>
         ) : (
           <motion.form
-            variants={item}
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ duration: 0.5 }}
             onSubmit={handleSubmit}
             className="w-full space-y-4"
           >
@@ -254,13 +374,10 @@ const Waitlist = () => {
         )}
 
         {/* Footer */}
-        <motion.p
-          variants={item}
-          className="mt-10 text-white/20 text-[10px] font-mono tracking-widest uppercase text-center"
-        >
+        <p className="mt-10 text-white/20 text-[10px] font-mono tracking-widest uppercase text-center">
           © 2026 Dynabolic · Tüm Hakları Saklıdır
-        </motion.p>
-      </motion.div>
+        </p>
+      </div>
     </div>
   );
 };
