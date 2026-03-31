@@ -1,36 +1,36 @@
 
 
-# Part 3: Replace Phase 3 with "İleri Düzey Mühendislik & Biyometri" (6 Features, 4-col Grid)
+# Part 4: Add "Kurumsallaşma & Süper Admin" (6 Features, 4-col Grid)
 
 ## Single file: `src/pages/CoachWaitlist.tsx`
 
 ### 1. Update imports (line 3)
-Add `Dumbbell`, `Utensils`, `TrendingUp`, `Watch`, `Camera`, `Accessibility` to lucide-react imports. Remove icons only used by old `financeFeatures` that aren't needed elsewhere: `Wallet`, `UserPlus`, `ShieldCheck`, `FileText`, `Medal`.
+Add `Wallet`, `ShieldCheck`, `Radar`, `Coins`, `Scale`, `Building2` to the existing lucide-react import.
 
-### 2. Replace `financeFeatures` array (lines 80-111)
-Delete the current 5-feature array. Replace with new `engineeringFeatures` array:
+### 2. Add `adminFeatures` array after `engineeringFeatures` (after line 117)
+New array with 6 features:
 
 | # | Icon | colSpan | Title |
 |---|------|---------|-------|
-| 1 | `Accessibility` | `md:col-span-2 lg:col-span-2` | 3D Dijital İkiz & Vücut Kompozisyonu |
-| 2 | `Dumbbell` | `md:col-span-1 lg:col-span-1` | Makro-Saykıl Antrenman Planlayıcı |
-| 3 | `Utensils` | `md:col-span-1 lg:col-span-1` | Mikro & Makro Beslenme Matrisi |
-| 4 | `TrendingUp` | `md:col-span-2 lg:col-span-2` | Volume Load & Progressive Overload Radarı |
-| 5 | `Watch` | `md:col-span-1 lg:col-span-1` | Giyilebilir Teknoloji & Cihaz Senkronizasyonu |
-| 6 | `Camera` | `md:col-span-1 lg:col-span-1` | Vision AI Form & Postür Analizi |
+| 1 | `Wallet` | `md:col-span-2 lg:col-span-2` | Otonom Fatura & Hak Ediş Merkezi |
+| 2 | `ShieldCheck` | `md:col-span-1 lg:col-span-1` | Hiyerarşik İzin Matrisi |
+| 3 | `Radar` | `md:col-span-1 lg:col-span-1` | Churn (Kayıp) Risk Radarı |
+| 4 | `Coins` | `md:col-span-2 lg:col-span-2` | BioCoin & Gelişmiş Oyunlaştırma |
+| 5 | `Scale` | `md:col-span-1 lg:col-span-1` | Anlaşmazlık Çözüm Merkezi |
+| 6 | `Building2` | `md:col-span-1 lg:col-span-1` | Kurumsal White-Label Otoritesi |
 
-Each feature uses string-based `colSpan` format matching Phase 1 & 2, with full descriptions from the spec.
+Full descriptions from the spec included.
 
-### 3. Update Phase 3 section JSX (lines 390-433)
-- Eyebrow: "FAZ 3: İLERİ DÜZEY MÜHENDİSLİK & BİYOMETRİ"
-- Headline: "Sınırları Zorlayan Atletik Performans Yönetimi" (`text-3xl md:text-5xl`)
-- Container: `max-w-[1400px]` (was `max-w-6xl`)
-- Grid: `grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6` (match Phase 1 & 2)
-- Cards: `bg-[#0a0a0a]` with string-based colSpan class, same radial gradient and GPU classes
-- Map over `engineeringFeatures` instead of `financeFeatures`
+### 3. Insert Phase 4 section JSX (after line 439, before Trust Banner)
+- Same `motion.section` wrapper with `whileInView` stagger as Phases 1-3
+- Eyebrow: "FAZ 4: KURUMSALLAŞMA & SÜPER ADMİN"
+- Headline: "Bir Antrenörden Çok, Bir Teknoloji Şirketi Olun" (`text-3xl md:text-5xl`)
+- Container: `max-w-[1400px] mx-auto mt-32 px-6 pb-32`
+- Grid: `grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6`
+- Cards: identical styling to Phases 1-3 (`bg-[#0a0a0a]`, radial gradient, GPU classes)
+- Maps over `adminFeatures`
 
 ### What stays untouched
-- Hero, scroll indicator, Phase 1 (AI Doctor), Phase 2 (Ecosystem)
-- Trust banner, form, footer
-- All animation variants (`heroContainer`, `heroItem`, `container`, `item`)
+- Hero, scroll indicator, Phases 1-3, Trust Banner, form, footer
+- All animation variants
 
