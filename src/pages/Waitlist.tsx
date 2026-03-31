@@ -99,6 +99,8 @@ const performanceFeaturesAthletes = [
     colSpan: "md:col-span-1 lg:col-span-1",
   },
 ];
+
+const Waitlist = () => {
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [goal, setGoal] = useState("");
