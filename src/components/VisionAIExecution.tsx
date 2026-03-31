@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from "react";
+import { useState, useEffect, useRef, useCallback, useMemo } from "react";
 import confetti from "canvas-confetti";
 import { motion, AnimatePresence, PanInfo } from "framer-motion";
 import { X, Play, Pause, RotateCcw, Check, Activity, Target, Clock, Eye, EyeOff, Trophy, Info, History, ChevronLeft, ChevronRight, Heart, List, Dumbbell } from "lucide-react";
@@ -87,22 +87,24 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
   const { user } = useAuth();
   const { awardCoins } = useBioCoin();
   
-  const exercises: Exercise[] = (propExercises ?? []).map(ex => ({
-    id: ex.id,
-    name: ex.name,
-    sets: ex.sets ?? 3,
-    targetReps: parseInt(ex.reps) || 10,
-    reps: parseInt(ex.reps) || 10,
-    tempo: "3-1-2",
-    restDuration: parseInt(ex.restTime) || 60,
-    rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
-    notes: ex.notes ?? undefined,
-    videoUrl: ex.videoUrl ?? undefined,
-    rir: ex.rir,
-    rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
-    failureSet: ex.failureSet,
-    groupId: ex.groupId,
-  }));
+  const exercises: Exercise[] = useMemo(() => {
+    return (propExercises ?? []).map(ex => ({
+      id: ex.id,
+      name: ex.name,
+      sets: ex.sets ?? 3,
+      targetReps: parseInt(ex.reps) || 10,
+      reps: parseInt(ex.reps) || 10,
+      tempo: "3-1-2",
+      restDuration: parseInt(ex.restTime) || 60,
+      rpe: typeof ex.rpe === 'number' ? ex.rpe : 7,
+      notes: ex.notes ?? undefined,
+      videoUrl: ex.videoUrl ?? undefined,
+      rir: ex.rir,
+      rirPerSet: Array.isArray(ex.rirPerSet) ? ex.rirPerSet : undefined,
+      failureSet: ex.failureSet,
+      groupId: ex.groupId,
+    }));
+  }, [propExercises]);
   
   const { seconds: timer, isRunning, pause: pauseTimer, resume: resumeTimer, toggle: toggleTimer, reset: resetTimer } = useStableTimer({ mode: "up", autoStart: true });
   useWakeLock();
@@ -147,6 +149,8 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
     return lastUsedWeightsRef.current[name] ?? historicalLastWeights?.get(name) ?? 0;
   }, [historicalLastWeights]);
 
+  const isInitialized = useRef(false);
+
   // Pre-populate from historical data on mount & set initial weight
   useEffect(() => {
     if (!historicalLastWeights || historicalLastWeights.size === 0) return;
@@ -155,10 +159,11 @@ const VisionAIExecution = ({ workoutTitle, exercises: propExercises, assignmentI
         lastUsedWeightsRef.current[name] = w;
       }
     });
-    // Set initial weight for first exercise
-    if (exercises.length > 0) {
+    // Set initial weight for first exercise ONLY ONCE
+    if (!isInitialized.current && exercises.length > 0) {
       const initialWeight = getSmartWeight(exercises[0].name);
       if (initialWeight > 0) setWeight(initialWeight);
+      isInitialized.current = true;
     }
   }, [historicalLastWeights, exercises, getSmartWeight]);
 
