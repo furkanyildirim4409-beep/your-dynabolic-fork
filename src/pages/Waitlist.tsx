@@ -377,6 +377,49 @@ const Waitlist = () => {
         </motion.div>
       </motion.section>
 
+      {/* ═══════ PHASE 3: BİYOMETRİ & YAŞAM TARZI ═══════ */}
+      <motion.section
+        initial="hidden"
+        whileInView="show"
+        viewport={{ once: true, amount: 0.1 }}
+        variants={gridStagger}
+        className="max-w-[1400px] mx-auto mt-24 md:mt-32 px-6 pb-32"
+      >
+        <motion.p
+          variants={gridItem}
+          className="text-center text-xs font-mono tracking-[0.3em] uppercase text-[#CCFF00] mb-4"
+        >
+          FAZ 3: BİYOMETRİ & YAŞAM TARZI
+        </motion.p>
+        <motion.h2
+          variants={gridItem}
+          className="text-center text-3xl md:text-5xl font-bold text-white mb-12 md:mb-16"
+        >
+          Sadece Salonda Değil, 7/24 Kusursuz Takip
+        </motion.h2>
+
+        <motion.div
+          variants={gridStagger}
+          className="grid grid-cols-1 md:grid-cols-3 lg:grid-cols-4 gap-4 md:gap-6"
+        >
+          {lifestyleFeaturesAthletes.map((f) => (
+            <motion.div
+              key={f.title}
+              variants={gridItem}
+              className={`${f.colSpan} bg-[#0a0a0a] border border-white/[0.05] rounded-3xl p-6 md:p-8 hover:border-[#CCFF00]/40 transition-all duration-500 transform-gpu will-change-transform [transform:translateZ(0)] group`}
+              style={{
+                background:
+                  "radial-gradient(ellipse 80% 60% at 50% 0%, hsla(68,100%,50%,0.03) 0%, #0a0a0a 70%)",
+              }}
+            >
+              <f.icon className="w-8 h-8 text-[#CCFF00] mb-4 opacity-80 group-hover:opacity-100 transition-opacity" />
+              <h3 className="text-white font-semibold text-base md:text-lg mb-2">{f.title}</h3>
+              <p className="text-white/50 text-sm leading-relaxed">{f.desc}</p>
+            </motion.div>
+          ))}
+        </motion.div>
+      </motion.section>
+
       <div className="relative z-10 max-w-md mx-auto px-6 py-24 flex flex-col items-center">
         {submitted ? (
           <motion.div
