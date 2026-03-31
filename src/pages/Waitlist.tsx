@@ -19,7 +19,7 @@ const heroContainer = {
 };
 const heroItem = {
   hidden: { opacity: 0, y: 30 },
-  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: [0.25, 0.4, 0.25, 1] } },
+  show: { opacity: 1, y: 0, transition: { duration: 0.7, ease: "easeOut" as const } },
 };
 
 const particleNodes = Array.from({ length: 14 }, (_, i) => ({
