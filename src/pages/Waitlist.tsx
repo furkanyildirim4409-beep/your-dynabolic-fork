@@ -61,7 +61,44 @@ const analysisFeaturesAthletes = [
   },
 ];
 
-const Waitlist = () => {
+const performanceFeaturesAthletes = [
+  {
+    icon: TrendingUp,
+    title: "Progressive Overload Radarı",
+    desc: "Hangi harekette kaç kg arttırdın? Toplam tonajını (Volume Load) grafiklerle izle, gelişiminin durduğu anı (plato) önceden fark et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Medal,
+    title: "PR & Rekor Arşivi",
+    desc: "Kişisel rekorlarını (Personal Records) tarih ve video kanıtıyla arşivle. Her yeni rekorda BioCoin kazan.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Timer,
+    title: "Gelişmiş Rest Timer",
+    desc: "Hangi egzersiz için ne kadar dinlenmen gerektiğini bilen, sesli ve haptik (titreşimli) uyarı veren akıllı mola sistemi.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: Gauge,
+    title: "RPE & Tempo Kontrolü",
+    desc: "Sadece set/tekrar değil; setin zorluk derecesini (RPE) ve hareketin hızını (Tempo) profesyonel vücut geliştiriciler düzeyinde takip et.",
+    colSpan: "md:col-span-2 lg:col-span-2",
+  },
+  {
+    icon: Watch,
+    title: "Giyilebilir Cihaz Senkronu",
+    desc: "Apple Health, Garmin ve Oura entegrasyonu. Adım sayın, uykun ve kalp atış hızın otomatik olarak uygulamaya aksın.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+  {
+    icon: FileText,
+    title: "Özel Antrenman Notları",
+    desc: "Her set için özel notlar al, bir sonraki antrenmanda 'Geçen hafta burada ne yapmıştım?' karmaşasını bitir.",
+    colSpan: "md:col-span-1 lg:col-span-1",
+  },
+];
   const [name, setName] = useState("");
   const [email, setEmail] = useState("");
   const [goal, setGoal] = useState("");
