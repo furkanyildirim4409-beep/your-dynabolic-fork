@@ -94,7 +94,7 @@ const WaterTrackerWidget = () => {
           <div className="absolute inset-0 flex flex-col items-center justify-center">
             <span className="text-2xl">💧</span>
             <span className="text-foreground font-display font-bold text-xl leading-tight">
-              {(totalMl / 1000).toFixed(1)}L
+              {(totalMl / 1000).toFixed(2).replace(/0$/, '')}L
             </span>
             <span className="text-muted-foreground text-xs">
               / {(DAILY_GOAL_ML / 1000).toFixed(1)}L
