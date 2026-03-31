@@ -147,6 +147,34 @@ const MacroDashboard = ({
           );
         })}
       </div>
+
+      {/* Compact Weekly Adherence Strip */}
+      {weeklyAdherence && weeklyAdherence.totalDays > 0 && (
+        <div className="flex items-center gap-2 pt-3 mt-3 border-t border-border/30">
+          <span className={cn(
+            "text-[11px] font-bold px-1.5 py-0.5 rounded",
+            weeklyAdherence.percentage >= 70 ? "bg-emerald-500/15 text-emerald-500" :
+            weeklyAdherence.percentage >= 40 ? "bg-orange-500/15 text-orange-500" :
+            "bg-destructive/15 text-destructive"
+          )}>
+            %{weeklyAdherence.percentage}
+          </span>
+          <span className="text-[10px] text-muted-foreground uppercase tracking-wider">Haftalık Uyum</span>
+          <span className="text-[10px] text-muted-foreground ml-auto mr-2">
+            {weeklyAdherence.adherentDays}/{weeklyAdherence.totalDays}
+          </span>
+          <div className="flex gap-0.5">
+            {weeklyAdherence.dayResults.map((d) => (
+              <div
+                key={d.date}
+                className={cn("w-1.5 h-4 rounded-sm",
+                  d.adherent === true ? "bg-emerald-500" : d.adherent === false ? "bg-destructive/60" : "bg-muted-foreground/20"
+                )}
+              />
+            ))}
+          </div>
+        </div>
+      )}
     </div>
   );
 };
