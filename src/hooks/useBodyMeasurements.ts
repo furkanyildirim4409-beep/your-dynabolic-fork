@@ -174,8 +174,14 @@ export function useBodyMeasurements() {
   // Realtime subscription
   useEffect(() => {
     if (!userId) return;
+
+    // Remove any stale channel with the same name before creating a new one
+    const channelName = `body_measurements_realtime_${userId}`;
+    const existing = supabase.getChannels().find((c) => c.topic === `realtime:${channelName}`);
+    if (existing) supabase.removeChannel(existing);
+
     const channel = supabase
-      .channel("body_measurements_realtime")
+      .channel(channelName)
       .on(
         "postgres_changes",
         {
