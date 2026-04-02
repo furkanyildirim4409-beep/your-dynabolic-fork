@@ -44,6 +44,7 @@ import { CalendarClock, AlertTriangle, RefreshCw, CalendarDays, TrendingUp } fro
 import NutritionCalendar from "@/components/NutritionCalendar";
 import { useWeeklyAdherence } from "@/hooks/useWeeklyAdherence";
 import WaterTrackerWidget from "@/components/WaterTrackerWidget";
+import BarcodeCameraScanner from "@/components/BarcodeCameraScanner";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
@@ -883,6 +884,7 @@ const Beslenme = () => {
 
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showBarcodeCamera, setShowBarcodeCamera] = useState(false);
   const [scannerMode, setScannerMode] = useState<ScannerMode>("meal");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFood, setSelectedFood] = useState<ApiFoodItem | null>(null);
@@ -938,9 +940,14 @@ const Beslenme = () => {
   };
 
   const openBarcodeScanner = () => {
-    setScannerMode("barcode");
-    setShowCamera(true);
+    setShowBarcodeCamera(true);
   };
+
+  const handleBarcodeDetected = useCallback((barcode: string) => {
+    setShowBarcodeCamera(false);
+    searchFood("", barcode);
+    setShowManualAdd(true);
+  }, [searchFood]);
 
   const handleRemoveFood = async (id: string) => {
     try {
@@ -1177,6 +1184,13 @@ const Beslenme = () => {
 
       {/* CAMERA SCANNER */}
       <CameraScanner isOpen={showCamera} onClose={() => setShowCamera(false)} mode={scannerMode} />
+
+      {/* REAL BARCODE CAMERA SCANNER */}
+      <BarcodeCameraScanner
+        isOpen={showBarcodeCamera}
+        onClose={() => setShowBarcodeCamera(false)}
+        onDetected={handleBarcodeDetected}
+      />
 
       {/* NUTRITION CALENDAR DIALOG */}
       <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
