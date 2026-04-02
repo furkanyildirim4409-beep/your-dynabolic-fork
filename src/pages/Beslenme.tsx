@@ -1185,6 +1185,13 @@ const Beslenme = () => {
       {/* CAMERA SCANNER */}
       <CameraScanner isOpen={showCamera} onClose={() => setShowCamera(false)} mode={scannerMode} />
 
+      {/* REAL BARCODE CAMERA SCANNER */}
+      <BarcodeCameraScanner
+        isOpen={showBarcodeCamera}
+        onClose={() => setShowBarcodeCamera(false)}
+        onDetected={handleBarcodeDetected}
+      />
+
       {/* NUTRITION CALENDAR DIALOG */}
       <Dialog open={calendarOpen} onOpenChange={setCalendarOpen}>
         <DialogContent className="max-w-sm bg-background border-border">
