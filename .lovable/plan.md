@@ -1,45 +1,58 @@
 
 
-# Nutrition Epic 4A.1: FatSecret Turkish Localization Hotfix
+# Nutrition Epic 4A — Plan B: OpenFoodFacts Pivot
 
-## Problem
-Searching Turkish food terms (e.g. "tavuk") returns no results because FatSecret defaults to the US/English region.
+## Summary
+Full rewrite of `supabase/functions/search-food/index.ts` — remove all FatSecret/OAuth logic, replace with OpenFoodFacts (OFF) integration using strict User-Agent headers and Turkish-localized endpoints.
 
-## Fix
-Add `region: "TR"` and `language: "tr"` parameters to all three `signedRequest()` calls in `supabase/functions/search-food/index.ts`.
+## Changes (1 file)
 
-### Changes (3 locations in one file)
+**`supabase/functions/search-food/index.ts`** — complete rewrite:
 
-**1. `searchByText` (line 100-104)** — add locale params:
+1. **Remove** all FatSecret code (OAuth 1.0 signing, HMAC-SHA1, description parser, etc.)
+
+2. **Add shared fetch helper** with mandatory User-Agent:
 ```typescript
-const data = await signedRequest({
-  method: "foods.search",
-  search_expression: query,
-  max_results: "15",
-  region: "TR",
-  language: "tr",
-});
+const USER_AGENT = "DynabolicApp/1.0 - Web - (Contact: hello@dynabolic.com)";
+
+async function offFetch(url: string) {
+  const res = await fetch(url, {
+    headers: { "User-Agent": USER_AGENT }
+  });
+  if (!res.ok) throw new Error(`OFF ${res.status}`);
+  return res.json();
+}
 ```
 
-**2. `searchByBarcode` — barcode lookup (line 129-132)** — add locale params:
-```typescript
-const barcodeData = await signedRequest({
-  method: "food.find_id_for_barcode",
-  barcode,
-  region: "TR",
-  language: "tr",
-});
+3. **Text search** — Turkish-localized endpoint:
+```
+https://tr.openfoodfacts.org/cgi/search.pl?search_terms=...&search_simple=1&action=process&json=1&page_size=15
+```
+Parse `products[]` array, filter items that have valid nutriments.
+
+4. **Barcode search** — world V2 API:
+```
+https://world.openfoodfacts.org/api/v2/product/{barcode}.json
 ```
 
-**3. `searchByBarcode` — food detail fetch (line 138-141)** — add locale params:
+5. **Normalizer** — map OFF `product.nutriments` to our standard format:
 ```typescript
-const detail = await signedRequest({
-  method: "food.get.v4",
-  food_id: foodId,
-  region: "TR",
-  language: "tr",
-});
+{
+  id: product.code || product._id,
+  name: product.product_name_tr || product.product_name || "Bilinmeyen Ürün",
+  brand: product.brands || "",
+  calories: Math.round(nutriments["energy-kcal_100g"] || 0),
+  protein: round1(nutriments.proteins_100g || 0),
+  carbs: round1(nutriments.carbohydrates_100g || 0),
+  fat: round1(nutriments.fat_100g || 0),
+  serving_size: "100g"
+}
 ```
+Filter out items where all macros are zero.
 
-No other files need changes. Deploy and test with a Turkish query to verify.
+6. **Graceful error handling** — on any OFF failure (503, timeout, etc.), return `200` with empty array and a soft Turkish warning message so the client never crashes.
+
+7. **Main handler** stays the same shape (CORS, parse body, route to text/barcode, return JSON array).
+
+No frontend changes needed — the response contract (array of `{id, name, brand, calories, protein, carbs, fat, serving_size}`) remains identical.
 
