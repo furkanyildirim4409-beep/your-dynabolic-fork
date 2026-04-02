@@ -884,6 +884,7 @@ const Beslenme = () => {
 
   const [showManualAdd, setShowManualAdd] = useState(false);
   const [showCamera, setShowCamera] = useState(false);
+  const [showBarcodeCamera, setShowBarcodeCamera] = useState(false);
   const [scannerMode, setScannerMode] = useState<ScannerMode>("meal");
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFood, setSelectedFood] = useState<ApiFoodItem | null>(null);
