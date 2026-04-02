@@ -79,11 +79,12 @@ async function signedRequest(params: Record<string, string>): Promise<any> {
 // --- Description parser ---
 
 function parseFatSecretDescription(desc: string) {
-  const cal = desc.match(/Calories:\s*([\d.]+)/i);
-  const fat = desc.match(/Fat:\s*([\d.]+)/i);
-  const carbs = desc.match(/Carbs:\s*([\d.]+)/i);
-  const protein = desc.match(/Protein:\s*([\d.]+)/i);
-  const servingMatch = desc.match(/^Per\s+(.+?)\s*-/i);
+  // Support both English and Turkish description labels
+  const cal = desc.match(/(?:Calories|Kalori):\s*([\d.]+)/i);
+  const fat = desc.match(/(?:Fat|Yağ):\s*([\d.]+)/i);
+  const carbs = desc.match(/(?:Carbs|Karb):\s*([\d.]+)/i);
+  const protein = desc.match(/(?:Protein|Prot):\s*([\d.]+)/i);
+  const servingMatch = desc.match(/^(?:Per|Porsiyon başına:?)\s+(.+?)\s*-/i);
 
   return {
     calories: Math.round(parseFloat(cal?.[1] || "0")),
@@ -92,6 +93,25 @@ function parseFatSecretDescription(desc: string) {
     fat: Math.round(parseFloat(fat?.[1] || "0") * 10) / 10,
     serving_size: servingMatch ? servingMatch[1].trim() : "100g",
   };
+}
+
+// --- Search helpers ---
+
+function parseFoodList(foodList: any) {
+  const foods = Array.isArray(foodList) ? foodList : [foodList];
+  return foods
+    .map((f: any) => {
+      const desc = f.food_description || "";
+      const parsed = parseFatSecretDescription(desc);
+      if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) return null;
+      return {
+        id: String(f.food_id || ""),
+        name: f.food_name || "Bilinmeyen",
+        brand: f.brand_name || "",
+        ...parsed,
+      };
+    })
+    .filter(Boolean);
 }
 
 // --- Search handlers ---
@@ -105,23 +125,7 @@ async function searchByText(query: string) {
 
   const foodList = data?.foods?.food;
   if (!foodList) return [];
-
-  const foods = Array.isArray(foodList) ? foodList : [foodList];
-
-  return foods
-    .map((f: any) => {
-      const desc = f.food_description || "";
-      const parsed = parseFatSecretDescription(desc);
-      if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) return null;
-
-      return {
-        id: String(f.food_id || ""),
-        name: f.food_name || "Bilinmeyen",
-        brand: f.brand_name || "",
-        ...parsed,
-      };
-    })
-    .filter(Boolean);
+  return parseFoodList(foodList);
 }
 
 async function searchByBarcode(barcode: string) {
