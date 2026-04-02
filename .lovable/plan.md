@@ -1,49 +1,33 @@
 
 
-# Nutrition Epic 4A: Authenticated OpenFoodFacts
+# Nutrition Epic 4B: Real Camera Barcode Scanner
 
-## Problem
-OFF returns 503 from cloud IPs for unauthenticated requests.
+## Summary
+Replace the mock barcode scanner in Beslenme.tsx with a real camera-based barcode reader using `html5-qrcode`, then route detected barcodes through the existing `searchFood(query, barcode)` pipeline to OpenFoodFacts.
 
-## Fix
-Add Basic Auth header to all OFF API calls using stored secrets.
+## Changes
 
-## Steps
+### 1. Install `html5-qrcode`
+Add the npm package — it supports EAN-13, EAN-8, UPC-A, and works well in mobile browsers.
 
-### 1. Add secrets `OFF_USERNAME` and `OFF_PASSWORD`
-Request these two new secrets from the user via the add_secret tool.
+### 2. Create `src/components/BarcodeCameraScanner.tsx`
+A full-screen modal component that:
+- Uses `Html5Qrcode` to start a rear camera (`facingMode: "environment"`) stream inside a container div
+- Shows a dark overlay with a neon-green (`#CCFF00`) cornered scanning box (matching the app's existing primary color language)
+- On successful decode: stops the scanner, fires haptic feedback (`navigator.vibrate([100])`), and calls `onDetected(barcodeString)`
+- Close button stops camera and unmounts cleanly via `useEffect` cleanup
+- Handles `NotAllowedError` / `NotFoundError` — shows a toast: "Kamera izni verilmedi veya kamera bulunamadı."
+- All camera resources released in the cleanup to prevent battery drain
 
-### 2. Update `supabase/functions/search-food/index.ts`
-One change — update the `offFetch` helper (lines 9-22) to read credentials and include Basic Auth:
+### 3. Update `src/pages/Beslenme.tsx`
+- Import the new `BarcodeCameraScanner` component
+- Modify `openBarcodeScanner` to set a new `showBarcodeCamera` state (separate from the existing `showCamera` used for meal scanning)
+- On barcode detection callback:
+  1. Close the scanner modal
+  2. Call `searchFood("", detectedBarcode)` to trigger the OFF barcode lookup
+  3. Open the manual-add dialog (`setShowManualAdd(true)`) so results appear immediately
+- The existing mock `CameraScanner` component continues to handle `mode === "meal"` (NutriScan AI) unchanged
 
-```typescript
-const OFF_USER = Deno.env.get("OFF_USERNAME") || "";
-const OFF_PASS = Deno.env.get("OFF_PASSWORD") || "";
-const BASIC_AUTH = btoa(`${OFF_USER}:${OFF_PASS}`);
-
-async function offFetch(url: string): Promise<any> {
-  const headers: Record<string, string> = {
-    "User-Agent": USER_AGENT,
-    "Accept": "application/json",
-  };
-  if (OFF_USER) {
-    headers["Authorization"] = `Basic ${BASIC_AUTH}`;
-  }
-  const res = await fetch(url, { headers });
-  if (!res.ok) {
-    const text = await res.text();
-    console.error(`OFF API error ${res.status} for ${url}: ${text.substring(0, 200)}`);
-    throw new Error(`OFF ${res.status}`);
-  }
-  return res.json();
-}
-```
-
-Everything else (normalizer, text/barcode search, CORS, error fallback) stays identical.
-
-### 3. Deploy & test
-Deploy the function and test with a query like `{"query":"tavuk"}` to confirm 503 is resolved.
-
-## Prerequisites
-The user needs an OpenFoodFacts account. They can register free at https://world.openfoodfacts.org/cgi/user.pl — then provide their username and password as secrets.
+### 4. No backend changes
+The `search-food` edge function already handles `{ barcode: "..." }` payloads via the OFF V2 API.
 
