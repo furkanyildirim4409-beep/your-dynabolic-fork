@@ -101,6 +101,8 @@ async function searchByText(query: string) {
     method: "foods.search",
     search_expression: query,
     max_results: "15",
+    region: "TR",
+    language: "tr",
   });
 
   const foodList = data?.foods?.food;
