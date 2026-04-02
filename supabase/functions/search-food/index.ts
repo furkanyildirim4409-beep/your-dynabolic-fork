@@ -4,91 +4,106 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
-// Module-level token cache
-let cachedToken: string | null = null;
-let tokenExpiresAt = 0;
+const API_URL = "https://platform.fatsecret.com/rest/server.api";
 
-async function getAccessToken(): Promise<string> {
-  if (cachedToken && Date.now() < tokenExpiresAt - 30_000) {
-    return cachedToken;
+// --- OAuth 1.0 HMAC-SHA1 helpers ---
+
+function percentEncode(str: string): string {
+  return encodeURIComponent(str).replace(/[!'()*]/g, (c) => "%" + c.charCodeAt(0).toString(16).toUpperCase());
+}
+
+function generateNonce(): string {
+  const chars = "ABCDEFGHIJKLMNOPQRSTUVWXYZabcdefghijklmnopqrstuvwxyz0123456789";
+  let result = "";
+  for (let i = 0; i < 32; i++) {
+    result += chars.charAt(Math.floor(Math.random() * chars.length));
   }
+  return result;
+}
 
-  const clientId = Deno.env.get("FATSECRET_CLIENT_ID");
-  const clientSecret = Deno.env.get("FATSECRET_CLIENT_SECRET");
-  if (!clientId || !clientSecret) {
+async function hmacSha1(key: string, data: string): Promise<string> {
+  const encoder = new TextEncoder();
+  const cryptoKey = await crypto.subtle.importKey(
+    "raw",
+    encoder.encode(key),
+    { name: "HMAC", hash: "SHA-1" },
+    false,
+    ["sign"],
+  );
+  const signature = await crypto.subtle.sign("HMAC", cryptoKey, encoder.encode(data));
+  return btoa(String.fromCharCode(...new Uint8Array(signature)));
+}
+
+async function signedRequest(params: Record<string, string>): Promise<any> {
+  const consumerKey = Deno.env.get("FATSECRET_CLIENT_ID");
+  const consumerSecret = Deno.env.get("FATSECRET_CLIENT_SECRET");
+  if (!consumerKey || !consumerSecret) {
     throw new Error("FatSecret credentials not configured");
   }
 
-  const basic = btoa(`${clientId}:${clientSecret}`);
-  const res = await fetch("https://oauth.fatsecret.com/connect/token", {
-    method: "POST",
-    headers: {
-      Authorization: `Basic ${basic}`,
-      "Content-Type": "application/x-www-form-urlencoded",
-    },
-    body: "grant_type=client_credentials&scope=basic premier barcode",
-  });
+  const oauthParams: Record<string, string> = {
+    oauth_consumer_key: consumerKey,
+    oauth_nonce: generateNonce(),
+    oauth_signature_method: "HMAC-SHA1",
+    oauth_timestamp: Math.floor(Date.now() / 1000).toString(),
+    oauth_version: "1.0",
+    format: "json",
+    ...params,
+  };
 
+  // Build signature base string
+  const allParams = Object.keys(oauthParams)
+    .sort()
+    .map((k) => `${percentEncode(k)}=${percentEncode(oauthParams[k])}`)
+    .join("&");
+
+  const baseString = `GET&${percentEncode(API_URL)}&${percentEncode(allParams)}`;
+  const signingKey = `${percentEncode(consumerSecret)}&`; // no token secret
+
+  const signature = await hmacSha1(signingKey, baseString);
+  oauthParams["oauth_signature"] = signature;
+
+  const qs = Object.keys(oauthParams)
+    .map((k) => `${encodeURIComponent(k)}=${encodeURIComponent(oauthParams[k])}`)
+    .join("&");
+
+  const res = await fetch(`${API_URL}?${qs}`);
   if (!res.ok) {
     const text = await res.text();
-    throw new Error(`OAuth token error ${res.status}: ${text}`);
+    if (res.status === 429) throw { status: 429, message: "rate_limit", detail: text };
+    throw new Error(`FatSecret API ${res.status}: ${text}`);
   }
-
-  const json = await res.json();
-  cachedToken = json.access_token;
-  tokenExpiresAt = Date.now() + (json.expires_in || 86400) * 1000;
-  return cachedToken!;
+  return res.json();
 }
+
+// --- Description parser ---
 
 function parseFatSecretDescription(desc: string) {
   const cal = desc.match(/Calories:\s*([\d.]+)/i);
   const fat = desc.match(/Fat:\s*([\d.]+)/i);
   const carbs = desc.match(/Carbs:\s*([\d.]+)/i);
   const protein = desc.match(/Protein:\s*([\d.]+)/i);
-
-  // Extract serving info from the prefix like "Per 100g -" or "Per 1 serving (250ml) -"
   const servingMatch = desc.match(/^Per\s+(.+?)\s*-/i);
-  const serving_size = servingMatch ? servingMatch[1].trim() : "100g";
 
   return {
     calories: Math.round(parseFloat(cal?.[1] || "0")),
     protein: Math.round(parseFloat(protein?.[1] || "0") * 10) / 10,
     carbs: Math.round(parseFloat(carbs?.[1] || "0") * 10) / 10,
     fat: Math.round(parseFloat(fat?.[1] || "0") * 10) / 10,
-    serving_size,
+    serving_size: servingMatch ? servingMatch[1].trim() : "100g",
   };
 }
 
-async function fatSecretRequest(url: string, retried = false): Promise<any> {
-  const token = await getAccessToken();
-  const res = await fetch(url, {
-    headers: { Authorization: `Bearer ${token}` },
-  });
-
-  if (res.status === 401 && !retried) {
-    cachedToken = null;
-    tokenExpiresAt = 0;
-    return fatSecretRequest(url, true);
-  }
-
-  if (res.status === 429) {
-    const text = await res.text();
-    throw { status: 429, message: "Rate limit exceeded", detail: text };
-  }
-
-  if (!res.ok) {
-    const text = await res.text();
-    throw new Error(`FatSecret API ${res.status}: ${text}`);
-  }
-
-  return res.json();
-}
+// --- Search handlers ---
 
 async function searchByText(query: string) {
-  const url = `https://platform.fatsecret.com/rest/foods/search/v1?search_expression=${encodeURIComponent(query)}&format=json&max_results=15`;
-  const data = await fatSecretRequest(url);
+  const data = await signedRequest({
+    method: "foods.search",
+    search_expression: query,
+    max_results: "15",
+  });
 
-  const foodList = data?.foods_search?.results?.food;
+  const foodList = data?.foods?.food;
   if (!foodList) return [];
 
   const foods = Array.isArray(foodList) ? foodList : [foodList];
@@ -103,26 +118,27 @@ async function searchByText(query: string) {
         id: String(f.food_id || ""),
         name: f.food_name || "Bilinmeyen",
         brand: f.brand_name || "",
-        calories: parsed.calories,
-        protein: parsed.protein,
-        carbs: parsed.carbs,
-        fat: parsed.fat,
-        serving_size: parsed.serving_size,
+        ...parsed,
       };
     })
     .filter(Boolean);
 }
 
 async function searchByBarcode(barcode: string) {
-  const url = `https://platform.fatsecret.com/rest/food/barcode/find-by-id/v1?barcode=${encodeURIComponent(barcode)}&format=json`;
-  const data = await fatSecretRequest(url);
+  // Get food_id from barcode
+  const barcodeData = await signedRequest({
+    method: "food.find_id_for_barcode",
+    barcode,
+  });
 
-  const foodId = data?.food_id?.value;
+  const foodId = barcodeData?.food_id?.value;
   if (!foodId) return [];
 
-  // Fetch full food details
-  const detailUrl = `https://platform.fatsecret.com/rest/food/v4?food_id=${foodId}&format=json`;
-  const detail = await fatSecretRequest(detailUrl);
+  // Get full food details
+  const detail = await signedRequest({
+    method: "food.get.v4",
+    food_id: foodId,
+  });
 
   const food = detail?.food;
   if (!food) return [];
@@ -131,8 +147,9 @@ async function searchByBarcode(barcode: string) {
   if (!servings) return [];
 
   const servingList = Array.isArray(servings) ? servings : [servings];
-  // Pick "per 100g" serving if available, otherwise first
-  const serving = servingList.find((s: any) => s.metric_serving_unit === "g" && s.metric_serving_amount === "100.000") || servingList[0];
+  const serving =
+    servingList.find((s: any) => s.metric_serving_unit === "g" && String(s.metric_serving_amount) === "100.000") ||
+    servingList[0];
 
   return [
     {
@@ -143,10 +160,14 @@ async function searchByBarcode(barcode: string) {
       protein: Math.round(parseFloat(serving.protein || "0") * 10) / 10,
       carbs: Math.round(parseFloat(serving.carbohydrate || "0") * 10) / 10,
       fat: Math.round(parseFloat(serving.fat || "0") * 10) / 10,
-      serving_size: serving.metric_serving_amount ? `${Math.round(parseFloat(serving.metric_serving_amount))}${serving.metric_serving_unit || "g"}` : (serving.serving_description || "1 serving"),
+      serving_size: serving.metric_serving_amount
+        ? `${Math.round(parseFloat(serving.metric_serving_amount))}${serving.metric_serving_unit || "g"}`
+        : serving.serving_description || "1 serving",
     },
   ];
 }
+
+// --- Main handler ---
 
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
