@@ -56,7 +56,7 @@ function normalizeProduct(product: any): NormalizedFood | null {
 }
 
 async function searchByText(query: string): Promise<NormalizedFood[]> {
-  const url = `https://tr.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=15`;
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=15`;
   const data = await offFetch(url);
   const products = data?.products;
   if (!Array.isArray(products)) return [];
