@@ -57,7 +57,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
     const startScanner = async () => {
       setIsStarting(true);
       try {
-        const { Html5Qrcode } = await import("html5-qrcode");
+        const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
         if (cancelled) return;
 
         const scanner = new Html5Qrcode(containerIdRef.current);
@@ -66,25 +66,21 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         await scanner.start(
           { facingMode: "environment" },
           {
-            fps: 10,
-            qrbox: { width: 280, height: 160 },
-            aspectRatio: 1.0,
+            fps: 15,
+            formatsToSupport: [
+              Html5QrcodeSupportedFormats.EAN_13,
+              Html5QrcodeSupportedFormats.EAN_8,
+              Html5QrcodeSupportedFormats.UPC_A,
+              Html5QrcodeSupportedFormats.UPC_E,
+            ],
           },
           (decodedText) => {
             if (hasDetectedRef.current) return;
             hasDetectedRef.current = true;
-
-            if (navigator.vibrate) {
-              navigator.vibrate(100);
-            }
-
-            stopScanner().then(() => {
-              onDetectedRef.current(decodedText);
-            });
+            if (navigator.vibrate) navigator.vibrate(100);
+            stopScanner().then(() => onDetectedRef.current(decodedText));
           },
-          () => {
-            // Expected on every non-match frame — must remain empty
-          }
+          () => {}
         );
       } catch (err: any) {
         if (cancelled) return;
