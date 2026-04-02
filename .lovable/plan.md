@@ -1,58 +1,49 @@
 
 
-# Nutrition Epic 4A — Plan B: OpenFoodFacts Pivot
+# Nutrition Epic 4A: Authenticated OpenFoodFacts
 
-## Summary
-Full rewrite of `supabase/functions/search-food/index.ts` — remove all FatSecret/OAuth logic, replace with OpenFoodFacts (OFF) integration using strict User-Agent headers and Turkish-localized endpoints.
+## Problem
+OFF returns 503 from cloud IPs for unauthenticated requests.
 
-## Changes (1 file)
+## Fix
+Add Basic Auth header to all OFF API calls using stored secrets.
 
-**`supabase/functions/search-food/index.ts`** — complete rewrite:
+## Steps
 
-1. **Remove** all FatSecret code (OAuth 1.0 signing, HMAC-SHA1, description parser, etc.)
+### 1. Add secrets `OFF_USERNAME` and `OFF_PASSWORD`
+Request these two new secrets from the user via the add_secret tool.
 
-2. **Add shared fetch helper** with mandatory User-Agent:
+### 2. Update `supabase/functions/search-food/index.ts`
+One change — update the `offFetch` helper (lines 9-22) to read credentials and include Basic Auth:
+
 ```typescript
-const USER_AGENT = "DynabolicApp/1.0 - Web - (Contact: hello@dynabolic.com)";
+const OFF_USER = Deno.env.get("OFF_USERNAME") || "";
+const OFF_PASS = Deno.env.get("OFF_PASSWORD") || "";
+const BASIC_AUTH = btoa(`${OFF_USER}:${OFF_PASS}`);
 
-async function offFetch(url: string) {
-  const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT }
-  });
-  if (!res.ok) throw new Error(`OFF ${res.status}`);
+async function offFetch(url: string): Promise<any> {
+  const headers: Record<string, string> = {
+    "User-Agent": USER_AGENT,
+    "Accept": "application/json",
+  };
+  if (OFF_USER) {
+    headers["Authorization"] = `Basic ${BASIC_AUTH}`;
+  }
+  const res = await fetch(url, { headers });
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`OFF API error ${res.status} for ${url}: ${text.substring(0, 200)}`);
+    throw new Error(`OFF ${res.status}`);
+  }
   return res.json();
 }
 ```
 
-3. **Text search** — Turkish-localized endpoint:
-```
-https://tr.openfoodfacts.org/cgi/search.pl?search_terms=...&search_simple=1&action=process&json=1&page_size=15
-```
-Parse `products[]` array, filter items that have valid nutriments.
+Everything else (normalizer, text/barcode search, CORS, error fallback) stays identical.
 
-4. **Barcode search** — world V2 API:
-```
-https://world.openfoodfacts.org/api/v2/product/{barcode}.json
-```
+### 3. Deploy & test
+Deploy the function and test with a query like `{"query":"tavuk"}` to confirm 503 is resolved.
 
-5. **Normalizer** — map OFF `product.nutriments` to our standard format:
-```typescript
-{
-  id: product.code || product._id,
-  name: product.product_name_tr || product.product_name || "Bilinmeyen Ürün",
-  brand: product.brands || "",
-  calories: Math.round(nutriments["energy-kcal_100g"] || 0),
-  protein: round1(nutriments.proteins_100g || 0),
-  carbs: round1(nutriments.carbohydrates_100g || 0),
-  fat: round1(nutriments.fat_100g || 0),
-  serving_size: "100g"
-}
-```
-Filter out items where all macros are zero.
-
-6. **Graceful error handling** — on any OFF failure (503, timeout, etc.), return `200` with empty array and a soft Turkish warning message so the client never crashes.
-
-7. **Main handler** stays the same shape (CORS, parse body, route to text/barcode, return JSON array).
-
-No frontend changes needed — the response contract (array of `{id, name, brand, calories, protein, carbs, fat, serving_size}`) remains identical.
+## Prerequisites
+The user needs an OpenFoodFacts account. They can register free at https://world.openfoodfacts.org/cgi/user.pl — then provide their username and password as secrets.
 
