@@ -15,12 +15,17 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
   const [isStarting, setIsStarting] = useState(false);
   const hasDetectedRef = useRef(false);
 
+  // Stable refs for callback props to avoid re-triggering the effect
+  const onDetectedRef = useRef(onDetected);
+  const onCloseRef = useRef(onClose);
+  useEffect(() => { onDetectedRef.current = onDetected; }, [onDetected]);
+  useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
   const stopScanner = useCallback(async () => {
     const scanner = scannerRef.current;
     if (scanner) {
       try {
         const state = scanner.getState?.();
-        // State 2 = SCANNING, 3 = PAUSED
         if (state === 2 || state === 3) {
           await scanner.stop();
         }
@@ -38,8 +43,8 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
 
   const handleClose = useCallback(async () => {
     await stopScanner();
-    onClose();
-  }, [stopScanner, onClose]);
+    onCloseRef.current();
+  }, [stopScanner]);
 
   useEffect(() => {
     if (!isOpen) {
@@ -69,18 +74,16 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             if (hasDetectedRef.current) return;
             hasDetectedRef.current = true;
 
-            // Haptic feedback
             if (navigator.vibrate) {
               navigator.vibrate(100);
             }
 
-            // Stop scanner then notify
             stopScanner().then(() => {
-              onDetected(decodedText);
+              onDetectedRef.current(decodedText);
             });
           },
           () => {
-            // QR code scan failure — expected on every non-match frame, ignore
+            // Expected on every non-match frame — must remain empty
           }
         );
       } catch (err: any) {
@@ -91,13 +94,12 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         } else {
           toast.error("Kamera başlatılamadı.");
         }
-        onClose();
+        onCloseRef.current();
       } finally {
         if (!cancelled) setIsStarting(false);
       }
     };
 
-    // Small delay to let DOM mount the container
     const timeout = setTimeout(startScanner, 100);
 
     return () => {
@@ -105,7 +107,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
       clearTimeout(timeout);
       stopScanner();
     };
-  }, [isOpen, onDetected, onClose, stopScanner]);
+  }, [isOpen, stopScanner]);
 
   if (!isOpen) return null;
 
