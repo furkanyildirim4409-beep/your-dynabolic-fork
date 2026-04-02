@@ -133,8 +133,6 @@ async function searchByBarcode(barcode: string) {
   const barcodeData = await signedRequest({
     method: "food.find_id_for_barcode",
     barcode,
-    region: "TR",
-    language: "tr",
   });
 
   const foodId = barcodeData?.food_id?.value;
