@@ -106,6 +106,7 @@ async function searchByText(query: string) {
     language: "tr",
   });
 
+  console.log("RAW FatSecret response:", JSON.stringify(data).slice(0, 2000));
   const foodList = data?.foods?.food;
   if (!foodList) return [];
 
