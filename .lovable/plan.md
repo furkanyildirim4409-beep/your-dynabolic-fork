@@ -1,33 +1,46 @@
 
 
-# Nutrition Epic 4B: Real Camera Barcode Scanner
+# Fix: Barcode Scanner Infinite Render Loop
 
-## Summary
-Replace the mock barcode scanner in Beslenme.tsx with a real camera-based barcode reader using `html5-qrcode`, then route detected barcodes through the existing `searchFood(query, barcode)` pipeline to OpenFoodFacts.
+## Root Cause
 
-## Changes
+Line 1191 in `Beslenme.tsx` passes an **inline arrow function** as `onClose`:
+```tsx
+onClose={() => setShowBarcodeCamera(false)}
+```
+This creates a new function reference every render. The scanner's `useEffect` (line 108) includes `onClose` in its dependency array, so it **re-fires on every render** — destroying and recreating the camera stream in an infinite loop, causing the flashing.
 
-### 1. Install `html5-qrcode`
-Add the npm package — it supports EAN-13, EAN-8, UPC-A, and works well in mobile browsers.
+## Fix (2 files)
 
-### 2. Create `src/components/BarcodeCameraScanner.tsx`
-A full-screen modal component that:
-- Uses `Html5Qrcode` to start a rear camera (`facingMode: "environment"`) stream inside a container div
-- Shows a dark overlay with a neon-green (`#CCFF00`) cornered scanning box (matching the app's existing primary color language)
-- On successful decode: stops the scanner, fires haptic feedback (`navigator.vibrate([100])`), and calls `onDetected(barcodeString)`
-- Close button stops camera and unmounts cleanly via `useEffect` cleanup
-- Handles `NotAllowedError` / `NotFoundError` — shows a toast: "Kamera izni verilmedi veya kamera bulunamadı."
-- All camera resources released in the cleanup to prevent battery drain
+### 1. `src/components/BarcodeCameraScanner.tsx`
+Decouple the `useEffect` from callback props entirely using refs:
 
-### 3. Update `src/pages/Beslenme.tsx`
-- Import the new `BarcodeCameraScanner` component
-- Modify `openBarcodeScanner` to set a new `showBarcodeCamera` state (separate from the existing `showCamera` used for meal scanning)
-- On barcode detection callback:
-  1. Close the scanner modal
-  2. Call `searchFood("", detectedBarcode)` to trigger the OFF barcode lookup
-  3. Open the manual-add dialog (`setShowManualAdd(true)`) so results appear immediately
-- The existing mock `CameraScanner` component continues to handle `mode === "meal"` (NutriScan AI) unchanged
+- Store `onDetected` and `onClose` in `useRef` containers, updated via a separate `useEffect`. This way the scanner startup effect never re-runs due to prop changes.
+- Change the main `useEffect` dependency array to **`[isOpen]` only**.
+- Keep the failure callback completely empty (already correct).
+- Remove `stopScanner` from deps (it's already a stable `useCallback` with `[]` deps, but removing it from the effect deps is safer).
 
-### 4. No backend changes
-The `search-food` edge function already handles `{ barcode: "..." }` payloads via the OFF V2 API.
+```typescript
+// Stable refs for callbacks
+const onDetectedRef = useRef(onDetected);
+const onCloseRef = useRef(onClose);
+useEffect(() => { onDetectedRef.current = onDetected; }, [onDetected]);
+useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
+
+// Main effect depends ONLY on isOpen
+useEffect(() => {
+  if (!isOpen) { ... return; }
+  // ... startScanner uses onDetectedRef.current / onCloseRef.current
+}, [isOpen]);
+```
+
+### 2. `src/pages/Beslenme.tsx`
+Wrap the `onClose` handler in `useCallback` for good measure (belt-and-suspenders):
+```tsx
+const closeBarcodeCamera = useCallback(() => setShowBarcodeCamera(false), []);
+// ...
+<BarcodeCameraScanner onClose={closeBarcodeCamera} ... />
+```
+
+This eliminates all unstable dependencies from the scanner effect, guaranteeing a single camera initialization per open.
 
