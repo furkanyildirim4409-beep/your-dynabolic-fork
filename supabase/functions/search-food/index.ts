@@ -142,8 +142,6 @@ async function searchByBarcode(barcode: string) {
   const detail = await signedRequest({
     method: "food.get.v4",
     food_id: foodId,
-    region: "TR",
-    language: "tr",
   });
 
   const food = detail?.food;
