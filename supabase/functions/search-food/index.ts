@@ -8,9 +8,16 @@ const USER_AGENT = "DynabolicApp/1.0 - Web - (Contact: hello@dynabolic.com)";
 
 async function offFetch(url: string): Promise<any> {
   const res = await fetch(url, {
-    headers: { "User-Agent": USER_AGENT },
+    headers: {
+      "User-Agent": USER_AGENT,
+      "Accept": "application/json",
+    },
   });
-  if (!res.ok) throw new Error(`OFF ${res.status}`);
+  if (!res.ok) {
+    const text = await res.text();
+    console.error(`OFF API error ${res.status} for ${url}: ${text.substring(0, 200)}`);
+    throw new Error(`OFF ${res.status}`);
+  }
   return res.json();
 }
 
@@ -56,7 +63,7 @@ function normalizeProduct(product: any): NormalizedFood | null {
 }
 
 async function searchByText(query: string): Promise<NormalizedFood[]> {
-  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=15`;
+  const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query)}&search_simple=1&action=process&json=1&page_size=15&fields=code,product_name,product_name_tr,brands,nutriments`;
   const data = await offFetch(url);
   const products = data?.products;
   if (!Array.isArray(products)) return [];
@@ -64,7 +71,7 @@ async function searchByText(query: string): Promise<NormalizedFood[]> {
 }
 
 async function searchByBarcode(barcode: string): Promise<NormalizedFood[]> {
-  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json`;
+  const url = `https://world.openfoodfacts.org/api/v2/product/${encodeURIComponent(barcode)}.json?fields=code,product_name,product_name_tr,brands,nutriments`;
   const data = await offFetch(url);
   if (data?.status !== 1 || !data?.product) return [];
   const item = normalizeProduct(data.product);
@@ -101,7 +108,6 @@ Deno.serve(async (req) => {
     });
   } catch (err: any) {
     console.error("search-food error:", err);
-    // Graceful fallback — never crash the client
     return new Response(JSON.stringify([]), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
