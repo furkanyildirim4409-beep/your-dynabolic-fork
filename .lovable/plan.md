@@ -1,46 +1,47 @@
 
 
-# Fix: Barcode Scanner Infinite Render Loop
+# Fix: Barcode Scanner UI Overlay & Recognition Engine
 
-## Root Cause
+## Problem
+The `html5-qrcode` library renders its own white bounding box and shaded overlay via `qrbox`, conflicting with our custom neon-green CSS overlay. Additionally, `aspectRatio: 1.0` distorts the native camera feed, and the restricted scan area hurts recognition.
 
-Line 1191 in `Beslenme.tsx` passes an **inline arrow function** as `onClose`:
-```tsx
-onClose={() => setShowBarcodeCamera(false)}
-```
-This creates a new function reference every render. The scanner's `useEffect` (line 108) includes `onClose` in its dependency array, so it **re-fires on every render** — destroying and recreating the camera stream in an infinite loop, causing the flashing.
+## Fix (1 file)
 
-## Fix (2 files)
+### `src/components/BarcodeCameraScanner.tsx`
 
-### 1. `src/components/BarcodeCameraScanner.tsx`
-Decouple the `useEffect` from callback props entirely using refs:
-
-- Store `onDetected` and `onClose` in `useRef` containers, updated via a separate `useEffect`. This way the scanner startup effect never re-runs due to prop changes.
-- Change the main `useEffect` dependency array to **`[isOpen]` only**.
-- Keep the failure callback completely empty (already correct).
-- Remove `stopScanner` from deps (it's already a stable `useCallback` with `[]` deps, but removing it from the effect deps is safer).
-
+**Line 60** — also import `Html5QrcodeSupportedFormats`:
 ```typescript
-// Stable refs for callbacks
-const onDetectedRef = useRef(onDetected);
-const onCloseRef = useRef(onClose);
-useEffect(() => { onDetectedRef.current = onDetected; }, [onDetected]);
-useEffect(() => { onCloseRef.current = onClose; }, [onClose]);
-
-// Main effect depends ONLY on isOpen
-useEffect(() => {
-  if (!isOpen) { ... return; }
-  // ... startScanner uses onDetectedRef.current / onCloseRef.current
-}, [isOpen]);
+const { Html5Qrcode, Html5QrcodeSupportedFormats } = await import("html5-qrcode");
 ```
 
-### 2. `src/pages/Beslenme.tsx`
-Wrap the `onClose` handler in `useCallback` for good measure (belt-and-suspenders):
-```tsx
-const closeBarcodeCamera = useCallback(() => setShowBarcodeCamera(false), []);
-// ...
-<BarcodeCameraScanner onClose={closeBarcodeCamera} ... />
+**Lines 66-88** — replace the `scanner.start()` call: remove `qrbox` and `aspectRatio`, add `formatsToSupport`, bump `fps` to 15:
+```typescript
+await scanner.start(
+  { facingMode: "environment" },
+  {
+    fps: 15,
+    formatsToSupport: [
+      Html5QrcodeSupportedFormats.EAN_13,
+      Html5QrcodeSupportedFormats.EAN_8,
+      Html5QrcodeSupportedFormats.UPC_A,
+      Html5QrcodeSupportedFormats.UPC_E,
+    ],
+  },
+  (decodedText) => {
+    if (hasDetectedRef.current) return;
+    hasDetectedRef.current = true;
+    if (navigator.vibrate) navigator.vibrate(100);
+    stopScanner().then(() => onDetectedRef.current(decodedText));
+  },
+  () => {}
+);
 ```
 
-This eliminates all unstable dependencies from the scanner effect, guaranteeing a single camera initialization per open.
+**Why this works:**
+- Removing `qrbox` eliminates the library's default white box and shaded overlay — our CSS overlay becomes the sole UI.
+- Removing `aspectRatio` lets the camera use its native ratio (typically 16:9), filling the viewport naturally.
+- `formatsToSupport` restricts the decoder to product barcode formats only, reducing false positives and improving speed.
+- `fps: 15` increases scan frequency for faster detection.
+
+No other files need changes.
 
