@@ -1,44 +1,94 @@
 
 
-# Nutrition Epic Part 2: Dynamic Grammage Engine — Enhancement
+# Nutrition Epic Part 4A: FatSecret API Integration
 
-## Current State
+## Overview
 
-The core grammage engine **already exists**: `ServingEditPopover` (line 383) provides editable gram input with ratio-based macro recalculation, live preview, and DB persistence via `updateFoodServing`. It's wired into both `CheckedPlannedFoodRow` and `ManualFoodRow`.
+Replace OpenFoodFacts with FatSecret REST API (OAuth 2.0 Client Credentials) in the `search-food` edge function. Support both text search and barcode lookup. Parse FatSecret's string-based nutrition format into structured macro data.
 
-What's **missing** from the user's request:
+## Prerequisites — Secrets
 
-1. **Deviation indicator** — no visual signal when serving differs from coach target
-2. **Macro color change** — edited macros look identical to original ones
+Two secrets need to be added before deployment:
+- `FATSECRET_CLIENT_ID` — the OAuth client ID
+- `FATSECRET_CLIENT_SECRET` — value: `245cb40864764e0aafcfa4ba9800674e`
 
-## Changes — Single file: `src/pages/Beslenme.tsx`
+The user will need to provide the Client ID (not mentioned in the request).
 
-### 1. Add Deviation Indicator to `CheckedPlannedFoodRow` (lines 506-531)
+## File: `supabase/functions/search-food/index.ts` — Full Rewrite
 
-When a consumed food has `target_serving` and its current `serving_size` differs:
-- Show the serving text in **amber** (`text-amber-400`) instead of muted
-- Append a small `±` badge next to the serving size (e.g., `120g ±`)
-- Show the original coach target as strikethrough text below: `~~100g~~`
+### OAuth 2.0 Token Helper
+- `getAccessToken()`: POST to `https://oauth.fatsecret.com/connect/token` with `grant_type=client_credentials`, `scope=basic premier barcode`, using Basic Auth (`base64(client_id:client_secret)`)
+- Cache token in a module-level variable with expiry check to avoid re-fetching on every request
 
-Detection logic: compare `parseGrams(food.serving_size)` vs `parseGrams((food as any).target_serving)`. If they differ and `target_serving` exists → deviation = true.
+### Request Body
+Accept `{ query?: string, barcode?: string }` — at least one required.
 
-### 2. Add Deviation Indicator to `ManualFoodRow` (lines 534-576)
+### Search Flow
+1. **Text search**: GET `https://platform.fatsecret.com/rest/foods/search/v1?search_expression={query}&format=json&max_results=10` with Bearer token
+2. **Barcode lookup**: GET `https://platform.fatsecret.com/rest/food/barcode/find-by-id/v1?barcode={barcode}&format=json` → returns a single food with servings
 
-Same amber treatment when `target_serving` exists and differs from `serving_size`.
+### Description Parser (Critical)
+FatSecret returns nutrition as a string like:
+```
+"Per 100g - Calories: 22kcal | Fat: 0.34g | Carbs: 3.28g | Protein: 3.09g"
+```
 
-### 3. Amber macro text on deviation
+Regex extraction:
+```typescript
+function parseFatSecretDescription(desc: string) {
+  const cal = desc.match(/Calories:\s*([\d.]+)/i);
+  const fat = desc.match(/Fat:\s*([\d.]+)/i);
+  const carbs = desc.match(/Carbs:\s*([\d.]+)/i);
+  const protein = desc.match(/Protein:\s*([\d.]+)/i);
+  return {
+    calories: Math.round(parseFloat(cal?.[1] || "0")),
+    protein: Math.round(parseFloat(protein?.[1] || "0") * 10) / 10,
+    carbs: Math.round(parseFloat(carbs?.[1] || "0") * 10) / 10,
+    fat: Math.round(parseFloat(fat?.[1] || "0") * 10) / 10,
+  };
+}
+```
 
-In both row components, when deviation is detected, change the macro values' text from default colors to amber tints:
-- Calories: `text-amber-400` instead of `text-foreground`
-- P/K/F labels: `text-amber-400/80` instead of their default colors
+### Output Format (Unchanged)
+Keep the same shape consumed by `useConsumedFoods`:
+```json
+{
+  "id": "fatsecret_food_id",
+  "name": "Spinach",
+  "brand": "Generic",
+  "calories": 22,
+  "protein": 3.1,
+  "carbs": 3.3,
+  "fat": 0.3,
+  "serving_size": "100g"
+}
+```
 
-### 4. MacroDashboard totals (already correct)
+### Error Handling
+- 401 from FatSecret → clear cached token, retry once
+- 429 → return 429 with "rate_limit" error
+- Missing/unparseable description → skip that food item
 
-The `totals` prop comes from `useConsumedFoods().totals`, which already reflects the actual DB values (updated by `updateFoodServing`). No change needed — totals auto-update.
+## Client-Side Changes
 
-## Technical notes
+### `src/hooks/useConsumedFoods.ts` — Minor
+Update `searchFood` to also accept an optional `barcode` param:
+```typescript
+const searchFood = async (query: string, barcode?: string) => {
+  const { data } = await supabase.functions.invoke("search-food", {
+    body: barcode ? { barcode } : { query: query.trim() },
+  });
+};
+```
 
-- No new files, hooks, or dependencies
-- All changes are purely presentational (the math engine and persistence already work)
-- ~30 lines of JSX changes across two row components
+### `src/pages/Beslenme.tsx` — Wire Barcode Scanner
+The barcode scanner UI already exists (lines 183-340, `openBarcodeScanner`). Currently it's a mock that shows a toast after 2.5s. Wire it to actually call `searchFood(undefined, scannedBarcode)` — though the actual camera/barcode reading hardware API is out of scope, we can at least connect the flow so when a barcode value is available, it hits FatSecret.
+
+## Summary
+
+| File | Change |
+|---|---|
+| `supabase/functions/search-food/index.ts` | Full rewrite: OAuth 2.0 + FatSecret search + barcode + description parser |
+| `src/hooks/useConsumedFoods.ts` | Add optional `barcode` param to `searchFood` |
+| `src/pages/Beslenme.tsx` | Wire barcode scanner result to `searchFood` with barcode param |
 
