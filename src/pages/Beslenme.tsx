@@ -940,9 +940,14 @@ const Beslenme = () => {
   };
 
   const openBarcodeScanner = () => {
-    setScannerMode("barcode");
-    setShowCamera(true);
+    setShowBarcodeCamera(true);
   };
+
+  const handleBarcodeDetected = useCallback((barcode: string) => {
+    setShowBarcodeCamera(false);
+    searchFood("", barcode);
+    setShowManualAdd(true);
+  }, [searchFood]);
 
   const handleRemoveFood = async (id: string) => {
     try {
