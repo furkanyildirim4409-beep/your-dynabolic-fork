@@ -79,11 +79,12 @@ async function signedRequest(params: Record<string, string>): Promise<any> {
 // --- Description parser ---
 
 function parseFatSecretDescription(desc: string) {
-  const cal = desc.match(/Calories:\s*([\d.]+)/i);
-  const fat = desc.match(/Fat:\s*([\d.]+)/i);
-  const carbs = desc.match(/Carbs:\s*([\d.]+)/i);
-  const protein = desc.match(/Protein:\s*([\d.]+)/i);
-  const servingMatch = desc.match(/^Per\s+(.+?)\s*-/i);
+  // Support both English and Turkish description labels
+  const cal = desc.match(/(?:Calories|Kalori):\s*([\d.]+)/i);
+  const fat = desc.match(/(?:Fat|Yağ):\s*([\d.]+)/i);
+  const carbs = desc.match(/(?:Carbs|Karb):\s*([\d.]+)/i);
+  const protein = desc.match(/(?:Protein|Prot):\s*([\d.]+)/i);
+  const servingMatch = desc.match(/^(?:Per|Porsiyon başına:?)\s+(.+?)\s*-/i);
 
   return {
     calories: Math.round(parseFloat(cal?.[1] || "0")),
