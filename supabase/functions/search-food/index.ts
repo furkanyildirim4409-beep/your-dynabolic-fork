@@ -6,13 +6,19 @@ const corsHeaders = {
 
 const USER_AGENT = "DynabolicApp/1.0 - Web - (Contact: hello@dynabolic.com)";
 
+const OFF_USER = Deno.env.get("OFF_USERNAME") || "";
+const OFF_PASS = Deno.env.get("OFF_PASSWORD") || "";
+const BASIC_AUTH = btoa(`${OFF_USER}:${OFF_PASS}`);
+
 async function offFetch(url: string): Promise<any> {
-  const res = await fetch(url, {
-    headers: {
-      "User-Agent": USER_AGENT,
-      "Accept": "application/json",
-    },
-  });
+  const headers: Record<string, string> = {
+    "User-Agent": USER_AGENT,
+    "Accept": "application/json",
+  };
+  if (OFF_USER) {
+    headers["Authorization"] = `Basic ${BASIC_AUTH}`;
+  }
+  const res = await fetch(url, { headers });
   if (!res.ok) {
     const text = await res.text();
     console.error(`OFF API error ${res.status} for ${url}: ${text.substring(0, 200)}`);
