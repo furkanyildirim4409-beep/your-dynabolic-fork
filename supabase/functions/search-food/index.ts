@@ -117,31 +117,15 @@ function parseFoodList(foodList: any) {
 // --- Search handlers ---
 
 async function searchByText(query: string) {
-  // Try TR region first, fallback to global if no results
-  const trData = await signedRequest({
-    method: "foods.search",
-    search_expression: query,
-    max_results: "15",
-    region: "TR",
-    language: "tr",
-  });
-
-  const trFoodList = trData?.foods?.food;
-  if (trFoodList) {
-    const results = parseFoodList(trFoodList);
-    if (results.length > 0) return results;
-  }
-
-  // Fallback: search global database
-  const globalData = await signedRequest({
+  const data = await signedRequest({
     method: "foods.search",
     search_expression: query,
     max_results: "15",
   });
 
-  const globalFoodList = globalData?.foods?.food;
-  if (!globalFoodList) return [];
-  return parseFoodList(globalFoodList);
+  const foodList = data?.foods?.food;
+  if (!foodList) return [];
+  return parseFoodList(foodList);
 }
 
 async function searchByBarcode(barcode: string) {
