@@ -943,6 +943,8 @@ const Beslenme = () => {
     setShowBarcodeCamera(true);
   };
 
+  const handleBarcodeClose = useCallback(() => setShowBarcodeCamera(false), []);
+
   const handleBarcodeDetected = useCallback((barcode: string) => {
     setShowBarcodeCamera(false);
     searchFood("", barcode);
@@ -1188,7 +1190,7 @@ const Beslenme = () => {
       {/* REAL BARCODE CAMERA SCANNER */}
       <BarcodeCameraScanner
         isOpen={showBarcodeCamera}
-        onClose={() => setShowBarcodeCamera(false)}
+        onClose={handleBarcodeClose}
         onDetected={handleBarcodeDetected}
       />
 
