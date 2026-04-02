@@ -95,29 +95,15 @@ function parseFatSecretDescription(desc: string) {
   };
 }
 
-// --- Search handlers ---
+// --- Search helpers ---
 
-async function searchByText(query: string) {
-  const data = await signedRequest({
-    method: "foods.search",
-    search_expression: query,
-    max_results: "15",
-    region: "TR",
-    language: "tr",
-  });
-
-  console.log("RAW FatSecret response:", JSON.stringify(data).slice(0, 2000));
-  const foodList = data?.foods?.food;
-  if (!foodList) return [];
-
+function parseFoodList(foodList: any) {
   const foods = Array.isArray(foodList) ? foodList : [foodList];
-
   return foods
     .map((f: any) => {
       const desc = f.food_description || "";
       const parsed = parseFatSecretDescription(desc);
       if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) return null;
-
       return {
         id: String(f.food_id || ""),
         name: f.food_name || "Bilinmeyen",
@@ -126,6 +112,36 @@ async function searchByText(query: string) {
       };
     })
     .filter(Boolean);
+}
+
+// --- Search handlers ---
+
+async function searchByText(query: string) {
+  // Try TR region first, fallback to global if no results
+  const trData = await signedRequest({
+    method: "foods.search",
+    search_expression: query,
+    max_results: "15",
+    region: "TR",
+    language: "tr",
+  });
+
+  const trFoodList = trData?.foods?.food;
+  if (trFoodList) {
+    const results = parseFoodList(trFoodList);
+    if (results.length > 0) return results;
+  }
+
+  // Fallback: search global database
+  const globalData = await signedRequest({
+    method: "foods.search",
+    search_expression: query,
+    max_results: "15",
+  });
+
+  const globalFoodList = globalData?.foods?.food;
+  if (!globalFoodList) return [];
+  return parseFoodList(globalFoodList);
 }
 
 async function searchByBarcode(barcode: string) {
