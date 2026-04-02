@@ -4,57 +4,188 @@ const corsHeaders = {
     "authorization, x-client-info, apikey, content-type, x-supabase-client-platform, x-supabase-client-platform-version, x-supabase-client-runtime, x-supabase-client-runtime-version",
 };
 
+// Module-level token cache
+let cachedToken: string | null = null;
+let tokenExpiresAt = 0;
+
+async function getAccessToken(): Promise<string> {
+  if (cachedToken && Date.now() < tokenExpiresAt - 30_000) {
+    return cachedToken;
+  }
+
+  const clientId = Deno.env.get("FATSECRET_CLIENT_ID");
+  const clientSecret = Deno.env.get("FATSECRET_CLIENT_SECRET");
+  if (!clientId || !clientSecret) {
+    throw new Error("FatSecret credentials not configured");
+  }
+
+  const basic = btoa(`${clientId}:${clientSecret}`);
+  const res = await fetch("https://oauth.fatsecret.com/connect/token", {
+    method: "POST",
+    headers: {
+      Authorization: `Basic ${basic}`,
+      "Content-Type": "application/x-www-form-urlencoded",
+    },
+    body: "grant_type=client_credentials&scope=basic premier barcode",
+  });
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`OAuth token error ${res.status}: ${text}`);
+  }
+
+  const json = await res.json();
+  cachedToken = json.access_token;
+  tokenExpiresAt = Date.now() + (json.expires_in || 86400) * 1000;
+  return cachedToken!;
+}
+
+function parseFatSecretDescription(desc: string) {
+  const cal = desc.match(/Calories:\s*([\d.]+)/i);
+  const fat = desc.match(/Fat:\s*([\d.]+)/i);
+  const carbs = desc.match(/Carbs:\s*([\d.]+)/i);
+  const protein = desc.match(/Protein:\s*([\d.]+)/i);
+
+  // Extract serving info from the prefix like "Per 100g -" or "Per 1 serving (250ml) -"
+  const servingMatch = desc.match(/^Per\s+(.+?)\s*-/i);
+  const serving_size = servingMatch ? servingMatch[1].trim() : "100g";
+
+  return {
+    calories: Math.round(parseFloat(cal?.[1] || "0")),
+    protein: Math.round(parseFloat(protein?.[1] || "0") * 10) / 10,
+    carbs: Math.round(parseFloat(carbs?.[1] || "0") * 10) / 10,
+    fat: Math.round(parseFloat(fat?.[1] || "0") * 10) / 10,
+    serving_size,
+  };
+}
+
+async function fatSecretRequest(url: string, retried = false): Promise<any> {
+  const token = await getAccessToken();
+  const res = await fetch(url, {
+    headers: { Authorization: `Bearer ${token}` },
+  });
+
+  if (res.status === 401 && !retried) {
+    cachedToken = null;
+    tokenExpiresAt = 0;
+    return fatSecretRequest(url, true);
+  }
+
+  if (res.status === 429) {
+    const text = await res.text();
+    throw { status: 429, message: "Rate limit exceeded", detail: text };
+  }
+
+  if (!res.ok) {
+    const text = await res.text();
+    throw new Error(`FatSecret API ${res.status}: ${text}`);
+  }
+
+  return res.json();
+}
+
+async function searchByText(query: string) {
+  const url = `https://platform.fatsecret.com/rest/foods/search/v1?search_expression=${encodeURIComponent(query)}&format=json&max_results=15`;
+  const data = await fatSecretRequest(url);
+
+  const foodList = data?.foods_search?.results?.food;
+  if (!foodList) return [];
+
+  const foods = Array.isArray(foodList) ? foodList : [foodList];
+
+  return foods
+    .map((f: any) => {
+      const desc = f.food_description || "";
+      const parsed = parseFatSecretDescription(desc);
+      if (parsed.calories === 0 && parsed.protein === 0 && parsed.carbs === 0 && parsed.fat === 0) return null;
+
+      return {
+        id: String(f.food_id || ""),
+        name: f.food_name || "Bilinmeyen",
+        brand: f.brand_name || "",
+        calories: parsed.calories,
+        protein: parsed.protein,
+        carbs: parsed.carbs,
+        fat: parsed.fat,
+        serving_size: parsed.serving_size,
+      };
+    })
+    .filter(Boolean);
+}
+
+async function searchByBarcode(barcode: string) {
+  const url = `https://platform.fatsecret.com/rest/food/barcode/find-by-id/v1?barcode=${encodeURIComponent(barcode)}&format=json`;
+  const data = await fatSecretRequest(url);
+
+  const foodId = data?.food_id?.value;
+  if (!foodId) return [];
+
+  // Fetch full food details
+  const detailUrl = `https://platform.fatsecret.com/rest/food/v4?food_id=${foodId}&format=json`;
+  const detail = await fatSecretRequest(detailUrl);
+
+  const food = detail?.food;
+  if (!food) return [];
+
+  const servings = food.servings?.serving;
+  if (!servings) return [];
+
+  const servingList = Array.isArray(servings) ? servings : [servings];
+  // Pick "per 100g" serving if available, otherwise first
+  const serving = servingList.find((s: any) => s.metric_serving_unit === "g" && s.metric_serving_amount === "100.000") || servingList[0];
+
+  return [
+    {
+      id: String(food.food_id || ""),
+      name: food.food_name || "Bilinmeyen",
+      brand: food.brand_name || "",
+      calories: Math.round(parseFloat(serving.calories || "0")),
+      protein: Math.round(parseFloat(serving.protein || "0") * 10) / 10,
+      carbs: Math.round(parseFloat(serving.carbohydrate || "0") * 10) / 10,
+      fat: Math.round(parseFloat(serving.fat || "0") * 10) / 10,
+      serving_size: serving.metric_serving_amount ? `${Math.round(parseFloat(serving.metric_serving_amount))}${serving.metric_serving_unit || "g"}` : (serving.serving_description || "1 serving"),
+    },
+  ];
+}
+
 Deno.serve(async (req) => {
   if (req.method === "OPTIONS") {
     return new Response(null, { headers: corsHeaders });
   }
 
   try {
-    const { query } = await req.json();
-    if (!query || typeof query !== "string" || query.trim().length === 0) {
-      return new Response(JSON.stringify({ error: "query is required" }), {
+    const body = await req.json();
+    const { query, barcode } = body;
+
+    if (!query && !barcode) {
+      return new Response(JSON.stringify({ error: "query or barcode is required" }), {
         status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
 
-    const url = `https://world.openfoodfacts.org/cgi/search.pl?search_terms=${encodeURIComponent(query.trim())}&search_simple=1&action=process&json=1&page_size=10`;
-
-    const res = await fetch(url);
-    if (!res.ok) {
-      throw new Error(`OpenFoodFacts API returned ${res.status}`);
+    let products;
+    if (barcode && typeof barcode === "string" && barcode.trim()) {
+      products = await searchByBarcode(barcode.trim());
+    } else if (query && typeof query === "string" && query.trim()) {
+      products = await searchByText(query.trim());
+    } else {
+      products = [];
     }
-
-    const data = await res.json();
-
-    const products = (data.products || [])
-      .map((p: any) => {
-        const n = p.nutriments || {};
-        const calories = n["energy-kcal_100g"] ?? n["energy_100g"] ?? null;
-        const protein = n["proteins_100g"] ?? null;
-        const carbs = n["carbohydrates_100g"] ?? null;
-        const fat = n["fat_100g"] ?? null;
-
-        if (calories == null && protein == null && carbs == null && fat == null) return null;
-
-        return {
-          id: p.code || p._id || "",
-          name: p.product_name || p.product_name_en || "Bilinmeyen",
-          brand: p.brands || "",
-          calories: Math.round(Number(calories) || 0),
-          protein: Math.round((Number(protein) || 0) * 10) / 10,
-          carbs: Math.round((Number(carbs) || 0) * 10) / 10,
-          fat: Math.round((Number(fat) || 0) * 10) / 10,
-          serving_size: p.serving_size || "100g",
-        };
-      })
-      .filter(Boolean);
 
     return new Response(JSON.stringify(products), {
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
   } catch (err: any) {
     console.error("search-food error:", err);
+
+    if (err?.status === 429) {
+      return new Response(JSON.stringify({ error: "rate_limit" }), {
+        status: 429,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
+      });
+    }
+
     return new Response(JSON.stringify({ error: err.message || String(err) }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
