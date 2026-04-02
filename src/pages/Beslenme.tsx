@@ -44,6 +44,7 @@ import { CalendarClock, AlertTriangle, RefreshCw, CalendarDays, TrendingUp } fro
 import NutritionCalendar from "@/components/NutritionCalendar";
 import { useWeeklyAdherence } from "@/hooks/useWeeklyAdherence";
 import WaterTrackerWidget from "@/components/WaterTrackerWidget";
+import BarcodeCameraScanner from "@/components/BarcodeCameraScanner";
 
 // --- TİP TANIMLAMALARI ---
 interface MealSlot {
