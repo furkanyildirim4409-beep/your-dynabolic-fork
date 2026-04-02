@@ -74,15 +74,16 @@ export function useConsumedFoods() {
   }, [fetchToday]);
 
   // Search food via edge function
-  const searchFood = useCallback(async (query: string) => {
-    if (!query.trim()) {
+  const searchFood = useCallback(async (query: string, barcode?: string) => {
+    if (!barcode && !query.trim()) {
       setSearchResults([]);
       return;
     }
     setIsSearching(true);
     try {
+      const body = barcode ? { barcode } : { query: query.trim() };
       const { data, error } = await supabase.functions.invoke("search-food", {
-        body: { query: query.trim() },
+        body,
       });
       if (error) throw error;
       setSearchResults(Array.isArray(data) ? data : []);
