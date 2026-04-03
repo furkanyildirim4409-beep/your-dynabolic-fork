@@ -499,40 +499,6 @@ const Profil = () => {
         <WearableDeviceSync />
       </motion.div>
 
-      {/* Recovery Zones */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            TOPARLANMA BÖLGELERİ
-          </h2>
-        </div>
-
-        <div className="space-y-2">
-          {recoveryZones.map((zone, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl"
-            >
-              <span className="text-foreground text-sm">{zone.zone}</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                zone.severity === "high" 
-                  ? "bg-destructive/20 text-destructive" 
-                  : zone.severity === "medium"
-                  ? "bg-yellow-500/20 text-yellow-500"
-                  : "bg-stat-hrv/20 text-stat-hrv"
-              }`}>
-                {zone.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       {/* Weight History Chart */}
       <motion.div
