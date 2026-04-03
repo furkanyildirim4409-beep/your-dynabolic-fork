@@ -71,8 +71,15 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         });
         scannerRef.current = scanner;
 
+        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+
         await scanner.start(
-          { facingMode: "environment" },
+          {
+            facingMode: "environment",
+            ...(isMobile && {
+              aspectRatio: { ideal: 9 / 16 },
+            }),
+          },
           {
             fps: 15,
           },
