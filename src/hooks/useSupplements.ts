@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from "react";
+import { useState, useEffect, useCallback, useRef } from "react";
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
@@ -57,6 +57,7 @@ export function useSupplements() {
   const { user } = useAuth();
   const [takenIds, setTakenIds] = useState<Set<string>>(new Set());
   const [localServings, setLocalServings] = useState<Record<string, number>>({});
+  const supplementsRef = useRef<Supplement[]>([]);
 
   // Hydrate takenIds from localStorage on mount
   useEffect(() => {
@@ -65,7 +66,9 @@ export function useSupplements() {
     if (stored) {
       try {
         setTakenIds(new Set(JSON.parse(stored)));
-      } catch { /* ignore corrupt data */ }
+      } catch {
+        // ignore corrupt data
+      }
     }
   }, [user]);
 
@@ -96,61 +99,63 @@ export function useSupplements() {
         servingsLeft: localServings[row.id] ?? row.servings_left,
       }));
 
+  // Keep ref in sync for use in callbacks
+  supplementsRef.current = supplements;
+
   const toggleTaken = useCallback((id: string) => {
+    const sups = supplementsRef.current;
+    const sup = sups.find((s) => s.id === id);
+    if (!sup) return;
+
     setTakenIds((prev) => {
       const next = new Set(prev);
       const wasTaken = next.has(id);
+
       if (wasTaken) {
         next.delete(id);
-        setLocalServings((ls) => {
-          const sup = supplements.find((s) => s.id === id);
-          if (!sup) return ls;
-          const newVal = Math.min(sup.totalServings, (ls[id] ?? sup.servingsLeft) + 1);
-          // Persist to DB
-          if (!useFallback) {
-            supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
-              .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
-          }
-          return { ...ls, [id]: newVal };
-        });
       } else {
         next.add(id);
-        setLocalServings((ls) => {
-          const sup = supplements.find((s) => s.id === id);
-          if (!sup) return ls;
-          const newVal = Math.max(0, (ls[id] ?? sup.servingsLeft) - 1);
-          // Persist to DB
-          if (!useFallback) {
-            supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
-              .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
-          }
-          return { ...ls, [id]: newVal };
-        });
-        const sup = supplements.find((s) => s.id === id);
-        if (sup) toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
       }
 
-      // Persist taken set to localStorage
+      // Persist to localStorage
       if (user) {
         localStorage.setItem(getTodayKey(user.id), JSON.stringify([...next]));
       }
 
       return next;
     });
-  }, [supplements, useFallback, user]);
+
+    // Update servings separately (not nested inside setTakenIds)
+    const wasTaken = takenIds.has(id);
+    if (wasTaken) {
+      const newVal = Math.min(sup.totalServings, (localServings[id] ?? sup.servingsLeft) + 1);
+      setLocalServings((ls) => ({ ...ls, [id]: newVal }));
+      if (!useFallback) {
+        supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
+          .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
+      }
+    } else {
+      const newVal = Math.max(0, (localServings[id] ?? sup.servingsLeft) - 1);
+      setLocalServings((ls) => ({ ...ls, [id]: newVal }));
+      if (!useFallback) {
+        supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
+          .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
+      }
+      toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
+    }
+  }, [user, useFallback, takenIds, localServings]);
 
   const refillStock = useCallback((id: string) => {
-    const sup = supplements.find((s) => s.id === id);
+    const sup = supplementsRef.current.find((s) => s.id === id);
     if (sup) {
       setLocalServings((ls) => ({ ...ls, [id]: sup.totalServings }));
       toast({ title: "Stok Yenilendi 📦", description: `${sup.name} stoğu yenilendi.` });
-      // Persist to DB
       if (!useFallback) {
         supabase.from("assigned_supplements").update({ servings_left: sup.totalServings }).eq("id", id)
           .then(({ error }) => { if (error) console.error("Stock refill failed:", error); });
       }
     }
-  }, [supplements, useFallback]);
+  }, [useFallback]);
 
   return { supplements, isLoading: isLoading && !!user, toggleTaken, refillStock, useFallback };
 }
