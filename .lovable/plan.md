@@ -1,28 +1,56 @@
 
 
-# Fix: Revert Over-Aggressive CSS (Black Screen Scanner)
+# Plan: Supplements Data Binding (Mock to Supabase)
+
+## Summary
+Replace hardcoded supplement mock data with a `useSupplements` hook that fetches from the existing `assigned_supplements` table, with graceful fallback to mock data. Zero visual changes.
+
+## Current State
+- `assigned_supplements` table exists in Supabase with columns: `id`, `athlete_id`, `coach_id`, `name_and_dosage`, `is_active`, `source_insight_id`, `created_at`
+- RLS policies already configured (athletes see own, coaches manage)
+- `Beslenme.tsx` imports mock data from `mockData.ts` and initializes local state
+- `SupplementTracker.tsx` expects: `id`, `name`, `dosage`, `timing`, `servingsLeft`, `totalServings`, `takenToday`, `icon`
 
 ## Problem
-`[&>div]:!bg-black` paints a solid black background over the library's internal wrapper div, hiding the video element. `[&_video]:!absolute` also breaks the library's layout flow.
+The DB table only has `name_and_dosage` (a single text field). It lacks `timing`, `icon`, `servings_left`, `total_servings` columns needed for the tracker UI.
 
-## Fix (1 file)
+## Implementation
 
-### `src/components/BarcodeCameraScanner.tsx` — Line 146
+### Step 1: Migrate `assigned_supplements` table (add missing columns)
 
-Replace the current `className` with:
+Add columns to support the tracker UI:
+- `dosage` (text, nullable) -- e.g. "5g"
+- `timing` (text, default "Sabah") -- e.g. "Antrenman Sonrası"
+- `icon` (text, default "💊")
+- `servings_left` (integer, default 30)
+- `total_servings` (integer, default 30)
 
-```tsx
-className="absolute inset-0 z-0 bg-black overflow-hidden flex items-center justify-center [&_div]:!border-none [&_div]:!shadow-none [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_canvas]:!hidden"
-```
+Keep `name_and_dosage` for backward compatibility but use a separate `dosage` column going forward.
 
-**What changed:**
-- Removed `[&>div]:!bg-black` — was painting over the video
-- Removed `[&_video]:!absolute [&_video]:!top-0 [&_video]:!left-0` — was breaking library's DOM flow
-- Removed `[&>div]:!h-full [&>div]:!w-full` — unnecessary with flex centering
-- Added `flex items-center justify-center` — centers the video naturally
-- Added `[&_div]:!shadow-none` — removes any library shadow artifacts
-- Kept `bg-black` on the parent container only (safe)
-- Kept `[&_video]:!object-cover` for mobile full-screen fill
+### Step 2: Create `src/hooks/useSupplements.ts`
 
-Single line change, no other files affected.
+- Fetch from `assigned_supplements` where `athlete_id = auth.uid()` and `is_active = true`
+- Parse `name_and_dosage` to extract name (split on first comma or use full string as name)
+- Map DB rows to the `Supplement` interface
+- Track `takenToday` in local state (client-side toggle, not persisted yet)
+- Fallback to mock data if query fails or user not authenticated
+- Expose: `supplements`, `isLoading`, `toggleTaken(id)`, `refillStock(id)`
+
+### Step 3: Update `src/pages/Beslenme.tsx`
+
+- Replace `import { assignedSupplements }` and local `useState<Supplement[]>` with `useSupplements()`
+- Wire `handleToggleSupplement` and `handleRefillSupplement` to hook methods
+- Add skeleton loading state in the supplements tab
+- Add empty state when no supplements assigned
+
+### Step 4: Add empty state + loading skeleton
+
+- Loading: 3-4 skeleton cards matching card height
+- Empty: centered icon + "Koçunuz henüz bir takviye programı atamadı." message in dark theme style
+
+### Files Changed
+1. **New migration** -- ALTER TABLE `assigned_supplements` ADD COLUMNS
+2. **New file**: `src/hooks/useSupplements.ts`
+3. **Modified**: `src/pages/Beslenme.tsx` (replace mock data with hook)
+4. **No changes** to `SupplementTracker.tsx` (UI preserved exactly)
 
