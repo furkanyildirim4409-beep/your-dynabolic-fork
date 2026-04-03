@@ -573,49 +573,6 @@ const Profil = () => {
         <TransformationTimeline />
       </motion.div>
 
-      {/* Body Scan Upload Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Camera className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            YENİ FOTOĞRAF EKLE
-          </h2>
-        </div>
-        
-        <p className="text-muted-foreground text-sm mb-4">
-          İlerlemenizi takip etmek için güncel vücut fotoğraflarınızı ekleyin.
-        </p>
-        
-        {isOffline ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                disabled
-                className="w-full h-12 font-display opacity-50 cursor-not-allowed"
-              >
-                <WifiOff className="w-5 h-5 mr-2" />
-                FOTOĞRAF YÜKLE
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>İnternet bağlantısı gerekli</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button 
-            onClick={() => setShowBodyScan(true)}
-            className="w-full h-12 font-display neon-glow-sm"
-          >
-            <Camera className="w-5 h-5 mr-2" />
-            FOTOĞRAF YÜKLE
-          </Button>
-        )}
-      </motion.div>
 
       {/* Bloodwork Upload Section */}
       <motion.div
