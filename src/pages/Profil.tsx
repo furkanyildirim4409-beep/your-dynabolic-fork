@@ -56,6 +56,32 @@ const Profil = () => {
   const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
   const { latest: latestMeasurement } = useBodyMeasurements();
 
+  // Dynamic stats from DB
+  const { data: workoutCount } = useQuery({
+    queryKey: ["completed-workout-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("assigned_workouts")
+        .select("*", { count: "exact", head: true })
+        .eq("athlete_id", user!.id)
+        .eq("status", "completed");
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+
+  const { data: badgeCount } = useQuery({
+    queryKey: ["badge-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("athlete_badges")
+        .select("*", { count: "exact", head: true })
+        .eq("athlete_id", user!.id);
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+
   useEffect(() => {
     if (searchParams.get("showSummary") === "true") {
       triggerRecap();
