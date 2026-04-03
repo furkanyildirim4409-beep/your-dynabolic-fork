@@ -177,7 +177,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             {/* html5-qrcode renders video here */}
             <div
               id={containerIdRef.current}
-              className="absolute inset-0 z-0 bg-black overflow-hidden flex flex-col [&>div]:!h-[100dvh] [&>div]:!w-full [&>div]:!border-none [&>div]:!shadow-none [&_video]:!absolute [&_video]:!inset-0 [&_video]:!h-full [&_video]:!w-full [&_video]:!object-cover [&_canvas]:!hidden"
+              className="absolute inset-0 z-0 bg-black overflow-hidden [&_div]:!bg-transparent [&_div]:!border-none [&_video]:!absolute [&_video]:!top-0 [&_video]:!left-0 [&_video]:!w-full [&_video]:!h-[100dvh] [&_video]:!max-w-none [&_video]:!object-cover [&_canvas]:!hidden"
             />
 
             {/* Dark overlay with cutout illusion */}
