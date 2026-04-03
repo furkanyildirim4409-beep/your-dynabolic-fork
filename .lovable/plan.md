@@ -1,56 +1,61 @@
 
 
-# Plan: Supplements Data Binding (Mock to Supabase)
-
-## Summary
-Replace hardcoded supplement mock data with a `useSupplements` hook that fetches from the existing `assigned_supplements` table, with graceful fallback to mock data. Zero visual changes.
-
-## Current State
-- `assigned_supplements` table exists in Supabase with columns: `id`, `athlete_id`, `coach_id`, `name_and_dosage`, `is_active`, `source_insight_id`, `created_at`
-- RLS policies already configured (athletes see own, coaches manage)
-- `Beslenme.tsx` imports mock data from `mockData.ts` and initializes local state
-- `SupplementTracker.tsx` expects: `id`, `name`, `dosage`, `timing`, `servingsLeft`, `totalServings`, `takenToday`, `icon`
+# Fix: Supplement State Persistence (DB + LocalStorage)
 
 ## Problem
-The DB table only has `name_and_dosage` (a single text field). It lacks `timing`, `icon`, `servings_left`, `total_servings` columns needed for the tracker UI.
+`toggleTaken` and `refillStock` only update React state — everything resets on page reload.
 
-## Implementation
+## Solution (1 file: `src/hooks/useSupplements.ts`)
 
-### Step 1: Migrate `assigned_supplements` table (add missing columns)
+### Change 1: LocalStorage for daily "taken" checklist
+- Build a date-scoped key: `supplements_taken_${userId}_${YYYY-MM-DD}`
+- On mount (`useEffect`), read today's key → initialize `takenIds`
+- On every `toggleTaken`, write updated set to localStorage
+- No cleanup needed for old keys (they're naturally ignored by date mismatch)
 
-Add columns to support the tracker UI:
-- `dosage` (text, nullable) -- e.g. "5g"
-- `timing` (text, default "Sabah") -- e.g. "Antrenman Sonrası"
-- `icon` (text, default "💊")
-- `servings_left` (integer, default 30)
-- `total_servings` (integer, default 30)
+### Change 2: Persist `servings_left` to Supabase
+- In `toggleTaken` (marking as taken): after optimistic UI update, fire `supabase.from("assigned_supplements").update({ servings_left: newValue }).eq("id", id)` — only when NOT using fallback data
+- In `toggleTaken` (un-marking): same pattern, increment servings_left back
+- In `refillStock`: after optimistic update, fire `supabase.from("assigned_supplements").update({ servings_left: totalServings }).eq("id", id)`
 
-Keep `name_and_dosage` for backward compatibility but use a separate `dosage` column going forward.
+### Change 3: Sync localStorage in toggleTaken
+- After updating the `takenIds` set, serialize to localStorage immediately using a helper function
 
-### Step 2: Create `src/hooks/useSupplements.ts`
+### Implementation Detail
 
-- Fetch from `assigned_supplements` where `athlete_id = auth.uid()` and `is_active = true`
-- Parse `name_and_dosage` to extract name (split on first comma or use full string as name)
-- Map DB rows to the `Supplement` interface
-- Track `takenToday` in local state (client-side toggle, not persisted yet)
-- Fallback to mock data if query fails or user not authenticated
-- Expose: `supplements`, `isLoading`, `toggleTaken(id)`, `refillStock(id)`
+```typescript
+// Helper
+function getTodayKey(userId: string) {
+  return `supplements_taken_${userId}_${new Date().toISOString().split("T")[0]}`;
+}
 
-### Step 3: Update `src/pages/Beslenme.tsx`
+// useEffect to hydrate takenIds from localStorage on mount
+useEffect(() => {
+  if (!user) return;
+  const stored = localStorage.getItem(getTodayKey(user.id));
+  if (stored) {
+    try { setTakenIds(new Set(JSON.parse(stored))); } catch {}
+  }
+}, [user]);
 
-- Replace `import { assignedSupplements }` and local `useState<Supplement[]>` with `useSupplements()`
-- Wire `handleToggleSupplement` and `handleRefillSupplement` to hook methods
-- Add skeleton loading state in the supplements tab
-- Add empty state when no supplements assigned
+// In toggleTaken: after computing `next` set
+const key = getTodayKey(user.id);
+localStorage.setItem(key, JSON.stringify([...next]));
 
-### Step 4: Add empty state + loading skeleton
-
-- Loading: 3-4 skeleton cards matching card height
-- Empty: centered icon + "Koçunuz henüz bir takviye programı atamadı." message in dark theme style
+// DB mutation (fire-and-forget, non-blocking)
+if (!useFallback) {
+  supabase.from("assigned_supplements")
+    .update({ servings_left: newServingsLeft })
+    .eq("id", id)
+    .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
+}
+```
 
 ### Files Changed
-1. **New migration** -- ALTER TABLE `assigned_supplements` ADD COLUMNS
-2. **New file**: `src/hooks/useSupplements.ts`
-3. **Modified**: `src/pages/Beslenme.tsx` (replace mock data with hook)
-4. **No changes** to `SupplementTracker.tsx` (UI preserved exactly)
+1. `src/hooks/useSupplements.ts` — add localStorage hydration, DB mutations in toggleTaken + refillStock
+
+No migration needed — we're updating existing `servings_left` column values via the client SDK (RLS already allows athlete reads; we need to verify update policy exists).
+
+### RLS Check
+Need to verify athletes can UPDATE their own `assigned_supplements.servings_left`. If no update policy exists, we'll add one scoped to the athlete updating only `servings_left` on their own rows.
 
