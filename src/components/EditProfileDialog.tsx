@@ -82,7 +82,7 @@ const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
         .update({
           full_name: fullName.trim() || null,
           phone_number: phoneNumber.trim() || null,
-        } as any)
+        })
         .eq("id", user.id);
       if (error) throw error;
       await refreshProfile();
