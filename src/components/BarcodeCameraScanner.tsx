@@ -68,8 +68,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             Html5QrcodeSupportedFormats.UPC_E,
           ],
           verbose: false,
-          disableFlip: true,
-        });
+        } as any);
         scannerRef.current = scanner;
 
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
