@@ -71,33 +71,60 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         });
         scannerRef.current = scanner;
 
-        const isMobile = /Android|iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
+        const isAndroid = /Android/i.test(navigator.userAgent);
 
-        await scanner.start(
-          {
-            facingMode: "environment",
-            ...(isMobile && {
-              aspectRatio: { ideal: 9 / 16 },
-            }),
-          },
-          {
-            fps: 15,
-          },
-          (decodedText) => {
-            if (hasDetectedRef.current) return;
-            hasDetectedRef.current = true;
-            if (navigator.vibrate) navigator.vibrate(100);
-            stopScanner().then(() => onDetectedRef.current(decodedText));
-          },
-          () => {}
-        );
+        const successCb = (decodedText: string) => {
+          if (hasDetectedRef.current) return;
+          hasDetectedRef.current = true;
+          if (navigator.vibrate) navigator.vibrate(100);
+          stopScanner().then(() => onDetectedRef.current(decodedText));
+        };
+        const errorCb = () => {};
+        const scanConfig = { fps: isIOS ? 10 : 15 };
+
+        // iOS Safari is strict with constraints — try plain facingMode first,
+        // then fall back to no constraints at all.
+        const cameraConfigs: any[] = [
+          { facingMode: "environment" },
+          ...(isAndroid ? [{ facingMode: "environment", aspectRatio: { ideal: 9 / 16 } }] : []),
+        ];
+
+        // On Android, prefer the aspectRatio config first
+        if (isAndroid) cameraConfigs.reverse();
+
+        let started = false;
+        for (const camCfg of cameraConfigs) {
+          if (cancelled) return;
+          try {
+            await scanner.start(camCfg, scanConfig, successCb, errorCb);
+            started = true;
+            break;
+          } catch (attemptErr: any) {
+            console.warn("[BarcodeCameraScanner] attempt failed with config:", camCfg, attemptErr?.name, attemptErr?.message);
+            // Reset scanner state before retry
+            try { await scanner.stop(); } catch { /* ignore */ }
+          }
+        }
+
+        // Last resort: try with just `true` (any available camera)
+        if (!started && !cancelled) {
+          try {
+            await scanner.start({ facingMode: { exact: "environment" } } as any, scanConfig, successCb, errorCb);
+            started = true;
+          } catch (lastErr: any) {
+            console.error("[BarcodeCameraScanner] all attempts failed:", lastErr?.name, lastErr?.message);
+            throw lastErr;
+          }
+        }
       } catch (err: any) {
         if (cancelled) return;
+        console.error("[BarcodeCameraScanner] fatal:", err?.name, err?.message, err);
         const name = err?.name || "";
         if (name === "NotAllowedError" || name === "NotFoundError") {
           toast.error("Kamera izni verilmedi veya kamera bulunamadı.");
         } else {
-          toast.error("Kamera başlatılamadı.");
+          toast.error(`Kamera başlatılamadı: ${err?.message || "Bilinmeyen hata"}`);
         }
         onCloseRef.current();
       } finally {
