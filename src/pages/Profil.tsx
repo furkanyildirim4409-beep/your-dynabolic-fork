@@ -637,6 +637,9 @@ const Profil = () => {
         />
       )}
 
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
+
       {/* Weekly Recap Modal (deep link) */}
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
 
