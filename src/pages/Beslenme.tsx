@@ -27,8 +27,8 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import SupplementTracker from "@/components/SupplementTracker";
-import { assignedSupplements as initialSupplements } from "@/lib/mockData";
-import type { Supplement } from "@/components/SupplementTracker";
+import { useSupplements } from "@/hooks/useSupplements";
+import { Skeleton } from "@/components/ui/skeleton";
 import { useAuth } from "@/context/AuthContext";
 
 import { useMacros } from "@/hooks/useMacros";
@@ -889,18 +889,7 @@ const Beslenme = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFood, setSelectedFood] = useState<ApiFoodItem | null>(null);
   const [activeTab, setActiveTab] = useState("meals");
-  const [supplements, setSupplements] = useState<Supplement[]>(
-    initialSupplements.map((s) => ({
-      id: s.id,
-      name: s.name,
-      dosage: s.dosage,
-      timing: s.timing,
-      servingsLeft: s.servingsLeft,
-      totalServings: s.totalServings,
-      takenToday: s.takenToday,
-      icon: s.icon,
-    })),
-  );
+  const { supplements, isLoading: supplementsLoading, toggleTaken: handleToggleSupplement, refillStock: handleRefillSupplement } = useSupplements();
 
   // Group planned foods by slot id
   const plannedBySlot = useMemo(() => {
@@ -993,31 +982,6 @@ const Beslenme = () => {
     }
   };
 
-  const handleToggleSupplement = (id: string) => {
-    setSupplements((current) =>
-      current.map((sup) => {
-        if (sup.id !== id) return sup;
-        const newTakenToday = !sup.takenToday;
-        const newServingsLeft = newTakenToday
-          ? Math.max(0, sup.servingsLeft - 1)
-          : Math.min(sup.totalServings, sup.servingsLeft + 1);
-        if (newTakenToday) {
-          toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
-        }
-        return { ...sup, takenToday: newTakenToday, servingsLeft: newServingsLeft };
-      }),
-    );
-  };
-
-  const handleRefillSupplement = (id: string) => {
-    setSupplements((current) =>
-      current.map((sup) => {
-        if (sup.id !== id) return sup;
-        toast({ title: "Stok Yenilendi 📦", description: `${sup.name} stoğu yenilendi.` });
-        return { ...sup, servingsLeft: sup.totalServings };
-      }),
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background px-4 pt-6 pb-32">
@@ -1175,11 +1139,40 @@ const Beslenme = () => {
 
           {/* Supplements Tab Content */}
           <TabsContent value="supplements" className="mt-4">
-            <SupplementTracker
-              supplements={supplements}
-              onToggleTaken={handleToggleSupplement}
-              onRefill={handleRefillSupplement}
-            />
+            {supplementsLoading ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                </div>
+                <Skeleton className="h-1.5 w-full rounded-full" />
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : supplements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+                  <Pill className="w-8 h-8 text-muted-foreground/60" />
+                </div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">Takviye Programı Yok</h3>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  Koçunuz henüz bir takviye programı atamadı.
+                </p>
+              </div>
+            ) : (
+              <SupplementTracker
+                supplements={supplements}
+                onToggleTaken={handleToggleSupplement}
+                onRefill={handleRefillSupplement}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
