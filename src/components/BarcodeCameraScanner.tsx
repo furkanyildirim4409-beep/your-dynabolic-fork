@@ -135,12 +135,18 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         }
       } catch (err: any) {
         if (cancelled) return;
-        console.error("[BarcodeCameraScanner] fatal:", err?.name, err?.message, err);
-        const name = err?.name || "";
-        if (name === "NotAllowedError" || name === "NotFoundError") {
+        const errStr = String(err?.message || err || "");
+        console.error("[BarcodeCameraScanner] fatal:", errStr);
+        const isPermissionOrNotFound =
+          errStr.includes("NotAllowedError") ||
+          errStr.includes("NotFoundError") ||
+          errStr.includes("Permission") ||
+          err?.name === "NotAllowedError" ||
+          err?.name === "NotFoundError";
+        if (isPermissionOrNotFound) {
           toast.error("Kamera izni verilmedi veya kamera bulunamadı.");
         } else {
-          toast.error(`Kamera başlatılamadı: ${err?.message || "Bilinmeyen hata"}`);
+          toast.error(`Kamera başlatılamadı: ${errStr || "Bilinmeyen hata"}`);
         }
         onCloseRef.current();
       } finally {
