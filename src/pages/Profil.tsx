@@ -136,12 +136,6 @@ const Profil = () => {
     { label: "TDEE", value: calculatedTDEE ? `${calculatedTDEE.toLocaleString()} kcal` : "—", highlight: true, tooltip: "BMR × aktivite çarpanı ile günlük kalori ihtiyacı" },
   ];
 
-  const recoveryZones = [
-    { zone: "Göğüs", status: "Toparlanma Gerekiyor", severity: "high" },
-    { zone: "Omuz", status: "Toparlanma Gerekiyor", severity: "high" },
-    { zone: "Bacak", status: "Hazır", severity: "ok" },
-    { zone: "Sırt", status: "Yarın Hazır", severity: "medium" },
-  ];
 
   const handleSettingsAction = async (action: string) => {
     if (action === "logout") {
