@@ -247,22 +247,32 @@ const Profil = () => {
           />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-display text-xl text-foreground">{profile?.full_name || "SPORCU"}</h3>
-            <Shield className="w-4 h-4 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-xl text-foreground">{profile?.full_name || "SPORCU"}</h3>
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8"
+              onClick={() => setShowEditProfile(true)}
+            >
+              <Pencil className="w-4 h-4 text-muted-foreground" />
+            </Button>
           </div>
           <p className="text-primary text-sm font-medium">{profile?.email}</p>
           <div className="flex gap-6 mt-3">
             <div className="text-center">
-              <p className="font-display text-lg text-primary">847</p>
+              <p className="font-display text-lg text-primary">{workoutCount ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Antrenman</p>
             </div>
             <div className="text-center">
-              <p className="font-display text-lg text-foreground">156</p>
+              <p className="font-display text-lg text-foreground">{profile?.streak ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Gün Serisi</p>
             </div>
             <div className="text-center">
-              <p className="font-display text-lg text-foreground">12</p>
+              <p className="font-display text-lg text-foreground">{badgeCount ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Rozet</p>
             </div>
           </div>
