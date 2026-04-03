@@ -68,7 +68,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             Html5QrcodeSupportedFormats.UPC_E,
           ],
           verbose: false,
-        });
+        } as any);
         scannerRef.current = scanner;
 
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -177,7 +177,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             {/* html5-qrcode renders video here */}
             <div
               id={containerIdRef.current}
-              className="absolute inset-0 z-0 bg-black overflow-hidden flex items-center justify-center [&_div]:!border-none [&_div]:!shadow-none [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_canvas]:!hidden"
+              className="absolute inset-0 z-0 bg-black overflow-hidden flex flex-col [&>div]:!h-[100dvh] [&>div]:!w-full [&>div]:!border-none [&>div]:!shadow-none [&_video]:!absolute [&_video]:!inset-0 [&_video]:!h-full [&_video]:!w-full [&_video]:!object-cover [&_canvas]:!hidden"
             />
 
             {/* Dark overlay with cutout illusion */}
