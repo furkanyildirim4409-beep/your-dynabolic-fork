@@ -68,6 +68,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             Html5QrcodeSupportedFormats.UPC_E,
           ],
           verbose: false,
+          disableFlip: true,
         } as any);
         scannerRef.current = scanner;
 
@@ -83,14 +84,11 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         const errorCb = () => {};
         const scanConfig = { fps: isIOS ? 10 : 15 };
 
-        // iOS Safari is strict with constraints — try plain facingMode first,
-        // then fall back to no constraints at all.
+        // Camera configs: try simple facingMode first, then aspectRatio on Android
         const cameraConfigs: any[] = [
           { facingMode: "environment" },
           ...(isAndroid ? [{ facingMode: "environment", aspectRatio: { ideal: 9 / 16 } }] : []),
         ];
-
-        // On Android, prefer the aspectRatio config first
         if (isAndroid) cameraConfigs.reverse();
 
         let started = false;
@@ -101,30 +99,54 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             started = true;
             break;
           } catch (attemptErr: any) {
-            console.warn("[BarcodeCameraScanner] attempt failed with config:", camCfg, attemptErr?.name, attemptErr?.message);
-            // Reset scanner state before retry
+            console.warn("[BarcodeCameraScanner] attempt failed:", camCfg, String(attemptErr?.message || attemptErr));
             try { await scanner.stop(); } catch { /* ignore */ }
           }
         }
 
-        // Last resort: try with just `true` (any available camera)
+        // Last resort: enumerate cameras and use deviceId directly
         if (!started && !cancelled) {
           try {
-            await scanner.start({ facingMode: { exact: "environment" } } as any, scanConfig, successCb, errorCb);
+            const cameras = await Html5Qrcode.getCameras();
+            if (cameras && cameras.length > 0) {
+              const backCam = cameras.find(c =>
+                /back|rear|arka|environment/i.test(c.label)
+              ) || cameras[cameras.length - 1];
+              await scanner.start(
+                { deviceId: { exact: backCam.id } },
+                scanConfig, successCb, errorCb
+              );
+              started = true;
+            }
+          } catch (enumErr: any) {
+            console.error("[BarcodeCameraScanner] enumeration fallback failed:", String(enumErr?.message || enumErr));
+          }
+        }
+
+        // Absolute last resort: any camera
+        if (!started && !cancelled) {
+          try {
+            await scanner.start(true as any, scanConfig, successCb, errorCb);
             started = true;
           } catch (lastErr: any) {
-            console.error("[BarcodeCameraScanner] all attempts failed:", lastErr?.name, lastErr?.message);
+            console.error("[BarcodeCameraScanner] all attempts failed:", String(lastErr?.message || lastErr));
             throw lastErr;
           }
         }
       } catch (err: any) {
         if (cancelled) return;
-        console.error("[BarcodeCameraScanner] fatal:", err?.name, err?.message, err);
-        const name = err?.name || "";
-        if (name === "NotAllowedError" || name === "NotFoundError") {
+        const errStr = String(err?.message || err || "");
+        console.error("[BarcodeCameraScanner] fatal:", errStr);
+        const isPermissionOrNotFound =
+          errStr.includes("NotAllowedError") ||
+          errStr.includes("NotFoundError") ||
+          errStr.includes("Permission") ||
+          err?.name === "NotAllowedError" ||
+          err?.name === "NotFoundError";
+        if (isPermissionOrNotFound) {
           toast.error("Kamera izni verilmedi veya kamera bulunamadı.");
         } else {
-          toast.error(`Kamera başlatılamadı: ${err?.message || "Bilinmeyen hata"}`);
+          toast.error(`Kamera başlatılamadı: ${errStr || "Bilinmeyen hata"}`);
         }
         onCloseRef.current();
       } finally {
