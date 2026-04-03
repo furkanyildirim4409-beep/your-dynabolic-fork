@@ -44,6 +44,7 @@ const Profil = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
