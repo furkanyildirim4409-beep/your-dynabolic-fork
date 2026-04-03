@@ -68,8 +68,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             Html5QrcodeSupportedFormats.UPC_E,
           ],
           verbose: false,
-          disableFlip: true,
-        } as any);
+        });
         scannerRef.current = scanner;
 
         const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
@@ -84,11 +83,14 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         const errorCb = () => {};
         const scanConfig = { fps: isIOS ? 10 : 15 };
 
-        // Camera configs: try simple facingMode first, then aspectRatio on Android
+        // iOS Safari is strict with constraints — try plain facingMode first,
+        // then fall back to no constraints at all.
         const cameraConfigs: any[] = [
           { facingMode: "environment" },
           ...(isAndroid ? [{ facingMode: "environment", aspectRatio: { ideal: 9 / 16 } }] : []),
         ];
+
+        // On Android, prefer the aspectRatio config first
         if (isAndroid) cameraConfigs.reverse();
 
         let started = false;
@@ -99,54 +101,30 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             started = true;
             break;
           } catch (attemptErr: any) {
-            console.warn("[BarcodeCameraScanner] attempt failed:", camCfg, String(attemptErr?.message || attemptErr));
+            console.warn("[BarcodeCameraScanner] attempt failed with config:", camCfg, attemptErr?.name, attemptErr?.message);
+            // Reset scanner state before retry
             try { await scanner.stop(); } catch { /* ignore */ }
           }
         }
 
-        // Last resort: enumerate cameras and use deviceId directly
+        // Last resort: try with just `true` (any available camera)
         if (!started && !cancelled) {
           try {
-            const cameras = await Html5Qrcode.getCameras();
-            if (cameras && cameras.length > 0) {
-              const backCam = cameras.find(c =>
-                /back|rear|arka|environment/i.test(c.label)
-              ) || cameras[cameras.length - 1];
-              await scanner.start(
-                { deviceId: { exact: backCam.id } },
-                scanConfig, successCb, errorCb
-              );
-              started = true;
-            }
-          } catch (enumErr: any) {
-            console.error("[BarcodeCameraScanner] enumeration fallback failed:", String(enumErr?.message || enumErr));
-          }
-        }
-
-        // Absolute last resort: any camera
-        if (!started && !cancelled) {
-          try {
-            await scanner.start(true as any, scanConfig, successCb, errorCb);
+            await scanner.start({ facingMode: { exact: "environment" } } as any, scanConfig, successCb, errorCb);
             started = true;
           } catch (lastErr: any) {
-            console.error("[BarcodeCameraScanner] all attempts failed:", String(lastErr?.message || lastErr));
+            console.error("[BarcodeCameraScanner] all attempts failed:", lastErr?.name, lastErr?.message);
             throw lastErr;
           }
         }
       } catch (err: any) {
         if (cancelled) return;
-        const errStr = String(err?.message || err || "");
-        console.error("[BarcodeCameraScanner] fatal:", errStr);
-        const isPermissionOrNotFound =
-          errStr.includes("NotAllowedError") ||
-          errStr.includes("NotFoundError") ||
-          errStr.includes("Permission") ||
-          err?.name === "NotAllowedError" ||
-          err?.name === "NotFoundError";
-        if (isPermissionOrNotFound) {
+        console.error("[BarcodeCameraScanner] fatal:", err?.name, err?.message, err);
+        const name = err?.name || "";
+        if (name === "NotAllowedError" || name === "NotFoundError") {
           toast.error("Kamera izni verilmedi veya kamera bulunamadı.");
         } else {
-          toast.error(`Kamera başlatılamadı: ${errStr || "Bilinmeyen hata"}`);
+          toast.error(`Kamera başlatılamadı: ${err?.message || "Bilinmeyen hata"}`);
         }
         onCloseRef.current();
       } finally {
@@ -199,7 +177,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
             {/* html5-qrcode renders video here */}
             <div
               id={containerIdRef.current}
-              className="absolute inset-0 z-0 bg-black overflow-hidden [&_div]:!bg-transparent [&_div]:!border-none [&_video]:!absolute [&_video]:!top-0 [&_video]:!left-0 [&_video]:!w-full [&_video]:!h-[100dvh] [&_video]:!max-w-none [&_video]:!object-cover [&_canvas]:!hidden"
+              className="absolute inset-0 z-0 bg-black overflow-hidden flex items-center justify-center [&_div]:!border-none [&_div]:!shadow-none [&_video]:!w-full [&_video]:!h-full [&_video]:!object-cover [&_canvas]:!hidden"
             />
 
             {/* Dark overlay with cutout illusion */}
