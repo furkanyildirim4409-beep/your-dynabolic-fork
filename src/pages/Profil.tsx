@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import WeeklyRecapModal from "@/components/WeeklyRecapModal";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
@@ -42,6 +44,7 @@ const Profil = () => {
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
+  const [showEditProfile, setShowEditProfile] = useState(false);
   const [avatarSrc, setAvatarSrc] = useState<string | null>(null);
   const [showCropper, setShowCropper] = useState(false);
   const [avatarUploading, setAvatarUploading] = useState(false);
@@ -52,6 +55,32 @@ const Profil = () => {
   const [searchParams, setSearchParams] = useSearchParams();
   const { showRecap, recapData, triggerRecap, dismissRecap } = useWeeklyRecap();
   const { latest: latestMeasurement } = useBodyMeasurements();
+
+  // Dynamic stats from DB
+  const { data: workoutCount } = useQuery({
+    queryKey: ["completed-workout-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("assigned_workouts")
+        .select("*", { count: "exact", head: true })
+        .eq("athlete_id", user!.id)
+        .eq("status", "completed");
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
+
+  const { data: badgeCount } = useQuery({
+    queryKey: ["badge-count", user?.id],
+    queryFn: async () => {
+      const { count } = await supabase
+        .from("athlete_badges")
+        .select("*", { count: "exact", head: true })
+        .eq("athlete_id", user!.id);
+      return count ?? 0;
+    },
+    enabled: !!user,
+  });
 
   useEffect(() => {
     if (searchParams.get("showSummary") === "true") {
@@ -107,12 +136,6 @@ const Profil = () => {
     { label: "TDEE", value: calculatedTDEE ? `${calculatedTDEE.toLocaleString()} kcal` : "—", highlight: true, tooltip: "BMR × aktivite çarpanı ile günlük kalori ihtiyacı" },
   ];
 
-  const recoveryZones = [
-    { zone: "Göğüs", status: "Toparlanma Gerekiyor", severity: "high" },
-    { zone: "Omuz", status: "Toparlanma Gerekiyor", severity: "high" },
-    { zone: "Bacak", status: "Hazır", severity: "ok" },
-    { zone: "Sırt", status: "Yarın Hazır", severity: "medium" },
-  ];
 
   const handleSettingsAction = async (action: string) => {
     if (action === "logout") {
@@ -224,22 +247,32 @@ const Profil = () => {
           />
         </div>
         <div className="flex-1">
-          <div className="flex items-center gap-2">
-            <h3 className="font-display text-xl text-foreground">{profile?.full_name || "SPORCU"}</h3>
-            <Shield className="w-4 h-4 text-primary" />
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <h3 className="font-display text-xl text-foreground">{profile?.full_name || "SPORCU"}</h3>
+              <Shield className="w-4 h-4 text-primary" />
+            </div>
+            <Button
+              size="icon"
+              variant="ghost"
+              className="w-8 h-8"
+              onClick={() => setShowEditProfile(true)}
+            >
+              <Pencil className="w-4 h-4 text-muted-foreground" />
+            </Button>
           </div>
           <p className="text-primary text-sm font-medium">{profile?.email}</p>
           <div className="flex gap-6 mt-3">
             <div className="text-center">
-              <p className="font-display text-lg text-primary">847</p>
+              <p className="font-display text-lg text-primary">{workoutCount ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Antrenman</p>
             </div>
             <div className="text-center">
-              <p className="font-display text-lg text-foreground">156</p>
+              <p className="font-display text-lg text-foreground">{profile?.streak ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Gün Serisi</p>
             </div>
             <div className="text-center">
-              <p className="font-display text-lg text-foreground">12</p>
+              <p className="font-display text-lg text-foreground">{badgeCount ?? 0}</p>
               <p className="text-muted-foreground text-[10px]">Rozet</p>
             </div>
           </div>
@@ -466,40 +499,6 @@ const Profil = () => {
         <WearableDeviceSync />
       </motion.div>
 
-      {/* Recovery Zones */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.2 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Target className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            TOPARLANMA BÖLGELERİ
-          </h2>
-        </div>
-
-        <div className="space-y-2">
-          {recoveryZones.map((zone, index) => (
-            <div
-              key={index}
-              className="flex items-center justify-between p-3 bg-secondary/50 rounded-xl"
-            >
-              <span className="text-foreground text-sm">{zone.zone}</span>
-              <span className={`text-xs px-2 py-1 rounded-full ${
-                zone.severity === "high" 
-                  ? "bg-destructive/20 text-destructive" 
-                  : zone.severity === "medium"
-                  ? "bg-yellow-500/20 text-yellow-500"
-                  : "bg-stat-hrv/20 text-stat-hrv"
-              }`}>
-                {zone.status}
-              </span>
-            </div>
-          ))}
-        </div>
-      </motion.div>
 
       {/* Weight History Chart */}
       <motion.div
@@ -574,49 +573,6 @@ const Profil = () => {
         <TransformationTimeline />
       </motion.div>
 
-      {/* Body Scan Upload Section */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.32 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <Camera className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            YENİ FOTOĞRAF EKLE
-          </h2>
-        </div>
-        
-        <p className="text-muted-foreground text-sm mb-4">
-          İlerlemenizi takip etmek için güncel vücut fotoğraflarınızı ekleyin.
-        </p>
-        
-        {isOffline ? (
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button 
-                disabled
-                className="w-full h-12 font-display opacity-50 cursor-not-allowed"
-              >
-                <WifiOff className="w-5 h-5 mr-2" />
-                FOTOĞRAF YÜKLE
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent>
-              <p>İnternet bağlantısı gerekli</p>
-            </TooltipContent>
-          </Tooltip>
-        ) : (
-          <Button 
-            onClick={() => setShowBodyScan(true)}
-            className="w-full h-12 font-display neon-glow-sm"
-          >
-            <Camera className="w-5 h-5 mr-2" />
-            FOTOĞRAF YÜKLE
-          </Button>
-        )}
-      </motion.div>
 
       {/* Bloodwork Upload Section */}
       <motion.div
@@ -680,6 +636,9 @@ const Profil = () => {
           onCropComplete={handleCropComplete}
         />
       )}
+
+      {/* Edit Profile Dialog */}
+      <EditProfileDialog isOpen={showEditProfile} onClose={() => setShowEditProfile(false)} />
 
       {/* Weekly Recap Modal (deep link) */}
       <WeeklyRecapModal isOpen={showRecap} onClose={dismissRecap} data={recapData} />
