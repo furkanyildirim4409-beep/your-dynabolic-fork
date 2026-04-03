@@ -29,7 +29,6 @@ import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover
 import SupplementTracker from "@/components/SupplementTracker";
 import { useSupplements } from "@/hooks/useSupplements";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Pill } from "lucide-react";
 import { useAuth } from "@/context/AuthContext";
 
 import { useMacros } from "@/hooks/useMacros";
