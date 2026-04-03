@@ -1139,11 +1139,40 @@ const Beslenme = () => {
 
           {/* Supplements Tab Content */}
           <TabsContent value="supplements" className="mt-4">
-            <SupplementTracker
-              supplements={supplements}
-              onToggleTaken={handleToggleSupplement}
-              onRefill={handleRefillSupplement}
-            />
+            {supplementsLoading ? (
+              <div className="space-y-4">
+                <div className="flex items-center justify-between">
+                  <div className="flex items-center gap-3">
+                    <Skeleton className="w-10 h-10 rounded-xl" />
+                    <div className="space-y-1.5">
+                      <Skeleton className="h-4 w-40" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                  </div>
+                  <Skeleton className="w-12 h-12 rounded-full" />
+                </div>
+                <Skeleton className="h-1.5 w-full rounded-full" />
+                {[1, 2, 3].map((i) => (
+                  <Skeleton key={i} className="h-28 w-full rounded-xl" />
+                ))}
+              </div>
+            ) : supplements.length === 0 ? (
+              <div className="flex flex-col items-center justify-center py-16 text-center">
+                <div className="w-16 h-16 rounded-2xl bg-muted/50 flex items-center justify-center mb-4">
+                  <Pill className="w-8 h-8 text-muted-foreground/60" />
+                </div>
+                <h3 className="text-sm font-semibold text-foreground mb-1">Takviye Programı Yok</h3>
+                <p className="text-xs text-muted-foreground max-w-[240px]">
+                  Koçunuz henüz bir takviye programı atamadı.
+                </p>
+              </div>
+            ) : (
+              <SupplementTracker
+                supplements={supplements}
+                onToggleTaken={handleToggleSupplement}
+                onRefill={handleRefillSupplement}
+              />
+            )}
           </TabsContent>
         </Tabs>
       </div>
