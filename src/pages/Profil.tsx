@@ -1,10 +1,12 @@
 import { useState, useRef, useEffect } from "react";
 import { useNavigate, useSearchParams } from "react-router-dom";
+import { useQuery } from "@tanstack/react-query";
 import WeeklyRecapModal from "@/components/WeeklyRecapModal";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
+import EditProfileDialog from "@/components/EditProfileDialog";
 import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
