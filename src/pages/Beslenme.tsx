@@ -889,18 +889,7 @@ const Beslenme = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [selectedFood, setSelectedFood] = useState<ApiFoodItem | null>(null);
   const [activeTab, setActiveTab] = useState("meals");
-  const [supplements, setSupplements] = useState<Supplement[]>(
-    initialSupplements.map((s) => ({
-      id: s.id,
-      name: s.name,
-      dosage: s.dosage,
-      timing: s.timing,
-      servingsLeft: s.servingsLeft,
-      totalServings: s.totalServings,
-      takenToday: s.takenToday,
-      icon: s.icon,
-    })),
-  );
+  const { supplements, isLoading: supplementsLoading, toggleTaken: handleToggleSupplement, refillStock: handleRefillSupplement } = useSupplements();
 
   // Group planned foods by slot id
   const plannedBySlot = useMemo(() => {
