@@ -1,61 +1,81 @@
 
 
-# Fix: Supplement State Persistence (DB + LocalStorage)
+# Plan: Profile Data Binding & Edit Dialog
 
-## Problem
-`toggleTaken` and `refillStock` only update React state — everything resets on page reload.
+## Summary
+Remove hardcoded mock data from the profile card, bind real DB values, add an Edit Profile dialog, and clean up deprecated UI sections. One migration, one new component, one file edit.
 
-## Solution (1 file: `src/hooks/useSupplements.ts`)
+## Database Migration
 
-### Change 1: LocalStorage for daily "taken" checklist
-- Build a date-scoped key: `supplements_taken_${userId}_${YYYY-MM-DD}`
-- On mount (`useEffect`), read today's key → initialize `takenIds`
-- On every `toggleTaken`, write updated set to localStorage
-- No cleanup needed for old keys (they're naturally ignored by date mismatch)
+Add `phone_number` column to `profiles` (the only missing column):
+```sql
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number text;
+```
+`avatar_url`, `streak`, `longest_streak` already exist. No `badge_count` column needed — we'll query `athlete_badges` count dynamically.
 
-### Change 2: Persist `servings_left` to Supabase
-- In `toggleTaken` (marking as taken): after optimistic UI update, fire `supabase.from("assigned_supplements").update({ servings_left: newValue }).eq("id", id)` — only when NOT using fallback data
-- In `toggleTaken` (un-marking): same pattern, increment servings_left back
-- In `refillStock`: after optimistic update, fire `supabase.from("assigned_supplements").update({ servings_left: totalServings }).eq("id", id)`
+The `avatars` bucket already exists and is public. No storage changes needed.
 
-### Change 3: Sync localStorage in toggleTaken
-- After updating the `takenIds` set, serialize to localStorage immediately using a helper function
+## File Changes
 
-### Implementation Detail
+### 1. New: `src/components/EditProfileDialog.tsx`
 
+A Dialog (using existing `dialog.tsx` primitives) with:
+- **Avatar upload** — click circular avatar preview, select file, upload to `avatars` bucket at `${user.id}/avatar.jpg`, update `profiles.avatar_url`. Reuse the existing crop flow from `AvatarCropperModal`.
+- **Full Name** field (text input, bound to `full_name`)
+- **Phone Number** field (text input, placeholder "+90 555 123 45 67", bound to `phone_number`)
+- Save button calls `supabase.from("profiles").update(...)` then `refreshProfile()`
+- Uses existing `Dialog`, `DialogContent`, `DialogHeader`, `DialogTitle`, `Input`, `Button`, `Avatar` components
+
+### 2. Modified: `src/pages/Profil.tsx`
+
+**Profile Card (lines 232-246) — Replace hardcoded stats with real data:**
+- "847 Antrenman" → query completed workout count via a small `useQuery` or inline fetch from `assigned_workouts` where `status='completed'`
+- "156 Gün Serisi" → bind to `profile.streak ?? 0`
+- "12 Rozet" → query `athlete_badges` count via `useQuery`
+- Add a pencil/edit icon button (top-right of the card) that opens `EditProfileDialog`
+
+**Remove "Toparlanma Bölgeleri" section (lines 469-502):**
+- Delete the `recoveryZones` array (lines 110-115) and the entire Recovery Zones motion.div
+
+**Remove "Yeni Fotoğraf Ekle" section (lines 577-619):**
+- Delete the entire "YENİ FOTOĞRAF EKLE" card (handled by TransformationTimeline)
+
+**WearableDeviceSync — no change needed:**
+- The existing `WearableDeviceSync.tsx` already uses 🍎 for Apple Health and 💚 for Google Health Connect. These are appropriate. No emoji change required.
+
+### 3. New hook or inline queries
+
+For workout count and badge count, use two small `useQuery` calls inside `Profil.tsx`:
 ```typescript
-// Helper
-function getTodayKey(userId: string) {
-  return `supplements_taken_${userId}_${new Date().toISOString().split("T")[0]}`;
-}
+const { data: workoutCount } = useQuery({
+  queryKey: ["completed-workout-count", user?.id],
+  queryFn: async () => {
+    const { count } = await supabase
+      .from("assigned_workouts")
+      .select("*", { count: "exact", head: true })
+      .eq("athlete_id", user!.id)
+      .eq("status", "completed");
+    return count ?? 0;
+  },
+  enabled: !!user,
+});
 
-// useEffect to hydrate takenIds from localStorage on mount
-useEffect(() => {
-  if (!user) return;
-  const stored = localStorage.getItem(getTodayKey(user.id));
-  if (stored) {
-    try { setTakenIds(new Set(JSON.parse(stored))); } catch {}
-  }
-}, [user]);
-
-// In toggleTaken: after computing `next` set
-const key = getTodayKey(user.id);
-localStorage.setItem(key, JSON.stringify([...next]));
-
-// DB mutation (fire-and-forget, non-blocking)
-if (!useFallback) {
-  supabase.from("assigned_supplements")
-    .update({ servings_left: newServingsLeft })
-    .eq("id", id)
-    .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
-}
+const { data: badgeCount } = useQuery({
+  queryKey: ["badge-count", user?.id],
+  queryFn: async () => {
+    const { count } = await supabase
+      .from("athlete_badges")
+      .select("*", { count: "exact", head: true })
+      .eq("athlete_id", user!.id);
+    return count ?? 0;
+  },
+  enabled: !!user,
+});
 ```
 
-### Files Changed
-1. `src/hooks/useSupplements.ts` — add localStorage hydration, DB mutations in toggleTaken + refillStock
-
-No migration needed — we're updating existing `servings_left` column values via the client SDK (RLS already allows athlete reads; we need to verify update policy exists).
-
-### RLS Check
-Need to verify athletes can UPDATE their own `assigned_supplements.servings_left`. If no update policy exists, we'll add one scoped to the athlete updating only `servings_left` on their own rows.
+## Visual Impact
+- Profile card stats become dynamic (may show 0 for new users — that's correct)
+- Two deprecated cards removed → cleaner page
+- New edit button + dialog for profile editing
+- Zero design/layout changes to remaining components
 
