@@ -982,31 +982,6 @@ const Beslenme = () => {
     }
   };
 
-  const handleToggleSupplement = (id: string) => {
-    setSupplements((current) =>
-      current.map((sup) => {
-        if (sup.id !== id) return sup;
-        const newTakenToday = !sup.takenToday;
-        const newServingsLeft = newTakenToday
-          ? Math.max(0, sup.servingsLeft - 1)
-          : Math.min(sup.totalServings, sup.servingsLeft + 1);
-        if (newTakenToday) {
-          toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
-        }
-        return { ...sup, takenToday: newTakenToday, servingsLeft: newServingsLeft };
-      }),
-    );
-  };
-
-  const handleRefillSupplement = (id: string) => {
-    setSupplements((current) =>
-      current.map((sup) => {
-        if (sup.id !== id) return sup;
-        toast({ title: "Stok Yenilendi 📦", description: `${sup.name} stoğu yenilendi.` });
-        return { ...sup, servingsLeft: sup.totalServings };
-      }),
-    );
-  };
 
   return (
     <div className="min-h-screen bg-background px-4 pt-6 pb-32">
