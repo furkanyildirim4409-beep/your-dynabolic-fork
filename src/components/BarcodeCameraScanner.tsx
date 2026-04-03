@@ -110,7 +110,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
         // Last resort: try with just `true` (any available camera)
         if (!started && !cancelled) {
           try {
-            await scanner.start(true, scanConfig, successCb, errorCb);
+            await scanner.start({ facingMode: { exact: "environment" } } as any, scanConfig, successCb, errorCb);
             started = true;
           } catch (lastErr: any) {
             console.error("[BarcodeCameraScanner] all attempts failed:", lastErr?.name, lastErr?.message);
