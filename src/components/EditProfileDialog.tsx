@@ -28,7 +28,7 @@ const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
   useEffect(() => {
     if (isOpen && profile) {
       setFullName(profile.full_name || "");
-      setPhoneNumber((profile as any).phone_number || "");
+      setPhoneNumber(profile.phone_number || "");
     }
   }, [isOpen, profile]);
 
