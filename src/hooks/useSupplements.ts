@@ -17,6 +17,10 @@ interface DBSupplement {
   is_active: boolean;
 }
 
+function getTodayKey(userId: string) {
+  return `supplements_taken_${userId}_${new Date().toISOString().split("T")[0]}`;
+}
+
 function parseName(nameAndDosage: string, dosage: string | null): { name: string; parsedDosage: string } {
   if (dosage) return { name: nameAndDosage, parsedDosage: dosage };
   const parts = nameAndDosage.split(",").map((s) => s.trim());
@@ -54,6 +58,17 @@ export function useSupplements() {
   const [takenIds, setTakenIds] = useState<Set<string>>(new Set());
   const [localServings, setLocalServings] = useState<Record<string, number>>({});
 
+  // Hydrate takenIds from localStorage on mount
+  useEffect(() => {
+    if (!user) return;
+    const stored = localStorage.getItem(getTodayKey(user.id));
+    if (stored) {
+      try {
+        setTakenIds(new Set(JSON.parse(stored)));
+      } catch { /* ignore corrupt data */ }
+    }
+  }, [user]);
+
   const { data: dbRows, isLoading, error } = useQuery({
     queryKey: ["assigned_supplements", user?.id],
     queryFn: async () => {
@@ -90,29 +105,52 @@ export function useSupplements() {
         setLocalServings((ls) => {
           const sup = supplements.find((s) => s.id === id);
           if (!sup) return ls;
-          return { ...ls, [id]: Math.min(sup.totalServings, (ls[id] ?? sup.servingsLeft) + 1) };
+          const newVal = Math.min(sup.totalServings, (ls[id] ?? sup.servingsLeft) + 1);
+          // Persist to DB
+          if (!useFallback) {
+            supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
+              .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
+          }
+          return { ...ls, [id]: newVal };
         });
       } else {
         next.add(id);
         setLocalServings((ls) => {
           const sup = supplements.find((s) => s.id === id);
           if (!sup) return ls;
-          return { ...ls, [id]: Math.max(0, (ls[id] ?? sup.servingsLeft) - 1) };
+          const newVal = Math.max(0, (ls[id] ?? sup.servingsLeft) - 1);
+          // Persist to DB
+          if (!useFallback) {
+            supabase.from("assigned_supplements").update({ servings_left: newVal }).eq("id", id)
+              .then(({ error }) => { if (error) console.error("Stock update failed:", error); });
+          }
+          return { ...ls, [id]: newVal };
         });
         const sup = supplements.find((s) => s.id === id);
         if (sup) toast({ title: "Alındı ✓", description: `${sup.name} işaretlendi.` });
       }
+
+      // Persist taken set to localStorage
+      if (user) {
+        localStorage.setItem(getTodayKey(user.id), JSON.stringify([...next]));
+      }
+
       return next;
     });
-  }, [supplements]);
+  }, [supplements, useFallback, user]);
 
   const refillStock = useCallback((id: string) => {
     const sup = supplements.find((s) => s.id === id);
     if (sup) {
       setLocalServings((ls) => ({ ...ls, [id]: sup.totalServings }));
       toast({ title: "Stok Yenilendi 📦", description: `${sup.name} stoğu yenilendi.` });
+      // Persist to DB
+      if (!useFallback) {
+        supabase.from("assigned_supplements").update({ servings_left: sup.totalServings }).eq("id", id)
+          .then(({ error }) => { if (error) console.error("Stock refill failed:", error); });
+      }
     }
-  }, [supplements]);
+  }, [supplements, useFallback]);
 
   return { supplements, isLoading: isLoading && !!user, toggleTaken, refillStock, useFallback };
 }
