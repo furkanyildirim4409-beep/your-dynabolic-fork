@@ -1367,6 +1367,7 @@ export type Database = {
           notification_preferences: Json | null
           notification_settings: Json | null
           onboarding_completed: boolean | null
+          phone_number: string | null
           readiness_score: number | null
           role: string | null
           specialty: string | null
@@ -1405,6 +1406,7 @@ export type Database = {
           notification_preferences?: Json | null
           notification_settings?: Json | null
           onboarding_completed?: boolean | null
+          phone_number?: string | null
           readiness_score?: number | null
           role?: string | null
           specialty?: string | null
@@ -1443,6 +1445,7 @@ export type Database = {
           notification_preferences?: Json | null
           notification_settings?: Json | null
           onboarding_completed?: boolean | null
+          phone_number?: string | null
           readiness_score?: number | null
           role?: string | null
           specialty?: string | null
