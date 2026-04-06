@@ -4,26 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
-type Profile = Tables<"profiles">;
-
-interface AuthContextType {
-  user: User | null;
-  session: Session | null;
-  profile: Profile | null;
-  isLoading: boolean;
-  signIn: (email: string, password: string) => Promise<void>;
-  signUp: (email: string, password: string, role: "coach" | "athlete", fullName: string) => Promise<void>;
-  signOut: () => Promise<void>;
-  refreshProfile: () => Promise<void>;
-}
-
-const AuthContext = createContext<AuthContextType | undefined>(undefined);
-
-export const useAuth = () => {
-  const ctx = useContext(AuthContext);
-  if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-  return ctx;
-};
+export type Profile = Tables<"profiles">;
 
 async function fetchProfile(userId: string): Promise<Profile | null> {
   const { data, error } = await supabase
@@ -35,7 +16,9 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     console.error("Profile fetch error:", error.message);
     return null;
   }
-  return data;
+  // Explicitly spread to ensure every column (including phone_number) is preserved
+  const profile: Profile = { ...data };
+  return profile;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
