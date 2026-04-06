@@ -6,7 +6,6 @@ interface ParametricBodySVGProps {
   measurements: BodyMeasurement | null;
 }
 
-const T = "transition: transform 0.4s ease";
 
 const ParametricBodySVG = ({ measurements }: ParametricBodySVGProps) => {
   const s = useMemo(() => calculateScales(measurements), [measurements]);
