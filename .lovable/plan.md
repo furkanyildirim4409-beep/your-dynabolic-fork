@@ -1,54 +1,48 @@
 
 
-# Biometric Twin Engine — Part 2: The Conversion Algorithm
+# Biometric Twin Engine — Part 3: Framer Motion Morphing + Build Fix
 
-## Summary
-Create a scale engine that converts real cm/% measurements into SVG transform multipliers, then apply them to the parametric body groups so the silhouette visually morphs as the slider moves.
+## Problem
+1. **Build errors**: The TS compiler reports `cssText` errors at specific line numbers that don't match the current file. This is a stale build artifact — but the real fix is to refactor the file anyway, which will clear the cache.
+2. **Jarring transitions**: CSS `transition` on SVG `<g>` elements is unreliable across browsers. Framer Motion's `motion.g` provides spring-based, GPU-accelerated morphing.
 
-## New File: `src/utils/biometricScaleEngine.ts`
+## Changes
 
-**Baselines** (average athletic male):
-```
-neck: 38, chest: 100, shoulder: 115, waist: 80, hips: 95, arm: 35, thigh: 55, body_fat_pct: 15
-```
+### `src/components/athlete-detail/ParametricBodySVG.tsx` — Full rewrite
 
-**Function**: `calculateScales(measurements: BodyMeasurement | null)` returns:
+**Imports**: Add `motion` from `framer-motion`.
+
+**Spring config**: Define a shared transition object:
 ```typescript
-interface BodyScales {
-  neck: number;    // scaleX for neck group
-  torso: number;   // scaleX for torso (driven by chest + shoulder avg)
-  waist: number;   // scaleX for waist ellipse
-  hips: number;    // scaleX for hips ellipse
-  arm: number;     // scaleX for arm paths
-  leg: number;     // scaleX for leg paths
-  overall: number; // subtle uniform scale from body_fat_pct influence
-}
+const morphSpring = { type: "spring", stiffness: 300, damping: 30 };
 ```
 
-**Logic per region:**
-- `scale = measurement / baseline` (e.g., 100cm waist / 80cm baseline = 1.25)
-- Clamp each to `[0.8, 1.4]`
-- Body fat influence: `overall = 1 + (bf% - 15) * 0.005`, clamped `[0.95, 1.1]` — adds subtle width to everything at high BF%
-- If measurement is null/0, return `1.0` (no deformation)
+**Convert all `<g>` groups** from static style transforms to Framer Motion animated transforms:
 
-## Edit: `src/components/athlete-detail/ParametricBodySVG.tsx`
+```tsx
+// Before (CSS transition - unreliable on SVG)
+<g id="torso" style={{ transformOrigin: "60px 94px", transform: `scaleX(${s.torso})`, transition: '...' }}>
 
-- Import `calculateScales`
-- Call `const scales = useMemo(() => calculateScales(measurements), [measurements])`
-- Apply transforms to each `<g>` group:
-  - `<g id="neck">`: `transform: scaleX(scales.neck * scales.overall)`
-  - `<g id="torso">`: `transform: scaleX(scales.torso * scales.overall)`
-  - `<g id="waist">`: `transform: scaleX(scales.waist * scales.overall)`
-  - `<g id="hips">`: `transform: scaleX(scales.hips * scales.overall)`
-  - `<g id="left-arm">` / `<g id="right-arm">`: `transform: scaleX(scales.arm)`
-  - `<g id="left-leg">` / `<g id="right-leg">`: `transform: scaleX(scales.leg)`
-- Add CSS `transition: transform 0.4s ease` on each group for smooth morphing when slider moves
-- `transform-origin` is already set on each group — no changes needed there
+// After (Framer Motion spring)
+<motion.g id="torso" 
+  animate={{ scaleX: s.torso * s.overall }} 
+  transition={morphSpring}
+  style={{ transformOrigin: "60px 94px" }}
+>
+```
+
+Apply this pattern to all 7 body groups: neck, torso, waist, hips, left-arm, right-arm, left-leg, right-leg.
+
+**Dynamic glow filter**: Add a second SVG `<filter>` (`bodyGlow`) with `feDropShadow` whose `stdDeviation` is driven by the `overall` scale — higher body fat = wider, softer glow. Apply it to the torso group.
+
+**Head stays static** — no scaling needed (no head measurement exists).
+
+### No other files change
+The `biometricScaleEngine.ts` and `BiometricTwin.tsx` remain untouched.
 
 ## Files
 
 | Action | File |
 |--------|------|
-| Create | `src/utils/biometricScaleEngine.ts` |
-| Edit   | `src/components/athlete-detail/ParametricBodySVG.tsx` |
+| Rewrite | `src/components/athlete-detail/ParametricBodySVG.tsx` |
 
