@@ -4,10 +4,10 @@ import { useQuery } from "@tanstack/react-query";
 import WeeklyRecapModal from "@/components/WeeklyRecapModal";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditProfileDialog from "@/components/EditProfileDialog";
-import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
+import BiometricTwin from "@/components/athlete-detail/BiometricTwin";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
 import BloodworkUpload from "@/components/BloodworkUpload";
@@ -18,7 +18,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
 import AvatarCropperModal from "@/components/profile/AvatarCropperModal";
 
-import { Slider } from "@/components/ui/slider";
+
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,7 +40,7 @@ const goalTranslations: Record<string, string> = {
 };
 
 const Profil = () => {
-  const [timelineValue, setTimelineValue] = useState([50]);
+  
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
@@ -120,11 +120,6 @@ const Profil = () => {
   const profileActivityLevel = (profileAny?.activity_level as string) ?? "moderate";
   const calculatedTDEE = calculatedBMR ? calcTDEE(calculatedBMR, profileActivityLevel) : null;
 
-  // Timeline slider always controls projection — interpolate from current toward goal
-  const progress = timelineValue[0] / 100;
-  const goalWaist = currentWaist * 0.85; // 15% waist reduction target
-  const projectedWaist = currentWaist - (currentWaist - goalWaist) * progress;
-  const waistScale = projectedWaist / 85;
 
   const bodyStats = [
     { label: "Boy", value: profileHeight ? `${profileHeight} cm` : "—" },
@@ -341,120 +336,8 @@ const Profil = () => {
         )}
       </motion.div>
 
-      {/* 3D Avatar Section - Now Realistic */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.1 }}
-        className="glass-card p-4 overflow-hidden"
-      >
-        <div className="flex items-center justify-between mb-2">
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            DİJİTAL İKİZ
-          </h2>
-          <div className="flex items-center gap-1">
-            <motion.div
-              className="w-2 h-2 rounded-full bg-primary"
-              animate={{ opacity: [1, 0.5, 1] }}
-              transition={{ duration: 1.5, repeat: Infinity }}
-            />
-            <span className="text-[10px] text-muted-foreground">CANLI</span>
-          </div>
-        </div>
-
-        {/* Realistic 3D Avatar */}
-        <RealisticBodyAvatar
-          waistScale={waistScale}
-          measurements={latestMeasurement ? {
-            neck: latestMeasurement.neck,
-            chest: latestMeasurement.chest,
-            shoulder: latestMeasurement.shoulder,
-            waist: latestMeasurement.waist,
-            hips: latestMeasurement.hips,
-            arm: latestMeasurement.arm,
-            thigh: latestMeasurement.thigh,
-          } : undefined}
-        />
-
-        {/* Recovery Alert */}
-        <div className="mt-4 bg-destructive/10 border border-destructive/30 rounded-xl p-3 flex items-center gap-3">
-          <AlertTriangle className="w-5 h-5 text-destructive flex-shrink-0" />
-          <div>
-            <p className="text-destructive text-xs font-medium">
-              KAS TOPARLANMASI GEREKİYOR
-            </p>
-            <p className="text-muted-foreground text-[10px]">
-              Göğüs ve Omuz bölgeleri dinlenme gerektirir
-            </p>
-          </div>
-        </div>
-      </motion.div>
-
-      {/* Timeline AI - Body Transformation */}
-      <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ delay: 0.15 }}
-        className="glass-card p-4"
-      >
-        <div className="flex items-center gap-2 mb-4">
-          <TrendingUp className="w-5 h-5 text-primary" />
-          <h2 className="font-display text-lg text-foreground tracking-wide">
-            ZAMAN YOLCULUĞU
-          </h2>
-        </div>
-
-        {/* Timeline Slider */}
-        <div className="space-y-3">
-          <div className="flex justify-between text-xs">
-            <span className="text-muted-foreground">BUGÜN</span>
-            <span className="text-primary font-medium">HEDEF (TEMMUZ 2026)</span>
-          </div>
-          
-          <Slider
-            value={timelineValue}
-            onValueChange={setTimelineValue}
-            max={100}
-            step={1}
-            className="w-full"
-          />
-
-          {/* Tooltip */}
-          <div className="text-center">
-            <span className="inline-block bg-primary/20 text-primary text-xs px-3 py-1 rounded-full">
-              TAHMİNİ FİZİK: {Math.round(timelineValue[0])}% İlerleme
-            </span>
-          </div>
-
-          {/* Projected Stats */}
-          <div className="grid grid-cols-2 gap-3 pt-3 border-t border-white/10">
-            <div className="text-center p-2 bg-secondary/50 rounded-lg">
-              <p className="text-muted-foreground text-[10px]">TAHMİNİ YAĞ</p>
-              <p className="font-display text-lg text-stat-hrv">
-                {currentBodyFat != null
-                  ? `%${(currentBodyFat - progress * (currentBodyFat * 0.25)).toFixed(1)}`
-                  : "—"}
-              </p>
-            </div>
-            <div className="text-center p-2 bg-secondary/50 rounded-lg">
-              <div className="flex items-center gap-1">
-                <p className="text-muted-foreground text-[10px]">TAHMİNİ KAS</p>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="w-3 h-3 text-muted-foreground cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent><p>Yağsız Vücut Kütlesi (LBM) baz alınarak hesaplanmıştır</p></TooltipContent>
-                </Tooltip>
-              </div>
-              <p className="font-display text-lg text-primary">
-                {currentMuscleMass != null
-                  ? `${(currentMuscleMass + progress * 4).toFixed(1)}kg`
-                  : "—"}
-              </p>
-            </div>
-          </div>
-        </div>
-      </motion.div>
+      {/* Biometric Twin - Iron Man HUD */}
+      <BiometricTwin onAddMeasurement={() => setShowMeasurements(true)} />
 
       {/* Bio-Coins Earned Section */}
       <motion.div
