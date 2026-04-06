@@ -1,5 +1,5 @@
 import { useState, useMemo, useEffect } from "react";
-import { motion } from "framer-motion";
+import { motion, AnimatePresence } from "framer-motion";
 import { Plus, Clock } from "lucide-react";
 import { Slider } from "@/components/ui/slider";
 import { Button } from "@/components/ui/button";
@@ -75,6 +75,25 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
     return String(v);
   };
 
+  // Previous record for delta comparison
+  const prevRecord = useMemo(() => {
+    if (!history.length || history.length < 2) return null;
+    const currentChronoIndex = history.length - 1 - Math.min(sliderValue[0], history.length - 1);
+    const prevChronoIndex = currentChronoIndex + 1;
+    if (prevChronoIndex >= history.length) return null;
+    return history[prevChronoIndex];
+  }, [history, sliderValue]);
+
+  const getDelta = (key: keyof BodyMeasurement): { value: number; direction: "up" | "down" } | null => {
+    if (!currentRecord || !prevRecord) return null;
+    const curr = currentRecord[key];
+    const prev = prevRecord[key];
+    if (curr == null || prev == null || curr === 0 || prev === 0) return null;
+    const diff = Number(curr) - Number(prev);
+    if (diff === 0) return null;
+    return { value: Math.abs(Math.round(diff * 10) / 10), direction: diff > 0 ? "up" : "down" };
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -104,6 +123,32 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
           <ParametricBodySVG measurements={currentRecord} />
         </div>
 
+        {/* SVG Connector Lines */}
+        <svg
+          className="absolute inset-0 w-full h-full pointer-events-none z-[5]"
+          viewBox="0 0 100 100"
+          preserveAspectRatio="none"
+        >
+          {badges.map((b) => {
+            const val = getValue(b.key);
+            if (val === "—") return null;
+            const badgeCenterX = b.align === "left" ? b.x + 15 : b.x;
+            const badgeCenterY = b.y + 3;
+            return (
+              <line
+                key={`line-${b.key}`}
+                x1={badgeCenterX}
+                y1={badgeCenterY}
+                x2={b.lineX}
+                y2={b.lineY}
+                stroke="hsl(var(--primary) / 0.25)"
+                strokeWidth="0.3"
+                strokeDasharray="1.5 1"
+              />
+            );
+          })}
+        </svg>
+
         {/* Floating Badges */}
         <motion.div
           className="relative z-10"
@@ -115,6 +160,13 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
           {badges.map((b) => {
             const val = getValue(b.key);
             const unit = b.key === "body_fat_pct" ? "%" : b.unit;
+            const delta = getDelta(b.key);
+            // For body_fat_pct, lower is better
+            const isPositive = delta
+              ? b.key === "body_fat_pct" || b.key === "waist"
+                ? delta.direction === "down"
+                : delta.direction === "up"
+              : false;
             return (
               <motion.div
                 key={b.key}
@@ -132,10 +184,26 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
                   <p className="text-[9px] text-muted-foreground uppercase tracking-wider leading-none mb-0.5">
                     {b.label}
                   </p>
-                  <p className={`font-display text-base leading-tight ${val !== "—" ? "text-primary" : "text-muted-foreground/50"}`}>
-                    {val !== "—" ? `${val}` : "—"}
-                    {val !== "—" && <span className="text-[10px] text-muted-foreground ml-0.5">{unit}</span>}
-                  </p>
+                  <div className="flex items-baseline gap-1">
+                    <AnimatePresence mode="wait">
+                      <motion.span
+                        key={val}
+                        initial={{ opacity: 0, y: 6 }}
+                        animate={{ opacity: 1, y: 0 }}
+                        exit={{ opacity: 0, y: -6 }}
+                        transition={{ duration: 0.25 }}
+                        className={`font-display text-base leading-tight ${val !== "—" ? "text-primary" : "text-muted-foreground/50"}`}
+                      >
+                        {val}
+                      </motion.span>
+                    </AnimatePresence>
+                    {val !== "—" && <span className="text-[10px] text-muted-foreground">{unit}</span>}
+                    {delta && (
+                      <span className={`text-[9px] font-semibold ${isPositive ? "text-green-400" : "text-red-400"}`}>
+                        {delta.direction === "up" ? "▲" : "▼"}{delta.value}
+                      </span>
+                    )}
+                  </div>
                 </div>
               </motion.div>
             );
