@@ -26,11 +26,11 @@ const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
-    if (isOpen && profile) {
-      setFullName(profile.full_name || "");
-      setPhoneNumber(profile.phone_number || "");
+    if (isOpen) {
+      setFullName(profile?.full_name || "");
+      setPhoneNumber(profile?.phone_number || "");
     }
-  }, [isOpen, profile]);
+  }, [isOpen, profile?.full_name, profile?.phone_number]);
 
   const handleFileSelect = (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
