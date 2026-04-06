@@ -4,7 +4,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { Tables } from "@/integrations/supabase/types";
 import { toast } from "sonner";
 
-type Profile = Tables<"profiles">;
+export type Profile = Tables<"profiles">;
 
 interface AuthContextType {
   user: User | null;
@@ -35,7 +35,9 @@ async function fetchProfile(userId: string): Promise<Profile | null> {
     console.error("Profile fetch error:", error.message);
     return null;
   }
-  return data;
+  // Explicitly spread to ensure every column (including phone_number) is preserved
+  const profile: Profile = { ...data };
+  return profile;
 }
 
 export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
