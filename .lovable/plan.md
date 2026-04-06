@@ -1,48 +1,42 @@
 
+Goal: fix `phone_number` persistence with the smallest possible change in the real auth file.
 
-# Fix: Phone Number Persistence and Type Safety
+What I found
+- The real file is `src/context/AuthContext.tsx` (singular), not `src/contexts/...`.
+- This file does not currently have:
+  - an exported `Profile` interface
+  - a manual `const profileData: Profile = { ... }` mapper
+- Instead, it uses `type Profile = Tables<"profiles">` and `fetchProfile()` returns the raw row from `.select("*")`.
+- `phone_number` already exists in generated Supabase types (`src/integrations/supabase/types.ts`).
+- `EditProfileDialog.tsx` already:
+  - reads `profile.phone_number`
+  - updates `phone_number: phoneNumber.trim() || null`
+  - awaits `refreshProfile()`
+- A migration already exists:
+  `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number text;`
 
-## Problem
-The `phone_number` field works at the database level, but the code uses `as any` casts that mask type issues and make the code fragile. The `phone_number` column already exists in Supabase types (`Tables<"profiles">` includes `phone_number: string | null`), and the fetch uses `.select("*")`, so the data is already being returned — the issue is purely in how the code accesses it.
+Plan
+1. Update only `src/context/AuthContext.tsx`.
+2. Replace the current loose profile alias with an explicit exported `Profile` shape that includes `phone_number: string | null`.
+3. Normalize the result inside `fetchProfile()` by building and returning a `Profile` object, explicitly preserving:
+   - `id`
+   - `email`
+   - `full_name`
+   - `phone_number`
+   - all other currently used profile fields already relied on elsewhere
+4. Keep the rest of `AuthContext` untouched:
+   - no auth flow changes
+   - no listener changes
+   - no `refreshProfile()` behavior changes
+5. Leave `EditProfileDialog.tsx` functionally unchanged, since its save/refresh logic is already correct.
+6. If the environment missed the migration, re-run:
+   `ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS phone_number text;`
 
-## Root Cause
-In `EditProfileDialog.tsx`:
-- Line 31: `(profile as any).phone_number` — unnecessary cast, hides the fact that `profile.phone_number` is valid
-- Line 85: `as any` on the update object — unnecessary, `phone_number` is in the Update type
+Why this is the right minimal fix
+- Your exact snippet does not match the current file structure, but the equivalent fix is to make `fetchProfile()` explicitly carry `phone_number` into the `profile` object stored in context.
+- This keeps the change narrowly scoped to AuthContext and directly targets the reload/open-dialog persistence path.
 
-These casts were added when `phone_number` wasn't yet in the generated types. Now that the migration ran and types were regenerated, they should be removed.
-
-## Changes
-
-### File: `src/components/EditProfileDialog.tsx`
-
-1. **Line 31** — Remove `as any` cast:
-   ```typescript
-   // Before
-   setPhoneNumber((profile as any).phone_number || "");
-   // After
-   setPhoneNumber(profile.phone_number || "");
-   ```
-
-2. **Lines 80-86** — Remove `as any` from update call:
-   ```typescript
-   // Before
-   const { error } = await supabase
-     .from("profiles")
-     .update({
-       full_name: fullName.trim() || null,
-       phone_number: phoneNumber.trim() || null,
-     } as any)
-     .eq("id", user.id);
-   // After
-   const { error } = await supabase
-     .from("profiles")
-     .update({
-       full_name: fullName.trim() || null,
-       phone_number: phoneNumber.trim() || null,
-     })
-     .eq("id", user.id);
-   ```
-
-No migration needed — the `phone_number` column already exists and the types already reflect it. No changes to `AuthContext.tsx` — it already uses `.select("*")` with `Tables<"profiles">` as the return type, which includes `phone_number`.
-
+Files involved
+- `src/context/AuthContext.tsx` — only file to change
+- `src/components/EditProfileDialog.tsx` — verify only, no planned logic change
+- `supabase/migrations/20260403143124_7b6476cf-3026-4e21-a537-c677be025d40.sql` — already contains the fallback column addition
