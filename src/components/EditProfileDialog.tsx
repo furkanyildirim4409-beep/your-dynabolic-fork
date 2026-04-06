@@ -77,14 +77,17 @@ const EditProfileDialog = ({ isOpen, onClose }: EditProfileDialogProps) => {
     if (!user) return;
     setSaving(true);
     try {
-      const { error } = await supabase
+      const { data, error } = await supabase
         .from("profiles")
         .update({
           full_name: fullName.trim() || null,
           phone_number: phoneNumber.trim() || null,
         })
-        .eq("id", user.id);
+        .eq("id", user.id)
+        .select("id, phone_number")
+        .single();
       if (error) throw error;
+      if (!data) throw new Error("Güncelleme başarısız: satır etkilenmedi.");
       await refreshProfile();
       toast({ title: "Profil güncellendi! ✅" });
       onClose();
