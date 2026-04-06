@@ -7,21 +7,6 @@ interface ParametricBodySVGProps {
   measurements: BodyMeasurement | null;
 }
 
-const morphSpring = { type: "spring" as const, stiffness: 300, damping: 30 };
-
-/* ── Palette shorthand ─────────────────────────────── */
-const P = "hsl(var(--primary))";
-const P80 = "hsl(var(--primary) / 0.8)";
-const P40 = "hsl(var(--primary) / 0.4)";
-const P25 = "hsl(var(--primary) / 0.25)";
-const P15 = "hsl(var(--primary) / 0.15)";
-const P10 = "hsl(var(--primary) / 0.10)";
-const P06 = "hsl(var(--primary) / 0.06)";
-const P04 = "hsl(var(--primary) / 0.04)";
-const P03 = "hsl(var(--primary) / 0.03)";
-const P02 = "hsl(var(--primary) / 0.02)";
-const P20 = "hsl(var(--primary) / 0.20)";
-
 const ParametricBodySVG = ({ measurements }: ParametricBodySVGProps) => {
   const s = useMemo(() => calculateScales(measurements), [measurements]);
 
@@ -29,418 +14,326 @@ const ParametricBodySVG = ({ measurements }: ParametricBodySVGProps) => {
     return 1 + (s.overall - 1) * 20;
   }, [s.overall]);
 
+  const morphSpring = { type: "spring" as const, stiffness: 300, damping: 30 };
+
+  // Reusable stroke classes
+  const contourClass = "stroke-primary fill-primary/5";
+  const innerClass = "stroke-primary/30 fill-none";
+  const detailClass = "stroke-primary/15 fill-none";
+
   return (
-    <svg viewBox="0 0 140 300" className="h-[380px] opacity-60" fill="none">
-      <defs>
-        {/* ── Patterns ─────────────────────────── */}
-        <pattern id="scanlines" width="4" height="4" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="4" y2="0" stroke={P06} strokeWidth="1" />
-        </pattern>
-        <pattern id="scanlines-fine" width="2" height="2" patternUnits="userSpaceOnUse">
-          <line x1="0" y1="0" x2="2" y2="0" stroke={P04} strokeWidth="0.5" />
-        </pattern>
-        <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
-          <path d="M 20 0 L 0 0 0 20" fill="none" stroke={P04} strokeWidth="0.3" />
-        </pattern>
+    <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
+      {/* ViewBox expanded to 140x300 to accommodate broader shoulder and leg details */}
+      <svg viewBox="0 0 140 300" className="h-[380px] w-full" fill="none">
+        <defs>
+          <pattern id="scan-lines" width="4" height="4" patternUnits="userSpaceOnUse">
+            <rect width="4" height="1" fill="currentColor" className="text-primary/10" />
+          </pattern>
+          <pattern id="fine-scan-lines" width="2" height="2" patternUnits="userSpaceOnUse">
+            <rect width="2" height="0.5" fill="currentColor" className="text-primary/20" />
+          </pattern>
+          <pattern id="grid" width="20" height="20" patternUnits="userSpaceOnUse">
+            <path
+              d="M 20 0 L 0 0 0 20"
+              fill="none"
+              stroke="currentColor"
+              strokeWidth="0.5"
+              className="text-primary/5"
+            />
+          </pattern>
+          <filter id="bodyGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation={glowRadius} result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+          <filter id="muscleGlow" x="-20%" y="-20%" width="140%" height="140%">
+            <feGaussianBlur stdDeviation="0.8" result="blur" />
+            <feComposite in="SourceGraphic" in2="blur" operator="over" />
+          </filter>
+        </defs>
 
-        {/* ── Filters ──────────────────────────── */}
-        <filter id="centerGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="2" result="blur" />
-          <feMerge>
-            <feMergeNode in="blur" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="bodyGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation={glowRadius} result="glow" />
-          <feMerge>
-            <feMergeNode in="glow" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-        <filter id="muscleGlow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur in="SourceGraphic" stdDeviation="0.8" result="mg" />
-          <feMerge>
-            <feMergeNode in="mg" />
-            <feMergeNode in="SourceGraphic" />
-          </feMerge>
-        </filter>
-      </defs>
+        {/* Background Grid & Scans */}
+        <rect width="100%" height="100%" fill="url(#grid)" />
+        <rect width="100%" height="100%" fill="url(#scan-lines)" />
 
-      {/* ── Background layers ──────────────────── */}
-      <rect width="140" height="300" fill="url(#grid)" />
-      <line
-        x1="70" y1="10" x2="70" y2="290"
-        stroke={P10}
-        strokeWidth="0.5"
-        strokeDasharray="4 6"
-        filter="url(#centerGlow)"
-      />
+        <g filter="url(#bodyGlow)">
+          {/* HEAD */}
+          <motion.g
+            id="head"
+            animate={{ scaleX: s.overall, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "70px 20px" }}
+          >
+            {/* Skull Outline */}
+            <path
+              d="M 60 10 C 60 2, 80 2, 80 10 C 80 18, 77 25, 74 32 C 72 35, 68 35, 66 32 C 63 25, 60 18, 60 10 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Ear marks & Jawline detail */}
+            <path
+              d="M 59 15 C 57 18, 57 22, 60 25 M 81 15 C 83 18, 83 22, 80 25 M 65 28 L 75 28"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            {/* Cranial midline */}
+            <line x1="70" y1="4" x2="70" y2="30" className={detailClass} strokeWidth="0.3" />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          HEAD — skull outline, jaw, ears, cranial line
-          ════════════════════════════════════════════ */}
-      <g id="head">
-        {/* Skull */}
-        <ellipse cx="70" cy="24" rx="15" ry="17"
-          stroke={P} strokeWidth="0.8"
-          fill={P03} />
-        {/* Cranial midline */}
-        <line x1="70" y1="8" x2="70" y2="34" stroke={P15} strokeWidth="0.3" />
-        {/* Jaw definition */}
-        <path d="M58 28 Q62 38 70 40 Q78 38 82 28"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Left ear */}
-        <path d="M55 20 Q52 24 55 28" stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Right ear */}
-        <path d="M85 20 Q88 24 85 28" stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Eye line */}
-        <line x1="61" y1="21" x2="79" y2="21" stroke={P10} strokeWidth="0.3" />
-      </g>
+          {/* NECK */}
+          <motion.g
+            id="neck"
+            animate={{ scaleX: s.neck, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "70px 40px" }}
+          >
+            {/* Sternocleidomastoid outline */}
+            <path d="M 66 32 L 62 48 L 78 48 L 74 32 Z" className={contourClass} strokeWidth="0.8" />
+            {/* Trapezius attachment */}
+            <path
+              d="M 50 50 L 62 40 M 90 50 L 78 40"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            <line x1="70" y1="32" x2="70" y2="48" className={detailClass} strokeWidth="0.3" />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          NECK — SCM lines, trapezius attachments
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="neck"
-        animate={{ scaleX: s.neck * s.overall }}
-        transition={morphSpring}
-        style={{ transformOrigin: "70px 47px" }}
-      >
-        {/* Neck column */}
-        <rect x="63" y="40" width="14" height="12" rx="5"
-          stroke={P80} strokeWidth="0.8" fill={P02} />
-        {/* Left SCM */}
-        <path d="M64 40 Q60 46 56 52" stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Right SCM */}
-        <path d="M76 40 Q80 46 84 52" stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Trapezius attachment (left) */}
-        <path d="M56 52 Q48 50 40 54" stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Trapezius attachment (right) */}
-        <path d="M84 52 Q92 50 100 54" stroke={P15} strokeWidth="0.3" fill="none" />
-      </motion.g>
+          {/* TORSO */}
+          <motion.g
+            id="torso"
+            animate={{ scaleX: s.torso, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "70px 85px" }}
+          >
+            {/* Fine scanline mask restricted to torso */}
+            <mask id="torso-mask">
+              <path
+                d="M 50 48 C 60 48, 80 48, 90 48 C 105 52, 110 75, 98 95 C 90 108, 85 115, 70 115 C 55 115, 50 108, 42 95 C 30 75, 35 52, 50 48 Z"
+                fill="white"
+              />
+            </mask>
+            <rect width="100%" height="100%" fill="url(#fine-scan-lines)" mask="url(#torso-mask)" opacity="0.5" />
 
-      {/* ════════════════════════════════════════════
-          TORSO — pecs, abs, serratus, lats, obliques
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="torso"
-        animate={{ scaleX: s.torso * s.overall }}
-        transition={morphSpring}
-        style={{ transformOrigin: "70px 100px" }}
-        filter="url(#bodyGlow)"
-      >
-        {/* Outer contour — shoulder caps → lats → oblique taper */}
-        <path
-          d="M34 55 Q40 50 63 50 L77 50 Q100 50 106 55
-             L108 64 Q112 90 106 115
-             L100 135 Q92 145 70 148
-             Q48 145 40 135 L34 115
-             Q28 90 32 64 Z"
-          stroke={P} strokeWidth="0.8"
-          fill={P03}
-        />
+            {/* Torso Outer Contour */}
+            <path
+              d="M 50 48 C 60 48, 80 48, 90 48 C 105 52, 110 75, 98 95 C 90 108, 85 115, 70 115 C 55 115, 50 108, 42 95 C 30 75, 35 52, 50 48 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
 
-        {/* ── Deltoid caps ─────────────── */}
-        {/* Left deltoid */}
-        <path d="M34 55 Q30 58 28 68 Q30 72 34 70"
-          stroke={P40} strokeWidth="0.5" fill={P03} />
-        {/* Right deltoid */}
-        <path d="M106 55 Q110 58 112 68 Q110 72 106 70"
-          stroke={P40} strokeWidth="0.5" fill={P03} />
+            {/* Pectorals */}
+            <path
+              d="M 70 58 C 84 58, 94 65, 90 75 C 80 82, 73 80, 70 80 C 67 80, 60 82, 50 75 C 46 65, 56 58, 70 58 Z"
+              className={innerClass}
+              strokeWidth="0.5"
+              filter="url(#muscleGlow)"
+            />
 
-        {/* ── Pectorals ────────────────── */}
-        {/* Left pec */}
-        <path d="M42 62 Q50 58 68 62 Q68 74 55 78 Q42 76 40 68 Z"
-          stroke={P25} strokeWidth="0.4" fill={P03}
-          filter="url(#muscleGlow)" />
-        {/* Right pec */}
-        <path d="M72 62 Q90 58 98 62 Q100 68 98 76 Q85 78 72 74 Z"
-          stroke={P25} strokeWidth="0.4" fill={P03}
-          filter="url(#muscleGlow)" />
-        {/* Pec split (sternum line) */}
-        <line x1="70" y1="58" x2="70" y2="80" stroke={P25} strokeWidth="0.4" />
+            {/* Abs (6-pack) */}
+            <path d="M 62 85 L 78 85 M 63 95 L 77 95 M 64 105 L 76 105" className={detailClass} strokeWidth="0.4" />
+            {/* Linea Alba (midline) */}
+            <line x1="70" y1="80" x2="70" y2="115" className={innerClass} strokeWidth="0.5" filter="url(#muscleGlow)" />
 
-        {/* ── Abdominals (6-pack) ──────── */}
-        {/* Linea alba (vertical center) */}
-        <line x1="70" y1="82" x2="70" y2="138" stroke={P25} strokeWidth="0.4" />
-        {/* Upper ab division */}
-        <path d="M58 90 Q64 88 70 90 Q76 88 82 90"
-          stroke={P15} strokeWidth="0.3" fill="none" filter="url(#muscleGlow)" />
-        {/* Mid ab division */}
-        <path d="M56 102 Q63 100 70 102 Q77 100 84 102"
-          stroke={P15} strokeWidth="0.3" fill="none" filter="url(#muscleGlow)" />
-        {/* Lower ab division */}
-        <path d="M54 114 Q62 112 70 114 Q78 112 86 114"
-          stroke={P15} strokeWidth="0.3" fill="none" filter="url(#muscleGlow)" />
-        {/* Rectus abdominis outer left */}
-        <path d="M56 82 Q54 100 52 120 Q50 130 52 138"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Rectus abdominis outer right */}
-        <path d="M84 82 Q86 100 88 120 Q90 130 88 138"
-          stroke={P15} strokeWidth="0.3" fill="none" />
+            {/* Serratus Anterior (ribs) */}
+            <path d="M 46 80 L 54 85 M 44 88 L 52 93 M 43 96 L 50 101" className={detailClass} strokeWidth="0.3" />
+            <path d="M 94 80 L 86 85 M 96 88 L 88 93 M 97 96 L 90 101" className={detailClass} strokeWidth="0.3" />
+          </motion.g>
 
-        {/* ── Serratus anterior ─────────── */}
-        {/* Left serratus fingers */}
-        <path d="M40 72 L48 78" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M38 78 L47 84" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M36 84 L46 90" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M35 90 L45 96" stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Right serratus fingers */}
-        <path d="M100 72 L92 78" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M102 78 L93 84" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M104 84 L94 90" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M105 90 L95 96" stroke={P15} strokeWidth="0.3" fill="none" />
+          {/* WAIST */}
+          <motion.g
+            id="waist"
+            animate={{ scaleX: s.waist, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "70px 125px" }}
+          >
+            {/* Waist Outer Contour */}
+            <path
+              d="M 45 112 C 40 125, 42 135, 48 140 L 92 140 C 98 135, 100 125, 95 112 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
 
-        {/* ── Lat flare lines ──────────── */}
-        <path d="M34 70 Q30 90 32 110" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M106 70 Q110 90 108 110" stroke={P15} strokeWidth="0.3" fill="none" />
+            {/* Obliques & V-Taper */}
+            <path
+              d="M 45 115 C 50 125, 55 135, 60 140 M 95 115 C 90 125, 85 135, 80 140"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
 
-        {/* Fine scanlines overlay on torso */}
-        <rect x="34" y="50" width="72" height="98" fill="url(#scanlines-fine)" opacity="0.5" />
-      </motion.g>
+            {/* Dash indicator line representing measurement tape */}
+            <path
+              d="M 42 125 C 55 132, 85 132, 98 125"
+              stroke="hsl(var(--primary))"
+              strokeWidth="0.5"
+              strokeDasharray="2 2"
+              fill="none"
+              opacity="0.6"
+            />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          WAIST — oblique definition + measurement ring
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="waist"
-        animate={{ scaleX: s.waist * s.overall }}
-        transition={morphSpring}
-        style={{ transformOrigin: "70px 122px" }}
-      >
-        {/* Left oblique strokes */}
-        <path d="M40 108 L48 118" stroke={P25} strokeWidth="0.4" fill="none" />
-        <path d="M38 114 L46 124" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M36 120 L44 130" stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Right oblique strokes */}
-        <path d="M100 108 L92 118" stroke={P25} strokeWidth="0.4" fill="none" />
-        <path d="M102 114 L94 124" stroke={P15} strokeWidth="0.3" fill="none" />
-        <path d="M104 120 L96 130" stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Measurement ring */}
-        <ellipse cx="70" cy="122" rx="24" ry="4"
-          stroke={P25} strokeWidth="0.5"
-          strokeDasharray="3 2" fill="none" />
-      </motion.g>
+          {/* HIPS */}
+          <motion.g
+            id="hips"
+            animate={{ scaleX: s.hips, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "70px 155px" }}
+          >
+            {/* Hips & Pelvis Contour */}
+            <path
+              d="M 48 140 C 38 155, 40 165, 48 170 C 55 168, 65 162, 70 160 C 75 162, 85 168, 92 170 C 100 165, 102 155, 92 140 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
 
-      {/* ════════════════════════════════════════════
-          HIPS — iliac crest, hip flexor, inguinal lines
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="hips"
-        animate={{ scaleX: s.hips * s.overall }}
-        transition={morphSpring}
-        style={{ transformOrigin: "70px 148px" }}
-      >
-        {/* Iliac crest (left) */}
-        <path d="M44 135 Q48 130 56 132 Q62 134 66 140"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Iliac crest (right) */}
-        <path d="M96 135 Q92 130 84 132 Q78 134 74 140"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Inguinal crease (left) */}
-        <path d="M50 140 Q58 148 64 155"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Inguinal crease (right) */}
-        <path d="M90 140 Q82 148 76 155"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Hip flexor separation (left) */}
-        <path d="M48 138 Q52 145 54 152"
-          stroke={P10} strokeWidth="0.3" fill="none" />
-        {/* Hip flexor separation (right) */}
-        <path d="M92 138 Q88 145 86 152"
-          stroke={P10} strokeWidth="0.3" fill="none" />
-        {/* Measurement ring */}
-        <ellipse cx="70" cy="148" rx="26" ry="5"
-          stroke={P25} strokeWidth="0.5"
-          strokeDasharray="3 2" fill="none" />
-      </motion.g>
+            {/* Inguinal Crease (Hip Flexors) */}
+            <path
+              d="M 48 145 C 55 155, 65 160, 70 160 C 75 160, 85 155, 92 145"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          LEFT ARM — deltoid, bicep/tricep, forearm
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="left-arm"
-        animate={{ scaleX: s.arm }}
-        transition={morphSpring}
-        style={{ transformOrigin: "28px 100px" }}
-      >
-        {/* Outer arm contour */}
-        <path
-          d="M34 55 Q24 62 20 82 Q18 105 22 128 Q24 138 30 145"
-          stroke={P} strokeWidth="0.8"
-          fill="none" strokeLinecap="round" />
-        {/* Inner arm contour */}
-        <path
-          d="M38 60 Q32 68 28 82 Q26 100 28 120 Q30 132 34 140"
-          stroke={P40} strokeWidth="0.5"
-          fill="none" strokeLinecap="round" />
-        {/* Deltoid cap */}
-        <path d="M34 55 Q28 58 26 66 Q28 70 34 68"
-          stroke={P25} strokeWidth="0.4" fill={P03} />
-        {/* Bicep/tricep separation */}
-        <path d="M30 70 Q26 85 24 100 Q24 108 26 115"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Bicep bulk line */}
-        <path d="M32 72 Q28 82 27 92"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Elbow joint */}
-        <circle cx="24" cy="118" r="2.5" fill={P20} stroke={P25} strokeWidth="0.3" />
-        {/* Forearm brachioradialis */}
-        <path d="M24 120 Q22 130 24 140"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Forearm inner line */}
-        <path d="M28 120 Q26 132 28 142"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-      </motion.g>
+          {/* LEFT ARM */}
+          <motion.g
+            id="left-arm"
+            animate={{ scaleX: s.arm, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "35px 105px" }}
+          >
+            {/* Deltoid */}
+            <path
+              d="M 42 50 C 28 55, 20 70, 28 85 C 35 78, 40 75, 45 70 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Bicep / Tricep Upper Arm */}
+            <path
+              d="M 28 85 C 18 100, 16 115, 22 125 C 28 132, 35 132, 40 122 C 46 105, 44 90, 40 80 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Brachialis separation line */}
+            <path
+              d="M 28 95 C 32 105, 34 115, 32 125"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            {/* Forearm */}
+            <path
+              d="M 22 125 C 10 145, 12 165, 20 175 C 25 182, 32 182, 35 175 C 40 160, 38 140, 32 128 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Elbow Joint */}
+            <circle cx="28" cy="126" r="2" className="fill-primary/20 stroke-primary/50" strokeWidth="0.5" />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          RIGHT ARM — deltoid, bicep/tricep, forearm
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="right-arm"
-        animate={{ scaleX: s.arm }}
-        transition={morphSpring}
-        style={{ transformOrigin: "112px 100px" }}
-      >
-        {/* Outer arm contour */}
-        <path
-          d="M106 55 Q116 62 120 82 Q122 105 118 128 Q116 138 110 145"
-          stroke={P} strokeWidth="0.8"
-          fill="none" strokeLinecap="round" />
-        {/* Inner arm contour */}
-        <path
-          d="M102 60 Q108 68 112 82 Q114 100 112 120 Q110 132 106 140"
-          stroke={P40} strokeWidth="0.5"
-          fill="none" strokeLinecap="round" />
-        {/* Deltoid cap */}
-        <path d="M106 55 Q112 58 114 66 Q112 70 106 68"
-          stroke={P25} strokeWidth="0.4" fill={P03} />
-        {/* Bicep/tricep separation */}
-        <path d="M110 70 Q114 85 116 100 Q116 108 114 115"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Bicep bulk line */}
-        <path d="M108 72 Q112 82 113 92"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Elbow joint */}
-        <circle cx="116" cy="118" r="2.5" fill={P20} stroke={P25} strokeWidth="0.3" />
-        {/* Forearm brachioradialis */}
-        <path d="M116 120 Q118 130 116 140"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Forearm inner line */}
-        <path d="M112 120 Q114 132 112 142"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-      </motion.g>
+          {/* RIGHT ARM */}
+          <motion.g
+            id="right-arm"
+            animate={{ scaleX: s.arm, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "105px 105px" }}
+          >
+            {/* Deltoid */}
+            <path
+              d="M 98 50 C 112 55, 120 70, 112 85 C 105 78, 100 75, 95 70 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Bicep / Tricep Upper Arm */}
+            <path
+              d="M 112 85 C 122 100, 124 115, 118 125 C 112 132, 105 132, 100 122 C 94 105, 96 90, 100 80 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Brachialis separation line */}
+            <path
+              d="M 112 95 C 108 105, 106 115, 108 125"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            {/* Forearm */}
+            <path
+              d="M 118 125 C 130 145, 128 165, 120 175 C 115 182, 108 182, 105 175 C 100 160, 102 140, 108 128 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Elbow Joint */}
+            <circle cx="112" cy="126" r="2" className="fill-primary/20 stroke-primary/50" strokeWidth="0.5" />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          LEFT LEG — quads, knee, calf, shin
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="left-leg"
-        animate={{ scaleX: s.leg }}
-        transition={morphSpring}
-        style={{ transformOrigin: "50px 215px" }}
-      >
-        {/* Outer leg contour */}
-        <path
-          d="M50 148 Q46 170 44 200 Q42 232 40 260 Q38 272 42 278"
-          stroke={P} strokeWidth="0.8"
-          fill="none" strokeLinecap="round" />
-        {/* Inner leg contour */}
-        <path
-          d="M64 155 Q60 175 58 200 Q56 230 54 258 Q53 270 50 276"
-          stroke={P40} strokeWidth="0.5"
-          fill="none" strokeLinecap="round" />
-        {/* Vastus lateralis */}
-        <path d="M48 155 Q44 175 42 195"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Vastus medialis */}
-        <path d="M60 158 Q58 178 56 198"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Rectus femoris center */}
-        <path d="M54 152 Q52 175 50 198"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Knee joint */}
-        <circle cx="50" cy="206" r="3" fill={P20} stroke={P25} strokeWidth="0.3" />
-        {/* Knee cap detail */}
-        <ellipse cx="50" cy="206" rx="4" ry="3"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Tibialis anterior (shin) */}
-        <path d="M48 212 Q46 235 44 258"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Gastrocnemius split (calf) */}
-        <path d="M54 212 Q52 230 50 248"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Calf inner line */}
-        <path d="M56 215 Q54 235 52 252"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Ankle joint */}
-        <circle cx="44" cy="266" r="2" fill={P20} stroke={P15} strokeWidth="0.3" />
-        {/* Foot */}
-        <path d="M40 272 Q38 276 36 278 Q40 280 46 278"
-          stroke={P40} strokeWidth="0.5" fill="none" />
-      </motion.g>
+          {/* LEFT LEG */}
+          <motion.g
+            id="left-leg"
+            animate={{ scaleX: s.leg, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "50px 220px" }}
+          >
+            {/* Quadriceps (Thigh) */}
+            <path
+              d="M 48 170 C 32 195, 34 225, 42 245 C 52 245, 60 215, 65 160 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Vastus line (Quad separation) */}
+            <path
+              d="M 46 185 C 44 210, 46 230, 50 240"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            {/* Calf */}
+            <path
+              d="M 42 245 C 30 265, 35 285, 40 295 C 48 285, 52 265, 48 245 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Tibialis line */}
+            <path d="M 44 250 L 44 290" className={detailClass} strokeWidth="0.3" />
+            {/* Knee Joint */}
+            <circle cx="46" cy="245" r="2.5" className="fill-primary/20 stroke-primary/50" strokeWidth="0.5" />
+          </motion.g>
 
-      {/* ════════════════════════════════════════════
-          RIGHT LEG — quads, knee, calf, shin
-          ════════════════════════════════════════════ */}
-      <motion.g
-        id="right-leg"
-        animate={{ scaleX: s.leg }}
-        transition={morphSpring}
-        style={{ transformOrigin: "90px 215px" }}
-      >
-        {/* Outer leg contour */}
-        <path
-          d="M90 148 Q94 170 96 200 Q98 232 100 260 Q102 272 98 278"
-          stroke={P} strokeWidth="0.8"
-          fill="none" strokeLinecap="round" />
-        {/* Inner leg contour */}
-        <path
-          d="M76 155 Q80 175 82 200 Q84 230 86 258 Q87 270 90 276"
-          stroke={P40} strokeWidth="0.5"
-          fill="none" strokeLinecap="round" />
-        {/* Vastus lateralis */}
-        <path d="M92 155 Q96 175 98 195"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Vastus medialis */}
-        <path d="M80 158 Q82 178 84 198"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Rectus femoris center */}
-        <path d="M86 152 Q88 175 90 198"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Knee joint */}
-        <circle cx="90" cy="206" r="3" fill={P20} stroke={P25} strokeWidth="0.3" />
-        {/* Knee cap detail */}
-        <ellipse cx="90" cy="206" rx="4" ry="3"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Tibialis anterior (shin) */}
-        <path d="M92 212 Q94 235 96 258"
-          stroke={P25} strokeWidth="0.4" fill="none" />
-        {/* Gastrocnemius split (calf) */}
-        <path d="M86 212 Q88 230 90 248"
-          stroke={P25} strokeWidth="0.4" fill="none"
-          filter="url(#muscleGlow)" />
-        {/* Calf inner line */}
-        <path d="M84 215 Q86 235 88 252"
-          stroke={P15} strokeWidth="0.3" fill="none" />
-        {/* Ankle joint */}
-        <circle cx="96" cy="266" r="2" fill={P20} stroke={P15} strokeWidth="0.3" />
-        {/* Foot */}
-        <path d="M100 272 Q102 276 104 278 Q100 280 94 278"
-          stroke={P40} strokeWidth="0.5" fill="none" />
-      </motion.g>
-
-      {/* ── Top scanline overlay ───────────────── */}
-      <rect width="140" height="300" fill="url(#scanlines)" />
-    </svg>
+          {/* RIGHT LEG */}
+          <motion.g
+            id="right-leg"
+            animate={{ scaleX: s.leg, scaleY: s.overall }}
+            transition={morphSpring}
+            style={{ transformOrigin: "90px 220px" }}
+          >
+            {/* Quadriceps (Thigh) */}
+            <path
+              d="M 92 170 C 108 195, 106 225, 98 245 C 88 245, 80 215, 75 160 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Vastus line (Quad separation) */}
+            <path
+              d="M 94 185 C 96 210, 94 230, 90 240"
+              className={innerClass}
+              strokeWidth="0.4"
+              filter="url(#muscleGlow)"
+            />
+            {/* Calf */}
+            <path
+              d="M 98 245 C 110 265, 105 285, 100 295 C 92 285, 88 265, 92 245 Z"
+              className={contourClass}
+              strokeWidth="0.8"
+            />
+            {/* Tibialis line */}
+            <path d="M 96 250 L 96 290" className={detailClass} strokeWidth="0.3" />
+            {/* Knee Joint */}
+            <circle cx="94" cy="245" r="2.5" className="fill-primary/20 stroke-primary/50" strokeWidth="0.5" />
+          </motion.g>
+        </g>
+      </svg>
+    </div>
   );
 };
 
