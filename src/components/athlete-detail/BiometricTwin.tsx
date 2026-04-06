@@ -6,6 +6,7 @@ import { Button } from "@/components/ui/button";
 import { useBodyMeasurements, type BodyMeasurement } from "@/hooks/useBodyMeasurements";
 import { format } from "date-fns";
 import { tr } from "date-fns/locale";
+import ParametricBodySVG from "./ParametricBodySVG";
 
 interface BiometricTwinProps {
   onAddMeasurement?: () => void;
@@ -47,17 +48,19 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
   const { history, loading } = useBodyMeasurements();
   const [sliderValue, setSliderValue] = useState([0]);
 
+  // Reset slider to rightmost (newest) when history loads
   useEffect(() => {
     if (history.length > 0) {
-      setSliderValue([0]);
+      setSliderValue([history.length - 1]);
     }
   }, [history.length]);
 
-  // history is sorted desc (latest first) — slider 0 = latest
+  // history is sorted DESC (index 0 = newest, last = oldest)
+  // slider 0 = oldest (history[last]), slider max = newest (history[0])
   const currentRecord = useMemo(() => {
     if (!history.length) return null;
-    const idx = Math.min(sliderValue[0], history.length - 1);
-    return history[idx];
+    const chronoIndex = history.length - 1 - Math.min(sliderValue[0], history.length - 1);
+    return history[chronoIndex];
   }, [history, sliderValue]);
 
   const dateLabel = useMemo(() => {
@@ -96,33 +99,9 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
 
       {/* Body + Badges Area */}
       <div className="relative" style={{ minHeight: 380 }}>
-        {/* SVG Body Silhouette */}
+        {/* Parametric SVG Body Silhouette */}
         <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
-          <svg viewBox="0 0 120 280" className="h-[340px] opacity-60" fill="none">
-            {/* Head */}
-            <ellipse cx="60" cy="22" rx="14" ry="16" stroke="hsl(var(--primary))" strokeWidth="1" fill="hsl(var(--primary) / 0.05)" />
-            {/* Neck */}
-            <rect x="54" y="38" width="12" height="10" rx="4" stroke="hsl(var(--primary))" strokeWidth="0.8" fill="none" />
-            {/* Shoulders + Torso */}
-            <path d="M30 52 Q36 48 54 48 L66 48 Q84 48 90 52 L92 60 Q94 90 88 110 L82 130 Q76 138 60 140 Q44 138 38 130 L32 110 Q26 90 28 60 Z"
-              stroke="hsl(var(--primary))" strokeWidth="1" fill="hsl(var(--primary) / 0.04)" />
-            {/* Left arm */}
-            <path d="M30 52 Q22 58 20 80 Q18 100 22 120 Q24 130 28 135"
-              stroke="hsl(var(--primary))" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-            {/* Right arm */}
-            <path d="M90 52 Q98 58 100 80 Q102 100 98 120 Q96 130 92 135"
-              stroke="hsl(var(--primary))" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-            {/* Left leg */}
-            <path d="M44 138 Q42 160 40 190 Q38 220 36 248 Q35 258 38 262"
-              stroke="hsl(var(--primary))" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-            {/* Right leg */}
-            <path d="M76 138 Q78 160 80 190 Q82 220 84 248 Q85 258 82 262"
-              stroke="hsl(var(--primary))" strokeWidth="0.8" fill="none" strokeLinecap="round" />
-            {/* Waist line hint */}
-            <ellipse cx="60" cy="115" rx="22" ry="4" stroke="hsl(var(--primary) / 0.3)" strokeWidth="0.5" strokeDasharray="3 2" fill="none" />
-            {/* Hip line hint */}
-            <ellipse cx="60" cy="138" rx="24" ry="5" stroke="hsl(var(--primary) / 0.3)" strokeWidth="0.5" strokeDasharray="3 2" fill="none" />
-          </svg>
+          <ParametricBodySVG measurements={currentRecord} />
         </div>
 
         {/* Floating Badges */}
@@ -154,7 +133,7 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
                     {b.label}
                   </p>
                   <p className={`font-display text-base leading-tight ${val !== "—" ? "text-primary" : "text-muted-foreground/50"}`}>
-                    {val !== "—" ? `${val}${unit === "%" ? "" : ""}` : "—"}
+                    {val !== "—" ? `${val}` : "—"}
                     {val !== "—" && <span className="text-[10px] text-muted-foreground ml-0.5">{unit}</span>}
                   </p>
                 </div>
@@ -183,9 +162,9 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
               className="w-full"
             />
             <div className="flex justify-between text-[10px] text-muted-foreground">
-              <span>En Yeni</span>
-              <span className="text-primary font-semibold">{dateLabel}</span>
               <span>En Eski</span>
+              <span className="text-primary font-semibold">{dateLabel}</span>
+              <span>En Yeni</span>
             </div>
           </>
         ) : (
