@@ -1,46 +1,68 @@
 
 
-# Biometric Twin Engine — Part 4: Final Synchronization & Badge Tracking
+# Elite Realism SVG Engine — Part 1: Silhouette & Palette Swap
 
-## Summary
-Add animated number transitions to badges, render SVG connector lines from badges to body parts, and handle null/zero edge cases gracefully.
+## Overview
+Replace the minimalist outline silhouette with a detailed anatomical muscle diagram rendered in the dark HUD / neon-lime palette, while preserving the existing `<motion.g>` hierarchy so all morphing animations continue working.
 
-## Changes
-
-### 1. Edit `src/components/athlete-detail/BiometricTwin.tsx`
-
-**Animated badge values**: Replace static text values with `<motion.span>` using Framer Motion's `key` trick — when the value changes, the number fades/slides in:
-```tsx
-<AnimatePresence mode="wait">
-  <motion.span
-    key={val}
-    initial={{ opacity: 0, y: 6 }}
-    animate={{ opacity: 1, y: 0 }}
-    exit={{ opacity: 0, y: -6 }}
-    transition={{ duration: 0.25 }}
-  >
-    {val}
-  </motion.span>
-</AnimatePresence>
-```
-
-**SVG connector lines**: Add a lightweight SVG layer (absolute positioned, same dimensions as the badge container) that draws dashed lines from each badge's `lineX/lineY` coordinates to the badge position. These use the existing `lineX`/`lineY` fields already defined in the badge config. Render as a `<svg>` overlay with `pointer-events-none`.
-
-**Delta indicator**: When `history.length > 1` and the slider is at the newest record, compute the delta between current and previous measurement. Show a small green/red arrow (▲/▼) next to the value indicating improvement or regression.
-
-**Slider default**: Already defaults to `[history.length - 1]` (newest) — verified correct. No change needed.
-
-### 2. Edge case handling (already covered but verify)
-
-The `scaleFor` function in `biometricScaleEngine.ts` already returns `1` for null/zero values. The `getValue` function already returns "—" for null/zero. No changes needed here.
-
-### 3. Realtime refresh after adding measurement
-
-The `useBodyMeasurements` hook already has a realtime subscription on `INSERT` events that triggers `fetchData()`. When "Yeni Ölçüm Ekle" saves a new record, the subscription fires, history updates, and the slider's `useEffect` resets to `[history.length - 1]` (newest). Already working — no changes needed.
-
-## Files
+## File Changed
 
 | Action | File |
 |--------|------|
-| Edit | `src/components/athlete-detail/BiometricTwin.tsx` |
+| Rewrite | `src/components/athlete-detail/ParametricBodySVG.tsx` |
+
+## Technical Approach
+
+### Preserved Structure
+The component keeps its exact interface, imports, `calculateScales` usage, `morphSpring` config, and all 8 `<motion.g>` groups with identical `id` values and `animate`/`transition` props. Only the SVG paths *inside* each group change.
+
+### New SVG Details (per motion group)
+
+**Head** — Skull outline with jaw definition, ear lines, and a subtle cranial midline. Fill with faint primary glow.
+
+**Neck** — Sternocleidomastoid lines (two diagonal strokes from jaw to clavicle), trapezius attachment curves.
+
+**Torso** — The most complex group:
+- Outer contour: Shoulder caps (deltoid curves), lat flare, oblique taper
+- Pectorals: Two curved regions with pec-split line down center
+- Abdominals: 6-pack grid — 3 horizontal lines + vertical linea alba
+- Serratus: Diagonal finger-like strokes on the lateral ribcage
+- All internal lines at 20-40% opacity primary color; outer contour at full primary
+
+**Waist** — Oblique definition lines (diagonal strokes) replacing the simple ellipse, with the dashed measurement ring retained as overlay.
+
+**Hips** — Iliac crest lines, hip flexor separation curves, inguinal crease lines.
+
+**Arms (left + right)** — Each arm gets:
+- Deltoid cap (rounded triangle)
+- Bicep/tricep separation line running down the upper arm
+- Forearm brachioradialis line
+- Elbow joint circle marker
+
+**Legs (left + right)** — Each leg gets:
+- Quadriceps: Vastus lateralis/medialis separation lines
+- Knee joint circle marker
+- Calf: Gastrocnemius split line
+- Tibialis anterior line on the shin
+
+### Palette Rules (applied globally)
+- Outer contours: `stroke="hsl(var(--primary))"` at `strokeWidth="0.8"`
+- Internal muscle lines: `stroke="hsl(var(--primary) / 0.25)"` at `strokeWidth="0.4"`
+- Deep detail lines (ab grid, serratus): `stroke="hsl(var(--primary) / 0.15)"` at `strokeWidth="0.3"`
+- Muscle region fills: `fill="hsl(var(--primary) / 0.03)"` for subtle volume
+- Joint markers: small circles with `fill="hsl(var(--primary) / 0.2)"`
+
+### Enhanced Filters & Overlays
+- Existing `bodyGlow` filter stays on the torso group (dynamic glow based on body fat)
+- Add a new `muscleGlow` filter (tight `stdDeviation=0.8` blur) applied to internal muscle detail lines for a subtle "hologram scan" effect
+- Existing grid and scanline patterns remain as the base and top layers
+- Add a secondary finer scanline pattern (`2px` spacing) overlaid on the torso region only
+
+### ViewBox & Sizing
+- Expand viewBox from `0 0 120 280` to `0 0 140 300` to accommodate wider shoulder/deltoid detail and foot definition
+- Increase CSS height from `h-[340px]` to `h-[380px]`
+- All `transformOrigin` values on motion groups adjusted proportionally for the new coordinate space
+
+### No Other Files Change
+`biometricScaleEngine.ts`, `BiometricTwin.tsx`, and all badge/connector logic remain untouched. The motion group IDs and scale bindings are identical.
 
