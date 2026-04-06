@@ -7,7 +7,7 @@ import { motion, AnimatePresence } from "framer-motion";
 import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditProfileDialog from "@/components/EditProfileDialog";
-import RealisticBodyAvatar from "@/components/RealisticBodyAvatar";
+import BiometricTwin from "@/components/athlete-detail/BiometricTwin";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BodyScanUpload from "@/components/BodyScanUpload";
 import BloodworkUpload from "@/components/BloodworkUpload";
@@ -40,7 +40,7 @@ const goalTranslations: Record<string, string> = {
 };
 
 const Profil = () => {
-  const [timelineValue, setTimelineValue] = useState([50]);
+  
   const [showSettings, setShowSettings] = useState(false);
   const [showBodyScan, setShowBodyScan] = useState(false);
   const [showMeasurements, setShowMeasurements] = useState(false);
@@ -120,11 +120,6 @@ const Profil = () => {
   const profileActivityLevel = (profileAny?.activity_level as string) ?? "moderate";
   const calculatedTDEE = calculatedBMR ? calcTDEE(calculatedBMR, profileActivityLevel) : null;
 
-  // Timeline slider always controls projection — interpolate from current toward goal
-  const progress = timelineValue[0] / 100;
-  const goalWaist = currentWaist * 0.85; // 15% waist reduction target
-  const projectedWaist = currentWaist - (currentWaist - goalWaist) * progress;
-  const waistScale = projectedWaist / 85;
 
   const bodyStats = [
     { label: "Boy", value: profileHeight ? `${profileHeight} cm` : "—" },
