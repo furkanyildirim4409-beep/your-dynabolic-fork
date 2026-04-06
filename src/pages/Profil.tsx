@@ -4,7 +4,7 @@ import { useQuery } from "@tanstack/react-query";
 import WeeklyRecapModal from "@/components/WeeklyRecapModal";
 import { useWeeklyRecap } from "@/hooks/useWeeklyRecap";
 import { motion, AnimatePresence } from "framer-motion";
-import { User, Settings, Bell, Shield, LogOut, AlertTriangle, TrendingUp, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
+import { User, Settings, Bell, Shield, LogOut, AlertTriangle, Target, Coins, ChevronRight, Camera, WifiOff, Ruler, Info, Users, Loader2, Scale, Dumbbell, Pencil } from "lucide-react";
 import { Skeleton } from "@/components/ui/skeleton";
 import EditProfileDialog from "@/components/EditProfileDialog";
 import BiometricTwin from "@/components/athlete-detail/BiometricTwin";
@@ -18,7 +18,7 @@ import SettingsPanel from "@/components/SettingsPanel";
 import UpdateMeasurementsModal from "@/components/UpdateMeasurementsModal";
 import AvatarCropperModal from "@/components/profile/AvatarCropperModal";
 
-import { Slider } from "@/components/ui/slider";
+
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Button } from "@/components/ui/button";
 import { Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
