@@ -40,7 +40,7 @@ const containerVariants = {
 
 const badgeVariants = {
   hidden: { opacity: 0, scale: 0.8 },
-  visible: { opacity: 1, scale: 1, transition: { type: "spring", stiffness: 300, damping: 24 } },
+  visible: { opacity: 1, scale: 1, transition: { type: "spring" as const, stiffness: 300, damping: 24 } },
 };
 
 const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
