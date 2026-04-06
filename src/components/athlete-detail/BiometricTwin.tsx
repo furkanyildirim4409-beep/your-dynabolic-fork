@@ -47,6 +47,12 @@ const BiometricTwin = ({ onAddMeasurement }: BiometricTwinProps) => {
   const { history, loading } = useBodyMeasurements();
   const [sliderValue, setSliderValue] = useState([0]);
 
+  useEffect(() => {
+    if (history.length > 0) {
+      setSliderValue([0]);
+    }
+  }, [history.length]);
+
   // history is sorted desc (latest first) — slider 0 = latest
   const currentRecord = useMemo(() => {
     if (!history.length) return null;
