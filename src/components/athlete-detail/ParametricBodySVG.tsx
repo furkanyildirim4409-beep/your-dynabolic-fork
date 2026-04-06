@@ -1,4 +1,5 @@
 import { useMemo } from "react";
+
 import { motion } from "framer-motion";
 import { type BodyMeasurement } from "@/hooks/useBodyMeasurements";
 import { calculateScales } from "@/utils/biometricScaleEngine";
