@@ -118,10 +118,10 @@ const UpdateMeasurementsModal = ({ isOpen, onClose }: Props) => {
         if (gender) profileUpdate.gender = gender;
         if (activityLevel) profileUpdate.activity_level = activityLevel;
 
-        if (Object.keys(profileUpdate).length > 0) {
+      if (Object.keys(profileUpdate).length > 0) {
           const { error: pErr } = await supabase
             .from("profiles")
-            .update(profileUpdate)
+            .update(profileUpdate as any)
             .eq("id", user.id);
           if (pErr) console.error("Profile update error:", pErr.message);
           else await refreshProfile();
