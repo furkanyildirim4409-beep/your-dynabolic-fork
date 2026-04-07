@@ -152,7 +152,7 @@ const Tarifler = () => {
               <div className="relative h-56">
                 <img src={selectedRecipe.image} alt={selectedRecipe.title} className="w-full h-full object-cover" />
                 <div className="absolute inset-0 bg-gradient-to-t from-background via-background/30 to-transparent" />
-                <button onClick={() => setSelectedRecipe(null)} className="absolute top-4 left-4 p-2 rounded-full bg-background/50 backdrop-blur-sm">
+                <button onClick={() => setSelectedRecipe(null)} className="absolute top-[max(env(safe-area-inset-top),1rem)] left-4 p-2 rounded-full bg-background/50 backdrop-blur-sm">
                   <ChevronLeft className="w-5 h-5 text-foreground" />
                 </button>
                 <div className="absolute top-4 right-4 flex gap-2">

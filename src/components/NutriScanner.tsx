@@ -85,7 +85,7 @@ const NutriScanner = ({ isOpen, onClose, onFoodAdd }: NutriScannerProps) => {
       className="fixed inset-0 z-50 bg-background"
     >
       {/* Header */}
-      <div className="absolute top-0 left-0 right-0 z-10 p-4 flex items-center justify-between">
+      <div className="absolute top-0 left-0 right-0 z-10 p-4 safe-top flex items-center justify-between">
         <h2 className="font-display text-lg font-bold text-foreground flex items-center gap-2">
           <Zap className="w-5 h-5 text-primary" />
           NutriScan AI

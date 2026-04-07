@@ -76,7 +76,7 @@ const Leaderboard = () => {
   return (
     <div className="h-[100dvh] flex flex-col bg-background overflow-hidden">
       {/* Header */}
-      <div className="shrink-0 z-40 bg-background/80 backdrop-blur-xl border-b border-white/5">
+      <div className="shrink-0 z-40 bg-background/80 backdrop-blur-xl border-b border-white/5 safe-top">
         <div className="flex items-center justify-between p-4 relative z-50">
           <button onClick={() => { hapticLight(); navigate(-1); }} className="relative z-50 flex items-center justify-center w-10 h-10 rounded-full bg-secondary/80 hover:bg-secondary active:scale-95 transition-all" aria-label="Geri Dön">
             <ChevronLeft className="w-6 h-6 text-foreground" />
@@ -232,7 +232,7 @@ const Leaderboard = () => {
       {/* Bottom Bar */}
       {activeTab === "leaderboard" && currentUser && currentUserRank > 0 && (
         <motion.div initial={{ y: 100 }} animate={{ y: 0 }} className="fixed bottom-0 left-0 right-0 z-50 bg-background/95 backdrop-blur-xl border-t border-white/10">
-          <div className="max-w-[430px] mx-auto p-4 flex items-center gap-4">
+          <div className="max-w-[430px] mx-auto p-4 safe-bottom flex items-center gap-4">
             <div className="w-12 h-12 rounded-full bg-gradient-to-br from-primary to-emerald-500 flex items-center justify-center shadow-lg shadow-primary/20">
               <span className="font-display text-lg text-primary-foreground">#{currentUserRank}</span>
             </div>

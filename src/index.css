@@ -109,6 +109,12 @@
     @apply border-border;
   }
 
+  html, body, #root {
+    background-color: hsl(var(--background));
+    min-height: 100vh;
+    min-height: -webkit-fill-available;
+  }
+
   body {
     @apply bg-background text-foreground font-sans antialiased;
     font-family: 'Inter', sans-serif;
