@@ -1,50 +1,38 @@
 
 
-# Holographic Heatmap HUD — Pivot Plan
+# Capacitor iOS Entegrasyonu
 
-## Problem
-The current detailed muscle-line SVG paths look amateurish. We're pivoting to a "holographic heatmap scan" aesthetic: a single clean silhouette used as a clip mask, with blurred glowing orbs inside that react to measurement scales.
+## Yapılacaklar
 
-## Approach
+### 1. Capacitor Bağımlılıklarını Kur
+- `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios` paketlerini yükle
 
-### Complete rewrite of `ParametricBodySVG.tsx`
+### 2. Capacitor Yapılandırması Oluştur
+- `npx cap init` ile `capacitor.config.ts` oluştur
+- **appId**: `app.lovable.81cfe6d0aa164027bfc40c501d2474a7`
+- **appName**: `blossom-db-forge`
+- **webDir**: `dist`
+- Hot-reload için server URL ekle: `https://81cfe6d0-aa16-4027-bfc4-0c501d2474a7.lovableproject.com?forceHideBadge=true`
 
-**1. Clean Silhouette as Clip Path**
-- Define ONE smooth, closed `<path>` representing a full human body outline (head, shoulders, arms, torso, legs, feet) using polished bezier curves
-- Register as `<clipPath id="body-clip">` in `<defs>`
-- Render outline stroke separately at `stroke={P}` opacity 0.4
+### 3. Senden Yapman Gerekenler (Lovable'da yapılamaz)
 
-**2. Heatmap Orbs (clipped inside the body)**
-- 7 `<motion.ellipse>` elements inside `<g clipPath="url(#body-clip)">`:
-  - Chest (cx=70, cy=75) → `s.torso`
-  - Waist (cx=70, cy=122) → `s.waist`
-  - Hips (cx=70, cy=150) → `s.hips`
-  - Left Arm (cx=30, cy=90) → `s.arm`
-  - Right Arm (cx=110, cy=90) → `s.arm`
-  - Left Leg (cx=52, cy=220) → `s.leg`
-  - Right Leg (cx=88, cy=220) → `s.leg`
-- Heavy Gaussian blur (`stdDeviation="14"`), `fill={P}`
-- Framer Motion `animate` binds `scaleX`, `scaleY`, `opacity` to scale values
-- Larger measurement → orb expands and glows brighter
+Capacitor'ın iOS platformunu eklemek ve Xcode'da build almak senin bilgisayarında yapılması gereken adımlar:
 
-**3. Animated Scan Line**
-- Horizontal `<line>` with CSS `@keyframes` sweeping top-to-bottom (~4s infinite loop)
-- Clipped to body silhouette, primary color at low opacity + blur
+1. GitHub'a aktar: Lovable'da **"Export to GitHub"** butonuna tıkla
+2. Projeyi klonla: `git clone <repo-url> && cd <repo>`
+3. Bağımlılıkları kur: `npm install`
+4. iOS platformunu ekle: `npx cap add ios`
+5. Projeyi derle: `npm run build`
+6. Sync et: `npx cap sync ios`
+7. Xcode'da aç: `npx cap open ios`
+8. Xcode'da cihaz seç ve **Run** butonuna bas
 
-**4. Background Grid + Center Axis**
-- Keep existing grid pattern, center dashed axis, and top scanlines overlay
+**Not:** iOS build için macOS + Xcode gereklidir.
 
-**5. Preserved Contract**
-- Same props, imports, `viewBox="0 0 140 300"`, `h-[380px]`
-- No changes to `biometricScaleEngine.ts` or `BiometricTwin.tsx`
+## Dosya Değişiklikleri
 
-## Technical Detail
-
-### File changes
-
-| Action | File |
-|--------|------|
-| Rewrite | `src/components/athlete-detail/ParametricBodySVG.tsx` |
-
-The component keeps the same interface and `calculateScales` integration. All motion groups are replaced by the clip-mask + orbs architecture. A `<style>` block inside the SVG defines the scan-line keyframe animation.
+| Dosya | İşlem |
+|-------|-------|
+| `package.json` | Capacitor paketleri eklenir |
+| `capacitor.config.ts` | Yeni dosya oluşturulur |
 
