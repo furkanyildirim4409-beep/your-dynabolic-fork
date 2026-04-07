@@ -80,7 +80,7 @@ const ChatInterface = ({ isOpen, onClose }: ChatInterfaceProps) => {
           className="fixed inset-0 z-50 bg-background"
         >
           {/* Header */}
-          <div className="absolute top-0 left-0 right-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10">
+          <div className="absolute top-0 left-0 right-0 bg-card/95 backdrop-blur-md p-4 flex items-center gap-4 z-10" style={{ paddingTop: 'calc(16px + env(safe-area-inset-top))' }}>
             <motion.button
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
