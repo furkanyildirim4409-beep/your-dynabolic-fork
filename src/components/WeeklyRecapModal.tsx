@@ -199,7 +199,7 @@ const WeeklyRecapModal = ({ isOpen, onClose, data }: WeeklyRecapModalProps) => {
         animate={{ opacity: 1, scale: 1, y: 0 }}
         exit={{ opacity: 0, scale: 0.9, y: 50 }}
         transition={{ type: "spring", damping: 25, stiffness: 300 }}
-        className="fixed inset-4 z-[9999] bg-gradient-to-b from-background via-background to-background/95 rounded-3xl border border-white/10 overflow-hidden flex flex-col"
+        className="fixed inset-4 z-[9999] bg-gradient-to-b from-background via-background to-background/95 rounded-3xl border border-white/10 overflow-hidden flex flex-col safe-top safe-bottom"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

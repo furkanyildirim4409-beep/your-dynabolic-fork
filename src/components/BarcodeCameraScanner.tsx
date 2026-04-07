@@ -150,7 +150,7 @@ const BarcodeCameraScanner = ({ isOpen, onClose, onDetected }: BarcodeCameraScan
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
-          className="fixed inset-0 z-50 bg-black flex flex-col"
+          className="fixed inset-0 z-50 bg-black flex flex-col safe-top safe-bottom"
         >
           {/* Header */}
           <div className="absolute top-0 left-0 right-0 z-20 px-4 py-4 flex items-center justify-between">
