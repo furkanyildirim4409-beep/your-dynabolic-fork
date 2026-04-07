@@ -52,7 +52,7 @@ const CoachBloodworkModal = ({ isOpen, onClose, athleteId, athleteName }: CoachB
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto"
+        className="fixed inset-0 z-50 bg-black/80 backdrop-blur-sm overflow-y-auto safe-top safe-bottom"
         onClick={onClose}
       >
         <motion.div
