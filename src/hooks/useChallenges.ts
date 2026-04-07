@@ -174,7 +174,7 @@ export const useChallenges = () => {
       const field = isChallenger ? "challenger_value" : "opponent_value";
       const { error } = await supabase
         .from("challenges")
-        .update({ [field]: value })
+        .update({ [field]: value } as any)
         .eq("id", challengeId);
       if (error) throw error;
     },
