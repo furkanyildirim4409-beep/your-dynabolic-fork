@@ -75,7 +75,7 @@ const BodyMetricsOnboarding = () => {
   };
 
   return (
-    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/95 backdrop-blur-xl">
+    <div className="fixed inset-0 z-[60] flex items-center justify-center bg-background/95 backdrop-blur-xl safe-top">
       <div className="w-full max-w-[400px] px-4">
         {/* Progress dots */}
         <div className="flex justify-center gap-2 mb-8">
