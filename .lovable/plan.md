@@ -1,69 +1,65 @@
 
 
-# Fix Safe Area Insets for All Modals, Sheets & Portals
+# Edge-to-Edge Native UI Overhaul
 
 ## Problem
-Portal-based UI (Dialogs, Sheets, Drawers) and custom `fixed inset-0` overlays render outside AppShell, so they don't inherit safe-area padding. Content collides with the iOS notch/Dynamic Island and home indicator.
+1. **Dialog padding bug**: Centered dialogs have unnecessary `pt-[env(safe-area-inset-top)]` / `pb-[env(safe-area-inset-bottom)]` causing ugly gaps
+2. **White gap under notch**: The `bg-background` doesn't bleed into the safe area on full-screen overlays — there's a visible uncolored strip behind the Dynamic Island
+3. **Leaderboard squished**: The header content collides with the notch because it lacks proper safe-area handling
 
-## Approach
+## Architecture
 
-### A. Global CSS utility classes (index.css)
-Add reusable safe-area utility classes that all overlays can reference:
+The correct approach: **background color bleeds edge-to-edge, content is inset.**
+
+- Root `html, body, #root` get `background-color: hsl(var(--background))` so the notch area is always dark
+- Centered dialogs: NO safe-area padding (they float in the middle)
+- Full-screen overlays: background fills `inset-0`, inner header gets `pt-[env(safe-area-inset-top)]`
+- Bottom bars: inner content gets `pb-[env(safe-area-inset-bottom)]`
+
+## Changes
+
+### 1. `src/index.css` — Root background bleed
+Add to `@layer base`:
 ```css
-.safe-top { padding-top: env(safe-area-inset-top) }
-.safe-bottom { padding-bottom: env(safe-area-inset-bottom) }
+html, body, #root {
+  background-color: hsl(var(--background));
+  min-height: 100vh;
+  min-height: -webkit-fill-available;
+}
 ```
 
-### B. Core UI primitives (3 files)
+### 2. `src/components/ui/dialog.tsx` — Revert safe-area padding
+- **Remove** `pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]` from `DialogContent`
+- **Reset** close button to standard `top-4 right-4`
 
-**1. `src/components/ui/dialog.tsx`**
-- `DialogContent`: add `pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]` to the base classes
-- Close button: shift down with `top-[max(calc(env(safe-area-inset-top)+1rem),1rem)]`
+### 3. `src/components/ui/sheet.tsx` — Smarter safe-area
+- Keep `safe-top safe-bottom` for `left`/`right` (full-height) sheets — these are correct
+- For `bottom` sheets: only `safe-bottom`, no `safe-top`
+- Current blanket `safe-top safe-bottom` on all variants is fine for left/right but the close button position is already good
 
-**2. `src/components/ui/sheet.tsx`**
-- `SheetContent`: add safe-area padding based on `side`:
-  - `top` / full-height (`left`, `right`): add top + bottom safe insets
-  - `bottom`: add bottom safe inset only
-- Close button: same top shift as Dialog
+### 4. `src/pages/Leaderboard.tsx` — Edge-to-edge fix
+- The outer `div` already has `bg-background` ✓
+- Add `safe-top` padding to the **header inner div** (the one with the back button), not the outer wrapper
+- Add `safe-bottom` to the bottom bar's inner content div
 
-**3. `src/components/ui/drawer.tsx`**
-- `DrawerContent` (bottom-anchored): add `pb-[env(safe-area-inset-bottom)]`
-- `DrawerFooter`: add bottom safe inset
-
-### C. Custom full-screen overlays (biggest impact files)
-
-These use `fixed inset-0` directly, bypassing Shadcn primitives:
+### 5. Full-screen custom overlays — Apply pattern consistently
+For each `fixed inset-0 bg-background` overlay, the background wrapper stays `inset-0` (bleeds into notch), and the **header/first-child** gets the safe-area top padding:
 
 | File | Fix |
 |------|-----|
-| `src/components/VisionAIExecution.tsx` | Add `safe-top` class to the root `fixed inset-0` div; its header/close button will clear the notch |
-| `src/components/RestTimerOverlay.tsx` | Add `safe-top safe-bottom` to the full-screen container |
-| `src/components/ChallengeDetailModal.tsx` | Add safe insets to the `fixed inset-0` wrapper |
-| `src/components/BarcodeCameraScanner.tsx` | Add `safe-top` to the camera overlay header |
-| `src/components/CoachBloodworkModal.tsx` | Add `safe-top` to the full-screen overlay |
-| `src/pages/Akademi.tsx` | Add `safe-top` to both course-detail and module overlays |
-| `src/components/WeeklyRecapModal.tsx` | Add `safe-bottom` to the recap overlay content |
-| `src/components/ExerciseRestTimerOverlay.tsx` | Add safe insets to its full-screen container |
-
-### D. Files NOT changed
-- `AppShell.tsx` — already fixed
-- `EliteDock.tsx` — already uses `env(safe-area-inset-bottom)`
-- `ChatInterface.tsx` — already fixed
+| `src/pages/Tarifler.tsx` | Add `safe-top` to inner content header |
+| `src/components/NutriScanner.tsx` | Add `safe-top` to header section |
+| `src/components/chat/ChatInterface.tsx` | Verify header has safe-top (already done) |
+| `src/components/BodyMetricsOnboarding.tsx` | Add `safe-top` to the fixed wrapper |
 
 ## File Summary
 
 | File | Change |
 |------|--------|
-| `src/index.css` | Add `.safe-top` / `.safe-bottom` utility classes |
-| `src/components/ui/dialog.tsx` | Safe insets on content + close button |
-| `src/components/ui/sheet.tsx` | Safe insets per side variant + close button |
-| `src/components/ui/drawer.tsx` | Bottom safe inset on content + footer |
-| `src/components/VisionAIExecution.tsx` | Add safe-top to root overlay |
-| `src/components/RestTimerOverlay.tsx` | Add safe-top + safe-bottom |
-| `src/components/ChallengeDetailModal.tsx` | Add safe insets |
-| `src/components/BarcodeCameraScanner.tsx` | Add safe-top |
-| `src/components/CoachBloodworkModal.tsx` | Add safe-top |
-| `src/pages/Akademi.tsx` | Add safe-top to overlays |
-| `src/components/WeeklyRecapModal.tsx` | Add safe-bottom |
-| `src/components/ExerciseRestTimerOverlay.tsx` | Add safe insets |
+| `src/index.css` | Add `html, body, #root { background-color }` for notch bleed |
+| `src/components/ui/dialog.tsx` | Remove safe-area padding, reset close button |
+| `src/pages/Leaderboard.tsx` | Move safe-top to header inner div, safe-bottom on bottom bar |
+| `src/pages/Tarifler.tsx` | Add safe-top to recipe detail header |
+| `src/components/NutriScanner.tsx` | Add safe-top to header |
+| `src/components/BodyMetricsOnboarding.tsx` | Add safe-top |
 
