@@ -1,38 +1,43 @@
 
 
-# Capacitor iOS Entegrasyonu
+# iOS Capacitor Safe Area & Viewport Fix
 
-## Yapılacaklar
+## Problem
+In the Capacitor iOS build, content collides with the status bar/Dynamic Island at the top and the home indicator at the bottom. The webview also has a bouncy overscroll effect.
 
-### 1. Capacitor Bağımlılıklarını Kur
-- `@capacitor/core`, `@capacitor/cli`, `@capacitor/ios` paketlerini yükle
+## Changes
 
-### 2. Capacitor Yapılandırması Oluştur
-- `npx cap init` ile `capacitor.config.ts` oluştur
-- **appId**: `app.lovable.81cfe6d0aa164027bfc40c501d2474a7`
-- **appName**: `blossom-db-forge`
-- **webDir**: `dist`
-- Hot-reload için server URL ekle: `https://81cfe6d0-aa16-4027-bfc4-0c501d2474a7.lovableproject.com?forceHideBadge=true`
+### 1. `index.html` — Add `viewport-fit=cover`
+Add `viewport-fit=cover` to the existing viewport meta tag so `env(safe-area-inset-*)` values become non-zero.
 
-### 3. Senden Yapman Gerekenler (Lovable'da yapılamaz)
+### 2. `src/index.css` — Native feel CSS
+Add to the `body` rule:
+- `overscroll-behavior-y: none` — kills iOS bounce
+- `-webkit-user-select: none; user-select: none` — prevents text selection like native
+- `padding-top: env(safe-area-inset-top)` on `html` or a wrapper to push content below notch
 
-Capacitor'ın iOS platformunu eklemek ve Xcode'da build almak senin bilgisayarında yapılması gereken adımlar:
+### 3. `src/components/AppShell.tsx` — Safe area top padding
+Change `pt-6` to include the safe area inset at the top:
+```
+style={{ 
+  paddingTop: 'calc(24px + env(safe-area-inset-top))',
+  paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' 
+}}
+```
 
-1. GitHub'a aktar: Lovable'da **"Export to GitHub"** butonuna tıkla
-2. Projeyi klonla: `git clone <repo-url> && cd <repo>`
-3. Bağımlılıkları kur: `npm install`
-4. iOS platformunu ekle: `npx cap add ios`
-5. Projeyi derle: `npm run build`
-6. Sync et: `npx cap sync ios`
-7. Xcode'da aç: `npx cap open ios`
-8. Xcode'da cihaz seç ve **Run** butonuna bas
+### 4. `src/components/EliteDock.tsx` — Already handled
+The dock already uses `bottom: max(16px, env(safe-area-inset-bottom))` — no change needed.
 
-**Not:** iOS build için macOS + Xcode gereklidir.
+### 5. `src/components/chat/ChatInterface.tsx` — Safe area on header & input
+- Header: add `paddingTop: env(safe-area-inset-top)` so it clears the notch
+- Bottom input bar already has `safe-area-inset` class but verify it works with `viewport-fit=cover`
 
-## Dosya Değişiklikleri
+## Files
 
-| Dosya | İşlem |
-|-------|-------|
-| `package.json` | Capacitor paketleri eklenir |
-| `capacitor.config.ts` | Yeni dosya oluşturulur |
+| File | Change |
+|------|--------|
+| `index.html` | Add `viewport-fit=cover` to viewport meta |
+| `src/index.css` | Add overscroll/selection overrides to body |
+| `src/components/AppShell.tsx` | Add safe-area-inset-top to padding |
+| `src/components/chat/ChatInterface.tsx` | Add safe-area-inset-top to header |
 
