@@ -17,8 +17,8 @@ const AppShell = ({ children }: { children: ReactNode }) => {
           animate={{ opacity: 1, y: 0 }}
           exit={{ opacity: 0, y: -20 }}
           transition={{ duration: 0.3 }}
-          className="px-4 pt-6 pb-32 min-h-screen no-scrollbar"
-          style={{ paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}
+          className="px-4 pb-32 min-h-screen no-scrollbar"
+          style={{ paddingTop: 'calc(24px + env(safe-area-inset-top))', paddingBottom: 'calc(120px + env(safe-area-inset-bottom))' }}
         >
           {children}
         </motion.main>
