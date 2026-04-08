@@ -381,6 +381,36 @@ export type Database = {
           },
         ]
       }
+      auto_login_tokens: {
+        Row: {
+          created_at: string
+          created_by: string
+          expires_at: string
+          id: string
+          token: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          created_by: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          created_by?: string
+          expires_at?: string
+          id?: string
+          token?: string
+          used_at?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       badges: {
         Row: {
           category: string | null
@@ -2215,6 +2245,7 @@ export type Database = {
         Args: { _athlete_id: string; _token: string }
         Returns: Json
       }
+      cleanup_expired_auto_login_tokens: { Args: never; Returns: undefined }
       get_coach_info: { Args: { _coach_id: string }; Returns: Json }
       get_my_head_coach_id: { Args: never; Returns: string }
       get_team_peers: {
