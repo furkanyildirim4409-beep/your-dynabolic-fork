@@ -1,70 +1,47 @@
 
 
-## Plan: Filter Discovery Stories by Followed Coaches (Epic 2 - Part 3)
+## Plan: Wire Up Real Follower Count (Epic 2 - Part 3.5)
 
-### Summary
-Update `useCoachStories` to only return stories from coaches the current user follows, and update the empty state message.
+### Step 1 -- Add `useFollowerCount` hook to `src/hooks/useFollowSystem.ts`
 
-### Step 1 -- Update `src/hooks/useDiscoveryData.ts`
-
-**Import** `useAuth` from `@/context/AuthContext`.
-
-**Rewrite `useCoachStories`** to accept no args but internally:
-1. Get `user` from `useAuth()`.
-2. In `queryFn`, first fetch followed coach IDs from `user_follows` where `follower_id = user.id`.
-3. If no followed coaches, return `[]` immediately.
-4. Fetch `coach_stories` with `.in('coach_id', followedIds)` plus the existing `expires_at` filter.
-5. Update `queryKey` to `["coach-stories", "followed", userId]` so it refetches when user changes.
-6. Set `enabled: !!user` to skip when logged out.
+New exported hook using Supabase's `head: true` + `count: 'exact'` pattern:
 
 ```typescript
-export function useCoachStories() {
-  const { user } = useAuth();
-  return useQuery<CoachStoryRow[]>({
-    queryKey: ["coach-stories", "followed", user?.id],
-    enabled: !!user,
+export function useFollowerCount(coachId: string | undefined) {
+  return useQuery<number>({
+    queryKey: ["follower-count", coachId],
+    enabled: !!coachId,
     queryFn: async () => {
-      // 1. Get followed coach IDs
-      const { data: follows, error: fErr } = await (supabase as any)
+      const { count, error } = await (supabase as any)
         .from("user_follows")
-        .select("followed_id")
-        .eq("follower_id", user!.id);
-      if (fErr) throw fErr;
-      const followedIds = (follows ?? []).map((f: any) => f.followed_id);
-      if (followedIds.length === 0) return [];
-
-      // 2. Fetch stories only from followed coaches
-      const { data, error } = await (supabase as any)
-        .from("coach_stories")
-        .select("id, coach_id, media_url, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
-        .in("coach_id", followedIds)
-        .gte("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false });
+        .select("id", { count: "exact", head: true })
+        .eq("followed_id", coachId!);
       if (error) throw error;
-
-      return ((data ?? []) as any[]).map(/* same mapping */);
+      return count || 0;
     },
-    staleTime: 60_000,
+    staleTime: 30_000,
   });
 }
 ```
 
-### Step 2 -- Update empty state in `src/pages/Kesfet.tsx`
+### Step 2 -- Add count invalidation to `useToggleFollow`
 
-Change line 193 from:
+In `onSettled` (line 58-60), add:
+```typescript
+queryClient.invalidateQueries({ queryKey: ["follower-count", vars.coachId] });
 ```
-"Aktif hikaye yok."
-```
-to:
-```
-"Takip ettiğiniz koçların henüz aktif bir hikayesi yok."
-```
+
+### Step 3 -- Wire into `CoachProfile.tsx`
+
+- Import `useFollowerCount` alongside existing follow imports.
+- Initialize: `const { data: followerCount } = useFollowerCount(coachId);`
+- Replace hardcoded `0` on line 168 with `{followerCount ?? 0}`.
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/hooks/useDiscoveryData.ts` | Add auth, filter stories by followed coaches |
-| `src/pages/Kesfet.tsx` | Update empty state text |
+| `src/hooks/useFollowSystem.ts` | Add `useFollowerCount`, update `onSettled` |
+| `src/pages/CoachProfile.tsx` | Import hook, display live count |
 
-No database changes. No new files.
+No database changes.
 
