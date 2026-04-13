@@ -1,5 +1,6 @@
 import { useQuery } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/context/AuthContext";
 import type { LeaderboardCoach } from "@/types/shared-models";
 
 // ── Coach Stories ───────────────────────────────────
@@ -13,18 +14,30 @@ export interface CoachStoryRow {
 }
 
 export function useCoachStories() {
+  const { user } = useAuth();
   return useQuery<CoachStoryRow[]>({
-    queryKey: ["coach-stories"],
+    queryKey: ["coach-stories", "followed", user?.id],
+    enabled: !!user,
     queryFn: async () => {
+      // 1. Get followed coach IDs
+      const { data: follows, error: fErr } = await (supabase as any)
+        .from("user_follows")
+        .select("followed_id")
+        .eq("follower_id", user!.id);
+      if (fErr) throw fErr;
+      const followedIds = (follows ?? []).map((f: any) => f.followed_id);
+      if (followedIds.length === 0) return [];
+
+      // 2. Fetch stories only from followed coaches
       const { data, error } = await (supabase as any)
         .from("coach_stories")
         .select("id, coach_id, media_url, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
+        .in("coach_id", followedIds)
         .gte("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false });
-
       if (error) throw error;
 
-      return ((data ?? []) as any[]).map((s): CoachStoryRow => ({
+      return ((data ?? []) as any[]).map((s: any): CoachStoryRow => ({
         id: s.id,
         coach_id: s.coach_id,
         media_url: s.media_url,
