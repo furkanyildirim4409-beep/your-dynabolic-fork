@@ -90,9 +90,6 @@ const Kesfet = () => {
     });
   };
 
-  const handleLike = (postId: string) => {
-    setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-  };
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
