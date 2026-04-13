@@ -182,28 +182,38 @@ const Kesfet = () => {
             <h2 className="font-display text-sm text-foreground tracking-wide">ELİT KOÇLAR</h2>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {coaches.map((coach) => (
-              <motion.button
-                key={coach.id}
-                onClick={() => handleStoryClick(coach)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center gap-2 flex-shrink-0"
-              >
-                <div className={`p-0.5 rounded-full ${coach.hasNewStory ? "bg-gradient-to-tr from-primary via-yellow-500 to-primary" : "bg-muted"}`}>
-                  <div className="p-0.5 rounded-full bg-background">
-                    <Avatar className="w-16 h-16">
-                      <AvatarImage src={coach.avatar} alt={coach.name} className="object-cover" />
-                      <AvatarFallback className="bg-secondary text-foreground">{coach.name.charAt(4)}</AvatarFallback>
-                    </Avatar>
+            {storiesLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))
+            ) : uniqueCoachStories.length === 0 ? (
+              <p className="text-muted-foreground text-xs py-4">Aktif hikaye yok.</p>
+            ) : (
+              uniqueCoachStories.map((storyRow) => (
+                <motion.button
+                  key={storyRow.coach_id}
+                  onClick={() => handleStoryClick(storyRow)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center gap-2 flex-shrink-0"
+                >
+                  <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
+                    <div className="p-0.5 rounded-full bg-background">
+                      <Avatar className="w-16 h-16">
+                        <AvatarImage src={storyRow.coach.avatar_url || ""} alt={storyRow.coach.full_name} className="object-cover" />
+                        <AvatarFallback className="bg-secondary text-foreground">{storyRow.coach.full_name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-foreground text-xs font-medium truncate w-16">{coach.name}</p>
-                  <p className="text-muted-foreground text-[10px]">{coach.specialty.split(" ")[0]}</p>
-                </div>
-              </motion.button>
-            ))}
+                  <div className="text-center">
+                    <p className="text-foreground text-xs font-medium truncate w-16">{storyRow.coach.full_name.split(" ")[0]}</p>
+                  </div>
+                </motion.button>
+              ))
+            )}
           </div>
         </motion.div>
 
