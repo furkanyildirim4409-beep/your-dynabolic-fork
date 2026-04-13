@@ -7,7 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecificStories } from "@/hooks/useCoachDetail";
+import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecificStories, useCoachHighlights, type CoachHighlight } from "@/hooks/useCoachDetail";
 import { useToggleLike } from "@/hooks/useSocialFeed";
 import { useFollowStatus, useToggleFollow, useFollowerCount } from "@/hooks/useFollowSystem";
 import { useStory, type Story } from "@/context/StoryContext";
