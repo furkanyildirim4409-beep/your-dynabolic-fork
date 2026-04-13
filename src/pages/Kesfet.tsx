@@ -319,7 +319,7 @@ const Kesfet = () => {
                         <span className="text-xs">0</span>
                       </button>
                       <button
-                        onClick={() => toast({ title: "Link Kopyalandı (Demo)" })}
+                        onClick={() => toast("Link Kopyalandı (Demo)")}
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto"
                       >
                         <Share2 className="w-5 h-5" />
