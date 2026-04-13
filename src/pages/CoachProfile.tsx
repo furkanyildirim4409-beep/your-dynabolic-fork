@@ -52,6 +52,7 @@ const CoachProfile = () => {
   const { data: posts, isLoading: postsLoading } = useCoachPosts(coachId);
   const { data: products, isLoading: productsLoading } = useCoachDetailProducts(coachId);
   const { data: stories, isLoading: storiesLoading } = useCoachSpecificStories(coachId);
+  const { data: highlights, isLoading: highlightsLoading } = useCoachHighlights(coachId);
   const toggleLike = useToggleLike();
   const { openStories } = useStory();
   const { data: isFollowing, isLoading: isFollowLoading } = useFollowStatus(coachId);
@@ -120,6 +121,20 @@ const CoachProfile = () => {
       categoryGradient: "from-primary to-primary/60",
     });
   };
+
+  const handleHighlightClick = (highlight: CoachHighlight) => {
+    const mapped: Story[] = highlight.stories.map((s) => ({
+      id: s.id,
+      title: highlight.category,
+      thumbnail: s.media_url,
+      content: { image: s.media_url, text: "" },
+    }));
+    openStories(mapped, 0, {
+      categoryLabel: highlight.category,
+      categoryGradient: "from-amber-500 to-orange-500",
+    });
+  };
+
 
   return (
     <>
