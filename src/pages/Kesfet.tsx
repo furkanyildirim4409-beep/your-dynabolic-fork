@@ -5,6 +5,7 @@ import { Globe, X, Heart, MessageCircle, Share2, Verified, Coins, Trophy, Star, 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
 import ProductDetail from "@/components/ProductDetail";
@@ -15,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
+import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
@@ -53,16 +55,6 @@ const getAllProducts = () => {
   ).slice(0, 8);
 };
 
-const getAllPosts = () => {
-  return coaches.flatMap(coach =>
-    coach.posts.map(post => ({
-      ...post,
-      coachName: coach.name,
-      coachId: coach.id,
-      coachAvatar: coach.avatar
-    }))
-  );
-};
 
 const Kesfet = () => {
   const navigate = useNavigate();
@@ -71,14 +63,15 @@ const Kesfet = () => {
   const { profile, user, refreshProfile } = useAuth();
   const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
-  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
+  const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
+  const { mutate: toggleLike } = useToggleLike();
+
   const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
-  const allPosts = getAllPosts();
 
   const handleCoachClick = (coachId: string) => {
     navigate(`/coach/${coachId}`);
@@ -97,9 +90,6 @@ const Kesfet = () => {
     });
   };
 
-  const handleLike = (postId: string) => {
-    setLikedPosts(prev => ({ ...prev, [postId]: !prev[postId] }));
-  };
 
   const handleProductClick = (product: any) => {
     setSelectedProduct(product);
@@ -217,53 +207,75 @@ const Kesfet = () => {
             <TabsTrigger value="magaza" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">MAĞAZA</TabsTrigger>
           </TabsList>
 
-          {/* AKIŞ (Feed) Tab */}
           <TabsContent value="akis" className="mt-4">
             <div className="space-y-4">
-              {allPosts.map((post, index) => {
-                const isLiked = likedPosts[post.id + post.coachId];
-                const displayLikes = isLiked ? post.likes + 1 : post.likes;
-                return (
+              {feedLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <div key={i} className="glass-card overflow-hidden">
+                    <div className="p-4 flex items-center gap-3">
+                      <Skeleton className="w-10 h-10 rounded-full" />
+                      <div className="flex-1 space-y-2">
+                        <Skeleton className="h-4 w-32" />
+                        <Skeleton className="h-3 w-20" />
+                      </div>
+                    </div>
+                    <Skeleton className="mx-4 aspect-video rounded-lg" />
+                    <div className="p-4 space-y-2">
+                      <Skeleton className="h-4 w-full" />
+                      <Skeleton className="h-4 w-3/4" />
+                    </div>
+                    <div className="px-4 pb-4 flex items-center gap-6">
+                      <Skeleton className="h-5 w-16" />
+                      <Skeleton className="h-5 w-12" />
+                    </div>
+                  </div>
+                ))
+              ) : (livePosts ?? []).length === 0 ? (
+                <div className="glass-card p-8 text-center">
+                  <p className="text-muted-foreground text-sm">Henüz paylaşım yok.</p>
+                </div>
+              ) : (
+                (livePosts ?? []).map((post, index) => (
                   <motion.div
-                    key={`${post.id}-${post.coachId}`}
+                    key={post.id}
                     initial={{ opacity: 0, y: 20 }}
                     animate={{ opacity: 1, y: 0 }}
                     transition={{ delay: index * 0.1 }}
                     className="glass-card overflow-hidden"
                   >
                     <button
-                      onClick={() => handleCoachClick(post.coachId)}
+                      onClick={() => handleCoachClick(post.coach_id)}
                       className="w-full p-4 flex items-center gap-3 hover:bg-white/5 transition-colors"
                     >
                       <Avatar className="w-10 h-10">
-                        <AvatarImage src={post.coachAvatar} alt={post.coachName} className="object-cover" />
-                        <AvatarFallback className="bg-primary/20 text-primary">{post.coachName.charAt(4)}</AvatarFallback>
+                        <AvatarImage src={post.coach?.avatar_url || ""} alt={post.coach?.full_name || ""} className="object-cover" />
+                        <AvatarFallback className="bg-primary/20 text-primary">{(post.coach?.full_name || "K").charAt(0)}</AvatarFallback>
                       </Avatar>
                       <div className="flex-1 text-left">
                         <div className="flex items-center gap-1">
-                          <span className="text-foreground text-sm font-medium">{post.coachName}</span>
+                          <span className="text-foreground text-sm font-medium">{post.coach?.full_name || "Koç"}</span>
                           <Verified className="w-4 h-4 text-primary fill-primary" />
                         </div>
                         <span className="text-muted-foreground text-xs">Elit Koç</span>
                       </div>
                     </button>
 
-                    {post.type === "transformation" && (
+                    {post.type === "transformation" && post.before_image_url && post.after_image_url && (
                       <div className="grid grid-cols-2 gap-1 px-4">
                         <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden">
-                          <img src={post.beforeImage} alt="Önce" className="w-full h-full object-cover" />
+                          <img src={post.before_image_url} alt="Önce" className="w-full h-full object-cover" />
                           <span className="absolute bottom-2 left-2 bg-black/70 text-white text-[10px] px-2 py-0.5 rounded">ÖNCE</span>
                         </div>
                         <div className="relative aspect-[3/4] bg-muted rounded-lg overflow-hidden border-2 border-primary/50">
-                          <img src={post.afterImage} alt="Sonra" className="w-full h-full object-cover" />
+                          <img src={post.after_image_url} alt="Sonra" className="w-full h-full object-cover" />
                           <span className="absolute bottom-2 left-2 bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded">SONRA</span>
                         </div>
                       </div>
                     )}
 
-                    {post.type === "video" && post.videoThumbnail && (
+                    {post.type === "video" && post.video_thumbnail_url && (
                       <div className="relative aspect-video mx-4 bg-muted rounded-lg overflow-hidden">
-                        <img src={post.videoThumbnail} alt="Video" className="w-full h-full object-cover" />
+                        <img src={post.video_thumbnail_url} alt="Video" className="w-full h-full object-cover" />
                         <div className="absolute inset-0 flex items-center justify-center bg-black/30">
                           <div className="w-16 h-16 rounded-full bg-white/20 backdrop-blur-sm flex items-center justify-center">
                             <div className="w-0 h-0 border-l-[20px] border-l-white border-t-[12px] border-t-transparent border-b-[12px] border-b-transparent ml-1" />
@@ -278,15 +290,15 @@ const Kesfet = () => {
 
                     <div className="px-4 pb-4 flex items-center gap-6">
                       <button
-                        onClick={() => handleLike(post.id + post.coachId)}
-                        className={`flex items-center gap-2 transition-colors ${isLiked ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`}
+                        onClick={() => toggleLike({ postId: post.id, isCurrentlyLiked: post.user_has_liked })}
+                        className={`flex items-center gap-2 transition-colors ${post.user_has_liked ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`}
                       >
-                        <Heart className={`w-5 h-5 ${isLiked ? "fill-destructive" : ""}`} />
-                        <span className="text-xs">{displayLikes.toLocaleString()}</span>
+                        <Heart className={`w-5 h-5 ${post.user_has_liked ? "fill-destructive" : ""}`} />
+                        <span className="text-xs">{post.likes_count.toLocaleString()}</span>
                       </button>
                       <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                         <MessageCircle className="w-5 h-5" />
-                        <span className="text-xs">{post.comments}</span>
+                        <span className="text-xs">0</span>
                       </button>
                       <button
                         onClick={() => toast({ title: "Link Kopyalandı (Demo)" })}
@@ -296,8 +308,8 @@ const Kesfet = () => {
                       </button>
                     </div>
                   </motion.div>
-                );
-              })}
+                ))
+              )}
             </div>
           </TabsContent>
 
