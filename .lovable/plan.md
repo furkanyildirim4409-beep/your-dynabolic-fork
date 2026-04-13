@@ -1,47 +1,119 @@
 
 
-## Plan: Wire Up Real Follower Count (Epic 2 - Part 3.5)
+## Plan: Render Highlights in Coach Profile (Epic 3 - Part 3)
 
-### Step 1 -- Add `useFollowerCount` hook to `src/hooks/useFollowSystem.ts`
+### Summary
+Create a `useCoachHighlights` hook that fetches permanent categorized stories, and render them as Instagram-style highlight circles in `CoachProfile.tsx`.
 
-New exported hook using Supabase's `head: true` + `count: 'exact'` pattern:
+### Step 1 -- Add `useCoachHighlights` hook to `src/hooks/useCoachDetail.ts`
+
+New exported interface and hook:
 
 ```typescript
-export function useFollowerCount(coachId: string | undefined) {
-  return useQuery<number>({
-    queryKey: ["follower-count", coachId],
+export interface CoachHighlight {
+  category: string;
+  cover_image: string;
+  stories: CoachStoryRow[];
+}
+
+export function useCoachHighlights(coachId: string | undefined) {
+  return useQuery<CoachHighlight[]>({
+    queryKey: ["coach-highlights", coachId],
     enabled: !!coachId,
     queryFn: async () => {
-      const { count, error } = await (supabase as any)
-        .from("user_follows")
-        .select("id", { count: "exact", head: true })
-        .eq("followed_id", coachId!);
+      const { data, error } = await (supabase as any)
+        .from("coach_stories")
+        .select("id, coach_id, media_url, category, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
+        .eq("coach_id", coachId!)
+        .not("category", "is", null)
+        .order("created_at", { ascending: false });
       if (error) throw error;
-      return count || 0;
+
+      // Group by category
+      const grouped = new Map<string, CoachStoryRow[]>();
+      for (const s of (data ?? []) as any[]) {
+        const row: CoachStoryRow = {
+          id: s.id, coach_id: s.coach_id, media_url: s.media_url,
+          expires_at: s.expires_at, created_at: s.created_at,
+          coach: { full_name: s.profiles?.full_name ?? "Koç", avatar_url: s.profiles?.avatar_url ?? null },
+        };
+        const cat = s.category as string;
+        if (!grouped.has(cat)) grouped.set(cat, []);
+        grouped.get(cat)!.push(row);
+      }
+
+      return Array.from(grouped.entries()).map(([category, stories]) => ({
+        category,
+        cover_image: stories[0].media_url, // most recent (already sorted)
+        stories,
+      }));
     },
-    staleTime: 30_000,
+    staleTime: 300_000,
   });
 }
 ```
 
-### Step 2 -- Add count invalidation to `useToggleFollow`
+### Step 2 -- Render Highlights UI + interactivity in `CoachProfile.tsx`
 
-In `onSettled` (line 58-60), add:
+**Import**: Add `useCoachHighlights, type CoachHighlight` to existing import from `useCoachDetail`.
+
+**Initialize** (after line 54):
 ```typescript
-queryClient.invalidateQueries({ queryKey: ["follower-count", vars.coachId] });
+const { data: highlights, isLoading: highlightsLoading } = useCoachHighlights(coachId);
 ```
 
-### Step 3 -- Wire into `CoachProfile.tsx`
+**Add click handler**:
+```typescript
+const handleHighlightClick = (highlight: CoachHighlight) => {
+  const mapped: Story[] = highlight.stories.map((s) => ({
+    id: s.id,
+    title: highlight.category,
+    thumbnail: s.media_url,
+    content: { image: s.media_url, text: "" },
+  }));
+  openStories(mapped, 0, {
+    categoryLabel: highlight.category,
+    categoryGradient: "from-amber-500 to-orange-500",
+  });
+};
+```
 
-- Import `useFollowerCount` alongside existing follow imports.
-- Initialize: `const { data: followerCount } = useFollowerCount(coachId);`
-- Replace hardcoded `0` on line 168 with `{followerCount ?? 0}`.
+**Render** after the Stories section (after line 251), before Tabs:
+```jsx
+{(highlightsLoading || (highlights && highlights.length > 0)) && (
+  <div className="px-4 pb-4">
+    <p className="text-muted-foreground text-xs font-medium mb-2 tracking-wider">ÖNE ÇIKANLAR</p>
+    <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
+      {highlightsLoading ? (
+        Array.from({ length: 4 }).map((_, i) => (
+          <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
+            <Skeleton className="w-16 h-16 rounded-full" />
+            <Skeleton className="h-3 w-12" />
+          </div>
+        ))
+      ) : (
+        (highlights ?? []).map((h) => (
+          <button key={h.category} onClick={() => handleHighlightClick(h)} className="flex flex-col items-center gap-1 flex-shrink-0 group">
+            <div className="p-0.5 rounded-full border border-white/20">
+              <div className="w-16 h-16 rounded-full bg-muted bg-cover bg-center"
+                style={{ backgroundImage: `url(${h.cover_image})` }} />
+            </div>
+            <span className="text-[10px] text-muted-foreground group-hover:text-foreground max-w-[64px] truncate">{h.category}</span>
+          </button>
+        ))
+      )}
+    </div>
+  </div>
+)}
+```
+
+Highlights use a subtle `border-white/20` border (no gradient) to visually distinguish them from active stories which use the gradient ring.
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/hooks/useFollowSystem.ts` | Add `useFollowerCount`, update `onSettled` |
-| `src/pages/CoachProfile.tsx` | Import hook, display live count |
+| `src/hooks/useCoachDetail.ts` | Add `CoachHighlight` interface + `useCoachHighlights` hook |
+| `src/pages/CoachProfile.tsx` | Import hook, add handler, render highlights section |
 
-No database changes.
+No database changes needed.
 
