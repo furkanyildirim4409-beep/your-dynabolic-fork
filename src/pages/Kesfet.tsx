@@ -69,10 +69,17 @@ const Kesfet = () => {
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
+  const { mutate: toggleLike } = useToggleLike();
   const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
   const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
 
   const allProducts = getAllProducts();
+
+  // Deduplicate stories by coach_id
+  const uniqueCoachStories = (liveStories ?? []).reduce<CoachStoryRow[]>((acc, s) => {
+    if (!acc.find(x => x.coach_id === s.coach_id)) acc.push(s);
+    return acc;
+  }, []);
 
   const handleCoachClick = (coachId: string) => {
     navigate(`/coach/${coachId}`);
