@@ -822,6 +822,7 @@ export type Database = {
       }
       coach_stories: {
         Row: {
+          category: string | null
           coach_id: string | null
           created_at: string
           expires_at: string
@@ -829,6 +830,7 @@ export type Database = {
           media_url: string
         }
         Insert: {
+          category?: string | null
           coach_id?: string | null
           created_at?: string
           expires_at: string
@@ -836,6 +838,7 @@ export type Database = {
           media_url: string
         }
         Update: {
+          category?: string | null
           coach_id?: string | null
           created_at?: string
           expires_at?: string
@@ -2198,6 +2201,27 @@ export type Database = {
           status?: string
           subject?: string
           user_id?: string
+        }
+        Relationships: []
+      }
+      user_follows: {
+        Row: {
+          created_at: string
+          followed_id: string
+          follower_id: string
+          id: string
+        }
+        Insert: {
+          created_at?: string
+          followed_id: string
+          follower_id: string
+          id?: string
+        }
+        Update: {
+          created_at?: string
+          followed_id?: string
+          follower_id?: string
+          id?: string
         }
         Relationships: []
       }
