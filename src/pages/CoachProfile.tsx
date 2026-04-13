@@ -7,8 +7,10 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
-import { useCoachDetail, useCoachPosts, useCoachDetailProducts } from "@/hooks/useCoachDetail";
+import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecificStories } from "@/hooks/useCoachDetail";
 import { useToggleLike } from "@/hooks/useSocialFeed";
+import { useStory, type Story } from "@/context/StoryContext";
+import type { CoachStoryRow } from "@/hooks/useDiscoveryData";
 import ProductDetail from "@/components/ProductDetail";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
@@ -48,7 +50,9 @@ const CoachProfile = () => {
   const { data: profile, isLoading: profileLoading } = useCoachDetail(coachId);
   const { data: posts, isLoading: postsLoading } = useCoachPosts(coachId);
   const { data: products, isLoading: productsLoading } = useCoachDetailProducts(coachId);
+  const { data: stories, isLoading: storiesLoading } = useCoachSpecificStories(coachId);
   const toggleLike = useToggleLike();
+  const { openStories } = useStory();
 
   const coachName = profile?.full_name || "Koç";
   const coachAvatar = profile?.avatar_url || "";
@@ -93,6 +97,20 @@ const CoachProfile = () => {
 
   const handleMessage = () => {
     toast("Mesaj (Demo)", { description: `${coachName} ile mesajlaşma yakında aktif olacak!` });
+  };
+
+  const handleStoryClick = (storyRow: CoachStoryRow) => {
+    const allStories: Story[] = (stories ?? []).map((s) => ({
+      id: s.id,
+      title: s.coach.full_name,
+      thumbnail: s.media_url,
+      content: { image: s.media_url, text: "" },
+    }));
+    const idx = allStories.findIndex((s) => s.id === storyRow.id);
+    openStories(allStories, idx >= 0 ? idx : 0, {
+      categoryLabel: coachName,
+      categoryGradient: "from-primary to-primary/60",
+    });
   };
 
   return (
@@ -191,6 +209,37 @@ const CoachProfile = () => {
             </motion.button>
           </div>
         </div>
+
+        {/* Stories Section */}
+        {(storiesLoading || (stories && stories.length > 0)) && (
+          <div className="px-4 pb-4">
+            <p className="text-muted-foreground text-xs font-medium mb-2 tracking-wider">HİKAYELER</p>
+            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
+              {storiesLoading ? (
+                Array.from({ length: 3 }).map((_, i) => (
+                  <Skeleton key={i} className="w-16 h-16 rounded-full flex-shrink-0" />
+                ))
+              ) : (
+                (stories ?? []).map((s) => (
+                  <button
+                    key={s.id}
+                    onClick={() => handleStoryClick(s)}
+                    className="flex-shrink-0 group"
+                  >
+                    <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
+                      <div className="p-0.5 rounded-full bg-background">
+                        <div
+                          className="w-14 h-14 rounded-full bg-muted bg-cover bg-center"
+                          style={{ backgroundImage: `url(${s.media_url})` }}
+                        />
+                      </div>
+                    </div>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
