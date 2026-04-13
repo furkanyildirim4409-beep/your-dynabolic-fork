@@ -1,64 +1,53 @@
 
 
-## Plan: Inject Coach-Specific Stories into CoachProfile (Part 5)
+## Plan: Build Follow System Infrastructure (Epic 2 - Part 1)
 
 ### Summary
-Add a coach-specific stories hook and render a horizontal story ring on the Coach Profile page, between the action buttons and the tabs.
+Create the `user_follows` table in Supabase and build React Query hooks for follow/unfollow. No UI changes.
 
-### Step 1 -- Add `useCoachSpecificStories` hook to `src/hooks/useCoachDetail.ts`
+### Step 1 -- Database Migration
 
-Append a new hook that reuses the `CoachStoryRow` interface from `useDiscoveryData.ts`:
+Create `user_follows` table with RLS policies:
 
-```typescript
-import type { CoachStoryRow } from "@/hooks/useDiscoveryData";
+```sql
+CREATE TABLE public.user_follows (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    follower_id uuid NOT NULL,
+    followed_id uuid NOT NULL,
+    created_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
+    UNIQUE(follower_id, followed_id)
+);
 
-export function useCoachSpecificStories(coachId: string | undefined) {
-  return useQuery<CoachStoryRow[]>({
-    queryKey: ["coach-stories", coachId],
-    enabled: !!coachId,
-    queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("coach_stories")
-        .select("id, coach_id, media_url, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
-        .eq("coach_id", coachId!)
-        .gte("expires_at", new Date().toISOString())
-        .order("created_at", { ascending: false });
-      if (error) throw error;
-      return ((data ?? []) as any[]).map((s): CoachStoryRow => ({
-        id: s.id, coach_id: s.coach_id, media_url: s.media_url,
-        expires_at: s.expires_at, created_at: s.created_at,
-        coach: { full_name: s.profiles?.full_name ?? "Koç", avatar_url: s.profiles?.avatar_url ?? null },
-      }));
-    },
-    staleTime: 60_000,
-  });
-}
+ALTER TABLE public.user_follows ENABLE ROW LEVEL SECURITY;
+
+-- Public read (for follower counts)
+CREATE POLICY "Anyone can read follows" ON public.user_follows
+  FOR SELECT TO authenticated USING (true);
+
+-- Users can follow
+CREATE POLICY "Users can follow" ON public.user_follows
+  FOR INSERT TO authenticated WITH CHECK (auth.uid() = follower_id);
+
+-- Users can unfollow
+CREATE POLICY "Users can unfollow" ON public.user_follows
+  FOR DELETE TO authenticated USING (auth.uid() = follower_id);
 ```
 
-### Step 2 -- Update `src/pages/CoachProfile.tsx`
+Note: No FK to `auth.users` (per project guidelines). `follower_id` and `followed_id` are plain UUIDs.
 
-**Imports**: Add `useCoachSpecificStories` from `useCoachDetail`, `useStory` from `StoryContext`, `CoachStoryRow` type from `useDiscoveryData`.
+### Step 2 -- Create `src/hooks/useFollowSystem.ts`
 
-**Hook init** (after line 50): `const { data: stories, isLoading: storiesLoading } = useCoachSpecificStories(coachId);` and `const { openStories } = useStory();`
+Two hooks:
 
-**Story click handler**: Convert `CoachStoryRow` to `Story` shape and call `openStories`:
-```typescript
-const handleStoryClick = (storyRow: CoachStoryRow) => {
-  const story = { id: storyRow.id, title: storyRow.coach.full_name, thumbnail: storyRow.media_url, content: { image: storyRow.media_url, text: "" } };
-  openStories([story], 0, { categoryLabel: coachName, categoryGradient: "from-primary to-primary/60" });
-};
-```
+**`useFollowStatus(coachId)`** -- `useQuery<boolean>` checking if a row exists in `user_follows` where `follower_id = user.id` and `followed_id = coachId`. Returns `isFollowing` boolean plus `isLoading`.
 
-**UI insertion** (after action buttons div, ~line 192, before Tabs): Render a horizontal scroll of story circles. Only render the section if `storiesLoading || (stories && stories.length > 0)`:
-- Loading: 3 skeleton circles (`w-16 h-16 rounded-full`)
-- Stories: Map each story as a clickable circle with `media_url` as background image, gradient ring border
-- Empty: section hidden entirely
+**`useToggleFollow()`** -- `useMutation` accepting `{ coachId, isCurrentlyFollowing }`. If following, deletes the row; otherwise inserts. Optimistically updates the query cache. On settled, invalidates `["follow-status", coachId]`.
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/hooks/useCoachDetail.ts` | Add `useCoachSpecificStories` hook |
-| `src/pages/CoachProfile.tsx` | Import hook + StoryContext, add story section UI |
+| Migration SQL | New `user_follows` table + RLS |
+| `src/hooks/useFollowSystem.ts` | New file with 2 hooks |
 
-No database changes. No new files.
+No UI files touched.
 
