@@ -167,3 +167,22 @@ export interface BloodworkReport {
   analysisDate?: string;
   flaggedValues?: string[];
 }
+
+// ── Kesfet Social Feed ──────────────────────────────
+export interface SocialPost {
+  id: string;
+  coach_id: string;
+  content: string;
+  type: string; // "transformation" | "video" | "text"
+  before_image_url: string | null;
+  after_image_url: string | null;
+  video_thumbnail_url: string | null;
+  video_url: string | null;
+  created_at: string;
+  coach: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+  likes_count: number;
+  user_has_liked: boolean;
+}
