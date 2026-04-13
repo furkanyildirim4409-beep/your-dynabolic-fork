@@ -1,65 +1,58 @@
 
 
-# Edge-to-Edge Native UI Overhaul
+## Plan: Build React Query Hooks for Kesfet Social Feed
 
-## Problem
-1. **Dialog padding bug**: Centered dialogs have unnecessary `pt-[env(safe-area-inset-top)]` / `pb-[env(safe-area-inset-bottom)]` causing ugly gaps
-2. **White gap under notch**: The `bg-background` doesn't bleed into the safe area on full-screen overlays — there's a visible uncolored strip behind the Dynamic Island
-3. **Leaderboard squished**: The header content collides with the notch because it lacks proper safe-area handling
+### Summary
+Create the data-fetching and mutation layer for the social feed using `@tanstack/react-query` and the existing `social_posts` / `post_likes` Supabase tables. No UI changes.
 
-## Architecture
+### Database Schema (already exists)
 
-The correct approach: **background color bleeds edge-to-edge, content is inset.**
-
-- Root `html, body, #root` get `background-color: hsl(var(--background))` so the notch area is always dark
-- Centered dialogs: NO safe-area padding (they float in the middle)
-- Full-screen overlays: background fills `inset-0`, inner header gets `pt-[env(safe-area-inset-top)]`
-- Bottom bars: inner content gets `pb-[env(safe-area-inset-bottom)]`
-
-## Changes
-
-### 1. `src/index.css` — Root background bleed
-Add to `@layer base`:
-```css
-html, body, #root {
-  background-color: hsl(var(--background));
-  min-height: 100vh;
-  min-height: -webkit-fill-available;
-}
+```text
+social_posts: id, coach_id, content, type, before_image_url, after_image_url, video_thumbnail_url, video_url, created_at
+post_likes:   id, post_id, user_id, created_at
 ```
 
-### 2. `src/components/ui/dialog.tsx` — Revert safe-area padding
-- **Remove** `pt-[env(safe-area-inset-top)] pb-[env(safe-area-inset-bottom)]` from `DialogContent`
-- **Reset** close button to standard `top-4 right-4`
+RLS: SELECT is public on both tables. INSERT/DELETE on post_likes requires `auth.uid() = user_id`.
 
-### 3. `src/components/ui/sheet.tsx` — Smarter safe-area
-- Keep `safe-top safe-bottom` for `left`/`right` (full-height) sheets — these are correct
-- For `bottom` sheets: only `safe-bottom`, no `safe-top`
-- Current blanket `safe-top safe-bottom` on all variants is fine for left/right but the close button position is already good
+### Implementation Steps
 
-### 4. `src/pages/Leaderboard.tsx` — Edge-to-edge fix
-- The outer `div` already has `bg-background` ✓
-- Add `safe-top` padding to the **header inner div** (the one with the back button), not the outer wrapper
-- Add `safe-bottom` to the bottom bar's inner content div
+**Step 1 -- Add SocialPost type to `src/types/shared-models.ts`**
 
-### 5. Full-screen custom overlays — Apply pattern consistently
-For each `fixed inset-0 bg-background` overlay, the background wrapper stays `inset-0` (bleeds into notch), and the **header/first-child** gets the safe-area top padding:
+Append a `SocialPost` interface:
+- All columns from `social_posts`
+- `coach: { full_name: string; avatar_url: string | null }` (from joined profiles)
+- `likes_count: number`
+- `user_has_liked: boolean`
 
-| File | Fix |
-|------|-----|
-| `src/pages/Tarifler.tsx` | Add `safe-top` to inner content header |
-| `src/components/NutriScanner.tsx` | Add `safe-top` to header section |
-| `src/components/chat/ChatInterface.tsx` | Verify header has safe-top (already done) |
-| `src/components/BodyMetricsOnboarding.tsx` | Add `safe-top` to the fixed wrapper |
+**Step 2 -- Create `src/hooks/useSocialFeed.ts`**
 
-## File Summary
+Contains two exports:
 
-| File | Change |
+1. **`useSocialPosts()`** -- `useQuery` hook
+   - Query key: `["social-posts", user?.id]`
+   - Fetches from `social_posts` with `select('*, profiles!coach_id(full_name, avatar_url)')` ordered by `created_at` desc
+   - Separately fetches `post_likes` counts and current-user likes in a single pass (fetch all `post_likes` for the returned post IDs, then aggregate client-side -- avoids Supabase aggregate join limitations)
+   - Maps results into `SocialPost[]`
+
+2. **`useToggleLike()`** -- `useMutation` hook
+   - Accepts `{ postId: string; isCurrentlyLiked: boolean }`
+   - If liked: `DELETE FROM post_likes WHERE post_id = X AND user_id = auth.uid()`
+   - If not liked: `INSERT INTO post_likes (post_id, user_id)`
+   - **Optimistic update**: `onMutate` snapshots current query data, applies instant `likes_count +/- 1` and `user_has_liked` toggle via `queryClient.setQueryData`
+   - **Rollback**: `onError` restores snapshot
+   - **Revalidate**: `onSettled` calls `queryClient.invalidateQueries`
+
+### Technical Notes
+- The `post_likes` SELECT policy is `public` (uses `true`), so we can fetch all likes for aggregation without auth issues
+- The `social_posts` SELECT policy is also `public`, so the feed works for all authenticated users
+- Since the Supabase types file doesn't include `social_posts`/`post_likes` yet, we'll cast through `.from('social_posts' as any)` or define the row types manually; the types file will auto-regenerate on next schema sync
+- Pattern follows existing hooks like `useChallenges.ts` which uses `useQuery` + `useMutation` + `useQueryClient`
+
+### Files Changed
+| File | Action |
 |------|--------|
-| `src/index.css` | Add `html, body, #root { background-color }` for notch bleed |
-| `src/components/ui/dialog.tsx` | Remove safe-area padding, reset close button |
-| `src/pages/Leaderboard.tsx` | Move safe-top to header inner div, safe-bottom on bottom bar |
-| `src/pages/Tarifler.tsx` | Add safe-top to recipe detail header |
-| `src/components/NutriScanner.tsx` | Add safe-top to header |
-| `src/components/BodyMetricsOnboarding.tsx` | Add safe-top |
+| `src/types/shared-models.ts` | Append `SocialPost` interface |
+| `src/hooks/useSocialFeed.ts` | New file with `useSocialPosts` and `useToggleLike` |
+
+No UI files are touched.
 
