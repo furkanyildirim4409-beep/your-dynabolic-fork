@@ -338,7 +338,19 @@ const Kesfet = () => {
                 <Trophy className="w-5 h-5 text-primary" />
                 <h2 className="font-display text-sm text-foreground tracking-wide">KOÇLAR LİGİ</h2>
               </div>
-              {sortedCoaches.map((coach, index) => {
+              {leaderboardLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="glass-card p-4 flex items-center gap-4">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="w-14 h-14 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                ))
+              ) : (liveLeaderboard ?? []).map((coach, index) => {
                 const rank = index + 1;
                 const medal = getMedalBadge(rank);
                 return (
@@ -373,7 +385,7 @@ const Kesfet = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-display text-lg text-primary">{coach.score}</p>
+                      <p className="font-display text-lg text-primary">{coach.score.toLocaleString()}</p>
                       <p className="text-muted-foreground text-[10px]">puan</p>
                     </div>
                   </motion.button>
