@@ -198,3 +198,18 @@ export interface LeaderboardCoach {
   level: number;
   hasNewStory: boolean;
 }
+
+export interface CoachProduct {
+  id: string;
+  coach_id: string;
+  title: string;
+  description: string | null;
+  price: number;
+  image_url: string;
+  is_active: boolean;
+  created_at: string;
+  coach?: {
+    full_name: string;
+    avatar_url: string | null;
+  };
+}
