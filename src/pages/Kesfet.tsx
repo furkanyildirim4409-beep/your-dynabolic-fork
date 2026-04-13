@@ -190,7 +190,7 @@ const Kesfet = () => {
                 </div>
               ))
             ) : uniqueCoachStories.length === 0 ? (
-              <p className="text-muted-foreground text-xs py-4">Aktif hikaye yok.</p>
+              <p className="text-muted-foreground text-xs py-4">Takip ettiğiniz koçların henüz aktif bir hikayesi yok.</p>
             ) : (
               uniqueCoachStories.map((storyRow) => (
                 <motion.button
