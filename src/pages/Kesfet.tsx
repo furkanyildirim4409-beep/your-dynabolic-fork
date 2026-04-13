@@ -69,9 +69,9 @@ const Kesfet = () => {
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
   const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
-  const { mutate: toggleLike } = useToggleLike();
+  const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
+  const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
 
-  const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
 
   const handleCoachClick = (coachId: string) => {
