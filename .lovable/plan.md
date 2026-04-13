@@ -1,51 +1,28 @@
 
 
-## Plan: Inject Live Store Data into MAĞAZA Tab (Part 7)
+## Plan: Purge Ghost Data from MAĞAZA Tab (Part 3 of Master Fix)
 
-### Summary
-Replace `getAllProducts()` mock data with `useCoachProducts` live data in the MAĞAZA tab. Add skeleton loading state. Hook up purchase mutation. Remove remaining mock imports.
+### Problem
+The MAĞAZA tab has a nested sub-tab system: "ÜRÜNLER" (live products) and "SUPPLEMENTLER" (renders `<SupplementShop />` which imports `shopSupplements` from `@/lib/mockData`). The supplements sub-tab is entirely mock-driven ghost data.
 
 ### Changes to `src/pages/Kesfet.tsx`
 
-**1. Imports (lines 1-20)**
-- Add: `import { useCoachProducts } from "@/hooks/useStoreData";`
-- Remove: `import { coaches } from "@/lib/mockData";` (line 10) -- no longer used anywhere
-- Change toast import to sonner: `import { toast } from "sonner";` (line 9)
+**1. Remove imports (lines 18-19)**
+- Delete: `import SupplementShop from "@/components/SupplementShop";`
 
-**2. Remove `getAllProducts` helper** (lines 49-57)
-- Delete the entire function -- replaced by the hook
+**2. Flatten the MAĞAZA tab (lines 398-495)**
+- Remove the nested `<Tabs defaultValue="urunler">` wrapper with its ÜRÜNLER/SUPPLEMENTLER sub-tabs
+- Keep only the products grid content (Bio-Coin balance display + product grid + skeleton loading + empty state)
+- Add empty state when `!productsLoading && (liveProducts ?? []).length === 0`: render `"Şu an mağazada ürün bulunmuyor."` centered message
 
-**3. Hook initialization (after line 74)**
-- Add: `const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();`
-- Remove: `const allProducts = getAllProducts();` (line 76)
+**3. No other files touched**
+- `SupplementShop.tsx` stays on disk (not deleted) in case supplements are re-enabled with live data later
 
-**4. Adapt `handleAddToCart`** (lines 107-143)
-- The live product shape uses `image_url` not `image`, and `coach.full_name` not `coachName`
-- Update field mappings in the `addToCart` call:
-  - `image: product.image_url`
-  - `coachName: product.coach?.full_name || "Koç"`
-- Update discount key from `product.id + product.coachId` to `product.id + product.coach_id`
-
-**5. Adapt `handleProductClick`** (line 102-105)
-- Transform live product to the shape `ProductDetail` expects:
-  - `image: product.image_url`
-  - `coachName: product.coach?.full_name || "Koç"`
-  - `coachId: product.coach_id`
-  - `type: "product"`
-
-**6. Store tab content (lines 415-476)**
-- Add loading state: when `productsLoading`, render 4 skeleton cards in the 2-col grid (aspect-square skeleton + 3 text line skeletons)
-- Replace `allProducts.map(...)` with `(liveProducts ?? []).map((product, index) => ...)`
-- Update field references inside the map:
-  - `product.image` → `product.image_url`
-  - `product.coachName` → `product.coach?.full_name || "Koç"`
-  - `product.coachId` → `product.coach_id`
-  - Discount key: `product.id + product.coach_id`
+### Result
+The MAĞAZA tab becomes a flat, single-view product grid strictly mirroring `coach_products` from Supabase. No data in DB = empty state on screen.
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/pages/Kesfet.tsx` | Edit imports, remove mock helpers, wire live hooks, update field mappings |
-
-No new files. No database changes.
+| `src/pages/Kesfet.tsx` | Remove SupplementShop import, flatten MAĞAZA tab, add empty state |
 
