@@ -9,6 +9,7 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecificStories } from "@/hooks/useCoachDetail";
 import { useToggleLike } from "@/hooks/useSocialFeed";
+import { useFollowStatus, useToggleFollow } from "@/hooks/useFollowSystem";
 import { useStory, type Story } from "@/context/StoryContext";
 import type { CoachStoryRow } from "@/hooks/useDiscoveryData";
 import ProductDetail from "@/components/ProductDetail";
@@ -53,12 +54,14 @@ const CoachProfile = () => {
   const { data: stories, isLoading: storiesLoading } = useCoachSpecificStories(coachId);
   const toggleLike = useToggleLike();
   const { openStories } = useStory();
+  const { data: isFollowing, isLoading: isFollowLoading } = useFollowStatus(coachId);
+  const toggleFollow = useToggleFollow();
 
   const coachName = profile?.full_name || "Koç";
   const coachAvatar = profile?.avatar_url || "";
   const coachInitial = coachName.charAt(0);
 
-  const [isFollowing, setIsFollowing] = useState(false);
+  
 
   const handleLike = (postId: string, isCurrentlyLiked: boolean) => {
     toggleLike.mutate({ postId, isCurrentlyLiked });
@@ -89,10 +92,14 @@ const CoachProfile = () => {
   };
 
   const handleFollow = () => {
-    setIsFollowing(!isFollowing);
-    toast(isFollowing ? "Takipten Çıkıldı" : "Takip Edildi!", {
-      description: isFollowing ? `${coachName} takipten çıkarıldı.` : `${coachName} takip edilmeye başlandı.`,
-    });
+    if (!coachId) return;
+    toggleFollow.mutate(
+      { coachId, isCurrentlyFollowing: !!isFollowing },
+      {
+        onSuccess: () => toast(isFollowing ? "Takipten Çıkıldı" : "Takip Edildi!"),
+        onError: () => toast.error("Bir hata oluştu."),
+      }
+    );
   };
 
   const handleMessage = () => {
@@ -194,10 +201,11 @@ const CoachProfile = () => {
               whileHover={{ scale: 1.02 }}
               whileTap={{ scale: 0.98 }}
               onClick={handleFollow}
-              className={`flex-1 py-3 font-display text-sm rounded-xl flex items-center justify-center gap-2 ${isFollowing ? "bg-secondary text-foreground border border-white/10" : "bg-primary text-primary-foreground neon-glow"}`}
+              disabled={isFollowLoading || toggleFollow.isPending}
+              className={`flex-1 py-3 font-display text-sm rounded-xl flex items-center justify-center gap-2 disabled:opacity-50 ${!!isFollowing ? "bg-secondary text-foreground border border-white/10" : "bg-primary text-primary-foreground neon-glow"}`}
             >
-              {isFollowing && <Check className="w-4 h-4" />}
-              {isFollowing ? "TAKİP EDİLİYOR" : "TAKİP ET"}
+              {!!isFollowing && <Check className="w-4 h-4" />}
+              {!!isFollowing ? "TAKİP EDİLİYOR" : "TAKİP ET"}
             </motion.button>
             <motion.button
               whileHover={{ scale: 1.02 }}
