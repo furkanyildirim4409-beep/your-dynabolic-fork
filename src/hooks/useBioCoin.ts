@@ -16,21 +16,15 @@ export function useBioCoin() {
         return false;
       }
 
-      const { error: txError } = await supabase.from("bio_coin_transactions").insert({
-        user_id: user.id,
-        amount,
-        type,
-        description,
+      const { error: txError } = await supabase.rpc("add_bio_coin_transaction", {
+        _type: type,
+        _amount: amount,
+        _description: description,
       });
       if (txError) {
         console.error("BioCoin error:", txError.message);
         return false;
       }
-
-      await supabase
-        .from("profiles")
-        .update({ bio_coins: balance + amount })
-        .eq("id", user.id);
 
       await refreshProfile();
       if (amount > 0) toast.success(`🎉 +${amount} BioCoin Kazandın!`, { description });
