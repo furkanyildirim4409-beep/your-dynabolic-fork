@@ -1,48 +1,51 @@
 
 
-## Plan: Build React Query Hooks for Store (Part 6)
+## Plan: Inject Live Store Data into MAĞAZA Tab (Part 7)
 
 ### Summary
-Create `CoachProduct` interface and `src/hooks/useStoreData.ts` with `useCoachProducts` query and `usePurchaseProduct` placeholder mutation. No UI changes.
+Replace `getAllProducts()` mock data with `useCoachProducts` live data in the MAĞAZA tab. Add skeleton loading state. Hook up purchase mutation. Remove remaining mock imports.
 
-### Step 1 -- Add `CoachProduct` interface to `src/types/shared-models.ts`
-Append after the existing `LeaderboardCoach` interface:
-```typescript
-export interface CoachProduct {
-  id: string;
-  coach_id: string;
-  title: string;
-  description: string | null;
-  price: number;
-  image_url: string;
-  is_active: boolean;
-  created_at: string;
-  coach?: {
-    full_name: string;
-    avatar_url: string | null;
-  };
-}
-```
+### Changes to `src/pages/Kesfet.tsx`
 
-### Step 2 -- Create `src/hooks/useStoreData.ts`
+**1. Imports (lines 1-20)**
+- Add: `import { useCoachProducts } from "@/hooks/useStoreData";`
+- Remove: `import { coaches } from "@/lib/mockData";` (line 10) -- no longer used anywhere
+- Change toast import to sonner: `import { toast } from "sonner";` (line 9)
 
-**`useCoachProducts()`**
-- Query key: `["coach-products"]`
-- Fetches from `coach_products` with `.eq('is_active', true)`, joined with `profiles!coach_id(full_name, avatar_url)`
-- Orders by `created_at` desc
-- Maps to `CoachProduct[]` with safe optional chaining on the profile join
-- `staleTime: 300_000`
+**2. Remove `getAllProducts` helper** (lines 49-57)
+- Delete the entire function -- replaced by the hook
 
-**`usePurchaseProduct()`**
-- `useMutation` accepting `{ productId: string; price: number }`
-- Simulates delay with `setTimeout` (1s) and returns `true`
-- Placeholder for future Bio-Coin ledger integration
+**3. Hook initialization (after line 74)**
+- Add: `const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();`
+- Remove: `const allProducts = getAllProducts();` (line 76)
+
+**4. Adapt `handleAddToCart`** (lines 107-143)
+- The live product shape uses `image_url` not `image`, and `coach.full_name` not `coachName`
+- Update field mappings in the `addToCart` call:
+  - `image: product.image_url`
+  - `coachName: product.coach?.full_name || "Koç"`
+- Update discount key from `product.id + product.coachId` to `product.id + product.coach_id`
+
+**5. Adapt `handleProductClick`** (line 102-105)
+- Transform live product to the shape `ProductDetail` expects:
+  - `image: product.image_url`
+  - `coachName: product.coach?.full_name || "Koç"`
+  - `coachId: product.coach_id`
+  - `type: "product"`
+
+**6. Store tab content (lines 415-476)**
+- Add loading state: when `productsLoading`, render 4 skeleton cards in the 2-col grid (aspect-square skeleton + 3 text line skeletons)
+- Replace `allProducts.map(...)` with `(liveProducts ?? []).map((product, index) => ...)`
+- Update field references inside the map:
+  - `product.image` → `product.image_url`
+  - `product.coachName` → `product.coach?.full_name || "Koç"`
+  - `product.coachId` → `product.coach_id`
+  - Discount key: `product.id + product.coach_id`
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/types/shared-models.ts` | Append `CoachProduct` interface |
-| `src/hooks/useStoreData.ts` | New file with both hooks |
+| `src/pages/Kesfet.tsx` | Edit imports, remove mock helpers, wire live hooks, update field mappings |
 
-No UI files touched. No database changes.
+No new files. No database changes.
 
