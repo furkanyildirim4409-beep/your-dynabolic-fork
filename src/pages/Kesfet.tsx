@@ -6,9 +6,10 @@ import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "@/hooks/use-toast";
-import { coaches } from "@/lib/mockData";
+import { toast } from "sonner";
 import { useCoachStories, useLeaderboardCoaches, type CoachStoryRow } from "@/hooks/useDiscoveryData";
+import { useCoachProducts } from "@/hooks/useStoreData";
+import type { CoachProduct } from "@/types/shared-models";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
@@ -46,15 +47,6 @@ const getMedalBadge = (rank: number) => {
   return null;
 };
 
-const getAllProducts = () => {
-  return coaches.flatMap(coach =>
-    coach.products.map(product => ({
-      ...product,
-      coachName: coach.name,
-      coachId: coach.id
-    }))
-  ).slice(0, 8);
-};
 
 
 const Kesfet = () => {
@@ -72,8 +64,7 @@ const Kesfet = () => {
   const { mutate: toggleLike } = useToggleLike();
   const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
   const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
-
-  const allProducts = getAllProducts();
+  const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();
 
   // Deduplicate stories by coach_id
   const uniqueCoachStories = (liveStories ?? []).reduce<CoachStoryRow[]>((acc, s) => {
@@ -99,29 +90,39 @@ const Kesfet = () => {
   };
 
 
-  const handleProductClick = (product: any) => {
-    setSelectedProduct(product);
+  const handleProductClick = (product: CoachProduct) => {
+    setSelectedProduct({
+      id: product.id,
+      title: product.title,
+      price: product.price,
+      image: product.image_url,
+      type: "product",
+      coachName: product.coach?.full_name || "Koç",
+      coachId: product.coach_id,
+    });
     setShowProductDetail(true);
   };
 
   const handleAddToCart = async (product: any) => {
-    const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
+    const coachId = product.coach_id ?? product.coachId;
+    const discountKey = product.id + coachId;
+    const isDiscountActive = coinDiscounts[discountKey] || false;
     const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
 
     if (isDiscountActive && bioCoins < coinsNeeded) {
-      toast({ title: "Yetersiz bakiye!", description: "Yeterli Bio-Coin'iniz bulunmuyor.", variant: "destructive" });
+      toast.error("Yetersiz bakiye!", { description: "Yeterli Bio-Coin'iniz bulunmuyor." });
       return;
     }
 
     addToCart({
-      id: `${product.id}-${product.coachId}-${Date.now()}`,
+      id: `${product.id}-${coachId}-${Date.now()}`,
       title: product.title,
       price: product.price,
       discountedPrice: isDiscountActive ? Math.round(product.price - maxDiscount) : undefined,
       coinsUsed: isDiscountActive ? coinsNeeded : undefined,
-      image: product.image,
-      coachName: product.coachName,
+      image: product.image_url ?? product.image,
+      coachName: product.coach?.full_name ?? product.coachName ?? "Koç",
       type: "product",
     });
 
@@ -129,7 +130,6 @@ const Kesfet = () => {
       const newBalance = bioCoins - coinsNeeded;
       await supabase.from("profiles").update({ bio_coins: newBalance }).eq("id", user.id);
 
-      // Log spend transaction
       await supabase.from("bio_coin_transactions").insert({
         user_id: user.id,
         amount: -coinsNeeded,
@@ -138,7 +138,7 @@ const Kesfet = () => {
       });
 
       await refreshProfile();
-      setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: false }));
+      setCoinDiscounts(prev => ({ ...prev, [discountKey]: false }));
     }
   };
 
@@ -319,7 +319,7 @@ const Kesfet = () => {
                         <span className="text-xs">0</span>
                       </button>
                       <button
-                        onClick={() => toast({ title: "Link Kopyalandı (Demo)" })}
+                        onClick={() => toast("Link Kopyalandı (Demo)")}
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto"
                       >
                         <Share2 className="w-5 h-5" />
@@ -413,22 +413,34 @@ const Kesfet = () => {
                 </motion.div>
 
                 <div className="grid grid-cols-2 gap-3">
-                  {allProducts.map((product, index) => {
+                  {productsLoading ? (
+                    Array.from({ length: 4 }).map((_, i) => (
+                      <div key={i} className="glass-card overflow-hidden">
+                        <Skeleton className="aspect-square w-full" />
+                        <div className="p-3 space-y-2">
+                          <Skeleton className="h-3 w-3/4" />
+                          <Skeleton className="h-3 w-1/2" />
+                          <Skeleton className="h-4 w-16" />
+                        </div>
+                      </div>
+                    ))
+                  ) : (liveProducts ?? []).map((product, index) => {
+                    const discountKey = product.id + product.coach_id;
                     const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
-                    const isDiscountActive = coinDiscounts[product.id + product.coachId] || false;
+                    const isDiscountActive = coinDiscounts[discountKey] || false;
                     const coinsNeeded = calculateCoinsNeeded(maxDiscount);
                     const discountedPrice = product.price - maxDiscount;
 
                     return (
                       <motion.div
-                        key={`${product.id}-${product.coachId}`}
+                        key={product.id}
                         initial={{ opacity: 0, scale: 0.9 }}
                         animate={{ opacity: 1, scale: 1 }}
                         transition={{ delay: index * 0.05 }}
                         className="glass-card overflow-hidden"
                       >
                         <div className="aspect-square bg-muted relative cursor-pointer" onClick={() => handleProductClick(product)}>
-                          <img src={product.image} alt={product.title} className="w-full h-full object-cover" />
+                          <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
                           {isDiscountActive && (
                             <div className="absolute top-2 left-2">
                               <span className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full font-medium">-{Math.round(maxDiscount)}₺</span>
@@ -437,7 +449,7 @@ const Kesfet = () => {
                         </div>
                         <div className="p-3">
                           <p className="text-foreground text-xs font-medium line-clamp-1">{product.title}</p>
-                          <p className="text-muted-foreground text-[10px] mt-0.5">{product.coachName}</p>
+                          <p className="text-muted-foreground text-[10px] mt-0.5">{product.coach?.full_name || "Koç"}</p>
                           <div className="flex items-center justify-between mt-2">
                             {isDiscountActive ? (
                               <div className="flex items-center gap-1">
@@ -456,7 +468,7 @@ const Kesfet = () => {
                               </div>
                               <Switch
                                 checked={isDiscountActive}
-                                onCheckedChange={(checked) => setCoinDiscounts(prev => ({ ...prev, [product.id + product.coachId]: checked }))}
+                                onCheckedChange={(checked) => setCoinDiscounts(prev => ({ ...prev, [discountKey]: checked }))}
                                 className="scale-75"
                               />
                             </div>
