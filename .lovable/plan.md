@@ -1,46 +1,48 @@
 
 
-## Plan: Inject Live Data into Kesfet Feed Tab (Part 3)
+## Plan: Build React Query Hooks for Stories & Leaderboard (Part 4)
 
 ### Summary
-Replace the mock `allPosts` data in the AKIŞ tab with live Supabase data from `useSocialPosts` and `useToggleLike`, add skeleton loading states. No changes to KOÇLAR or MAĞAZA tabs.
+Create `src/hooks/useDiscoveryData.ts` with two hooks: `useCoachStories` and `useLeaderboardCoaches`. No UI changes.
 
-### Changes to `src/pages/Kesfet.tsx`
+### Step 1 -- Add `LeaderboardCoach` interface to `src/types/shared-models.ts`
 
-**1. Imports** (line ~1-17)
-- Add: `import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";`
-- Add: `import { Skeleton } from "@/components/ui/skeleton";`
+```typescript
+export interface LeaderboardCoach {
+  id: string;
+  name: string;
+  avatar: string;
+  specialty: string;
+  rating: number;
+  students: number;
+  score: number;
+  level: number;
+  hasNewStory: boolean;
+}
+```
 
-**2. Hook calls** (after line ~77)
-- Add `const { data: livePosts, isLoading: feedLoading } = useSocialPosts();`
-- Add `const { mutate: toggleLike } = useToggleLike();`
-- Remove `const allPosts = getAllPosts();` (line 81)
-- Remove `const [likedPosts, setLikedPosts] = useState(...)` (line 74)
-- Remove `handleLike` function (line 100-102)
+### Step 2 -- Create `src/hooks/useDiscoveryData.ts`
 
-**3. AKIŞ TabsContent** (lines 221-301)
-- Add loading skeleton: when `feedLoading`, render 3 skeleton cards mimicking post layout (avatar + name bar, image area, text lines, action bar)
-- Replace `allPosts.map(...)` with `(livePosts ?? []).map(...)` 
-- Map fields:
-  - `post.coachAvatar` → `post.coach?.avatar_url`
-  - `post.coachName` → `post.coach?.full_name`
-  - `post.coachId` → `post.coach_id`
-  - `post.beforeImage` → `post.before_image_url`
-  - `post.afterImage` → `post.after_image_url`
-  - `post.videoThumbnail` → `post.video_thumbnail_url`
-  - `post.likes` → `post.likes_count`
-  - `isLiked` → `post.user_has_liked`
-- Like button: call `toggleLike({ postId: post.id, isCurrentlyLiked: post.user_has_liked })`
-- Comments count: show `0` (no comments table yet)
+**`useCoachStories()`** -- `useQuery` hook
+- Query key: `["coach-stories"]`
+- Fetches from `coach_stories` where `expires_at > now()`, ordered by `created_at` desc
+- Joins `profiles!coach_id(full_name, avatar_url)` for coach info
+- Returns array of `{ id, coach_id, media_url, expires_at, created_at, coach: { full_name, avatar_url } }`
+- `staleTime: 60_000`
 
-**4. Cleanup**
-- Remove `getAllPosts()` helper function (lines 56-65) — no longer needed
-- Keep `getAllProducts()`, `coaches`, `getLeaderboardCoaches` imports for other tabs
+**`useLeaderboardCoaches()`** -- `useQuery` hook
+- Query key: `["leaderboard-coaches"]`
+- Fetches from `profiles` where `role = 'coach'`
+- Selects: `id, full_name, avatar_url, specialty, level`
+- Maps to `LeaderboardCoach` interface with safe fallbacks for missing fields (`rating: 4.9`, `score` derived from level, `students: 0`, `hasNewStory: false`)
+- Sorts by `score` descending
+- `staleTime: 120_000`
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/pages/Kesfet.tsx` | Edit imports, hooks, AKIŞ tab content, remove mock feed helpers |
+| `src/types/shared-models.ts` | Append `LeaderboardCoach` interface |
+| `src/hooks/useDiscoveryData.ts` | New file with both hooks |
 
-No new files. No database changes.
+No UI files touched. No database changes.
 
