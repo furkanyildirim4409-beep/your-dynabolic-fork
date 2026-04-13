@@ -7,7 +7,8 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
-import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
+import { coaches } from "@/lib/mockData";
+import { useCoachStories, useLeaderboardCoaches, type CoachStoryRow } from "@/hooks/useDiscoveryData";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
@@ -69,23 +70,30 @@ const Kesfet = () => {
 
   const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
   const { mutate: toggleLike } = useToggleLike();
+  const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
+  const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
 
-  const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
+
+  // Deduplicate stories by coach_id
+  const uniqueCoachStories = (liveStories ?? []).reduce<CoachStoryRow[]>((acc, s) => {
+    if (!acc.find(x => x.coach_id === s.coach_id)) acc.push(s);
+    return acc;
+  }, []);
 
   const handleCoachClick = (coachId: string) => {
     navigate(`/coach/${coachId}`);
   };
 
-  const handleStoryClick = (coach: Coach) => {
+  const handleStoryClick = (storyRow: CoachStoryRow) => {
     const story: Story = {
-      id: `coach-${coach.id}`,
-      title: coach.name,
-      thumbnail: coach.avatar,
-      content: coach.storyContent,
+      id: storyRow.id,
+      title: storyRow.coach.full_name,
+      thumbnail: storyRow.coach.avatar_url || "",
+      content: { image: storyRow.media_url, text: "" },
     };
     openStories([story], 0, {
-      categoryLabel: coach.specialty,
+      categoryLabel: storyRow.coach.full_name,
       categoryGradient: "from-primary to-primary/60",
     });
   };
@@ -174,28 +182,38 @@ const Kesfet = () => {
             <h2 className="font-display text-sm text-foreground tracking-wide">ELİT KOÇLAR</h2>
           </div>
           <div className="flex gap-4 overflow-x-auto pb-2 scrollbar-hide">
-            {coaches.map((coach) => (
-              <motion.button
-                key={coach.id}
-                onClick={() => handleStoryClick(coach)}
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                className="flex flex-col items-center gap-2 flex-shrink-0"
-              >
-                <div className={`p-0.5 rounded-full ${coach.hasNewStory ? "bg-gradient-to-tr from-primary via-yellow-500 to-primary" : "bg-muted"}`}>
-                  <div className="p-0.5 rounded-full bg-background">
-                    <Avatar className="w-16 h-16">
-                      <AvatarImage src={coach.avatar} alt={coach.name} className="object-cover" />
-                      <AvatarFallback className="bg-secondary text-foreground">{coach.name.charAt(4)}</AvatarFallback>
-                    </Avatar>
+            {storiesLoading ? (
+              Array.from({ length: 5 }).map((_, i) => (
+                <div key={i} className="flex flex-col items-center gap-2 flex-shrink-0">
+                  <Skeleton className="w-16 h-16 rounded-full" />
+                  <Skeleton className="h-3 w-12" />
+                </div>
+              ))
+            ) : uniqueCoachStories.length === 0 ? (
+              <p className="text-muted-foreground text-xs py-4">Aktif hikaye yok.</p>
+            ) : (
+              uniqueCoachStories.map((storyRow) => (
+                <motion.button
+                  key={storyRow.coach_id}
+                  onClick={() => handleStoryClick(storyRow)}
+                  whileHover={{ scale: 1.05 }}
+                  whileTap={{ scale: 0.95 }}
+                  className="flex flex-col items-center gap-2 flex-shrink-0"
+                >
+                  <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
+                    <div className="p-0.5 rounded-full bg-background">
+                      <Avatar className="w-16 h-16">
+                        <AvatarImage src={storyRow.coach.avatar_url || ""} alt={storyRow.coach.full_name} className="object-cover" />
+                        <AvatarFallback className="bg-secondary text-foreground">{storyRow.coach.full_name.charAt(0)}</AvatarFallback>
+                      </Avatar>
+                    </div>
                   </div>
-                </div>
-                <div className="text-center">
-                  <p className="text-foreground text-xs font-medium truncate w-16">{coach.name}</p>
-                  <p className="text-muted-foreground text-[10px]">{coach.specialty.split(" ")[0]}</p>
-                </div>
-              </motion.button>
-            ))}
+                  <div className="text-center">
+                    <p className="text-foreground text-xs font-medium truncate w-16">{storyRow.coach.full_name.split(" ")[0]}</p>
+                  </div>
+                </motion.button>
+              ))
+            )}
           </div>
         </motion.div>
 
@@ -320,7 +338,19 @@ const Kesfet = () => {
                 <Trophy className="w-5 h-5 text-primary" />
                 <h2 className="font-display text-sm text-foreground tracking-wide">KOÇLAR LİGİ</h2>
               </div>
-              {sortedCoaches.map((coach, index) => {
+              {leaderboardLoading ? (
+                Array.from({ length: 5 }).map((_, i) => (
+                  <div key={i} className="glass-card p-4 flex items-center gap-4">
+                    <Skeleton className="w-10 h-10 rounded-full" />
+                    <Skeleton className="w-14 h-14 rounded-full" />
+                    <div className="flex-1 space-y-2">
+                      <Skeleton className="h-4 w-28" />
+                      <Skeleton className="h-3 w-20" />
+                    </div>
+                    <Skeleton className="h-6 w-16" />
+                  </div>
+                ))
+              ) : (liveLeaderboard ?? []).map((coach, index) => {
                 const rank = index + 1;
                 const medal = getMedalBadge(rank);
                 return (
@@ -355,7 +385,7 @@ const Kesfet = () => {
                       </div>
                     </div>
                     <div className="text-right">
-                      <p className="font-display text-lg text-primary">{coach.score}</p>
+                      <p className="font-display text-lg text-primary">{coach.score.toLocaleString()}</p>
                       <p className="text-muted-foreground text-[10px]">puan</p>
                     </div>
                   </motion.button>
