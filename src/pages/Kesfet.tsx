@@ -5,6 +5,7 @@ import { Globe, X, Heart, MessageCircle, Share2, Verified, Coins, Trophy, Star, 
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
+import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "@/hooks/use-toast";
 import { coaches, getLeaderboardCoaches, Coach } from "@/lib/mockData";
 import ProductDetail from "@/components/ProductDetail";
@@ -15,6 +16,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SupplementShop from "@/components/SupplementShop";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
+import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
