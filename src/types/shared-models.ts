@@ -186,3 +186,15 @@ export interface SocialPost {
   likes_count: number;
   user_has_liked: boolean;
 }
+
+export interface LeaderboardCoach {
+  id: string;
+  name: string;
+  avatar: string;
+  specialty: string;
+  rating: number;
+  students: number;
+  score: number;
+  level: number;
+  hasNewStory: boolean;
+}
