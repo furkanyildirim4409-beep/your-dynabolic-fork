@@ -2,6 +2,22 @@ import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 
+export function useFollowerCount(coachId: string | undefined) {
+  return useQuery<number>({
+    queryKey: ["follower-count", coachId],
+    enabled: !!coachId,
+    queryFn: async () => {
+      const { count, error } = await (supabase as any)
+        .from("user_follows")
+        .select("id", { count: "exact", head: true })
+        .eq("followed_id", coachId!);
+      if (error) throw error;
+      return count || 0;
+    },
+    staleTime: 30_000,
+  });
+}
+
 export function useFollowStatus(coachId: string | undefined) {
   const { user } = useAuth();
 
@@ -57,6 +73,7 @@ export function useToggleFollow() {
     },
     onSettled: (_data, _err, vars) => {
       queryClient.invalidateQueries({ queryKey: ["follow-status", vars.coachId] });
+      queryClient.invalidateQueries({ queryKey: ["follower-count", vars.coachId] });
     },
   });
 }
