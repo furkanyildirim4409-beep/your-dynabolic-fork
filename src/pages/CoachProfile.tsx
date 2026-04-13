@@ -265,6 +265,33 @@ const CoachProfile = () => {
           </div>
         )}
 
+        {/* Highlights Section */}
+        {(highlightsLoading || (highlights && highlights.length > 0)) && (
+          <div className="px-4 pb-4">
+            <p className="text-muted-foreground text-xs font-medium mb-2 tracking-wider">ÖNE ÇIKANLAR</p>
+            <div className="flex gap-4 overflow-x-auto scrollbar-hide pb-1">
+              {highlightsLoading ? (
+                Array.from({ length: 4 }).map((_, i) => (
+                  <div key={i} className="flex flex-col items-center gap-1 flex-shrink-0">
+                    <Skeleton className="w-16 h-16 rounded-full" />
+                    <Skeleton className="h-3 w-12" />
+                  </div>
+                ))
+              ) : (
+                (highlights ?? []).map((h) => (
+                  <button key={h.category} onClick={() => handleHighlightClick(h)} className="flex flex-col items-center gap-1 flex-shrink-0 group">
+                    <div className="p-0.5 rounded-full border border-border">
+                      <div className="w-16 h-16 rounded-full bg-muted bg-cover bg-center"
+                        style={{ backgroundImage: `url(${h.cover_image})` }} />
+                    </div>
+                    <span className="text-[10px] text-muted-foreground group-hover:text-foreground max-w-[64px] truncate">{h.category}</span>
+                  </button>
+                ))
+              )}
+            </div>
+          </div>
+        )}
+
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-transparent border-b border-white/10 rounded-none h-12 p-0">
