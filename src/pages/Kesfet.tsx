@@ -55,16 +55,6 @@ const getAllProducts = () => {
   ).slice(0, 8);
 };
 
-const getAllPosts = () => {
-  return coaches.flatMap(coach =>
-    coach.posts.map(post => ({
-      ...post,
-      coachName: coach.name,
-      coachId: coach.id,
-      coachAvatar: coach.avatar
-    }))
-  );
-};
 
 const Kesfet = () => {
   const navigate = useNavigate();
