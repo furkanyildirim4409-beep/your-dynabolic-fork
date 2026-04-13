@@ -85,15 +85,15 @@ const Kesfet = () => {
     navigate(`/coach/${coachId}`);
   };
 
-  const handleStoryClick = (coach: Coach) => {
+  const handleStoryClick = (storyRow: CoachStoryRow) => {
     const story: Story = {
-      id: `coach-${coach.id}`,
-      title: coach.name,
-      thumbnail: coach.avatar,
-      content: coach.storyContent,
+      id: storyRow.id,
+      title: storyRow.coach.full_name,
+      thumbnail: storyRow.coach.avatar_url || "",
+      content: { image: storyRow.media_url, text: "" },
     };
     openStories([story], 0, {
-      categoryLabel: coach.specialty,
+      categoryLabel: storyRow.coach.full_name,
       categoryGradient: "from-primary to-primary/60",
     });
   };
