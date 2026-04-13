@@ -63,14 +63,15 @@ const Kesfet = () => {
   const { profile, user, refreshProfile } = useAuth();
   const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
-  const [likedPosts, setLikedPosts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
 
+  const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
+  const { mutate: toggleLike } = useToggleLike();
+
   const sortedCoaches = getLeaderboardCoaches();
   const allProducts = getAllProducts();
-  const allPosts = getAllPosts();
 
   const handleCoachClick = (coachId: string) => {
     navigate(`/coach/${coachId}`);
