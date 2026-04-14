@@ -46,6 +46,7 @@ const CoachProfile = () => {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
+  const [allStoriesWatched, setAllStoriesWatched] = useState(false);
 
   // Live data hooks
   const { data: profile, isLoading: profileLoading } = useCoachDetail(coachId);
