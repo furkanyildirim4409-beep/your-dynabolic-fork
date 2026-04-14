@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
+import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
@@ -65,6 +66,8 @@ const Kesfet = () => {
   const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
   const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
   const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();
+  const { data: viewedStoryIds } = useMyViewedStoryIds();
+  const markViewed = useMarkStoryViewed();
 
   // Deduplicate stories by coach_id
   const uniqueCoachStories = (liveStories ?? []).reduce<CoachStoryRow[]>((acc, s) => {
@@ -77,16 +80,19 @@ const Kesfet = () => {
   };
 
   const handleStoryClick = (storyRow: CoachStoryRow) => {
-    const story: Story = {
-      id: storyRow.id,
-      title: storyRow.coach.full_name,
-      thumbnail: storyRow.coach.avatar_url || "",
-      content: { image: storyRow.media_url, text: "" },
-    };
-    openStories([story], 0, {
+    // Get ALL active stories for this coach
+    const coachAllStories = (liveStories ?? []).filter(s => s.coach_id === storyRow.coach_id);
+    const mapped: Story[] = coachAllStories.map((s) => ({
+      id: s.id,
+      title: s.coach.full_name,
+      thumbnail: s.coach.avatar_url || "",
+      content: { image: s.media_url, text: "" },
+    }));
+    openStories(mapped, 0, {
       categoryLabel: storyRow.coach.full_name,
       categoryGradient: "from-primary to-primary/60",
     });
+    markViewed.mutate(coachAllStories.map(s => s.id));
   };
 
 
@@ -192,27 +198,34 @@ const Kesfet = () => {
             ) : uniqueCoachStories.length === 0 ? (
               <p className="text-muted-foreground text-xs py-4">Takip ettiğiniz koçların henüz aktif bir hikayesi yok.</p>
             ) : (
-              uniqueCoachStories.map((storyRow) => (
-                <motion.button
-                  key={storyRow.coach_id}
-                  onClick={() => handleStoryClick(storyRow)}
-                  whileHover={{ scale: 1.05 }}
-                  whileTap={{ scale: 0.95 }}
-                  className="flex flex-col items-center gap-2 flex-shrink-0"
-                >
-                  <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
-                    <div className="p-0.5 rounded-full bg-background">
-                      <Avatar className="w-16 h-16">
-                        <AvatarImage src={storyRow.coach.avatar_url || ""} alt={storyRow.coach.full_name} className="object-cover" />
-                        <AvatarFallback className="bg-secondary text-foreground">{storyRow.coach.full_name.charAt(0)}</AvatarFallback>
-                      </Avatar>
+              uniqueCoachStories.map((storyRow) => {
+                const coachStoryIds = (liveStories ?? []).filter(s => s.coach_id === storyRow.coach_id).map(s => s.id);
+                const allWatched = coachStoryIds.every(id => viewedStoryIds?.includes(id));
+                return (
+                  <motion.button
+                    key={storyRow.coach_id}
+                    onClick={() => handleStoryClick(storyRow)}
+                    whileHover={{ scale: 1.05 }}
+                    whileTap={{ scale: 0.95 }}
+                    className="flex flex-col items-center gap-2 flex-shrink-0"
+                  >
+                    <div className={allWatched
+                      ? "p-0.5 rounded-full border-2 border-muted-foreground/30"
+                      : "p-0.5 rounded-full bg-gradient-to-tr from-primary to-primary/60"
+                    }>
+                      <div className="p-0.5 rounded-full bg-background">
+                        <Avatar className="w-16 h-16">
+                          <AvatarImage src={storyRow.coach.avatar_url || ""} alt={storyRow.coach.full_name} className="object-cover" />
+                          <AvatarFallback className="bg-secondary text-foreground">{storyRow.coach.full_name.charAt(0)}</AvatarFallback>
+                        </Avatar>
+                      </div>
                     </div>
-                  </div>
-                  <div className="text-center">
-                    <p className="text-foreground text-xs font-medium truncate w-16">{storyRow.coach.full_name.split(" ")[0]}</p>
-                  </div>
-                </motion.button>
-              ))
+                    <div className="text-center">
+                      <p className="text-foreground text-xs font-medium truncate w-16">{storyRow.coach.full_name.split(" ")[0]}</p>
+                    </div>
+                  </motion.button>
+                );
+              })
             )}
           </div>
         </motion.div>
