@@ -1,58 +1,81 @@
 
 
-## Plan: Refactor Profile Avatar as Story Ring (Epic 4 - Final UI Refinement)
+## Plan: Story Views Engine & Discovery Fix (Epic 5 - Part 1)
 
 ### Summary
-Make the coach's main avatar clickable to open active stories (Instagram-style), add dynamic ring states, and delete the standalone "HİKAYELER" section.
+Create a `story_views` table for persistent view tracking, build hooks to read/write views, fix Discovery to play ALL stories per coach (not just one), and apply brand colors everywhere.
 
-### Changes to `src/pages/CoachProfile.tsx`
+---
 
-**1. Add local watched state** (after line 48):
-```typescript
-const [allStoriesWatched, setAllStoriesWatched] = useState(false);
+### Step 1 -- Database Migration: `story_views` table
+
+```sql
+CREATE TABLE public.story_views (
+    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
+    story_id uuid NOT NULL,
+    viewer_id uuid NOT NULL,
+    viewed_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
+    UNIQUE(story_id, viewer_id)
+);
+
+ALTER TABLE public.story_views ENABLE ROW LEVEL SECURITY;
+
+CREATE POLICY "Users can insert own views"
+ON public.story_views FOR INSERT TO authenticated
+WITH CHECK (auth.uid() = viewer_id);
+
+CREATE POLICY "Users can read own views"
+ON public.story_views FOR SELECT TO authenticated
+USING (auth.uid() = viewer_id);
+
+CREATE POLICY "Coaches can read views on their stories"
+ON public.story_views FOR SELECT TO authenticated
+USING (story_id IN (SELECT id FROM public.coach_stories WHERE coach_id = auth.uid()));
 ```
 
-**2. Add avatar click handler** (after `handleHighlightClick`):
-```typescript
-const handleAvatarClick = () => {
-  if (stories && stories.length > 0) {
-    const allStories: Story[] = stories.map((s) => ({
-      id: s.id,
-      title: s.coach.full_name,
-      thumbnail: s.media_url,
-      content: { image: s.media_url, text: "" },
-    }));
-    openStories(allStories, 0, {
-      categoryLabel: coachName,
-      categoryGradient: "from-pink-500 via-red-500 to-yellow-500",
-    });
-    setAllStoriesWatched(true);
-  }
-};
-```
+No foreign key to `auth.users` (per guidelines). We reference `coach_stories(id)` with `ON DELETE CASCADE` for cleanup.
 
-**3. Refactor avatar ring** (lines 168-177):
+---
 
-Derive ring state:
-```typescript
-const hasActiveStories = !storiesLoading && stories && stories.length > 0;
-```
+### Step 2 -- Create `src/hooks/useStoryViews.ts`
 
-Replace the static gradient wrapper with dynamic classes:
-- **Unwatched stories**: `p-1 rounded-full bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500` + `cursor-pointer`
-- **All watched**: `p-1 rounded-full border-2 border-muted-foreground/30` + `cursor-pointer`
-- **No stories**: No ring wrapper, no cursor change
+Two hooks:
 
-Wrap in `<button>` with `onClick={handleAvatarClick}` (only interactive when stories exist).
+- **`useMyViewedStoryIds()`** -- Fetches all `story_id` values from `story_views` where `viewer_id = user.id`. Returns `string[]`.
 
-**4. Delete "HİKAYELER" section** (lines 237-266):
+- **`useMarkStoryViewed()`** -- Mutation that upserts `{ story_id, viewer_id }` into `story_views` (using `.upsert` with `onConflict: 'story_id,viewer_id'` to ignore duplicates). On success, invalidates `["my-viewed-story-ids"]`.
 
-Remove the entire `{/* Stories Section */}` block. The "ÖNE ÇIKANLAR" (Highlights) section stays untouched.
+---
+
+### Step 3 -- Update `CoachProfile.tsx`
+
+- Remove `allStoriesWatched` local state.
+- Import `useMyViewedStoryIds` and `useMarkStoryViewed`.
+- Derive `allWatched`: `stories?.every(s => viewedIds?.includes(s.id))`.
+- Avatar ring colors change from pink/red/yellow to brand primary:
+  - Unwatched: `bg-gradient-to-tr from-primary to-primary/60`
+  - Watched: `border-2 border-muted-foreground/30`
+- In `handleAvatarClick`, after opening stories, call `markViewed` for each story id.
+
+---
+
+### Step 4 -- Fix Discovery `handleStoryClick` in `Kesfet.tsx`
+
+Currently passes only 1 story. Fix:
+
+- Filter `liveStories` by the clicked coach's `coach_id` to get ALL their active stories.
+- Map all of them into `Story[]` and pass the full array to `openStories`.
+- Ring colors already use `from-primary`; add watched/unwatched logic using `useMyViewedStoryIds`:
+  - If all stories for that coach are viewed: subtle `border-muted-foreground/30` ring.
+  - Otherwise: gradient `from-primary to-primary/60` ring.
+
+---
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| `src/pages/CoachProfile.tsx` | Dynamic avatar ring, click handler, delete stories section |
-
-No new files. No database changes.
+| Migration SQL | Create `story_views` table + RLS |
+| `src/hooks/useStoryViews.ts` | New file: `useMyViewedStoryIds`, `useMarkStoryViewed` |
+| `src/pages/CoachProfile.tsx` | Persistent watched state, brand ring colors |
+| `src/pages/Kesfet.tsx` | Play ALL coach stories, watched ring states |
 
