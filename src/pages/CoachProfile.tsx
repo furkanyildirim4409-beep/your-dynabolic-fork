@@ -47,7 +47,10 @@ const CoachProfile = () => {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
-  const [allStoriesWatched, setAllStoriesWatched] = useState(false);
+
+  // Persistent story view tracking
+  const { data: viewedStoryIds } = useMyViewedStoryIds();
+  const markViewed = useMarkStoryViewed();
 
   // Live data hooks
   const { data: profile, isLoading: profileLoading } = useCoachDetail(coachId);
@@ -66,6 +69,7 @@ const CoachProfile = () => {
   const coachInitial = coachName.charAt(0);
 
   const hasActiveStories = !storiesLoading && stories && stories.length > 0;
+  const allStoriesWatched = hasActiveStories && stories.every(s => viewedStoryIds?.includes(s.id));
 
   const handleAvatarClick = () => {
     if (stories && stories.length > 0) {
@@ -77,9 +81,9 @@ const CoachProfile = () => {
       }));
       openStories(allStories, 0, {
         categoryLabel: coachName,
-        categoryGradient: "from-pink-500 via-red-500 to-yellow-500",
+        categoryGradient: "from-primary to-primary/60",
       });
-      setAllStoriesWatched(true);
+      markViewed.mutate(stories.map(s => s.id));
     }
   };
 
@@ -178,7 +182,7 @@ const CoachProfile = () => {
               >
                 <div className={
                   hasActiveStories && !allStoriesWatched
-                    ? "p-1 rounded-full bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500"
+                    ? "p-1 rounded-full bg-gradient-to-tr from-primary to-primary/60"
                     : hasActiveStories && allStoriesWatched
                       ? "p-1 rounded-full border-2 border-muted-foreground/30"
                       : ""
