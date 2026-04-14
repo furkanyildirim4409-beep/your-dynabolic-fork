@@ -1,81 +1,56 @@
 
 
-## Plan: Story Views Engine & Discovery Fix (Epic 5 - Part 1)
+## Plan: Hotfix Discovery Feed Media (Epic 6 - Part 1)
 
-### Summary
-Create a `story_views` table for persistent view tracking, build hooks to read/write views, fix Discovery to play ALL stories per coach (not just one), and apply brand colors everywhere.
+### Problem
+The `social_posts` table lacks a generic `image_url` column. Currently only `transformation` (before/after) and `video` (thumbnail) types render media. A coach posting a single image has no column to store it and no rendering path in the UI.
 
----
+### Solution
 
-### Step 1 -- Database Migration: `story_views` table
+**Step 1 -- Database Migration: Add `image_url` column**
 
 ```sql
-CREATE TABLE public.story_views (
-    id uuid DEFAULT gen_random_uuid() PRIMARY KEY,
-    story_id uuid NOT NULL,
-    viewer_id uuid NOT NULL,
-    viewed_at timestamptz DEFAULT timezone('utc', now()) NOT NULL,
-    UNIQUE(story_id, viewer_id)
-);
-
-ALTER TABLE public.story_views ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Users can insert own views"
-ON public.story_views FOR INSERT TO authenticated
-WITH CHECK (auth.uid() = viewer_id);
-
-CREATE POLICY "Users can read own views"
-ON public.story_views FOR SELECT TO authenticated
-USING (auth.uid() = viewer_id);
-
-CREATE POLICY "Coaches can read views on their stories"
-ON public.story_views FOR SELECT TO authenticated
-USING (story_id IN (SELECT id FROM public.coach_stories WHERE coach_id = auth.uid()));
+ALTER TABLE public.social_posts ADD COLUMN IF NOT EXISTS image_url text;
 ```
 
-No foreign key to `auth.users` (per guidelines). We reference `coach_stories(id)` with `ON DELETE CASCADE` for cleanup.
+Update `src/integrations/supabase/types.ts` to include `image_url` in the `social_posts` Row/Insert/Update types.
 
----
+**Step 2 -- Update `SocialPost` type in `src/types/shared-models.ts`**
 
-### Step 2 -- Create `src/hooks/useStoryViews.ts`
+Add `image_url: string | null;` to the `SocialPost` interface.
 
-Two hooks:
+**Step 3 -- Update `useSocialFeed.ts` mapping**
 
-- **`useMyViewedStoryIds()`** -- Fetches all `story_id` values from `story_views` where `viewer_id = user.id`. Returns `string[]`.
+Include `image_url: p.image_url` in the post mapping inside `useSocialPosts`.
 
-- **`useMarkStoryViewed()`** -- Mutation that upserts `{ story_id, viewer_id }` into `story_views` (using `.upsert` with `onConflict: 'story_id,viewer_id'` to ignore duplicates). On success, invalidates `["my-viewed-story-ids"]`.
+**Step 4 -- Add image rendering in `Kesfet.tsx`**
 
----
+After the existing `transformation` and `video` blocks (line 316), add a new block for single-image posts:
 
-### Step 3 -- Update `CoachProfile.tsx`
+```tsx
+{post.type === "image" && post.image_url && (
+  <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
+    <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+  </div>
+)}
+```
 
-- Remove `allStoriesWatched` local state.
-- Import `useMyViewedStoryIds` and `useMarkStoryViewed`.
-- Derive `allWatched`: `stories?.every(s => viewedIds?.includes(s.id))`.
-- Avatar ring colors change from pink/red/yellow to brand primary:
-  - Unwatched: `bg-gradient-to-tr from-primary to-primary/60`
-  - Watched: `border-2 border-muted-foreground/30`
-- In `handleAvatarClick`, after opening stories, call `markViewed` for each story id.
+Also add a fallback for any post type that has `before_image_url` but not `after_image_url` (single image reusing the before field):
 
----
-
-### Step 4 -- Fix Discovery `handleStoryClick` in `Kesfet.tsx`
-
-Currently passes only 1 story. Fix:
-
-- Filter `liveStories` by the clicked coach's `coach_id` to get ALL their active stories.
-- Map all of them into `Story[]` and pass the full array to `openStories`.
-- Ring colors already use `from-primary`; add watched/unwatched logic using `useMyViewedStoryIds`:
-  - If all stories for that coach are viewed: subtle `border-muted-foreground/30` ring.
-  - Otherwise: gradient `from-primary to-primary/60` ring.
-
----
+```tsx
+{post.type !== "transformation" && post.type !== "video" && !post.image_url && post.before_image_url && (
+  <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
+    <img src={post.before_image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+  </div>
+)}
+```
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| Migration SQL | Create `story_views` table + RLS |
-| `src/hooks/useStoryViews.ts` | New file: `useMyViewedStoryIds`, `useMarkStoryViewed` |
-| `src/pages/CoachProfile.tsx` | Persistent watched state, brand ring colors |
-| `src/pages/Kesfet.tsx` | Play ALL coach stories, watched ring states |
+| Migration SQL | Add `image_url` column to `social_posts` |
+| `src/integrations/supabase/types.ts` | Add `image_url` to social_posts types |
+| `src/types/shared-models.ts` | Add `image_url` to `SocialPost` |
+| `src/hooks/useSocialFeed.ts` | Map `image_url` field |
+| `src/pages/Kesfet.tsx` | Render single-image and fallback media blocks |
 
