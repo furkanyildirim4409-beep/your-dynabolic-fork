@@ -315,6 +315,18 @@ const Kesfet = () => {
                       </div>
                     )}
 
+                    {post.type === "image" && post.image_url && (
+                      <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
+                        <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                    )}
+
+                    {post.type !== "transformation" && post.type !== "video" && !post.image_url && post.before_image_url && (
+                      <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
+                        <img src={post.before_image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                      </div>
+                    )}
+
                     <div className="p-4">
                       <p className="text-foreground text-sm">{post.content}</p>
                     </div>

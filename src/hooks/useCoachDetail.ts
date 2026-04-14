@@ -74,6 +74,7 @@ export function useCoachPosts(coachId: string | undefined) {
         after_image_url: p.after_image_url,
         video_thumbnail_url: p.video_thumbnail_url,
         video_url: p.video_url,
+        image_url: p.image_url ?? null,
         created_at: p.created_at,
         coach: {
           full_name: p.profiles?.full_name ?? "Koç",
