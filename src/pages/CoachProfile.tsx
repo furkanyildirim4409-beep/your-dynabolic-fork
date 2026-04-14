@@ -64,7 +64,24 @@ const CoachProfile = () => {
   const coachAvatar = profile?.avatar_url || "";
   const coachInitial = coachName.charAt(0);
 
-  
+  const hasActiveStories = !storiesLoading && stories && stories.length > 0;
+
+  const handleAvatarClick = () => {
+    if (stories && stories.length > 0) {
+      const allStories: Story[] = stories.map((s) => ({
+        id: s.id,
+        title: s.coach.full_name,
+        thumbnail: s.media_url,
+        content: { image: s.media_url, text: "" },
+      }));
+      openStories(allStories, 0, {
+        categoryLabel: coachName,
+        categoryGradient: "from-pink-500 via-red-500 to-yellow-500",
+      });
+      setAllStoriesWatched(true);
+    }
+  };
+
 
   const handleLike = (postId: string, isCurrentlyLiked: boolean) => {
     toggleLike.mutate({ postId, isCurrentlyLiked });
