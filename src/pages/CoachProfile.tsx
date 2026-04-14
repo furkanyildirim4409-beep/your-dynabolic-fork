@@ -126,19 +126,6 @@ const CoachProfile = () => {
     toast("Mesaj (Demo)", { description: `${coachName} ile mesajlaşma yakında aktif olacak!` });
   };
 
-  const handleStoryClick = (storyRow: CoachStoryRow) => {
-    const allStories: Story[] = (stories ?? []).map((s) => ({
-      id: s.id,
-      title: s.coach.full_name,
-      thumbnail: s.media_url,
-      content: { image: s.media_url, text: "" },
-    }));
-    const idx = allStories.findIndex((s) => s.id === storyRow.id);
-    openStories(allStories, idx >= 0 ? idx : 0, {
-      categoryLabel: coachName,
-      categoryGradient: "from-primary to-primary/60",
-    });
-  };
 
   const handleHighlightClick = (highlight: CoachHighlight) => {
     const mapped: Story[] = highlight.stories.map((s) => ({
