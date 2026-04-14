@@ -178,6 +178,7 @@ export interface SocialPost {
   after_image_url: string | null;
   video_thumbnail_url: string | null;
   video_url: string | null;
+  image_url: string | null;
   created_at: string;
   coach: {
     full_name: string;
