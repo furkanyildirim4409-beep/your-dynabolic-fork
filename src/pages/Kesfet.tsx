@@ -19,6 +19,7 @@ import { supabase } from "@/integrations/supabase/client";
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
+import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;

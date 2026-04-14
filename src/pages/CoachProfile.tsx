@@ -15,6 +15,7 @@ import { useStory, type Story } from "@/context/StoryContext";
 import ProductDetail from "@/components/ProductDetail";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
+import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
 
 // Bio-Coin Constants (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
