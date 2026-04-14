@@ -11,7 +11,7 @@ import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecific
 import { useToggleLike } from "@/hooks/useSocialFeed";
 import { useFollowStatus, useToggleFollow, useFollowerCount } from "@/hooks/useFollowSystem";
 import { useStory, type Story } from "@/context/StoryContext";
-import type { CoachStoryRow } from "@/hooks/useDiscoveryData";
+
 import ProductDetail from "@/components/ProductDetail";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
