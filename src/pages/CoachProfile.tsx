@@ -11,7 +11,7 @@ import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecific
 import { useToggleLike } from "@/hooks/useSocialFeed";
 import { useFollowStatus, useToggleFollow, useFollowerCount } from "@/hooks/useFollowSystem";
 import { useStory, type Story } from "@/context/StoryContext";
-import type { CoachStoryRow } from "@/hooks/useDiscoveryData";
+
 import ProductDetail from "@/components/ProductDetail";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
@@ -46,6 +46,7 @@ const CoachProfile = () => {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
+  const [allStoriesWatched, setAllStoriesWatched] = useState(false);
 
   // Live data hooks
   const { data: profile, isLoading: profileLoading } = useCoachDetail(coachId);
@@ -63,7 +64,24 @@ const CoachProfile = () => {
   const coachAvatar = profile?.avatar_url || "";
   const coachInitial = coachName.charAt(0);
 
-  
+  const hasActiveStories = !storiesLoading && stories && stories.length > 0;
+
+  const handleAvatarClick = () => {
+    if (stories && stories.length > 0) {
+      const allStories: Story[] = stories.map((s) => ({
+        id: s.id,
+        title: s.coach.full_name,
+        thumbnail: s.media_url,
+        content: { image: s.media_url, text: "" },
+      }));
+      openStories(allStories, 0, {
+        categoryLabel: coachName,
+        categoryGradient: "from-pink-500 via-red-500 to-yellow-500",
+      });
+      setAllStoriesWatched(true);
+    }
+  };
+
 
   const handleLike = (postId: string, isCurrentlyLiked: boolean) => {
     toggleLike.mutate({ postId, isCurrentlyLiked });
@@ -108,19 +126,6 @@ const CoachProfile = () => {
     toast("Mesaj (Demo)", { description: `${coachName} ile mesajlaşma yakında aktif olacak!` });
   };
 
-  const handleStoryClick = (storyRow: CoachStoryRow) => {
-    const allStories: Story[] = (stories ?? []).map((s) => ({
-      id: s.id,
-      title: s.coach.full_name,
-      thumbnail: s.media_url,
-      content: { image: s.media_url, text: "" },
-    }));
-    const idx = allStories.findIndex((s) => s.id === storyRow.id);
-    openStories(allStories, idx >= 0 ? idx : 0, {
-      categoryLabel: coachName,
-      categoryGradient: "from-primary to-primary/60",
-    });
-  };
 
   const handleHighlightClick = (highlight: CoachHighlight) => {
     const mapped: Story[] = highlight.stories.map((s) => ({
@@ -165,16 +170,26 @@ const CoachProfile = () => {
             {profileLoading ? (
               <Skeleton className="w-24 h-24 rounded-full" />
             ) : (
-              <div className="relative">
-                <div className="p-1 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
-                  <div className="p-0.5 rounded-full bg-background">
+              <button
+                onClick={handleAvatarClick}
+                className={`relative ${hasActiveStories ? 'cursor-pointer' : ''}`}
+                disabled={!hasActiveStories}
+              >
+                <div className={
+                  hasActiveStories && !allStoriesWatched
+                    ? "p-1 rounded-full bg-gradient-to-tr from-pink-500 via-red-500 to-yellow-500"
+                    : hasActiveStories && allStoriesWatched
+                      ? "p-1 rounded-full border-2 border-muted-foreground/30"
+                      : ""
+                }>
+                  <div className={hasActiveStories ? "p-0.5 rounded-full bg-background" : ""}>
                     <Avatar className="w-24 h-24">
                       <AvatarImage src={coachAvatar} alt={coachName} className="object-cover" />
                       <AvatarFallback className="bg-secondary text-foreground text-2xl font-display">{coachInitial}</AvatarFallback>
                     </Avatar>
                   </div>
                 </div>
-              </div>
+              </button>
             )}
 
             {/* Stats */}
@@ -234,36 +249,6 @@ const CoachProfile = () => {
           </div>
         </div>
 
-        {/* Stories Section */}
-        {(storiesLoading || (stories && stories.length > 0)) && (
-          <div className="px-4 pb-4">
-            <p className="text-muted-foreground text-xs font-medium mb-2 tracking-wider">HİKAYELER</p>
-            <div className="flex gap-3 overflow-x-auto scrollbar-hide pb-1">
-              {storiesLoading ? (
-                Array.from({ length: 3 }).map((_, i) => (
-                  <Skeleton key={i} className="w-16 h-16 rounded-full flex-shrink-0" />
-                ))
-              ) : (
-                (stories ?? []).map((s) => (
-                  <button
-                    key={s.id}
-                    onClick={() => handleStoryClick(s)}
-                    className="flex-shrink-0 group"
-                  >
-                    <div className="p-0.5 rounded-full bg-gradient-to-tr from-primary via-yellow-500 to-primary">
-                      <div className="p-0.5 rounded-full bg-background">
-                        <div
-                          className="w-14 h-14 rounded-full bg-muted bg-cover bg-center"
-                          style={{ backgroundImage: `url(${s.media_url})` }}
-                        />
-                      </div>
-                    </div>
-                  </button>
-                ))
-              )}
-            </div>
-          </div>
-        )}
 
         {/* Highlights Section */}
         {(highlightsLoading || (highlights && highlights.length > 0)) && (
