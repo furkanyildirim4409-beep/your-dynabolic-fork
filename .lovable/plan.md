@@ -1,56 +1,84 @@
 
 
-## Plan: Hotfix Discovery Feed Media (Epic 6 - Part 1)
+## Plan: Fix Auth Trigger for Email & User Roles (Hotfix)
 
 ### Problem
-The `social_posts` table lacks a generic `image_url` column. Currently only `transformation` (before/after) and `video` (thumbnail) types render media. A coach posting a single image has no column to store it and no rendering path in the UI.
+New user registration leaves `profiles.email` as NULL and does not insert a record into `user_roles`, breaking coach panel visibility and role-based logic.
 
-### Solution
+### Solution: Single Database Migration
 
-**Step 1 -- Database Migration: Add `image_url` column**
+One migration that:
+
+1. **Rewrites `handle_new_user()` trigger function** to:
+   - Insert `new.email` into `profiles.email`
+   - Default role to `'athlete'` (not `'coach'`)
+   - Use `COALESCE(full_name, split_part(email, '@', 1))` as fallback name
+   - Insert into `user_roles` with proper `::app_role` cast
+   - Use `ON CONFLICT` for idempotency on both tables
+
+2. **Re-creates the trigger** on `auth.users` (DROP + CREATE) to ensure it points to the updated function
+
+3. **Patches existing data**:
+   - Updates NULL emails in `profiles` from `auth.users`
+   - Inserts missing `user_roles` records for existing profiles
+
+### Key Detail: Type Cast
+The `user_roles.role` column uses the `app_role` enum (`admin`, `coach`, `athlete`). The trigger must cast the text value: `assigned_role::app_role`.
+
+### Migration SQL
 
 ```sql
-ALTER TABLE public.social_posts ADD COLUMN IF NOT EXISTS image_url text;
-```
+CREATE OR REPLACE FUNCTION public.handle_new_user()
+RETURNS trigger AS $$
+DECLARE
+  assigned_role text;
+BEGIN
+  assigned_role := COALESCE(new.raw_user_meta_data->>'role', 'athlete');
 
-Update `src/integrations/supabase/types.ts` to include `image_url` in the `social_posts` Row/Insert/Update types.
+  INSERT INTO public.profiles (id, full_name, avatar_url, role, email)
+  VALUES (
+    new.id,
+    COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
+    new.raw_user_meta_data->>'avatar_url',
+    assigned_role,
+    new.email
+  )
+  ON CONFLICT (id) DO UPDATE
+  SET email = EXCLUDED.email,
+      role = CASE WHEN public.profiles.role IS NULL THEN EXCLUDED.role ELSE public.profiles.role END;
 
-**Step 2 -- Update `SocialPost` type in `src/types/shared-models.ts`**
+  INSERT INTO public.user_roles (user_id, role)
+  VALUES (new.id, assigned_role::app_role)
+  ON CONFLICT (user_id, role) DO NOTHING;
 
-Add `image_url: string | null;` to the `SocialPost` interface.
+  RETURN new;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
 
-**Step 3 -- Update `useSocialFeed.ts` mapping**
+-- Recreate trigger
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
+CREATE TRIGGER on_auth_user_created
+  AFTER INSERT ON auth.users
+  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
 
-Include `image_url: p.image_url` in the post mapping inside `useSocialPosts`.
+-- Patch existing profiles with missing email
+UPDATE public.profiles p
+SET email = au.email
+FROM auth.users au
+WHERE p.id = au.id AND p.email IS NULL;
 
-**Step 4 -- Add image rendering in `Kesfet.tsx`**
-
-After the existing `transformation` and `video` blocks (line 316), add a new block for single-image posts:
-
-```tsx
-{post.type === "image" && post.image_url && (
-  <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
-    <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-  </div>
-)}
-```
-
-Also add a fallback for any post type that has `before_image_url` but not `after_image_url` (single image reusing the before field):
-
-```tsx
-{post.type !== "transformation" && post.type !== "video" && !post.image_url && post.before_image_url && (
-  <div className="aspect-square mx-4 bg-muted rounded-lg overflow-hidden">
-    <img src={post.before_image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
-  </div>
-)}
+-- Patch existing profiles missing from user_roles
+INSERT INTO public.user_roles (user_id, role)
+SELECT id, COALESCE(role, 'athlete')::app_role
+FROM public.profiles
+WHERE id NOT IN (SELECT user_id FROM public.user_roles)
+ON CONFLICT (user_id, role) DO NOTHING;
 ```
 
 ### Files Changed
 | File | Action |
 |------|--------|
-| Migration SQL | Add `image_url` column to `social_posts` |
-| `src/integrations/supabase/types.ts` | Add `image_url` to social_posts types |
-| `src/types/shared-models.ts` | Add `image_url` to `SocialPost` |
-| `src/hooks/useSocialFeed.ts` | Map `image_url` field |
-| `src/pages/Kesfet.tsx` | Render single-image and fallback media blocks |
+| Migration SQL | Rewrite trigger, recreate on auth.users, patch data |
+
+No application code changes needed. The `types.ts` file will auto-regenerate after migration.
 
