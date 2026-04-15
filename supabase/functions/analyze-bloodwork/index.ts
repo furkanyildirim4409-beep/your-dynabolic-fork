@@ -39,44 +39,10 @@ serve(async (req) => {
   }
 
   try {
-    // --- Authentication check ---
-    const authHeader = req.headers.get("Authorization");
-    if (!authHeader?.startsWith("Bearer ")) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
-    const SUPABASE_ANON_KEY = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
-
-    // Validate the JWT and get the user
-    const supabaseAuth = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
-      global: { headers: { Authorization: authHeader } },
-    });
-    const { data: claimsData, error: claimsError } = await supabaseAuth.auth.getUser();
-    if (claimsError || !claimsData?.user) {
-      return new Response(JSON.stringify({ error: "Unauthorized" }), {
-        status: 401,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-    const userId = claimsData.user.id;
-
     const { fileUrl, fileName } = await req.json();
     if (!fileUrl) {
       return new Response(JSON.stringify({ error: "fileUrl is required" }), {
         status: 400,
-        headers: { ...corsHeaders, "Content-Type": "application/json" },
-      });
-    }
-
-    // --- Verify the caller owns the file (folder prefix matches user ID) ---
-    if (!fileUrl.startsWith(`${userId}/`)) {
-      return new Response(JSON.stringify({ error: "Forbidden: you can only analyze your own files" }), {
-        status: 403,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
     }
@@ -86,7 +52,10 @@ serve(async (req) => {
       throw new Error("LOVABLE_API_KEY is not configured");
     }
 
-    // Download file from storage using service role
+    const SUPABASE_URL = Deno.env.get("SUPABASE_URL")!;
+    const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+
+    // Download file from storage
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     const { data: fileData, error: downloadError } = await supabase.storage
       .from("blood-test-pdfs")
@@ -181,7 +150,7 @@ serve(async (req) => {
       biomarkers = JSON.parse(jsonStr);
     } catch {
       console.error("Failed to parse AI response as JSON:", rawContent);
-      return new Response(JSON.stringify({ error: "parse_error", message: "AI response was not valid JSON" }), {
+      return new Response(JSON.stringify({ error: "parse_error", message: "AI response was not valid JSON", raw: rawContent }), {
         status: 422,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       });
@@ -204,7 +173,7 @@ serve(async (req) => {
     });
   } catch (e) {
     console.error("analyze-bloodwork error:", e);
-    return new Response(JSON.stringify({ error: "Internal server error" }), {
+    return new Response(JSON.stringify({ error: e instanceof Error ? e.message : "Unknown error" }), {
       status: 500,
       headers: { ...corsHeaders, "Content-Type": "application/json" },
     });
