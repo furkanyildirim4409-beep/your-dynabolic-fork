@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       password,
       options: {
         emailRedirectTo: window.location.origin,
-        data: { full_name: fullName },
+        data: { full_name: fullName, role },
       },
     });
     if (error) {
@@ -107,16 +107,8 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
       throw error;
     }
 
-    // Update profile with role and full_name after signup
-    if (data.user) {
-      const { error: updateError } = await supabase
-        .from("profiles")
-        .update({ role, full_name: fullName })
-        .eq("id", data.user.id);
-      if (updateError) {
-        console.error("Profile update error:", updateError.message);
-      }
-    }
+    // Role is set by the handle_new_user trigger via raw_user_meta_data.
+    // Do NOT update role directly on profiles to prevent privilege escalation.
 
     toast.success("Kayıt başarılı! E-postanızı kontrol edin.");
   };
