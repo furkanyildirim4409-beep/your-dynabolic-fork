@@ -34,39 +34,6 @@ const StarRow = ({ value, size = 14 }: { value: number; size?: number }) => (
   </div>
 );
 
-const InteractiveStars = ({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-}) => {
-  const [hover, setHover] = useState(0);
-  const display = hover || value;
-  return (
-    <div className="flex items-center gap-1" onMouseLeave={() => setHover(0)}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          disabled={disabled}
-          onMouseEnter={() => setHover(s)}
-          onClick={() => onChange(s)}
-          className="p-0.5 transition-transform hover:scale-110 disabled:opacity-50"
-        >
-          <Star
-            className={`w-7 h-7 ${
-              s <= display ? "text-primary fill-primary" : "text-muted-foreground/40"
-            }`}
-          />
-        </button>
-      ))}
-    </div>
-  );
-};
-
 const ShopifyProductDetailModal = ({
   isOpen,
   onClose,
@@ -74,19 +41,13 @@ const ShopifyProductDetailModal = ({
   cartType = "supplement",
 }: ShopifyProductDetailModalProps) => {
   const { addToCart } = useCart();
-  const { user } = useAuth();
   const { data, isLoading: reviewsLoading } = useProductReviews(product?.id ?? null);
-  const { mutate: submitReview, isPending: isSubmitting } = useSubmitProductReview();
-
-  const [draftRating, setDraftRating] = useState(0);
-  const [draftComment, setDraftComment] = useState("");
 
   if (!product) return null;
 
   const reviews = data?.reviews ?? [];
   const averageRating = data?.averageRating ?? 0;
   const totalCount = data?.totalCount ?? 0;
-  const userReview = data?.userReview ?? null;
 
   const handleAddToCart = () => {
     addToCart({
@@ -100,31 +61,6 @@ const ShopifyProductDetailModal = ({
     });
     onClose();
   };
-
-  const handleSubmitReview = () => {
-    if (!user) {
-      toast.error("Değerlendirme yapmak için giriş yapmalısın");
-      return;
-    }
-    if (draftRating < 1) {
-      toast.error("Lütfen bir puan seç");
-      return;
-    }
-    submitReview(
-      { productId: product.id, rating: draftRating, comment: draftComment },
-      {
-        onSuccess: () => {
-          toast.success(userReview ? "Değerlendirme güncellendi" : "Değerlendirme gönderildi");
-          setDraftRating(0);
-          setDraftComment("");
-        },
-        onError: (e: any) => toast.error(e?.message ?? "Gönderilemedi"),
-      },
-    );
-  };
-
-  // Pre-fill draft when user has an existing review
-  const effectiveDraftRating = draftRating || userReview?.rating || 0;
 
   return (
     <AnimatePresence>
