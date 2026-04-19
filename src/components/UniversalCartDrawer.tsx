@@ -258,15 +258,7 @@ const UniversalCartDrawer = () => {
 
                     {/* Cart Footer */}
                     <div className="border-t border-border p-4 space-y-4 bg-[hsl(var(--background))]">
-                      {/* Hybrid checkout disclaimer */}
-                      {isHybrid && (
-                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex gap-2">
-                          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-foreground leading-relaxed">
-                            Bu sepette 2 farklı ödeme akışı var. <span className="text-primary font-medium">Koçluk</span> ödemesi uygulama içinden, <span className="text-primary font-medium">fiziksel ürün</span> ödemesi Shopify üzerinden güvenle yapılacaktır.
-                          </p>
-                        </div>
-                      )}
+                      {/* Cart is strictly homogenous (Part 8.4) — no hybrid disclaimer needed */}
 
                       {/* Summary */}
                       <div className="space-y-2">
