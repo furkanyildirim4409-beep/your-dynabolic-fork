@@ -1,63 +1,124 @@
 
 
-## Plan: BioCoin Rule Engine Overhaul + Supplement Tab Restoration
+## Plan: Shopify Headless Integration — SupplementShop Live Data
 
 ### Tespit
-- `Kesfet.tsx` Mağaza sekmesi var ama "Supplementler" sekmesi yok. `<SupplementShop />` bileşeni mevcut (`shopSupplements` mock data ile), hiçbir yerden import edilmiyor.
-- `UniversalCartDrawer.tsx`'te BioCoin mantığı sabit `100 coin = 50₺` flat indirim. Sepet türünden (coaching dahil) bağımsız uygulanıyor — kural ihlali.
-- `CartItem.type` union: `"product" | "supplement" | "coaching"`. Eligible türler: `product` ve `supplement`. Coaching hariç.
+- `SupplementShop.tsx` şu anda `shopSupplements` mock array'inden besleniyor (`src/lib/mockData.ts`).
+- Projede Shopify SDK yok, native `fetch` ile Storefront API GraphQL çağrısı yapılacak (sıfır bağımlılık).
+- BioCoin/flavor/sepet mantığı korunacak — sadece veri kaynağı değişecek.
+- Lovable'ın dahili `shopify--enable` connector'ı VAR ama kullanıcı açıkça **headless Storefront API** istedi (kendi `VITE_SHOPIFY_DOMAIN` + token'ı ile). Bu yüzden enable flow'unu atlayıp doğrudan public Storefront API client kuruyoruz.
 
-### Step A — Supplement sekmesi geri ekle (`src/pages/Kesfet.tsx`)
-- `TabsList`'i 3 → 4 kolona çıkar (`grid-cols-4`).
-- Yeni `TabsTrigger value="supplements"` → "TAKVİYE" başlığı.
-- Yeni `TabsContent value="supplements"` → `<SupplementShop />` render eder.
-- Üst kısma `import SupplementShop from "@/components/SupplementShop"`.
-- Mevcut tema (`glass-card`, primary lime) zaten `SupplementShop` içinde uygulanmış, ek stil gerekmez.
-
-### Step B — Cart Rule Engine (`src/components/UniversalCartDrawer.tsx`)
-Eski `COIN_DISCOUNT_THRESHOLD/AMOUNT` flat sabitleri kaldırılır. Yeni saf hesaplama:
+### Step A — `src/lib/shopify.ts` (yeni dosya)
+Saf TypeScript GraphQL client:
 
 ```ts
-const COIN_TO_TL = 1;            // 1 BioCoin = 1 TL
-const MAX_PCT = 0.20;            // %20 cap
+const SHOPIFY_DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN;
+const SHOPIFY_STOREFRONT_TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
+const API_VERSION = "2024-10";
 
-// Eligible items only (coaching hariç)
-const eligibleItems = items.filter(i => i.type !== "coaching");
-const eligibleSubtotal = eligibleItems.reduce((s, i) => s + i.price * i.quantity, 0);
+export interface ShopifyProduct {
+  id: string;
+  title: string;
+  handle: string;
+  description: string;
+  imageUrl: string | null;
+  imageAlt: string;
+  price: number;
+  currencyCode: string;
+  variantId: string;
+}
 
-const maxDiscountTL = Math.floor(eligibleSubtotal * MAX_PCT);
-const maxCoinsUsable = Math.min(balance, Math.floor(maxDiscountTL / COIN_TO_TL));
-const coinDiscount = useCoinDiscount ? maxCoinsUsable * COIN_TO_TL : 0;
-const finalTotal = Math.max(0, cartTotal - coinDiscount);
+export async function shopifyFetch<T>({ query, variables }: { query: string; variables?: Record<string, any> }): Promise<T> {
+  if (!SHOPIFY_DOMAIN || !SHOPIFY_STOREFRONT_TOKEN) {
+    throw new Error("Shopify env vars missing: VITE_SHOPIFY_DOMAIN / VITE_SHOPIFY_STOREFRONT_TOKEN");
+  }
+  const res = await fetch(`https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`, {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_TOKEN,
+    },
+    body: JSON.stringify({ query, variables }),
+  });
+  const json = await res.json();
+  if (!res.ok || json.errors) throw new Error(json.errors?.[0]?.message ?? `Shopify API ${res.status}`);
+  return json.data as T;
+}
 
-const onlyCoaching = items.length > 0 && eligibleItems.length === 0;
-const canUseCoinDiscount = !onlyCoaching && balance > 0 && maxDiscountTL > 0;
+export async function getProducts(limit = 10): Promise<ShopifyProduct[]> {
+  const query = `
+    query Products($first: Int!) {
+      products(first: $first) {
+        edges {
+          node {
+            id
+            title
+            handle
+            description
+            images(first: 1) { edges { node { url altText } } }
+            variants(first: 1) { edges { node { id price { amount currencyCode } } } }
+          }
+        }
+      }
+    }`;
+  const data = await shopifyFetch<{ products: { edges: any[] } }>({ query, variables: { first: limit } });
+  return data.products.edges.map(({ node }) => {
+    const img = node.images.edges[0]?.node;
+    const variant = node.variants.edges[0]?.node;
+    return {
+      id: node.id,
+      title: node.title,
+      handle: node.handle,
+      description: node.description,
+      imageUrl: img?.url ?? null,
+      imageAlt: img?.altText ?? node.title,
+      price: variant ? parseFloat(variant.price.amount) : 0,
+      currencyCode: variant?.price.currencyCode ?? "TRY",
+      variantId: variant?.id ?? "",
+    };
+  });
+}
 ```
 
-Doğrulama: 1000₺ supplement + 5000₺ coaching → eligibleSubtotal=1000, maxDiscountTL=200, kullanıcı yeterli coin'e sahipse tam 200₺ indirim, coaching dokunulmaz. ✓
+### Step B — `src/hooks/useStoreData.ts` (extend)
+Yeni hook ekle, mevcut `useCoachProducts` korunur:
 
-### Step C — UI Geri Bildirim (aynı dosya)
-BioCoin bloğu yeniden tasarlanır:
+```ts
+import { getProducts, ShopifyProduct } from "@/lib/shopify";
+export function useShopifyProducts(limit = 20) {
+  return useQuery<ShopifyProduct[]>({
+    queryKey: ["shopify-products", limit],
+    queryFn: () => getProducts(limit),
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
+```
 
-1. **Aktif kart** (`canUseCoinDiscount` true):
-   - Başlık: "BİOCOİN İNDİRİMİ"
-   - Alt satır: `"Maks. indirim: {maxDiscountTL}₺ ({maxCoinsUsable} coin) · Koçluk paketleri hariç"`
-   - Switch açıkken: "Bakiye: {balance} coin" + "-{coinDiscount}₺"
-2. **Sadece coaching durumu** (`onlyCoaching` true):
-   - Switch disabled, küçük info satırı: *"BioCoin indirimi koçluk paketlerinde geçerli değildir."*
-3. Order kaydında `total_coins_used = coinDiscount / COIN_TO_TL` (yani gerçekte kullanılan coin sayısı), `spendCoins(maxCoinsUsable, ...)` çağrılır.
+### Step C — `src/components/SupplementShop.tsx` rewrite
+- `shopSupplements` import'u kaldır.
+- `useShopifyProducts()` çağır → loading: 6 adet `<Skeleton className="aspect-square">` grid; error: tek satır info card.
+- Map Shopify product → mevcut kart UI'ı (image, title, price, BioCoin toggle, "SEPETE EKLE").
+- `handleAddToCart` adapte: `addToCart({ id, title, price, image: imageUrl, type: "supplement", coachName: "Shopify" })`. Flavor/brand/category/rating UI'larını kaldır (Shopify temel sorgusunda yok — Part 8.2'de variant/metafield ile gelir).
+- BioCoin %20 cap mantığı ve fiyat gösterimi aynen korunur.
+- Currency: Shopify'dan gelen `currencyCode` ≠ TRY ise yine `₺` sembolüyle göster (ileride formatlanacak); şimdilik düz number.
 
-### Step D — Memory güncelle
-`mem://features/biocoin-economy-ledger` notu güncellenir:
-> Yeni kural: 1 BioCoin = 1 TL. Sepetteki **eligible** (`product` + `supplement`) ürünlerin toplamının maksimum **%20**'sine kadar indirim. `coaching` türü daima hariç. Sadece coaching içeren sepette toggle disabled.
+### Step D — Env değişkenleri
+Mesaj içinde kullanıcıya açıkça belirt:
+
+> Lütfen aşağıdaki iki ortam değişkenini ayarla (Project Settings → Build Secrets ya da `.env`):
+> - `VITE_SHOPIFY_DOMAIN` (örn. `dynabolic-store.myshopify.com`)
+> - `VITE_SHOPIFY_STOREFRONT_TOKEN` (Shopify admin → Apps → Headless / Custom App → Storefront API access token)
+
+`.env` dosyası secret yönetimi için kullanılmaz (Lovable kuralı), bu yüzden `.env.example` da oluşturmayız — değerler runtime'da `import.meta.env`'den okunur ve Build Secrets üzerinden inject edilir.
 
 ### Dosya Listesi
 
 | Dosya | Aksiyon |
 |------|--------|
-| `src/pages/Kesfet.tsx` | 4. tab "TAKVİYE" + `<SupplementShop />` mount |
-| `src/components/UniversalCartDrawer.tsx` | Flat threshold mantığını sil, rule engine + UI badge + disabled state |
-| `mem://features/biocoin-economy-ledger` | Yeni kural setini yansıt |
+| `src/lib/shopify.ts` | YENİ — GraphQL client + `getProducts()` |
+| `src/hooks/useStoreData.ts` | `useShopifyProducts` hook'u eklenir |
+| `src/components/SupplementShop.tsx` | Mock data sökülür, live Shopify data + skeleton/error state |
 
-DB değişikliği yok. `CartContext` API'si (items, balance) zaten yeterli — context'e dokunulmaz, hesaplama drawer içinde kalır (yalnızca tüketici drawer olduğu için).
+DB değişikliği yok. Mock `shopSupplements` array'i `mockData.ts` içinde dokunulmadan kalır (başka yerden import edilmiyorsa Part 8.x'te temizlenebilir).
 
