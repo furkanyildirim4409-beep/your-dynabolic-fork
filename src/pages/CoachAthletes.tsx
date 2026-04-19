@@ -1,13 +1,14 @@
 import { useState, useEffect, useCallback } from "react";
 import { motion } from "framer-motion";
 import { useNavigate } from "react-router-dom";
-import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog, Droplet } from "lucide-react";
+import { ArrowLeft, Users, Target, Beef, Wheat, Droplets, Flame, ChevronRight, Search, UserCog, Droplet, Pill } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import CoachMacroOverrideModal from "@/components/CoachMacroOverrideModal";
 import CoachBloodworkModal from "@/components/CoachBloodworkModal";
+import AssignSupplementDialog from "@/components/coach/AssignSupplementDialog";
 import { hapticLight } from "@/lib/haptics";
 
 interface AthleteRow {
@@ -43,6 +44,8 @@ const CoachAthletes = () => {
   const [showMacroModal, setShowMacroModal] = useState(false);
   const [bloodworkAthlete, setBloodworkAthlete] = useState<AthleteRow | null>(null);
   const [showBloodworkModal, setShowBloodworkModal] = useState(false);
+  const [supplementAthlete, setSupplementAthlete] = useState<AthleteRow | null>(null);
+  const [showSupplementModal, setShowSupplementModal] = useState(false);
 
   const fetchAthletes = useCallback(async () => {
     if (!user) return;
@@ -83,6 +86,12 @@ const CoachAthletes = () => {
     hapticLight();
     setBloodworkAthlete(athlete);
     setShowBloodworkModal(true);
+  };
+
+  const handleOpenSupplement = (athlete: AthleteRow) => {
+    hapticLight();
+    setSupplementAthlete(athlete);
+    setShowSupplementModal(true);
   };
 
   return (
@@ -208,26 +217,33 @@ const CoachAthletes = () => {
                   )}
 
                   {/* Action Buttons */}
-                  <div className="flex gap-2">
+                  <div className="grid grid-cols-3 gap-2">
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs gap-2"
+                      className="text-xs gap-1"
                       onClick={() => handleOpenMacro(athlete)}
                     >
                       <Target className="w-3.5 h-3.5" />
-                      Makro Düzenle
-                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                      Makro
                     </Button>
                     <Button
                       variant="outline"
                       size="sm"
-                      className="flex-1 text-xs gap-2"
+                      className="text-xs gap-1"
                       onClick={() => handleOpenBloodwork(athlete)}
                     >
                       <Droplet className="w-3.5 h-3.5 text-red-400" />
-                      Kan Tahlilleri
-                      <ChevronRight className="w-3.5 h-3.5 ml-auto" />
+                      Tahlil
+                    </Button>
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      className="text-xs gap-1"
+                      onClick={() => handleOpenSupplement(athlete)}
+                    >
+                      <Pill className="w-3.5 h-3.5 text-primary" />
+                      Takviye
                     </Button>
                   </div>
                 </motion.div>
@@ -251,6 +267,14 @@ const CoachAthletes = () => {
         onClose={() => { setShowBloodworkModal(false); setBloodworkAthlete(null); }}
         athleteId={bloodworkAthlete?.id || ""}
         athleteName={bloodworkAthlete?.full_name || "Sporcu"}
+      />
+
+      {/* Coach Supplement Assignment Modal */}
+      <AssignSupplementDialog
+        isOpen={showSupplementModal}
+        onClose={() => { setShowSupplementModal(false); setSupplementAthlete(null); }}
+        athleteId={supplementAthlete?.id || ""}
+        athleteName={supplementAthlete?.full_name || "Sporcu"}
       />
     </div>
   );

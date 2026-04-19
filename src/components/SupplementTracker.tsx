@@ -15,6 +15,8 @@ export interface Supplement {
   totalServings: number;
   takenToday: boolean;
   icon: string;
+  shopifyProductId?: string;
+  shopifyVariantId?: string;
 }
 
 interface SupplementTrackerProps {

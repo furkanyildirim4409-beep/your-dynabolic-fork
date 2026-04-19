@@ -136,6 +136,8 @@ export type Database = {
           is_active: boolean
           name_and_dosage: string
           servings_left: number
+          shopify_product_id: string | null
+          shopify_variant_id: string | null
           source_insight_id: string | null
           timing: string
           total_servings: number
@@ -150,6 +152,8 @@ export type Database = {
           is_active?: boolean
           name_and_dosage: string
           servings_left?: number
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
           source_insight_id?: string | null
           timing?: string
           total_servings?: number
@@ -164,6 +168,8 @@ export type Database = {
           is_active?: boolean
           name_and_dosage?: string
           servings_left?: number
+          shopify_product_id?: string | null
+          shopify_variant_id?: string | null
           source_insight_id?: string | null
           timing?: string
           total_servings?: number
