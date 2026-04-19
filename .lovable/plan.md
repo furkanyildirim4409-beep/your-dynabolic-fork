@@ -1,84 +1,89 @@
 
 
-## Plan: Fix Auth Trigger for Email & User Roles (Hotfix)
+## Plan: Discover Page Data Layer — Auto-Assignment & Social Graph
 
-### Problem
-New user registration leaves `profiles.email` as NULL and does not insert a record into `user_roles`, breaking coach panel visibility and role-based logic.
+### Goals
+1. Auto-assign athletes to coaches when a coaching package order is paid.
+2. Replace mock student/follower counts with real DB-driven values across Discover & Coach Profile.
+3. Expose a "Takipçiler" (followers) data source for a future modal.
 
-### Solution: Single Database Migration
+---
 
-One migration that:
+### Step A — Auto-Assignment (DB)
 
-1. **Rewrites `handle_new_user()` trigger function** to:
-   - Insert `new.email` into `profiles.email`
-   - Default role to `'athlete'` (not `'coach'`)
-   - Use `COALESCE(full_name, split_part(email, '@', 1))` as fallback name
-   - Insert into `user_roles` with proper `::app_role` cast
-   - Use `ON CONFLICT` for idempotency on both tables
+**Investigation needed first** (will do during execution):
+- Confirm `orders` table schema (status, items JSONB shape, buyer user_id column).
+- Confirm `team_assignments` schema (coach_id, athlete_id, status columns).
+- Verify how `coach_id` is encoded inside `coach_products` / order items.
 
-2. **Re-creates the trigger** on `auth.users` (DROP + CREATE) to ensure it points to the updated function
+**Migration:**
+- Create `SECURITY DEFINER` function `public.handle_coaching_order_paid()`.
+- Logic: when `NEW.status = 'paid'` and `OLD.status <> 'paid'`, iterate over `NEW.items` JSONB; for each item where `item_type = 'coaching'`, extract `coach_id` and INSERT into `team_assignments(coach_id, athlete_id, status)` with `ON CONFLICT (coach_id, athlete_id) DO UPDATE SET status='active'`.
+- Trigger: `AFTER INSERT OR UPDATE OF status ON public.orders`.
+- Backfill: one-shot INSERT for existing paid coaching orders.
 
-3. **Patches existing data**:
-   - Updates NULL emails in `profiles` from `auth.users`
-   - Inserts missing `user_roles` records for existing profiles
+**Note:** if `team_assignments` lacks a unique `(coach_id, athlete_id)` constraint, the migration will add one. If `orders` table doesn't exist yet, plan stops and surfaces the gap.
 
-### Key Detail: Type Cast
-The `user_roles.role` column uses the `app_role` enum (`admin`, `coach`, `athlete`). The trigger must cast the text value: `assigned_role::app_role`.
+---
 
-### Migration SQL
+### Step B — Social Graph (Followers table)
 
-```sql
-CREATE OR REPLACE FUNCTION public.handle_new_user()
-RETURNS trigger AS $$
-DECLARE
-  assigned_role text;
-BEGIN
-  assigned_role := COALESCE(new.raw_user_meta_data->>'role', 'athlete');
+`user_follows` already exists (`follower_id`, `followed_id`) per `useFollowSystem.ts`. **No new table needed.** We will reuse it. The user's request mentioned `followers` — clarifying via reuse to avoid duplication.
 
-  INSERT INTO public.profiles (id, full_name, avatar_url, role, email)
-  VALUES (
-    new.id,
-    COALESCE(new.raw_user_meta_data->>'full_name', split_part(new.email, '@', 1)),
-    new.raw_user_meta_data->>'avatar_url',
-    assigned_role,
-    new.email
-  )
-  ON CONFLICT (id) DO UPDATE
-  SET email = EXCLUDED.email,
-      role = CASE WHEN public.profiles.role IS NULL THEN EXCLUDED.role ELSE public.profiles.role END;
+---
 
-  INSERT INTO public.user_roles (user_id, role)
-  VALUES (new.id, assigned_role::app_role)
-  ON CONFLICT (user_id, role) DO NOTHING;
+### Step C — Dynamic Counts (Hooks)
 
-  RETURN new;
-END;
-$$ LANGUAGE plpgsql SECURITY DEFINER SET search_path = public;
+**Extend `src/hooks/useCoachProfile.ts`** (currently fetches own coach via `profile.coach_id`) — keep as-is, but also add:
 
--- Recreate trigger
-DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
-CREATE TRIGGER on_auth_user_created
-  AFTER INSERT ON auth.users
-  FOR EACH ROW EXECUTE PROCEDURE public.handle_new_user();
-
--- Patch existing profiles with missing email
-UPDATE public.profiles p
-SET email = au.email
-FROM auth.users au
-WHERE p.id = au.id AND p.email IS NULL;
-
--- Patch existing profiles missing from user_roles
-INSERT INTO public.user_roles (user_id, role)
-SELECT id, COALESCE(role, 'athlete')::app_role
-FROM public.profiles
-WHERE id NOT IN (SELECT user_id FROM public.user_roles)
-ON CONFLICT (user_id, role) DO NOTHING;
+**New hook `src/hooks/useCoachStats.ts`:**
+```ts
+export function useCoachStats(coachId?: string) {
+  // Returns { studentCount, followerCount }
+  // studentCount: count(team_assignments) where coach_id=coachId and status='active'
+  // followerCount: count(user_follows) where followed_id=coachId
+  // Two parallel head:true count queries, staleTime 60s
+}
 ```
 
-### Files Changed
+**New hook `src/hooks/useCoachFollowers.ts`:**
+```ts
+export function useCoachFollowers(coachId?: string) {
+  // SELECT follower_id, profiles!follower_id(full_name, avatar_url)
+  // FROM user_follows WHERE followed_id = coachId
+  // Returns array for future "Takipçiler" modal list
+}
+```
+
+---
+
+### Step D — UI Bindings (data only, no styling)
+
+| File | Change |
+|------|--------|
+| `src/pages/CoachProfile.tsx` | Replace any hardcoded student/follower numbers with `useCoachStats(coachId)` data. Keep existing `useFollowerCount` as fallback or swap to unified hook. |
+| `src/pages/Kesfet.tsx` (Discover) | If `LeaderboardCoach.students` is mock, fetch real counts via batched query in `useDiscoveryData.ts` `useLeaderboardCoaches`. |
+| `src/hooks/useDiscoveryData.ts` | In `useLeaderboardCoaches`, after fetching coaches, batch-count team_assignments per coach (single grouped query) and inject real `students` value. |
+
+---
+
+### Step E — Files Changed Summary
+
 | File | Action |
 |------|--------|
-| Migration SQL | Rewrite trigger, recreate on auth.users, patch data |
+| `supabase/migrations/<ts>_coaching_auto_assign.sql` | New trigger + function + backfill + unique constraint |
+| `src/hooks/useCoachStats.ts` | New |
+| `src/hooks/useCoachFollowers.ts` | New |
+| `src/hooks/useDiscoveryData.ts` | Inject real student counts into leaderboard |
+| `src/pages/CoachProfile.tsx` | Bind to `useCoachStats` |
+| `src/pages/Kesfet.tsx` | (If mock counts surfaced) bind to real data |
 
-No application code changes needed. The `types.ts` file will auto-regenerate after migration.
+---
+
+### Open Items (resolved at execution)
+- Exact `orders` schema → will inspect via `supabase--read_query` before writing trigger.
+- Exact `team_assignments` schema → same.
+- If neither table exists, will halt and report instead of inventing schema.
+
+No styling changes. Pure data layer & bindings.
 
