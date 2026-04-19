@@ -1,68 +1,104 @@
 
 
-## Tespit edilen iki kök neden (DB ile doğrulandı)
+## Plan: Dynamic Leaderboard RPC + Custom Highlight Covers + B2B Block
 
-Mevcut koç (`c21a5a19...`) için `coach_stories` tablosunda 4 satır var:
+### 1. Leaderboard RPC (`get_coach_leaderboard_v2`)
 
-| id | category | is_highlighted | expires_at | Durum |
-|----|----------|---------------|-----------|-------|
-| d011… | Değişimler | true | gelecek | aktif |
-| 7cd4… | NULL | false | gelecek | sadece 24h |
-| 50ce… | Değişimler | true | **geçmiş** | **arşivden öne çıkarılmış** |
-| 3567… | Soru-Cevap | false | geçmiş | arşiv |
+New SQL migration creating a SECURITY DEFINER function:
 
-### Kök neden #1 — RLS arşivlenmiş highlight'ları engelliyor
-`coach_stories` üzerindeki public SELECT policy:
-```
-"Herkes aktif hikayeleri görebilir": USING (now() < expires_at)
-```
-24 saati dolmuş highlight kayıtlar (50ce…) athlete app tarafından **hiç okunamıyor**. Hook ne yazarsa yazsın RLS blokluyor. Koç panelinde görünüyor çünkü panel kendi koç session'ı ile "Coaches can view own stories" policy'sini kullanıyor.
-
-### Kök neden #2 — `CoachProfile.tsx` highlight'ı iki kez render ediyor
-`src/pages/CoachProfile.tsx` satır 299–327'de **iki ayrı highlight bloğu** mevcut:
-1. İnline "ÖNE ÇIKANLAR" bölümü (satır 299–324) — `useCoachHighlights` + `handleHighlightClick`.
-2. `<CoachHighlightsRow coachId={coachId} />` (satır 327) — aynı hook'u tekrar çağırıyor ve aynı verileri tekrar çiziyor.
-
-Bu yüzden ekranda her bucket iki kez görünüyor.
-
-## Düzeltme planı
-
-### A) DB migration — RLS policy'yi highlight için aç
-`coach_stories` tablosunun public SELECT politikasını şöyle değiştir:
 ```sql
-DROP POLICY "Herkes aktif hikayeleri görebilir" ON public.coach_stories;
+CREATE OR REPLACE FUNCTION public.get_coach_leaderboard_v2()
+RETURNS TABLE (
+  coach_id uuid,
+  full_name text,
+  avatar_url text,
+  specialty text,
+  level integer,
+  student_count bigint,
+  total_likes bigint,
+  calculated_score numeric
+)
+LANGUAGE sql
+STABLE
+SECURITY DEFINER
+SET search_path = public
+AS $$
+  WITH coaches AS (
+    SELECT id, full_name, avatar_url, specialty, COALESCE(level,1) AS level
+    FROM profiles WHERE role = 'coach'
+  ),
+  students AS (
+    SELECT coach_id, COUNT(*)::bigint AS student_count
+    FROM profiles WHERE role = 'athlete' AND coach_id IS NOT NULL
+    GROUP BY coach_id
+  ),
+  likes AS (
+    SELECT sp.coach_id, COUNT(pl.id)::bigint AS total_likes
+    FROM social_posts sp
+    LEFT JOIN post_likes pl ON pl.post_id = sp.id
+    GROUP BY sp.coach_id
+  )
+  SELECT
+    c.id, c.full_name, c.avatar_url, c.specialty, c.level,
+    COALESCE(s.student_count, 0),
+    COALESCE(l.total_likes, 0),
+    (COALESCE(s.student_count,0) * 100
+     + COALESCE(l.total_likes,0) * 0.5
+     + c.level * 50)::numeric AS calculated_score
+  FROM coaches c
+  LEFT JOIN students s ON s.coach_id = c.id
+  LEFT JOIN likes l ON l.coach_id = c.id
+  ORDER BY calculated_score DESC;
+$$;
 
-CREATE POLICY "Public can view active or highlighted stories"
-ON public.coach_stories
-FOR SELECT
-TO public
-USING (
-  now() < expires_at
-  OR is_highlighted = true
-  OR category IS NOT NULL
-);
+GRANT EXECUTE ON FUNCTION public.get_coach_leaderboard_v2() TO authenticated, anon;
 ```
-Böylece:
-- Aktif 24h ring davranışı korunur (`useCoachSpecificStories` yine `.gt('expires_at', now)` filtresi koyuyor → ring asla highlight göstermez).
-- Highlight bucket'ı geçmiş kayıtları da okuyabilir.
 
-### B) `src/pages/CoachProfile.tsx` — duplicate render'ı sil
-Satır 299–324 arasındaki inline "ÖNE ÇIKANLAR" bloğunu **tamamen kaldır**. Yalnızca `<CoachHighlightsRow coachId={coachId} />` kalsın. Artık ihtiyaç kalmadığı için `highlights`, `highlightsLoading`, `useCoachHighlights`, `handleHighlightClick`, `CoachHighlight` ve `Skeleton` import'larındaki kullanımları temizle (Skeleton başka yerde de kullanılıyor, sadece highlight kullanımını kaldır).
+**Hook update** — `useLeaderboardCoaches` in `src/hooks/useDiscoveryData.ts`:
+- Replace current profiles+manual-count logic with `supabase.rpc('get_coach_leaderboard_v2')`.
+- Map RPC rows → `LeaderboardCoach`: `score = calculated_score`, `students = student_count`, `rating = 4.9` (kept), `hasNewStory = false` (kept; ring logic untouched).
+- No change required in `Kesfet.tsx` — it already consumes `useLeaderboardCoaches`.
 
-### C) `CoachHighlightsRow.tsx` — başlık ekle (UX paritesi için)
-Silinen inline blokta görünen "ÖNE ÇIKANLAR" başlığı kayboldu; aynı tipografide tek satırlık başlığı `CoachHighlightsRow`'un üstüne ekle.
+### 2. Custom highlight covers via `coach_highlight_metadata`
 
-### D) Memory güncelle
-`mem://features/coach-story-highlights` notuna RLS sözleşmesini ekle: "public SELECT artık `now() < expires_at OR is_highlighted = true OR category IS NOT NULL`". 24h ring `useCoachSpecificStories` içindeki `.gt(expires_at, now)` ile zorlanır.
+Schema confirmed: `coach_highlight_metadata(coach_id, category_name, custom_cover_url)` already exists.
 
-## Dosya listesi
+Update `useCoachHighlights` in `src/hooks/useCoachDetail.ts`:
+- After fetching `coach_stories`, run a parallel fetch:
+  ```ts
+  const { data: meta } = await supabase
+    .from('coach_highlight_metadata')
+    .select('category_name, custom_cover_url')
+    .eq('coach_id', coachId);
+  ```
+- Build a normalized lookup: `Map<UPPER(category_name.trim()), custom_cover_url>`.
+- During grouping, when emitting each highlight bucket: `cover_image = metaMap.get(key) ?? stories[0].media_url`.
+- Preserves all existing dedup + Turkish-locale upper-case key logic.
 
-| Dosya | Aksiyon |
+No change needed in `CoachHighlightsRow.tsx`.
+
+### 3. B2B "Powered by Dynabolic" block on Coach Profile
+
+In `src/pages/CoachProfile.tsx`, add a new compact info card placed under the bio / above posts (or inside the existing "Seni Neler Bekliyor" area if present — will check during implementation and reuse if found, else insert standalone). Content:
+
+> **Bu Koç Dynabolic Altyapısını Kullanıyor**
+> - 🧬 AI NutriScanner — gıda etiketi tarama
+> - 👁 Vision AI — form ve poz analizi
+> - 📊 Kişisel Performans Paneli
+> - ✉️ Koça Özel Profesyonel E-posta Sistemi
+
+Glassmorphic card, neon-lime accent, lucide icons (`ScanLine`, `Eye`, `LayoutDashboard`, `Mail`), small grid (2 cols on mobile). Read-only, static — no data fetch.
+
+### Files
+
+| File | Action |
 |------|--------|
-| Yeni migration | `coach_stories` SELECT policy'sini yeniden yaz |
-| `src/pages/CoachProfile.tsx` | İnline highlight bloğunu sil, kullanılmayan import/handler'ları temizle |
-| `src/components/CoachHighlightsRow.tsx` | "ÖNE ÇIKANLAR" başlığı ekle |
-| `mem://features/coach-story-highlights` | RLS kontratını yansıt |
+| New migration | Create `get_coach_leaderboard_v2()` RPC + grant |
+| `src/hooks/useDiscoveryData.ts` | Rewrite `useLeaderboardCoaches` to call RPC |
+| `src/hooks/useCoachDetail.ts` | `useCoachHighlights`: parallel fetch metadata, custom cover override |
+| `src/pages/CoachProfile.tsx` | Insert B2B "Powered by Dynabolic" info card |
+| `mem://features/coach-story-highlights` | Note custom cover override contract |
+| `mem://features/leaderboard-system` | Add coach leaderboard RPC formula |
 
-Koç paneli tarafında değişiklik gerekmiyor — `useUpdateStoryCategory` zaten `is_highlighted=true` ve `category` alanlarını UPDATE ile doğru yazıyor, INSERT yapmıyor.
+No DB schema changes (table already exists). No breaking changes to ring/highlights separation.
 
