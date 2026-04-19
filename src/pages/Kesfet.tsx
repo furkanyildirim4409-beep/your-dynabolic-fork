@@ -12,6 +12,7 @@ import { useCoachProducts, useShopifyProducts } from "@/hooks/useStoreData";
 import type { CoachProduct } from "@/types/shared-models";
 import type { ShopifyProduct } from "@/lib/shopify";
 import ProductDetail from "@/components/ProductDetail";
+import ShopifyProductDetailModal from "@/components/ShopifyProductDetailModal";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
 import { useAuth } from "@/context/AuthContext";
@@ -91,6 +92,7 @@ const Kesfet = () => {
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
+  const [selectedShopifyProduct, setSelectedShopifyProduct] = useState<ShopifyProduct | null>(null);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
   const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
 
@@ -494,12 +496,13 @@ const Kesfet = () => {
                   Şu an mağazada ürün bulunmuyor.
                 </div>
               ) : (liveProducts ?? []).map((product: ShopifyProduct, index: number) => (
-                <motion.div
+                <motion.button
                   key={product.id}
                   initial={{ opacity: 0, scale: 0.9 }}
                   animate={{ opacity: 1, scale: 1 }}
                   transition={{ delay: index * 0.05 }}
-                  className="glass-card overflow-hidden"
+                  onClick={() => setSelectedShopifyProduct(product)}
+                  className="glass-card overflow-hidden text-left hover:bg-white/5 transition-colors"
                 >
                   <div className="aspect-square bg-muted relative">
                     {product.imageUrl ? (
@@ -513,31 +516,36 @@ const Kesfet = () => {
                     <div className="flex items-center justify-between mt-2">
                       <span className="text-primary font-display text-sm">{product.price}₺</span>
                     </div>
-                    <motion.button
+                    <motion.div
                       whileTap={{ scale: 0.95 }}
-                      onClick={() => addToCart({
-                        id: `${product.variantId}-${Date.now()}`,
-                        title: product.title,
-                        price: product.price,
-                        image: product.imageUrl ?? "/placeholder.svg",
-                        coachName: "Shopify",
-                        type: "product",
-                        shopifyVariantId: product.variantId,
-                      })}
-                      className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1"
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        addToCart({
+                          id: `${product.variantId}-${Date.now()}`,
+                          title: product.title,
+                          price: product.price,
+                          image: product.imageUrl ?? "/placeholder.svg",
+                          coachName: "Shopify",
+                          type: "product",
+                          shopifyVariantId: product.variantId,
+                        });
+                      }}
+                      role="button"
+                      tabIndex={0}
+                      className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1 cursor-pointer"
                     >
                       <ShoppingBag className="w-3 h-3" />
                       SEPETE EKLE
-                    </motion.button>
+                    </motion.div>
                   </div>
-                </motion.div>
+                </motion.button>
               ))}
             </div>
           </TabsContent>
         </Tabs>
       </div>
 
-      {/* Product Detail Modal */}
+      {/* Product Detail Modal (legacy coach products) */}
       {showProductDetail && selectedProduct && (
         <ProductDetail
           product={selectedProduct}
@@ -546,6 +554,14 @@ const Kesfet = () => {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      {/* Shopify Product Detail Modal */}
+      <ShopifyProductDetailModal
+        isOpen={!!selectedShopifyProduct}
+        product={selectedShopifyProduct}
+        onClose={() => setSelectedShopifyProduct(null)}
+        cartType="product"
+      />
 
       <BioCoinTransactionHistory
         isOpen={showTransactionHistory}
