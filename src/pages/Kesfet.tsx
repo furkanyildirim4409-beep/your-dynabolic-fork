@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useCoachStories, useLeaderboardCoaches, type CoachStoryRow } from "@/hooks/useDiscoveryData";
-import { useCoachProducts } from "@/hooks/useStoreData";
+import { useCoachProducts, useShopifyProducts } from "@/hooks/useStoreData";
 import type { CoachProduct } from "@/types/shared-models";
+import type { ShopifyProduct } from "@/lib/shopify";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
@@ -97,7 +98,9 @@ const Kesfet = () => {
   const { mutate: toggleLike } = useToggleLike();
   const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
   const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
-  const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();
+  const { data: liveProducts, isLoading: productsLoading, error: productsError } = useShopifyProducts({ limit: 50 });
+  // Coach-native products (kept for future hybrid display; currently unused in UI):
+  void useCoachProducts;
   const { data: viewedStoryIds } = useMyViewedStoryIds();
   const markViewed = useMarkStoryViewed();
 
@@ -482,71 +485,53 @@ const Kesfet = () => {
                     </div>
                   </div>
                 ))
+              ) : productsError ? (
+                <div className="text-center p-8 text-muted-foreground col-span-2 text-xs">
+                  Mağaza yüklenemedi. Shopify yapılandırması eksik olabilir.
+                </div>
               ) : (liveProducts ?? []).length === 0 ? (
                 <div className="text-center p-8 text-muted-foreground col-span-2">
                   Şu an mağazada ürün bulunmuyor.
                 </div>
-              ) : (liveProducts ?? []).map((product, index) => {
-                const discountKey = product.id + product.coach_id;
-                const maxDiscount = calculateMaxDiscount(product.price, bioCoins);
-                const isDiscountActive = coinDiscounts[discountKey] || false;
-                const coinsNeeded = calculateCoinsNeeded(maxDiscount);
-                const discountedPrice = product.price - maxDiscount;
-
-                return (
-                  <motion.div
-                    key={product.id}
-                    initial={{ opacity: 0, scale: 0.9 }}
-                    animate={{ opacity: 1, scale: 1 }}
-                    transition={{ delay: index * 0.05 }}
-                    className="glass-card overflow-hidden"
-                  >
-                    <div className="aspect-square bg-muted relative cursor-pointer" onClick={() => handleProductClick(product)}>
-                      <img src={product.image_url} alt={product.title} className="w-full h-full object-cover" />
-                      {isDiscountActive && (
-                        <div className="absolute top-2 left-2">
-                          <span className="bg-primary text-primary-foreground text-[10px] px-2 py-0.5 rounded-full font-medium">-{Math.round(maxDiscount)}₺</span>
-                        </div>
-                      )}
+              ) : (liveProducts ?? []).map((product: ShopifyProduct, index: number) => (
+                <motion.div
+                  key={product.id}
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: index * 0.05 }}
+                  className="glass-card overflow-hidden"
+                >
+                  <div className="aspect-square bg-muted relative">
+                    {product.imageUrl ? (
+                      <img src={product.imageUrl} alt={product.imageAlt} loading="lazy" className="w-full h-full object-cover" />
+                    ) : (
+                      <div className="w-full h-full flex items-center justify-center text-muted-foreground text-xs">No image</div>
+                    )}
+                  </div>
+                  <div className="p-3">
+                    <p className="text-foreground text-xs font-medium line-clamp-2 h-8">{product.title}</p>
+                    <div className="flex items-center justify-between mt-2">
+                      <span className="text-primary font-display text-sm">{product.price}₺</span>
                     </div>
-                    <div className="p-3">
-                      <p className="text-foreground text-xs font-medium line-clamp-1">{product.title}</p>
-                      <p className="text-muted-foreground text-[10px] mt-0.5">{product.coach?.full_name || "Koç"}</p>
-                      <div className="flex items-center justify-between mt-2">
-                        {isDiscountActive ? (
-                          <div className="flex items-center gap-1">
-                            <span className="text-muted-foreground text-xs line-through">{product.price}₺</span>
-                            <span className="text-primary font-display text-sm">{Math.round(discountedPrice)}₺</span>
-                          </div>
-                        ) : (
-                          <span className="text-primary font-display text-sm">{product.price}₺</span>
-                        )}
-                      </div>
-                      {maxDiscount > 0 && (
-                        <div className="mt-2 flex items-center justify-between">
-                          <div className="flex items-center gap-1">
-                            <Coins className="w-3 h-3 text-primary" />
-                            <span className="text-[10px] text-muted-foreground">Bio-Coin</span>
-                          </div>
-                          <Switch
-                            checked={isDiscountActive}
-                            onCheckedChange={(checked) => setCoinDiscounts(prev => ({ ...prev, [discountKey]: checked }))}
-                            className="scale-75"
-                          />
-                        </div>
-                      )}
-                      <motion.button
-                        whileTap={{ scale: 0.95 }}
-                        onClick={() => handleAddToCart(product)}
-                        className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1"
-                      >
-                        <ShoppingBag className="w-3 h-3" />
-                        SEPETE EKLE
-                      </motion.button>
-                    </div>
-                  </motion.div>
-                );
-              })}
+                    <motion.button
+                      whileTap={{ scale: 0.95 }}
+                      onClick={() => addToCart({
+                        id: `${product.variantId}-${Date.now()}`,
+                        title: product.title,
+                        price: product.price,
+                        image: product.imageUrl ?? "/placeholder.svg",
+                        coachName: "Shopify",
+                        type: "product",
+                        shopifyVariantId: product.variantId,
+                      })}
+                      className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1"
+                    >
+                      <ShoppingBag className="w-3 h-3" />
+                      SEPETE EKLE
+                    </motion.button>
+                  </div>
+                </motion.div>
+              ))}
             </div>
           </TabsContent>
         </Tabs>

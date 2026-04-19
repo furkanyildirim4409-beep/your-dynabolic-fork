@@ -1,27 +1,26 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Trash2, Coins, Plus, Minus } from "lucide-react";
+import { X, ShoppingBag, Trash2, Coins, Plus, Minus, Info, ExternalLink } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import confetti from "canvas-confetti";
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import PaymentModal, { PaymentDetails } from "./PaymentModal";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { Switch } from "@/components/ui/switch";
+import { createShopifyCart } from "@/lib/shopify";
 
 const COIN_TO_TL = 0.1;      // 10 BioCoin = 1 TL
-const MAX_PCT = 0.20;        // Max 20% discount on eligible items
+const MAX_PCT = 0.20;        // Max 20% discount on eligible (coaching) items
 
 const fireConfetti = () => {
   const count = 200;
   const defaults = { origin: { y: 0.7 }, zIndex: 9999 };
-
   function fire(particleRatio: number, opts: confetti.Options) {
     confetti({ ...defaults, ...opts, particleCount: Math.floor(count * particleRatio) });
   }
-
   fire(0.25, { spread: 26, startVelocity: 55, colors: ["#CDDC39", "#8BC34A", "#4CAF50"] });
   fire(0.2, { spread: 60, colors: ["#CDDC39", "#8BC34A", "#4CAF50"] });
   fire(0.35, { spread: 100, decay: 0.91, scalar: 0.8, colors: ["#CDDC39", "#8BC34A", "#4CAF50"] });
@@ -35,58 +34,98 @@ const UniversalCartDrawer = () => {
   const { balance, spendCoins } = useBioCoin();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
   const [useCoinDiscount, setUseCoinDiscount] = useState(false);
+  const [shopifyLoading, setShopifyLoading] = useState(false);
 
   const totalCoinsUsed = items.reduce((acc, item) => acc + (item.coinsUsed || 0) * item.quantity, 0);
 
-  // Rule engine: coaching excluded, max 20% on eligible subtotal, 1 coin = 1 TL
-  const eligibleItems = items.filter((i) => i.type !== "coaching");
-  const eligibleSubtotal = eligibleItems.reduce(
+  // Cart split — Shopify (physical) vs native coaching
+  const shopifyItems = useMemo(
+    () => items.filter((i) => i.type === "supplement" || i.type === "product"),
+    [items],
+  );
+  const coachingItems = useMemo(() => items.filter((i) => i.type === "coaching"), [items]);
+  const isHybrid = shopifyItems.length > 0 && coachingItems.length > 0;
+  const hasShopify = shopifyItems.length > 0;
+  const hasCoaching = coachingItems.length > 0;
+
+  // BioCoin discount applies ONLY to coaching items (Shopify checkout has no discount-code support yet)
+  const eligibleSubtotal = coachingItems.reduce(
     (s, i) => s + (i.discountedPrice ?? i.price) * i.quantity,
     0,
   );
   const maxDiscountTL = Math.floor(eligibleSubtotal * MAX_PCT);
   const maxCoinsUsable = Math.min(balance, Math.floor(maxDiscountTL / COIN_TO_TL));
-  const onlyCoaching = items.length > 0 && eligibleItems.length === 0;
-  const canUseCoinDiscount = !onlyCoaching && balance > 0 && maxDiscountTL > 0;
+  const canUseCoinDiscount = hasCoaching && balance > 0 && maxDiscountTL > 0;
   const coinDiscount = useCoinDiscount && canUseCoinDiscount ? maxCoinsUsable * COIN_TO_TL : 0;
   const coinsSpent = useCoinDiscount && canUseCoinDiscount ? maxCoinsUsable : 0;
+  const coachingTotal = coachingItems.reduce((s, i) => s + (i.discountedPrice ?? i.price) * i.quantity, 0);
+  const finalCoachingTotal = Math.max(0, coachingTotal - coinDiscount);
   const finalTotal = Math.max(0, cartTotal - coinDiscount);
 
-  const getPaymentDetails = (): PaymentDetails => {
-    const itemTypes = [...new Set(items.map(i => i.type))];
-    const primaryType = itemTypes.includes("coaching") ? "coaching" :
-                       itemTypes.includes("supplement") ? "supplement" : "store";
-
-    const itemSummary = items.length === 1 ? items[0].title : `${items.length} Ürün`;
-
+  const getCoachingPaymentDetails = (): PaymentDetails => {
+    const itemSummary = coachingItems.length === 1 ? coachingItems[0].title : `${coachingItems.length} Koçluk Paketi`;
     return {
-      amount: finalTotal,
+      amount: finalCoachingTotal,
       title: itemSummary,
-      description: items.map(i => `${i.title} x${i.quantity}`).join(", "),
-      type: primaryType,
+      description: coachingItems.map((i) => `${i.title} x${i.quantity}`).join(", "),
+      type: "coaching",
       referenceId: `CART-${Date.now()}`,
     };
   };
 
-  const handleCheckout = () => {
-    closeCart();
-    setTimeout(() => { setShowPaymentModal(true); }, 100);
+  const redirectToShopifyCheckout = async () => {
+    if (shopifyItems.length === 0) return;
+    setShopifyLoading(true);
+    try {
+      const lines = shopifyItems
+        .filter((i) => !!i.shopifyVariantId)
+        .map((i) => ({ merchandiseId: i.shopifyVariantId!, quantity: i.quantity }));
+      if (lines.length === 0) {
+        throw new Error("Shopify ürünlerinde variant bilgisi eksik.");
+      }
+      const url = await createShopifyCart(lines);
+      // Clear shopify items locally — Shopify owns the order from this point on
+      shopifyItems.forEach((i) => removeFromCart(i.id));
+      window.location.href = url;
+    } catch (err: any) {
+      toast({
+        title: "Shopify checkout başarısız",
+        description: err?.message ?? "Bilinmeyen hata",
+        variant: "destructive",
+      });
+    } finally {
+      setShopifyLoading(false);
+    }
+  };
+
+  const handleCheckout = async () => {
+    // 1) Coaching present → native PaymentModal first (Shopify redirect happens onSuccess)
+    if (hasCoaching) {
+      closeCart();
+      setTimeout(() => setShowPaymentModal(true), 100);
+      return;
+    }
+    // 2) Shopify-only → straight to Shopify checkout
+    if (hasShopify) {
+      await redirectToShopifyCheckout();
+    }
   };
 
   const handlePaymentSuccess = async () => {
     if (!user) return;
 
-    // Spend coins if discount was applied
     if (coinsSpent > 0) {
-      const success = await spendCoins(coinsSpent, "purchase", "Sepet İndirimi");
+      const success = await spendCoins(coinsSpent, "purchase", "Koçluk İndirimi");
       if (!success) return;
     }
 
     const { error } = await supabase.from("orders").insert({
       user_id: user.id,
-      items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
-      total_price: finalTotal,
-      total_coins_used: totalCoinsUsed + coinsSpent,
+      items: coachingItems.map((i) => ({
+        id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type,
+      })) as any,
+      total_price: finalCoachingTotal,
+      total_coins_used: coinsSpent,
       status: "pending",
     });
 
@@ -96,10 +135,17 @@ const UniversalCartDrawer = () => {
     }
 
     fireConfetti();
-    clearCart();
-    closeCart();
+    coachingItems.forEach((i) => removeFromCart(i.id));
     setUseCoinDiscount(false);
-    toast({ title: "Sipariş Tamamlandı! 🎉", description: "Siparişiniz başarıyla oluşturuldu." });
+    toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Şimdi Shopify ürünlerine yönlendiriliyorsun..." });
+
+    // Continue to Shopify if hybrid
+    if (hasShopify) {
+      setTimeout(() => redirectToShopifyCheckout(), 600);
+    } else {
+      clearCart();
+      closeCart();
+    }
   };
 
   return (
@@ -213,6 +259,16 @@ const UniversalCartDrawer = () => {
 
                     {/* Cart Footer */}
                     <div className="border-t border-border p-4 space-y-4 bg-[hsl(var(--background))]">
+                      {/* Hybrid checkout disclaimer */}
+                      {isHybrid && (
+                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex gap-2">
+                          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                          <p className="text-[11px] text-foreground leading-relaxed">
+                            Bu sepette 2 farklı ödeme akışı var. <span className="text-primary font-medium">Koçluk</span> ödemesi uygulama içinden, <span className="text-primary font-medium">fiziksel ürün</span> ödemesi Shopify üzerinden güvenle yapılacaktır.
+                          </p>
+                        </div>
+                      )}
+
                       {/* Summary */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
@@ -228,7 +284,7 @@ const UniversalCartDrawer = () => {
                           </div>
                         )}
 
-                        {/* BioCoin Discount Section */}
+                        {/* BioCoin Discount Section — coaching only */}
                         {canUseCoinDiscount ? (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -241,7 +297,7 @@ const UniversalCartDrawer = () => {
                                 <div>
                                   <p className="text-xs font-display text-foreground">BİOCOİN İNDİRİMİ</p>
                                   <p className="text-[10px] text-muted-foreground leading-tight">
-                                    Maks. {maxDiscountTL}₺ ({maxCoinsUsable} coin) · Koçluk paketleri hariç
+                                    Maks. {maxDiscountTL}₺ ({maxCoinsUsable} coin) · Sadece koçluk paketleri
                                   </p>
                                 </div>
                               </div>
@@ -254,14 +310,17 @@ const UniversalCartDrawer = () => {
                               </div>
                             )}
                           </motion.div>
-                        ) : onlyCoaching ? (
-                          <div className="bg-muted/40 border border-border rounded-xl p-3 flex items-center gap-2">
-                            <Coins className="w-4 h-4 text-muted-foreground" />
-                            <p className="text-[11px] text-muted-foreground leading-tight">
-                              BioCoin indirimi koçluk paketlerinde geçerli değildir.
+                        ) : null}
+
+                        {/* Shopify-only or hybrid: BioCoin disclaimer for physical items */}
+                        {hasShopify && (
+                          <div className="bg-muted/40 border border-border rounded-xl p-2.5 flex items-start gap-2">
+                            <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
+                            <p className="text-[10px] text-muted-foreground leading-tight">
+                              Shopify ürünlerinde BioCoin kullanımı çok yakında (Part 8.3) aktif olacaktır.
                             </p>
                           </div>
-                        ) : null}
+                        )}
 
                         {coinDiscount > 0 && (
                           <div className="flex items-center justify-between text-sm text-primary">
@@ -278,8 +337,20 @@ const UniversalCartDrawer = () => {
 
                       {/* Actions */}
                       <div className="space-y-2">
-                        <Button onClick={handleCheckout} className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12">
-                          ÖDEMEYE GEÇ
+                        <Button
+                          onClick={handleCheckout}
+                          disabled={shopifyLoading}
+                          className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12"
+                        >
+                          {shopifyLoading ? (
+                            "SHOPIFY'A YÖNLENDİRİLİYOR..."
+                          ) : isHybrid ? (
+                            <span className="flex items-center gap-2">KOÇLUK + SHOPIFY ÖDE <ExternalLink className="w-4 h-4" /></span>
+                          ) : hasShopify ? (
+                            <span className="flex items-center gap-2">SHOPIFY İLE ÖDE <ExternalLink className="w-4 h-4" /></span>
+                          ) : (
+                            "ÖDEMEYE GEÇ"
+                          )}
                         </Button>
                         <Button variant="outline" onClick={clearCart} className="w-full border-border text-muted-foreground hover:text-destructive h-10">
                           Sepeti Temizle
@@ -297,7 +368,7 @@ const UniversalCartDrawer = () => {
       <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
-        payment={items.length > 0 ? getPaymentDetails() : null}
+        payment={coachingItems.length > 0 ? getCoachingPaymentDetails() : null}
         onPaymentSuccess={handlePaymentSuccess}
       />
     </>
