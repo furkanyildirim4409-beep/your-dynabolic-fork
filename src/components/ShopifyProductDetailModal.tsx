@@ -170,49 +170,13 @@ const ShopifyProductDetailModal = ({
                     )}
                   </div>
 
-                  {/* Write review */}
-                  {user ? (
-                    <div className="glass-card p-3 mb-3 space-y-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {userReview ? "Değerlendirmeni güncelle" : "Bu ürüne puan ver"}
-                        </p>
-                        <InteractiveStars
-                          value={effectiveDraftRating}
-                          onChange={setDraftRating}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <Textarea
-                        value={draftComment || (draftRating === 0 ? userReview?.comment ?? "" : draftComment)}
-                        onChange={(e) => setDraftComment(e.target.value)}
-                        placeholder="Deneyimini paylaş (opsiyonel)..."
-                        className="min-h-[70px] bg-background/50 text-sm resize-none"
-                        disabled={isSubmitting}
-                        maxLength={500}
-                      />
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={isSubmitting || effectiveDraftRating < 1}
-                        size="sm"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display"
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : userReview ? (
-                          "GÜNCELLE"
-                        ) : (
-                          "GÖNDER"
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="glass-card p-3 mb-3 text-center">
-                      <p className="text-xs text-muted-foreground">
-                        Değerlendirme yapmak için giriş yap.
-                      </p>
-                    </div>
-                  )}
+                  {/* Verified review gate */}
+                  <div className="flex items-start gap-2 p-3 mb-3 rounded-lg bg-muted/40 border border-border">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Sadece bu ürünü satın alan kullanıcılar değerlendirme yapabilir.
+                    </p>
+                  </div>
 
                   {/* Reviews list */}
                   {reviewsLoading ? (
