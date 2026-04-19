@@ -57,6 +57,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
+    if (blocked) {
+      toast({
+        title: "Sepet Tipi Uyuşmuyor",
+        description: "Koçluk paketleri ile fiziksel ürünler aynı sepette birleştirilemez. Lütfen önce mevcut sepetinizi onaylayın.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: "Sepete Eklendi ✓", description: `"${item.title}" sepetinize eklendi.` });
     requestAnimationFrame(() => setIsCartOpen(true));
   }, []);
