@@ -18,8 +18,9 @@ const CoachHighlightsRow = ({ coachId }: CoachHighlightsRowProps) => {
   );
 
   return (
-    <div className="border-b border-white/5">
-      <div className="flex gap-4 overflow-x-auto py-4 px-4 [&::-webkit-scrollbar]:hidden">
+    <div className="border-b border-white/5 px-4 pb-4">
+      <p className="text-muted-foreground text-xs font-medium mb-2 tracking-wider pt-2">ÖNE ÇIKANLAR</p>
+      <div className="flex gap-4 overflow-x-auto py-2 [&::-webkit-scrollbar]:hidden">
         {uniqueHighlights.map((highlight, index) => (
           <motion.button
             key={highlight.category}
