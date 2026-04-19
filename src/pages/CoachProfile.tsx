@@ -336,6 +336,16 @@ const CoachProfile = () => {
                       </div>
                     </div>
                   )}
+                  {post.type === "image" && post.image_url && (
+                    <div className="aspect-square bg-muted overflow-hidden">
+                      <img src={post.image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  )}
+                  {post.type !== "transformation" && post.type !== "video" && !post.image_url && post.before_image_url && (
+                    <div className="aspect-square bg-muted overflow-hidden">
+                      <img src={post.before_image_url} alt="" className="w-full h-full object-cover" loading="lazy" />
+                    </div>
+                  )}
                   <div className="p-4"><p className="text-foreground text-sm">{post.content}</p></div>
                   <div className="px-4 pb-4 flex items-center gap-6">
                     <button onClick={() => handleLike(post.id, post.user_has_liked)} className={`flex items-center gap-2 transition-colors ${post.user_has_liked ? "text-destructive" : "text-muted-foreground hover:text-destructive"}`}>
