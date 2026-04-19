@@ -1,124 +1,125 @@
 
 
-## Plan: Shopify Headless Integration — SupplementShop Live Data
+## Plan: Part 8.2 Revised — Client-Side Hybrid Checkout
 
-### Tespit
-- `SupplementShop.tsx` şu anda `shopSupplements` mock array'inden besleniyor (`src/lib/mockData.ts`).
-- Projede Shopify SDK yok, native `fetch` ile Storefront API GraphQL çağrısı yapılacak (sıfır bağımlılık).
-- BioCoin/flavor/sepet mantığı korunacak — sadece veri kaynağı değişecek.
-- Lovable'ın dahili `shopify--enable` connector'ı VAR ama kullanıcı açıkça **headless Storefront API** istedi (kendi `VITE_SHOPIFY_DOMAIN` + token'ı ile). Bu yüzden enable flow'unu atlayıp doğrudan public Storefront API client kuruyoruz.
+### Mimari Düzeltme Kabul
+Edge function yaklaşımı iptal. Tüm Shopify Storefront API çağrıları **client-side** (`src/lib/shopify.ts`) içinden yapılacak. Token public Storefront token olduğu için bu güvenli ve standart pattern.
 
-### Step A — `src/lib/shopify.ts` (yeni dosya)
-Saf TypeScript GraphQL client:
+⚠️ **Geçiş notu:** Mevcut `supabase/functions/shopify-products/` edge function silinmeyecek (kullanıcı talimatına sadık kalıyoruz: "Do NOT create any Supabase Edge Functions" — silme değil, sadece yeni oluşturmama). Ama `src/lib/shopify.ts` bu function'ı çağırmaktan vazgeçip direkt Shopify'a fetch atacak. Bunun için **iki yeni env değişkeni gerekli olacak** (`VITE_SHOPIFY_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_TOKEN`) — şu an sadece backend secret olarak ekli. Bunu plan sonunda kullanıcıya soracağım.
 
+### Keşif (onay sonrası ilk iş)
+- `src/pages/Kesfet.tsx` → "Mağaza" sekmesi şu an ne render ediyor? (mock array mı, başka hook mu?)
+- Tab yapısı: Mağaza ana tab + alt-tab'lar (TAKVİYE/EKİPMAN) mı, yoksa düz iki ayrı tab mı?
+
+### Step A — `src/lib/shopify.ts` genişlet
+
+**1. `getProducts` opsiyonel query parametresi:**
 ```ts
-const SHOPIFY_DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN;
-const SHOPIFY_STOREFRONT_TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN;
-const API_VERSION = "2024-10";
+export async function getProducts(opts: { limit?: number; query?: string } = {}): Promise<ShopifyProduct[]>
+```
+Default: `first: 50`, query yok → tüm ürünler. (Collection handle sonra eklenir, şimdilik query string ile filter, örn. `tag:supplement`.)
 
-export interface ShopifyProduct {
-  id: string;
-  title: string;
-  handle: string;
-  description: string;
-  imageUrl: string | null;
-  imageAlt: string;
-  price: number;
-  currencyCode: string;
-  variantId: string;
-}
+**2. Direkt client fetch'e geri dön:**
+- `supabase.functions.invoke("shopify-products")` çağrısını kaldır.
+- `shopifyFetch()` helper'ını canlandır (Part 8.1 plan taslağındaki gibi) → `https://${VITE_SHOPIFY_DOMAIN}/api/2024-10/graphql.json` direkt POST.
 
-export async function shopifyFetch<T>({ query, variables }: { query: string; variables?: Record<string, any> }): Promise<T> {
-  if (!SHOPIFY_DOMAIN || !SHOPIFY_STOREFRONT_TOKEN) {
-    throw new Error("Shopify env vars missing: VITE_SHOPIFY_DOMAIN / VITE_SHOPIFY_STOREFRONT_TOKEN");
-  }
-  const res = await fetch(`https://${SHOPIFY_DOMAIN}/api/${API_VERSION}/graphql.json`, {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-      "X-Shopify-Storefront-Access-Token": SHOPIFY_STOREFRONT_TOKEN,
-    },
-    body: JSON.stringify({ query, variables }),
-  });
-  const json = await res.json();
-  if (!res.ok || json.errors) throw new Error(json.errors?.[0]?.message ?? `Shopify API ${res.status}`);
-  return json.data as T;
-}
-
-export async function getProducts(limit = 10): Promise<ShopifyProduct[]> {
-  const query = `
-    query Products($first: Int!) {
-      products(first: $first) {
-        edges {
-          node {
-            id
-            title
-            handle
-            description
-            images(first: 1) { edges { node { url altText } } }
-            variants(first: 1) { edges { node { id price { amount currencyCode } } } }
-          }
-        }
+**3. Yeni fonksiyon: `createShopifyCart`:**
+```ts
+export async function createShopifyCart(
+  lines: { merchandiseId: string; quantity: number }[]
+): Promise<string> {
+  const mutation = `
+    mutation cartCreate($input: CartInput!) {
+      cartCreate(input: $input) {
+        cart { checkoutUrl }
+        userErrors { field message }
       }
     }`;
-  const data = await shopifyFetch<{ products: { edges: any[] } }>({ query, variables: { first: limit } });
-  return data.products.edges.map(({ node }) => {
-    const img = node.images.edges[0]?.node;
-    const variant = node.variants.edges[0]?.node;
-    return {
-      id: node.id,
-      title: node.title,
-      handle: node.handle,
-      description: node.description,
-      imageUrl: img?.url ?? null,
-      imageAlt: img?.altText ?? node.title,
-      price: variant ? parseFloat(variant.price.amount) : 0,
-      currencyCode: variant?.price.currencyCode ?? "TRY",
-      variantId: variant?.id ?? "",
-    };
+  const data = await shopifyFetch<{ cartCreate: { cart: { checkoutUrl: string }, userErrors: any[] } }>({
+    query: mutation,
+    variables: { input: { lines: lines.map(l => ({ merchandiseId: l.merchandiseId, quantity: l.quantity })) } },
   });
+  if (data.cartCreate.userErrors?.length) throw new Error(data.cartCreate.userErrors[0].message);
+  return data.cartCreate.cart.checkoutUrl;
 }
 ```
 
-### Step B — `src/hooks/useStoreData.ts` (extend)
-Yeni hook ekle, mevcut `useCoachProducts` korunur:
+### Step B — Mağaza tab'ını Shopify'a bağla
+- `Kesfet.tsx` keşfinden sonra: ana "Mağaza" tab'ı `useShopifyProducts({ limit: 50 })` kullanır.
+- TAKVİYE alt-tab'ı zaten `<SupplementShop />` (mevcut hook'u kullanıyor) — dokunulmaz.
+- Genel mağaza için skeleton + error state aynı pattern.
+- Kart UI: SupplementShop ile aynı stil (image, title, price, "SEPETE EKLE"). Yardımcı için inline render ya da paylaşılan `<ShopifyProductCard />` çıkarılabilir (keşif sonrası karar).
 
+### Step C — `UniversalCartDrawer.tsx` Hibrit Orchestrator
+
+**Cart split:**
 ```ts
-import { getProducts, ShopifyProduct } from "@/lib/shopify";
-export function useShopifyProducts(limit = 20) {
-  return useQuery<ShopifyProduct[]>({
-    queryKey: ["shopify-products", limit],
-    queryFn: () => getProducts(limit),
-    staleTime: 5 * 60_000,
-    retry: 1,
-  });
-}
+const shopifyItems = items.filter(i => i.type === "supplement" || i.type === "product");
+const coachingItems = items.filter(i => i.type === "coaching");
+const isHybrid = shopifyItems.length > 0 && coachingItems.length > 0;
 ```
 
-### Step C — `src/components/SupplementShop.tsx` rewrite
-- `shopSupplements` import'u kaldır.
-- `useShopifyProducts()` çağır → loading: 6 adet `<Skeleton className="aspect-square">` grid; error: tek satır info card.
-- Map Shopify product → mevcut kart UI'ı (image, title, price, BioCoin toggle, "SEPETE EKLE").
-- `handleAddToCart` adapte: `addToCart({ id, title, price, image: imageUrl, type: "supplement", coachName: "Shopify" })`. Flavor/brand/category/rating UI'larını kaldır (Shopify temel sorgusunda yok — Part 8.2'de variant/metafield ile gelir).
-- BioCoin %20 cap mantığı ve fiyat gösterimi aynen korunur.
-- Currency: Shopify'dan gelen `currencyCode` ≠ TRY ise yine `₺` sembolüyle göster (ileride formatlanacak); şimdilik düz number.
+**UI eklemeler:**
+- Hibrit ise sepet özetinin üstünde info banner:
+  > *"Bu sepette 2 farklı ödeme akışı var. Koçluk ödemesi uygulama içinden, fiziksel ürün ödemesi Shopify üzerinden güvenle yapılacaktır."*
+- BioCoin toggle'ının altına küçük not (Shopify item varsa):
+  > *"Shopify ürünlerinde BioCoin kullanımı çok yakında (Part 8.3) aktif olacaktır."*
+- BioCoin discount hesabı zaten coaching'i hariç tutuyor — şimdi tam tersi, **sadece coaching'e** uygulanmalı (Shopify ürünleri Shopify checkout'a gidecek, indirim kodu yok). `eligibleItems` filter'ını `i.type === "coaching"` olarak güncelle. (BioCoin kuralları memo'su `mem://features/biocoin-economy-ledger` revize edilecek.)
 
-### Step D — Env değişkenleri
-Mesaj içinde kullanıcıya açıkça belirt:
+**Checkout orchestrator:**
+```ts
+const handleCheckout = async () => {
+  // 1. Coaching varsa → native flow
+  if (coachingItems.length > 0) {
+    closeCart();
+    setShowPaymentModal(true);
+    // PaymentModal success → handlePaymentSuccess içinde Shopify redirect tetiklenir
+    return;
+  }
+  // 2. Sadece Shopify ise → direkt redirect
+  await redirectToShopifyCheckout();
+};
 
-> Lütfen aşağıdaki iki ortam değişkenini ayarla (Project Settings → Build Secrets ya da `.env`):
-> - `VITE_SHOPIFY_DOMAIN` (örn. `dynabolic-store.myshopify.com`)
-> - `VITE_SHOPIFY_STOREFRONT_TOKEN` (Shopify admin → Apps → Headless / Custom App → Storefront API access token)
+const redirectToShopifyCheckout = async () => {
+  if (shopifyItems.length === 0) return;
+  try {
+    const url = await createShopifyCart(
+      shopifyItems.map(i => ({ merchandiseId: i.id, quantity: i.quantity }))
+    );
+    // Shopify item'larını sepetten temizle (coaching zaten Supabase'e yazıldı)
+    shopifyItems.forEach(i => removeFromCart(i.id));
+    window.location.href = url;
+  } catch (err) {
+    toast({ title: "Shopify checkout başarısız", description: err.message, variant: "destructive" });
+  }
+};
+```
 
-`.env` dosyası secret yönetimi için kullanılmaz (Lovable kuralı), bu yüzden `.env.example` da oluşturmayız — değerler runtime'da `import.meta.env`'den okunur ve Build Secrets üzerinden inject edilir.
+**`handlePaymentSuccess` güncelle:** coaching siparişini Supabase'e yazdıktan sonra, `shopifyItems.length > 0` ise `redirectToShopifyCheckout()` çağır.
+
+### Step D — Runtime Hatası Düzeltmesi
+Console'da görünen `Edge function returned 502: Error, {"error":""}` → mevcut `shopify-products` function 502 dönüyor çünkü secrets eksik veya domain hatalı. Step A'da client-side fetch'e geçince bu hata kendiliğinden çözülür (function artık çağrılmayacak).
+
+### Step E — Env Değişkenleri (kullanıcıdan istenecek)
+Build Secrets paneline (frontend için):
+- `VITE_SHOPIFY_DOMAIN` (örn. `dynabolic-store.myshopify.com`)
+- `VITE_SHOPIFY_STOREFRONT_TOKEN` (Storefront API public token)
+
+Backend secret'lar (`SHOPIFY_DOMAIN`, `SHOPIFY_STOREFRONT_TOKEN`) duruyor — ileride webhook/admin işlemleri için kalsın.
 
 ### Dosya Listesi
 
 | Dosya | Aksiyon |
 |------|--------|
-| `src/lib/shopify.ts` | YENİ — GraphQL client + `getProducts()` |
-| `src/hooks/useStoreData.ts` | `useShopifyProducts` hook'u eklenir |
-| `src/components/SupplementShop.tsx` | Mock data sökülür, live Shopify data + skeleton/error state |
+| `src/lib/shopify.ts` | Direkt fetch'e dönüş + `getProducts({query})` + `createShopifyCart()` |
+| `src/pages/Kesfet.tsx` | Mağaza tab'ı Shopify ürünleri (keşif sonrası netleşir) |
+| `src/components/UniversalCartDrawer.tsx` | Hibrit orchestrator + BioCoin scope değişimi + UI disclaimer |
+| `src/hooks/useStoreData.ts` | `useShopifyProducts` opsiyonel `query` parametresi |
+| `mem://features/biocoin-economy-ledger` | "BioCoin sadece coaching'e uygulanır" güncellemesi |
+| `mem://features/shopping-cart-system` | Hibrit checkout akışı eklenir |
 
-DB değişikliği yok. Mock `shopSupplements` array'i `mockData.ts` içinde dokunulmadan kalır (başka yerden import edilmiyorsa Part 8.x'te temizlenebilir).
+**DB değişikliği yok. Yeni edge function yok.** Mevcut `shopify-products` edge function dormant kalır (silmiyoruz).
+
+### Açık Soru (plan onayı sonrası kullanıcıya sorulacak)
+Build Secrets'a `VITE_SHOPIFY_DOMAIN` ve `VITE_SHOPIFY_STOREFRONT_TOKEN` eklenmeli — değerler aynı backend secret'larıyla aynı mı, farklı mı?
 
