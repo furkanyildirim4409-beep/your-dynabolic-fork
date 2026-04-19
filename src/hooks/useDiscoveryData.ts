@@ -53,54 +53,25 @@ export function useCoachStories() {
   });
 }
 
-// ── Leaderboard Coaches ─────────────────────────────
+// ── Leaderboard Coaches (RPC-driven, real math) ─────
 export function useLeaderboardCoaches() {
   return useQuery<LeaderboardCoach[]>({
-    queryKey: ["leaderboard-coaches"],
+    queryKey: ["leaderboard-coaches", "v2"],
     queryFn: async () => {
-      const { data, error } = await supabase
-        .from("profiles")
-        .select("id, full_name, avatar_url, specialty, level")
-        .eq("role", "coach");
-
+      const { data, error } = await (supabase as any).rpc("get_coach_leaderboard_v2");
       if (error) throw error;
 
-      const rawCoaches = (data ?? []) as any[];
-      const coachIds = rawCoaches.map((c) => c.id);
-
-      // Batch fetch real student counts (athletes whose profiles.coach_id = coach.id)
-      const studentCountMap = new Map<string, number>();
-      if (coachIds.length > 0) {
-        const { data: athletes, error: aErr } = await supabase
-          .from("profiles")
-          .select("coach_id")
-          .in("coach_id", coachIds)
-          .eq("role", "athlete");
-        if (aErr) throw aErr;
-        (athletes ?? []).forEach((a: any) => {
-          if (!a.coach_id) return;
-          studentCountMap.set(a.coach_id, (studentCountMap.get(a.coach_id) ?? 0) + 1);
-        });
-      }
-
-      const coaches: LeaderboardCoach[] = rawCoaches.map((p) => {
-        const level = p.level ?? 1;
-        const students = studentCountMap.get(p.id) ?? 0;
-        return {
-          id: p.id,
-          name: p.full_name || "Koç",
-          avatar: p.avatar_url || "",
-          specialty: p.specialty || "Fitness",
-          rating: 4.9,
-          students,
-          score: level * 1000 + students * 10,
-          level,
-          hasNewStory: false,
-        };
-      });
-
-      coaches.sort((a, b) => b.score - a.score);
-      return coaches;
+      return ((data ?? []) as any[]).map((row): LeaderboardCoach => ({
+        id: row.coach_id,
+        name: row.full_name || "Koç",
+        avatar: row.avatar_url || "",
+        specialty: row.specialty || "Fitness",
+        rating: 4.9,
+        students: Number(row.student_count ?? 0),
+        score: Number(row.calculated_score ?? 0),
+        level: row.level ?? 1,
+        hasNewStory: false,
+      }));
     },
     staleTime: 120_000,
   });
