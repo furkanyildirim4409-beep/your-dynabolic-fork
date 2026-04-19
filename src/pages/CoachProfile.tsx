@@ -22,6 +22,7 @@ const CommentCountBadge = ({ postId }: { postId: string }) => {
 
 import ProductDetail from "@/components/ProductDetail";
 import PostCommentsDrawer from "@/components/PostCommentsDrawer";
+import CoachHighlightsRow from "@/components/CoachHighlightsRow";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
 import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
@@ -321,6 +322,9 @@ const CoachProfile = () => {
             </div>
           </div>
         )}
+
+        {/* Highlights */}
+        {coachId && <CoachHighlightsRow coachId={coachId} />}
 
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
