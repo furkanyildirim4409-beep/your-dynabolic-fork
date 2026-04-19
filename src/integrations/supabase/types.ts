@@ -1071,6 +1071,45 @@ export type Database = {
           },
         ]
       }
+      email_templates: {
+        Row: {
+          body_html: string
+          category: string | null
+          created_at: string
+          id: string
+          is_system: boolean
+          name: string
+          owner_id: string | null
+          required_variables: Json | null
+          subject: string
+          thumbnail_url: string | null
+        }
+        Insert: {
+          body_html?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name: string
+          owner_id?: string | null
+          required_variables?: Json | null
+          subject?: string
+          thumbnail_url?: string | null
+        }
+        Update: {
+          body_html?: string
+          category?: string | null
+          created_at?: string
+          id?: string
+          is_system?: boolean
+          name?: string
+          owner_id?: string | null
+          required_variables?: Json | null
+          subject?: string
+          thumbnail_url?: string | null
+        }
+        Relationships: []
+      }
       emails: {
         Row: {
           body_html: string | null
@@ -1410,30 +1449,54 @@ export type Database = {
       }
       orders: {
         Row: {
+          carrier_name: string | null
           created_at: string | null
+          expires_at: string | null
+          external_reference_id: string | null
           id: string
           items: Json
+          order_type: string
+          shipping_address: Json | null
           status: string | null
           total_coins_used: number | null
           total_price: number
+          tracking_number: string | null
+          tracking_url: string | null
+          updated_at: string | null
           user_id: string | null
         }
         Insert: {
+          carrier_name?: string | null
           created_at?: string | null
+          expires_at?: string | null
+          external_reference_id?: string | null
           id?: string
           items: Json
+          order_type?: string
+          shipping_address?: Json | null
           status?: string | null
           total_coins_used?: number | null
           total_price: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Update: {
+          carrier_name?: string | null
           created_at?: string | null
+          expires_at?: string | null
+          external_reference_id?: string | null
           id?: string
           items?: Json
+          order_type?: string
+          shipping_address?: Json | null
           status?: string | null
           total_coins_used?: number | null
           total_price?: number
+          tracking_number?: string | null
+          tracking_url?: string | null
+          updated_at?: string | null
           user_id?: string | null
         }
         Relationships: []
