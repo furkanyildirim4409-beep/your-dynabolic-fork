@@ -23,6 +23,7 @@ const StoryViewer = () => {
   const [isPaused, setIsPaused] = useState(false);
   const [replyText, setReplyText] = useState("");
   const [isInputFocused, setIsInputFocused] = useState(false);
+  const [keyboardOffset, setKeyboardOffset] = useState(0);
 
   const timerRef = useRef<NodeJS.Timeout | null>(null);
   const progressRef = useRef(0);
