@@ -553,6 +553,12 @@ const Kesfet = () => {
         isOpen={showTransactionHistory}
         onClose={() => setShowTransactionHistory(false)}
       />
+
+      <PostCommentsDrawer
+        postId={commentsPostId}
+        open={!!commentsPostId}
+        onOpenChange={(o) => { if (!o) setCommentsPostId(null); }}
+      />
     </>
   );
 };
