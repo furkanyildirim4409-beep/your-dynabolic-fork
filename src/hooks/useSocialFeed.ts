@@ -132,7 +132,7 @@ export function useToggleLike() {
     },
 
     onMutate: async ({ postId, isCurrentlyLiked }) => {
-      const queryKey = ["social-posts", userId];
+      const queryKey = ["social-posts", "following", userId];
       await queryClient.cancelQueries({ queryKey });
 
       const previousPosts = queryClient.getQueryData<SocialPost[]>(queryKey);
@@ -154,12 +154,13 @@ export function useToggleLike() {
 
     onError: (_err, _vars, context) => {
       if (context?.previousPosts) {
-        queryClient.setQueryData(["social-posts", userId], context.previousPosts);
+        queryClient.setQueryData(["social-posts", "following", userId], context.previousPosts);
       }
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["social-posts", userId] });
+      queryClient.invalidateQueries({ queryKey: ["social-posts", "following", userId] });
+      queryClient.invalidateQueries({ queryKey: ["coach-posts"] });
     },
   });
 }
