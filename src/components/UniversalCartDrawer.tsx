@@ -44,7 +44,6 @@ const UniversalCartDrawer = () => {
     [items],
   );
   const coachingItems = useMemo(() => items.filter((i) => i.type === "coaching"), [items]);
-  const isHybrid = shopifyItems.length > 0 && coachingItems.length > 0;
   const hasShopify = shopifyItems.length > 0;
   const hasCoaching = coachingItems.length > 0;
 
