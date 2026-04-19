@@ -393,6 +393,7 @@ const CoachProfile = () => {
                     </button>
                     <button onClick={() => setCommentsPostId(post.id)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                       <MessageCircle className="w-5 h-5" />
+                      <CommentCountBadge postId={post.id} />
                     </button>
                     <button onClick={() => sharePost(post.id, post.content)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto">
                       <Share2 className="w-5 h-5" />
