@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Trash2, Coins, Plus, Minus, Info, ExternalLink } from "lucide-react";
+import { X, ShoppingBag, Trash2, Coins, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import confetti from "canvas-confetti";
@@ -44,7 +44,6 @@ const UniversalCartDrawer = () => {
     [items],
   );
   const coachingItems = useMemo(() => items.filter((i) => i.type === "coaching"), [items]);
-  const isHybrid = shopifyItems.length > 0 && coachingItems.length > 0;
   const hasShopify = shopifyItems.length > 0;
   const hasCoaching = coachingItems.length > 0;
 
@@ -137,15 +136,10 @@ const UniversalCartDrawer = () => {
     fireConfetti();
     coachingItems.forEach((i) => removeFromCart(i.id));
     setUseCoinDiscount(false);
-    toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Şimdi Shopify ürünlerine yönlendiriliyorsun..." });
+    toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Koçun en kısa sürede seninle iletişime geçecek." });
 
-    // Continue to Shopify if hybrid
-    if (hasShopify) {
-      setTimeout(() => redirectToShopifyCheckout(), 600);
-    } else {
-      clearCart();
-      closeCart();
-    }
+    clearCart();
+    closeCart();
   };
 
   return (
@@ -259,15 +253,7 @@ const UniversalCartDrawer = () => {
 
                     {/* Cart Footer */}
                     <div className="border-t border-border p-4 space-y-4 bg-[hsl(var(--background))]">
-                      {/* Hybrid checkout disclaimer */}
-                      {isHybrid && (
-                        <div className="bg-primary/10 border border-primary/20 rounded-xl p-3 flex gap-2">
-                          <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
-                          <p className="text-[11px] text-foreground leading-relaxed">
-                            Bu sepette 2 farklı ödeme akışı var. <span className="text-primary font-medium">Koçluk</span> ödemesi uygulama içinden, <span className="text-primary font-medium">fiziksel ürün</span> ödemesi Shopify üzerinden güvenle yapılacaktır.
-                          </p>
-                        </div>
-                      )}
+                      {/* Cart is strictly homogenous (Part 8.4) — no hybrid disclaimer needed */}
 
                       {/* Summary */}
                       <div className="space-y-2">
@@ -343,15 +329,18 @@ const UniversalCartDrawer = () => {
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12"
                         >
                           {shopifyLoading ? (
-                            "SHOPIFY'A YÖNLENDİRİLİYOR..."
-                          ) : isHybrid ? (
-                            <span className="flex items-center gap-2">KOÇLUK + SHOPIFY ÖDE <ExternalLink className="w-4 h-4" /></span>
+                            "İŞLEM YAPILIYOR..."
                           ) : hasShopify ? (
-                            <span className="flex items-center gap-2">SHOPIFY İLE ÖDE <ExternalLink className="w-4 h-4" /></span>
+                            "SİPARİŞİ TAMAMLA"
                           ) : (
                             "ÖDEMEYE GEÇ"
                           )}
                         </Button>
+                        {hasShopify && (
+                          <p className="text-[10px] text-muted-foreground text-center leading-tight px-2">
+                            Fiziksel ürün siparişleri için adres ve ödeme adımı bir sonraki ekranda alınacaktır.
+                          </p>
+                        )}
                         <Button variant="outline" onClick={clearCart} className="w-full border-border text-muted-foreground hover:text-destructive h-10">
                           Sepeti Temizle
                         </Button>

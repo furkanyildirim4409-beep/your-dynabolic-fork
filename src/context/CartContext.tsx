@@ -36,7 +36,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addToCart = useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    let blocked = false;
     setItems((prev) => {
+      const hasCoaching = prev.some((i) => i.type === "coaching");
+      const hasPhysical = prev.some((i) => i.type === "supplement" || i.type === "product");
+      const incomingIsCoaching = item.type === "coaching";
+      const incomingIsPhysical = item.type === "supplement" || item.type === "product";
+      if ((hasCoaching && incomingIsPhysical) || (hasPhysical && incomingIsCoaching)) {
+        blocked = true;
+        return prev;
+      }
       const existingIndex = prev.findIndex((i) => i.id === item.id);
       if (existingIndex >= 0) {
         const updated = [...prev];
@@ -48,6 +57,14 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
       }
       return [...prev, { ...item, quantity: item.quantity || 1 }];
     });
+    if (blocked) {
+      toast({
+        title: "Sepet Tipi Uyuşmuyor",
+        description: "Koçluk paketleri ile fiziksel ürünler aynı sepette birleştirilemez. Lütfen önce mevcut sepetinizi onaylayın.",
+        variant: "destructive",
+      });
+      return;
+    }
     toast({ title: "Sepete Eklendi ✓", description: `"${item.title}" sepetinize eklendi.` });
     requestAnimationFrame(() => setIsCartOpen(true));
   }, []);

@@ -1,14 +1,10 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Star, Truck, Shield, Loader2 } from "lucide-react";
+import { X, ShoppingBag, Star, Truck, Shield, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
-import { useProductReviews, useSubmitProductReview } from "@/hooks/useProductReviews";
+import { useProductReviews } from "@/hooks/useProductReviews";
 import type { ShopifyProduct } from "@/lib/shopify";
 
 interface ShopifyProductDetailModalProps {
@@ -38,39 +34,6 @@ const StarRow = ({ value, size = 14 }: { value: number; size?: number }) => (
   </div>
 );
 
-const InteractiveStars = ({
-  value,
-  onChange,
-  disabled,
-}: {
-  value: number;
-  onChange: (v: number) => void;
-  disabled?: boolean;
-}) => {
-  const [hover, setHover] = useState(0);
-  const display = hover || value;
-  return (
-    <div className="flex items-center gap-1" onMouseLeave={() => setHover(0)}>
-      {[1, 2, 3, 4, 5].map((s) => (
-        <button
-          key={s}
-          type="button"
-          disabled={disabled}
-          onMouseEnter={() => setHover(s)}
-          onClick={() => onChange(s)}
-          className="p-0.5 transition-transform hover:scale-110 disabled:opacity-50"
-        >
-          <Star
-            className={`w-7 h-7 ${
-              s <= display ? "text-primary fill-primary" : "text-muted-foreground/40"
-            }`}
-          />
-        </button>
-      ))}
-    </div>
-  );
-};
-
 const ShopifyProductDetailModal = ({
   isOpen,
   onClose,
@@ -78,19 +41,13 @@ const ShopifyProductDetailModal = ({
   cartType = "supplement",
 }: ShopifyProductDetailModalProps) => {
   const { addToCart } = useCart();
-  const { user } = useAuth();
   const { data, isLoading: reviewsLoading } = useProductReviews(product?.id ?? null);
-  const { mutate: submitReview, isPending: isSubmitting } = useSubmitProductReview();
-
-  const [draftRating, setDraftRating] = useState(0);
-  const [draftComment, setDraftComment] = useState("");
 
   if (!product) return null;
 
   const reviews = data?.reviews ?? [];
   const averageRating = data?.averageRating ?? 0;
   const totalCount = data?.totalCount ?? 0;
-  const userReview = data?.userReview ?? null;
 
   const handleAddToCart = () => {
     addToCart({
@@ -104,31 +61,6 @@ const ShopifyProductDetailModal = ({
     });
     onClose();
   };
-
-  const handleSubmitReview = () => {
-    if (!user) {
-      toast.error("Değerlendirme yapmak için giriş yapmalısın");
-      return;
-    }
-    if (draftRating < 1) {
-      toast.error("Lütfen bir puan seç");
-      return;
-    }
-    submitReview(
-      { productId: product.id, rating: draftRating, comment: draftComment },
-      {
-        onSuccess: () => {
-          toast.success(userReview ? "Değerlendirme güncellendi" : "Değerlendirme gönderildi");
-          setDraftRating(0);
-          setDraftComment("");
-        },
-        onError: (e: any) => toast.error(e?.message ?? "Gönderilemedi"),
-      },
-    );
-  };
-
-  // Pre-fill draft when user has an existing review
-  const effectiveDraftRating = draftRating || userReview?.rating || 0;
 
   return (
     <AnimatePresence>
@@ -238,49 +170,13 @@ const ShopifyProductDetailModal = ({
                     )}
                   </div>
 
-                  {/* Write review */}
-                  {user ? (
-                    <div className="glass-card p-3 mb-3 space-y-3">
-                      <div>
-                        <p className="text-xs text-muted-foreground mb-2">
-                          {userReview ? "Değerlendirmeni güncelle" : "Bu ürüne puan ver"}
-                        </p>
-                        <InteractiveStars
-                          value={effectiveDraftRating}
-                          onChange={setDraftRating}
-                          disabled={isSubmitting}
-                        />
-                      </div>
-                      <Textarea
-                        value={draftComment || (draftRating === 0 ? userReview?.comment ?? "" : draftComment)}
-                        onChange={(e) => setDraftComment(e.target.value)}
-                        placeholder="Deneyimini paylaş (opsiyonel)..."
-                        className="min-h-[70px] bg-background/50 text-sm resize-none"
-                        disabled={isSubmitting}
-                        maxLength={500}
-                      />
-                      <Button
-                        onClick={handleSubmitReview}
-                        disabled={isSubmitting || effectiveDraftRating < 1}
-                        size="sm"
-                        className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display"
-                      >
-                        {isSubmitting ? (
-                          <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : userReview ? (
-                          "GÜNCELLE"
-                        ) : (
-                          "GÖNDER"
-                        )}
-                      </Button>
-                    </div>
-                  ) : (
-                    <div className="glass-card p-3 mb-3 text-center">
-                      <p className="text-xs text-muted-foreground">
-                        Değerlendirme yapmak için giriş yap.
-                      </p>
-                    </div>
-                  )}
+                  {/* Verified review gate */}
+                  <div className="flex items-start gap-2 p-3 mb-3 rounded-lg bg-muted/40 border border-border">
+                    <Info className="w-4 h-4 text-primary flex-shrink-0 mt-0.5" />
+                    <p className="text-xs text-muted-foreground leading-relaxed">
+                      Sadece bu ürünü satın alan kullanıcılar değerlendirme yapabilir.
+                    </p>
+                  </div>
 
                   {/* Reviews list */}
                   {reviewsLoading ? (
