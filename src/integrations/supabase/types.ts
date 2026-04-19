@@ -742,6 +742,33 @@ export type Database = {
           },
         ]
       }
+      coach_highlight_metadata: {
+        Row: {
+          category_name: string
+          coach_id: string
+          created_at: string
+          custom_cover_url: string | null
+          id: string
+          updated_at: string
+        }
+        Insert: {
+          category_name: string
+          coach_id: string
+          created_at?: string
+          custom_cover_url?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Update: {
+          category_name?: string
+          coach_id?: string
+          created_at?: string
+          custom_cover_url?: string | null
+          id?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       coach_invites: {
         Row: {
           coach_id: string
@@ -2639,6 +2666,19 @@ export type Database = {
       }
       cleanup_expired_auto_login_tokens: { Args: never; Returns: undefined }
       get_coach_info: { Args: { _coach_id: string }; Returns: Json }
+      get_coach_leaderboard_v2: {
+        Args: never
+        Returns: {
+          avatar_url: string
+          calculated_score: number
+          coach_id: string
+          full_name: string
+          level: number
+          specialty: string
+          student_count: number
+          total_likes: number
+        }[]
+      }
       get_my_head_coach_id: { Args: never; Returns: string }
       get_team_peers: {
         Args: { _head_coach_id: string }
