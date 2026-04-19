@@ -70,7 +70,7 @@ const NativeCheckoutModal = ({ isOpen, onClose, total, itemCount, onConfirm }: P
       return;
     }
     setSubmitting(true);
-    onConfirm(result.data);
+    onConfirm(result.data as ShippingAddress);
     // parent will close — small UX delay reset
     setTimeout(() => setSubmitting(false), 400);
   };

@@ -5,12 +5,12 @@ import { useCart } from "@/context/CartContext";
 import confetti from "canvas-confetti";
 import { useMemo, useState } from "react";
 import PaymentModal, { PaymentDetails } from "./PaymentModal";
+import NativeCheckoutModal, { ShippingAddress } from "./NativeCheckoutModal";
 import { toast } from "@/hooks/use-toast";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { Switch } from "@/components/ui/switch";
-import { createShopifyCart } from "@/lib/shopify";
 
 const COIN_TO_TL = 0.1;      // 10 BioCoin = 1 TL
 const MAX_PCT = 0.20;        // Max 20% discount on eligible (coaching) items
@@ -33,8 +33,10 @@ const UniversalCartDrawer = () => {
   const { user } = useAuth();
   const { balance, spendCoins } = useBioCoin();
   const [showPaymentModal, setShowPaymentModal] = useState(false);
+  const [showNativeCheckout, setShowNativeCheckout] = useState(false);
+  const [showShopifyPayment, setShowShopifyPayment] = useState(false);
+  const [pendingAddress, setPendingAddress] = useState<ShippingAddress | null>(null);
   const [useCoinDiscount, setUseCoinDiscount] = useState(false);
-  const [shopifyLoading, setShopifyLoading] = useState(false);
 
   const totalCoinsUsed = items.reduce((acc, item) => acc + (item.coinsUsed || 0) * item.quantity, 0);
 
@@ -47,7 +49,7 @@ const UniversalCartDrawer = () => {
   const hasShopify = shopifyItems.length > 0;
   const hasCoaching = coachingItems.length > 0;
 
-  // BioCoin discount applies ONLY to coaching items (Shopify checkout has no discount-code support yet)
+  // BioCoin discount applies ONLY to coaching items
   const eligibleSubtotal = coachingItems.reduce(
     (s, i) => s + (i.discountedPrice ?? i.price) * i.quantity,
     0,
@@ -72,45 +74,36 @@ const UniversalCartDrawer = () => {
     };
   };
 
-  const redirectToShopifyCheckout = async () => {
-    if (shopifyItems.length === 0) return;
-    setShopifyLoading(true);
-    try {
-      const lines = shopifyItems
-        .filter((i) => !!i.shopifyVariantId)
-        .map((i) => ({ merchandiseId: i.shopifyVariantId!, quantity: i.quantity }));
-      if (lines.length === 0) {
-        throw new Error("Shopify ürünlerinde variant bilgisi eksik.");
-      }
-      const url = await createShopifyCart(lines);
-      // Clear shopify items locally — Shopify owns the order from this point on
-      shopifyItems.forEach((i) => removeFromCart(i.id));
-      window.location.href = url;
-    } catch (err: any) {
-      toast({
-        title: "Shopify checkout başarısız",
-        description: err?.message ?? "Bilinmeyen hata",
-        variant: "destructive",
-      });
-    } finally {
-      setShopifyLoading(false);
-    }
+  const getShopifyPaymentDetails = (): PaymentDetails => {
+    const itemSummary = shopifyItems.length === 1 ? shopifyItems[0].title : `${shopifyItems.length} Ürün`;
+    return {
+      amount: cartTotal,
+      title: itemSummary,
+      description: shopifyItems.map((i) => `${i.title} x${i.quantity}`).join(", "),
+      type: "store",
+      referenceId: `SHOP-${Date.now()}`,
+    };
   };
 
-  const handleCheckout = async () => {
-    // 1) Coaching present → native PaymentModal first (Shopify redirect happens onSuccess)
+  const handleCheckout = () => {
     if (hasCoaching) {
       closeCart();
       setTimeout(() => setShowPaymentModal(true), 100);
       return;
     }
-    // 2) Shopify-only → straight to Shopify checkout
     if (hasShopify) {
-      await redirectToShopifyCheckout();
+      closeCart();
+      setTimeout(() => setShowNativeCheckout(true), 100);
     }
   };
 
-  const handlePaymentSuccess = async () => {
+  const handleAddressConfirm = (address: ShippingAddress) => {
+    setPendingAddress(address);
+    setShowNativeCheckout(false);
+    setTimeout(() => setShowShopifyPayment(true), 100);
+  };
+
+  const handleCoachingPaymentSuccess = async () => {
     if (!user) return;
 
     if (coinsSpent > 0) {
@@ -120,6 +113,7 @@ const UniversalCartDrawer = () => {
 
     const { error } = await supabase.from("orders").insert({
       user_id: user.id,
+      order_type: "coaching",
       items: coachingItems.map((i) => ({
         id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type,
       })) as any,
@@ -137,6 +131,41 @@ const UniversalCartDrawer = () => {
     coachingItems.forEach((i) => removeFromCart(i.id));
     setUseCoinDiscount(false);
     toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Koçun en kısa sürede seninle iletişime geçecek." });
+
+    clearCart();
+    closeCart();
+  };
+
+  const handleShopifyPaymentSuccess = async () => {
+    if (!user || !pendingAddress) return;
+
+    const { error } = await supabase.from("orders").insert({
+      user_id: user.id,
+      order_type: "shopify",
+      items: shopifyItems.map((i) => ({
+        id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type,
+        shopifyVariantId: i.shopifyVariantId,
+      })) as any,
+      total_price: cartTotal,
+      shipping_address: pendingAddress as any,
+      status: "processing",
+      external_reference_id: `SHOP-${Date.now()}`,
+    });
+
+    // TODO Part 8.6: Call Supabase Edge Function to mirror order to Shopify Admin API
+
+    if (error) {
+      toast({ title: "Sipariş kaydedilemedi", description: error.message, variant: "destructive" });
+      return;
+    }
+
+    fireConfetti();
+    shopifyItems.forEach((i) => removeFromCart(i.id));
+    setPendingAddress(null);
+    toast({
+      title: "Sipariş Alındı! 📦",
+      description: "Siparişin işleme alındı. Kargo bilgilendirmesi yakında gönderilecek.",
+    });
 
     clearCart();
     closeCart();
@@ -167,12 +196,10 @@ const UniversalCartDrawer = () => {
               onClick={(e) => e.stopPropagation()}
               className="absolute inset-x-0 bottom-0 w-full max-w-[430px] mx-auto bg-[hsl(var(--background))] border-t border-border rounded-t-3xl max-h-[85vh] flex flex-col touch-none"
             >
-              {/* Drag Handle */}
               <div className="flex justify-center pt-3 pb-1">
                 <div className="w-10 h-1 rounded-full bg-muted-foreground/30" />
               </div>
 
-              {/* Header */}
               <div className="p-4 border-b border-border flex items-center justify-between">
                 <div className="flex items-center gap-2">
                   <ShoppingBag className="w-5 h-5 text-primary" />
@@ -186,7 +213,6 @@ const UniversalCartDrawer = () => {
                 </button>
               </div>
 
-              {/* Cart Content */}
               <div className="flex flex-col flex-1 overflow-hidden">
                 {items.length === 0 ? (
                   <div className="flex-1 flex flex-col items-center justify-center p-8 text-center">
@@ -196,7 +222,6 @@ const UniversalCartDrawer = () => {
                   </div>
                 ) : (
                   <>
-                    {/* Items List */}
                     <div className="flex-1 overflow-y-auto p-4 space-y-3 overscroll-contain">
                       {items.map((item, index) => (
                         <motion.div
@@ -251,11 +276,7 @@ const UniversalCartDrawer = () => {
                       ))}
                     </div>
 
-                    {/* Cart Footer */}
                     <div className="border-t border-border p-4 space-y-4 bg-[hsl(var(--background))]">
-                      {/* Cart is strictly homogenous (Part 8.4) — no hybrid disclaimer needed */}
-
-                      {/* Summary */}
                       <div className="space-y-2">
                         <div className="flex items-center justify-between text-sm">
                           <span className="text-muted-foreground">Ara Toplam</span>
@@ -270,7 +291,6 @@ const UniversalCartDrawer = () => {
                           </div>
                         )}
 
-                        {/* BioCoin Discount Section — coaching only */}
                         {canUseCoinDiscount ? (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
@@ -298,12 +318,11 @@ const UniversalCartDrawer = () => {
                           </motion.div>
                         ) : null}
 
-                        {/* Shopify-only or hybrid: BioCoin disclaimer for physical items */}
                         {hasShopify && (
                           <div className="bg-muted/40 border border-border rounded-xl p-2.5 flex items-start gap-2">
                             <Coins className="w-3.5 h-3.5 text-muted-foreground flex-shrink-0 mt-0.5" />
                             <p className="text-[10px] text-muted-foreground leading-tight">
-                              Shopify ürünlerinde BioCoin kullanımı çok yakında (Part 8.3) aktif olacaktır.
+                              Shopify ürünlerinde BioCoin kullanımı çok yakında aktif olacaktır.
                             </p>
                           </div>
                         )}
@@ -321,20 +340,12 @@ const UniversalCartDrawer = () => {
                         </div>
                       </div>
 
-                      {/* Actions */}
                       <div className="space-y-2">
                         <Button
                           onClick={handleCheckout}
-                          disabled={shopifyLoading}
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12"
                         >
-                          {shopifyLoading ? (
-                            "İŞLEM YAPILIYOR..."
-                          ) : hasShopify ? (
-                            "SİPARİŞİ TAMAMLA"
-                          ) : (
-                            "ÖDEMEYE GEÇ"
-                          )}
+                          {hasShopify ? "SİPARİŞİ TAMAMLA" : "ÖDEMEYE GEÇ"}
                         </Button>
                         {hasShopify && (
                           <p className="text-[10px] text-muted-foreground text-center leading-tight px-2">
@@ -354,11 +365,27 @@ const UniversalCartDrawer = () => {
         )}
       </AnimatePresence>
 
+      {/* Coaching payment */}
       <PaymentModal
         isOpen={showPaymentModal}
         onClose={() => setShowPaymentModal(false)}
         payment={coachingItems.length > 0 ? getCoachingPaymentDetails() : null}
-        onPaymentSuccess={handlePaymentSuccess}
+        onPaymentSuccess={handleCoachingPaymentSuccess}
+      />
+
+      {/* Shopify native checkout: address → payment */}
+      <NativeCheckoutModal
+        isOpen={showNativeCheckout}
+        onClose={() => setShowNativeCheckout(false)}
+        total={cartTotal}
+        itemCount={shopifyItems.reduce((acc, i) => acc + i.quantity, 0)}
+        onConfirm={handleAddressConfirm}
+      />
+      <PaymentModal
+        isOpen={showShopifyPayment}
+        onClose={() => setShowShopifyPayment(false)}
+        payment={shopifyItems.length > 0 && pendingAddress ? getShopifyPaymentDetails() : null}
+        onPaymentSuccess={handleShopifyPaymentSuccess}
       />
     </>
   );
