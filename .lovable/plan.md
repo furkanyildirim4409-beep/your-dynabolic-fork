@@ -1,89 +1,70 @@
 
 
-## Plan: Discover Page Data Layer — Auto-Assignment & Social Graph
+## Plan: Discover Feed — Following-Only + Coach Profile Media Fix
 
-### Goals
-1. Auto-assign athletes to coaches when a coaching package order is paid.
-2. Replace mock student/follower counts with real DB-driven values across Discover & Coach Profile.
-3. Expose a "Takipçiler" (followers) data source for a future modal.
+### Investigation completed (from existing files in context)
 
----
+- `useSocialFeed.useSocialPosts` currently does an unfiltered `select * from social_posts` → must be scoped to followed coaches.
+- `useFollowSystem` already uses `user_follows(follower_id, followed_id)` — reuse this table.
+- `social_posts` schema has multiple media columns: `image_url`, `before_image_url`, `after_image_url`, `video_url`, `video_thumbnail_url`, `type`. The mapper in `useSocialFeed` already returns all of them, but `useCoachPosts` in `useCoachDetail.ts` does too — so data shape parity exists. Need to verify what `<SocialPostCard />` actually consumes vs what's mapped (likely a mismatch on a unified `media_url` field, or `image_url` not in select).
 
-### Step A — Auto-Assignment (DB)
-
-**Investigation needed first** (will do during execution):
-- Confirm `orders` table schema (status, items JSONB shape, buyer user_id column).
-- Confirm `team_assignments` schema (coach_id, athlete_id, status columns).
-- Verify how `coach_id` is encoded inside `coach_products` / order items.
-
-**Migration:**
-- Create `SECURITY DEFINER` function `public.handle_coaching_order_paid()`.
-- Logic: when `NEW.status = 'paid'` and `OLD.status <> 'paid'`, iterate over `NEW.items` JSONB; for each item where `item_type = 'coaching'`, extract `coach_id` and INSERT into `team_assignments(coach_id, athlete_id, status)` with `ON CONFLICT (coach_id, athlete_id) DO UPDATE SET status='active'`.
-- Trigger: `AFTER INSERT OR UPDATE OF status ON public.orders`.
-- Backfill: one-shot INSERT for existing paid coaching orders.
-
-**Note:** if `team_assignments` lacks a unique `(coach_id, athlete_id)` constraint, the migration will add one. If `orders` table doesn't exist yet, plan stops and surfaces the gap.
+### Pre-flight checks (during execution)
+1. Read `src/components/SocialPostCard.tsx` (or equivalent — locate via search) to determine the exact prop shape it expects (`media_url` vs separate columns, `author` vs `coach`, etc.).
+2. Read `src/pages/Kesfet.tsx` and `src/pages/CoachProfile.tsx` to see how each renders posts — confirm whether they already share `<SocialPostCard />` or use ad-hoc JSX.
+3. Verify `social_posts` columns include `image_url` (memory note `social-posts-schema-media` confirms multi-column media schema with image fallback).
 
 ---
 
-### Step B — Social Graph (Followers table)
+### Step A — Following-Only Feed (`src/hooks/useSocialFeed.ts`)
 
-`user_follows` already exists (`follower_id`, `followed_id`) per `useFollowSystem.ts`. **No new table needed.** We will reuse it. The user's request mentioned `followers` — clarifying via reuse to avoid duplication.
+Modify `useSocialPosts` `queryFn`:
 
----
+1. Early return `[]` if no `userId`.
+2. Fetch followed coach IDs:
+   ```ts
+   const { data: follows } = await supabase
+     .from("user_follows")
+     .select("followed_id")
+     .eq("follower_id", userId);
+   const followedIds = (follows ?? []).map(f => f.followed_id);
+   if (followedIds.length === 0) return [];
+   ```
+3. Add `.in("coach_id", followedIds)` to the existing posts query.
+4. Rest of the aggregation (likes, mapping) stays unchanged.
+5. Bump `queryKey` to `["social-posts", "following", userId]` to avoid stale cache from the old global feed.
 
-### Step C — Dynamic Counts (Hooks)
-
-**Extend `src/hooks/useCoachProfile.ts`** (currently fetches own coach via `profile.coach_id`) — keep as-is, but also add:
-
-**New hook `src/hooks/useCoachStats.ts`:**
-```ts
-export function useCoachStats(coachId?: string) {
-  // Returns { studentCount, followerCount }
-  // studentCount: count(team_assignments) where coach_id=coachId and status='active'
-  // followerCount: count(user_follows) where followed_id=coachId
-  // Two parallel head:true count queries, staleTime 60s
-}
-```
-
-**New hook `src/hooks/useCoachFollowers.ts`:**
-```ts
-export function useCoachFollowers(coachId?: string) {
-  // SELECT follower_id, profiles!follower_id(full_name, avatar_url)
-  // FROM user_follows WHERE followed_id = coachId
-  // Returns array for future "Takipçiler" modal list
-}
-```
+No styling/UI changes. Empty-state UI in `Kesfet.tsx` deferred to a later step per the user's instruction.
 
 ---
 
-### Step D — UI Bindings (data only, no styling)
+### Step B — Coach Profile Media Fix
+
+Two probable root causes (will confirm during execution):
+
+**B1. Missing `image_url` in select:**  
+`useCoachPosts` uses `select("*, profiles!coach_id(...)")` — `*` should include `image_url`, but if the column exists yet the post card reads a different field name, mapping is broken. Will:
+- Add explicit column list instead of `*` to guarantee `image_url`, `video_url`, `video_thumbnail_url`, `before_image_url`, `after_image_url`, `type`, `content`, `created_at` are returned.
+
+**B2. Prop-shape mismatch with `<SocialPostCard />`:**  
+After reading the card component, will:
+- Either rename mapper output keys in `useCoachPosts` to match what the card expects, OR
+- If `Kesfet.tsx` passes a wrapper-derived `media_url`/`media_type` derived from `type`, replicate the same derivation in `CoachProfile.tsx`'s render path so both pages feed identical props.
+- Ensure `coach` object (name, avatar) is consistently named — already aligned in both hooks.
+
+**B3. Unified component usage:**  
+- If `CoachProfile.tsx` uses inline JSX instead of `<SocialPostCard />`, swap to the shared component using the same mapped data structure as `Kesfet.tsx`.
+
+No visual restyling — only data wiring.
+
+---
+
+### Files to change
 
 | File | Change |
 |------|--------|
-| `src/pages/CoachProfile.tsx` | Replace any hardcoded student/follower numbers with `useCoachStats(coachId)` data. Keep existing `useFollowerCount` as fallback or swap to unified hook. |
-| `src/pages/Kesfet.tsx` (Discover) | If `LeaderboardCoach.students` is mock, fetch real counts via batched query in `useDiscoveryData.ts` `useLeaderboardCoaches`. |
-| `src/hooks/useDiscoveryData.ts` | In `useLeaderboardCoaches`, after fetching coaches, batch-count team_assignments per coach (single grouped query) and inject real `students` value. |
+| `src/hooks/useSocialFeed.ts` | Filter feed by `user_follows`; bump query key |
+| `src/hooks/useCoachDetail.ts` | Explicit column select in `useCoachPosts`; align mapper keys with `<SocialPostCard />` |
+| `src/pages/CoachProfile.tsx` | Swap to shared `<SocialPostCard />` if not already; ensure props match |
 
----
-
-### Step E — Files Changed Summary
-
-| File | Action |
-|------|--------|
-| `supabase/migrations/<ts>_coaching_auto_assign.sql` | New trigger + function + backfill + unique constraint |
-| `src/hooks/useCoachStats.ts` | New |
-| `src/hooks/useCoachFollowers.ts` | New |
-| `src/hooks/useDiscoveryData.ts` | Inject real student counts into leaderboard |
-| `src/pages/CoachProfile.tsx` | Bind to `useCoachStats` |
-| `src/pages/Kesfet.tsx` | (If mock counts surfaced) bind to real data |
-
----
-
-### Open Items (resolved at execution)
-- Exact `orders` schema → will inspect via `supabase--read_query` before writing trigger.
-- Exact `team_assignments` schema → same.
-- If neither table exists, will halt and report instead of inventing schema.
-
-No styling changes. Pure data layer & bindings.
+No DB migration required (reuses existing `user_follows` and `social_posts` tables).
 
