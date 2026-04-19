@@ -1,52 +1,64 @@
 
 
-## Plan: Hotfix — Remove B2B Block + Fix Invisible Highlight Covers
+## Tespit (DB ile doğrulandı)
 
-### Step A — `src/pages/CoachProfile.tsx`
-Remove the entire "DYNABOLIC ALTYAPISI" block (the `mt-8 px-4` wrapper containing the 4-item grid with `ScanLine`, `Eye`, `LayoutDashboard`, `Mail`). Also remove the now-unused lucide imports for those four icons. Restore flow: Bio/Stats → `<CoachHighlightsRow />` → Tabs.
+**Network log**: `GET /coach_highlight_metadata?coach_id=eq.c21a5a19...` → `200 []` (boş dizi).
 
-### Step B — `src/hooks/useCoachDetail.ts` (`useCoachHighlights`)
+**DB sorgusu**: Aynı satır gerçekte mevcut:
+```
+category_name = 'Değişimler'
+custom_cover_url = .../highlight-covers/c21a5a19.../2f600872-...jpg
+```
 
-Make cover matching ultra-defensive:
+**RLS policy listesi** (`coach_highlight_metadata`):
+```
+"Coaches manage own highlight metadata"  ALL  USING (auth.uid() = coach_id)
+```
+Tek policy bu. Yani sadece koçun kendisi okuyabiliyor — sporcu profili ziyaret ettiğinde RLS satırı filtreliyor ve boş dönüyor. Hook sessizce `stories[0].media_url`'e düşüyor → koçun manuel olarak kırptığı kapak athlete app'te asla görünmüyor.
 
-1. **Normalized key helper** — apply identically on both sides:
-   ```ts
-   const normKey = (s: string) => s.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g, "");
-   ```
+Coach Panel tarafı ise doğru çalışıyor:
+- `HighlightCoverCropper` → `social-media` bucket'a yüklüyor (public, OK)
+- `useUpsertHighlightMetadata` → `coach_highlight_metadata`'ya `coach_id + category_name + custom_cover_url` UPSERT'liyor (kendi coach session'ı ile policy geçiyor)
+- Hook'lar (`useCoachHighlights` panel tarafı) custom cover'ı doğru gösteriyor
 
-2. **Build `metaMap` safely** from `metaRes.data` (treat null as empty):
-   ```ts
-   const metaMap = new Map<string, string>();
-   for (const m of (metaRes?.data ?? []) as any[]) {
-     const name = typeof m?.category_name === "string" ? m.category_name : "";
-     const url = typeof m?.custom_cover_url === "string" ? m.custom_cover_url : "";
-     if (!name.trim() || !url.trim()) continue;
-     metaMap.set(normKey(name), url);
-   }
-   ```
+Sorun **sadece** athlete app okuma yetkisinde.
 
-3. **Resolve cover with safe fallback** — never let `undefined` slip through, never drop a group just because the custom cover is missing:
-   ```ts
-   return Array.from(grouped.values())
-     .map(({ display, stories }) => {
-       const key = normKey(display);
-       let cover = metaMap.get(key);
-       if (!cover || !cover.trim()) {
-         cover = stories[0]?.media_url ?? "";
-       }
-       return { category: display, cover_image: cover, stories };
-     })
-     .filter((h) => h.cover_image.trim().length > 0 && h.stories.length > 0);
-   ```
+## Düzeltme planı
 
-This guarantees: (a) if custom cover exists → use it, (b) otherwise → fall back to first story media, (c) only drop a bucket when truly no media exists at all.
+### A) DB migration — public SELECT policy ekle
 
-### Files
+`coach_highlight_metadata` non-sensitive: yalnızca koç ID + kategori adı + halka açık `social-media` bucket URL'i içeriyor (zaten public bucket). Tıpkı `coach_stories` ve `coach_products` gibi public okumaya açılmalı.
 
-| File | Action |
+```sql
+CREATE POLICY "Public can view highlight metadata"
+ON public.coach_highlight_metadata
+FOR SELECT
+TO public
+USING (true);
+```
+
+Mevcut `ALL` policy korunur (yazma yetkisi sadece koça ait kalır). Athlete app artık `category_name` + `custom_cover_url` çiftini okuyabilecek.
+
+### B) Frontend doğrulaması — değişiklik gerekmiyor
+
+`src/hooks/useCoachDetail.ts` içindeki `useCoachHighlights` zaten:
+- `coach_highlight_metadata`'yı paralel fetch'liyor
+- Türkçe locale uppercase + whitespace-strip ile normalize key map kuruyor (`Değişimler` → `DEĞİŞİMLER`)
+- `cover = metaMap.get(key) ?? stories[0].media_url` fallback ile çözüyor
+
+RLS açıldığı an athlete koçun kırptığı dairesel kapağı anında görecek; fallback yalnızca metadata yoksa devreye girecek.
+
+### C) Memory güncelle
+
+`mem://features/coach-story-highlights` notuna ek:
+> `coach_highlight_metadata` public SELECT açıktır (`USING (true)`); yazma `auth.uid() = coach_id` ile koça kilitlidir. Athlete profili ziyaret ettiğinde koçun custom cropped kapağını okuyabilmek için zorunludur.
+
+## Dosya listesi
+
+| Dosya | Aksiyon |
 |------|--------|
-| `src/pages/CoachProfile.tsx` | Delete B2B "DYNABOLIC ALTYAPISI" block + unused icon imports |
-| `src/hooks/useCoachDetail.ts` | Rewrite `useCoachHighlights` cover resolution with normalized key + safe fallback |
+| Yeni migration | `coach_highlight_metadata` üzerine `Public can view highlight metadata` SELECT policy ekle |
+| `mem://features/coach-story-highlights` | RLS kontratını güncelle |
 
-No DB changes. No other components touched.
+Frontend (athlete app) ve Coach Panel kodunda **hiçbir değişiklik gerekmiyor** — sorun saf RLS engelleme. Migration uygulandığı an, koçun panelden atadığı dairesel kapaklar `/coach/:id` sayfasındaki "ÖNE ÇIKANLAR" satırında doğrudan görünür hâle gelecek.
 
