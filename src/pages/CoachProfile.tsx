@@ -160,8 +160,15 @@ const CoachProfile = () => {
     );
   };
 
-  const handleMessage = () => {
-    toast("Mesaj (Demo)", { description: `${coachName} ile mesajlaşma yakında aktif olacak!` });
+  const { profile: currentProfile } = useAuth();
+  const handleMessage = async () => {
+    if (!coachId) return;
+    if (currentProfile?.coach_id === coachId) {
+      navigate("/kokpit");
+      setTimeout(() => window.dispatchEvent(new CustomEvent("openCoachChat")), 150);
+    } else {
+      toast.info("Bu koçla mesajlaşmak için önce paketini satın al veya takip et.");
+    }
   };
 
 
