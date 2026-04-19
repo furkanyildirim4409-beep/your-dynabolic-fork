@@ -1,70 +1,90 @@
 
 
-## Plan: Discover Feed — Following-Only + Coach Profile Media Fix
+## Plan: Discover Interaction Engine — Likes, Comments, Native Share
 
-### Investigation completed (from existing files in context)
-
-- `useSocialFeed.useSocialPosts` currently does an unfiltered `select * from social_posts` → must be scoped to followed coaches.
-- `useFollowSystem` already uses `user_follows(follower_id, followed_id)` — reuse this table.
-- `social_posts` schema has multiple media columns: `image_url`, `before_image_url`, `after_image_url`, `video_url`, `video_thumbnail_url`, `type`. The mapper in `useSocialFeed` already returns all of them, but `useCoachPosts` in `useCoachDetail.ts` does too — so data shape parity exists. Need to verify what `<SocialPostCard />` actually consumes vs what's mapped (likely a mismatch on a unified `media_url` field, or `image_url` not in select).
-
-### Pre-flight checks (during execution)
-1. Read `src/components/SocialPostCard.tsx` (or equivalent — locate via search) to determine the exact prop shape it expects (`media_url` vs separate columns, `author` vs `coach`, etc.).
-2. Read `src/pages/Kesfet.tsx` and `src/pages/CoachProfile.tsx` to see how each renders posts — confirm whether they already share `<SocialPostCard />` or use ad-hoc JSX.
-3. Verify `social_posts` columns include `image_url` (memory note `social-posts-schema-media` confirms multi-column media schema with image fallback).
+### Pre-flight investigation needed
+1. Locate the actual feed post card — `SocialPostCard.tsx` is referenced but not in file list. Need to search to confirm whether posts in `Kesfet.tsx` are rendered inline or via a component.
+2. Check if `post_comments` table exists in DB; if not, create migration.
+3. Confirm current Like/Share/Comment button wiring in the rendering location.
 
 ---
 
-### Step A — Following-Only Feed (`src/hooks/useSocialFeed.ts`)
+### Step A — Real Likes (Optimistic UI)
 
-Modify `useSocialPosts` `queryFn`:
+`useToggleLike` already exists in `useSocialFeed.ts` with optimistic cache updates. Work needed:
+- Locate the Like button in the feed render path (Kesfet.tsx or extracted component).
+- Wire `onClick={() => toggleLike.mutate({ postId: post.id, isCurrentlyLiked: post.user_has_liked })}`.
+- Bind heart icon classes: `fill-red-500 text-red-500` when `post.user_has_liked`, else neutral.
+- Show `post.likes_count` next to icon.
 
-1. Early return `[]` if no `userId`.
-2. Fetch followed coach IDs:
-   ```ts
-   const { data: follows } = await supabase
-     .from("user_follows")
-     .select("followed_id")
-     .eq("follower_id", userId);
-   const followedIds = (follows ?? []).map(f => f.followed_id);
-   if (followedIds.length === 0) return [];
-   ```
-3. Add `.in("coach_id", followedIds)` to the existing posts query.
-4. Rest of the aggregation (likes, mapping) stays unchanged.
-5. Bump `queryKey` to `["social-posts", "following", userId]` to avoid stale cache from the old global feed.
-
-No styling/UI changes. Empty-state UI in `Kesfet.tsx` deferred to a later step per the user's instruction.
+No new hook needed.
 
 ---
 
-### Step B — Coach Profile Media Fix
+### Step B — Real Comments (Drawer)
 
-Two probable root causes (will confirm during execution):
+**DB Migration** (new):
+```sql
+CREATE TABLE public.post_comments (
+  id uuid PK default gen_random_uuid(),
+  post_id uuid NOT NULL,
+  user_id uuid NOT NULL,
+  content text NOT NULL,
+  created_at timestamptz NOT NULL default now()
+);
+ALTER TABLE post_comments ENABLE RLS;
+-- SELECT: anyone authenticated can read comments on posts they can see (any auth user, since posts table is read-broad)
+-- INSERT: user_id = auth.uid()
+-- DELETE: user_id = auth.uid()
+CREATE INDEX idx_post_comments_post_id ON post_comments(post_id, created_at DESC);
+```
 
-**B1. Missing `image_url` in select:**  
-`useCoachPosts` uses `select("*, profiles!coach_id(...)")` — `*` should include `image_url`, but if the column exists yet the post card reads a different field name, mapping is broken. Will:
-- Add explicit column list instead of `*` to guarantee `image_url`, `video_url`, `video_thumbnail_url`, `before_image_url`, `after_image_url`, `type`, `content`, `created_at` are returned.
+**New hook `src/hooks/usePostComments.ts`:**
+- `usePostComments(postId)` → fetch comments + joined `profiles(full_name, avatar_url)`, ordered by `created_at asc`.
+- `useAddComment()` mutation → insert + optimistic prepend; invalidate on settled.
+- Also bumps a `comments_count` derived from query length (no DB column needed yet).
 
-**B2. Prop-shape mismatch with `<SocialPostCard />`:**  
-After reading the card component, will:
-- Either rename mapper output keys in `useCoachPosts` to match what the card expects, OR
-- If `Kesfet.tsx` passes a wrapper-derived `media_url`/`media_type` derived from `type`, replicate the same derivation in `CoachProfile.tsx`'s render path so both pages feed identical props.
-- Ensure `coach` object (name, avatar) is consistently named — already aligned in both hooks.
+**New component `src/components/PostCommentsDrawer.tsx`:**
+- shadcn `<Drawer>` opened from feed card.
+- Header: "Yorumlar".
+- Scrollable list: avatar + name + content + relative time (existing `formatDistanceToNow` patterns).
+- Sticky bottom input (`Textarea` autosize or `Input`) + Send button. Disabled while empty/sending.
+- Dark theme: `bg-zinc-950 border-zinc-800`, input `bg-zinc-900`, matches existing aesthetic per `mem://style/ui-aesthetic`.
+- Empty state: "İlk yorumu sen yap".
 
-**B3. Unified component usage:**  
-- If `CoachProfile.tsx` uses inline JSX instead of `<SocialPostCard />`, swap to the shared component using the same mapped data structure as `Kesfet.tsx`.
+---
 
-No visual restyling — only data wiring.
+### Step C — Native Share
+
+In the feed card:
+- Replace existing share handler with `navigator.share()` block (exact snippet from user's spec).
+- Fallback: `navigator.clipboard.writeText` + `toast.success("Bağlantı kopyalandı!")` from `sonner`.
+- Wrap in try/catch; ignore `AbortError` (user cancelled the share sheet) silently.
+
+Note: `/post/:id` route does not exist yet — link will currently 404. Out-of-scope for this step but flagged.
+
+---
+
+### Step D — Render-path consolidation
+
+Will determine during execution:
+- If `Kesfet.tsx` renders post cards inline → wire Likes/Comments/Share directly there AND in `CoachProfile.tsx` post grid.
+- If a shared `SocialPostCard` exists → centralize all three handlers there.
+
+Goal: single source of truth for interaction logic across Discover and Coach Profile.
 
 ---
 
 ### Files to change
 
-| File | Change |
+| File | Action |
 |------|--------|
-| `src/hooks/useSocialFeed.ts` | Filter feed by `user_follows`; bump query key |
-| `src/hooks/useCoachDetail.ts` | Explicit column select in `useCoachPosts`; align mapper keys with `<SocialPostCard />` |
-| `src/pages/CoachProfile.tsx` | Swap to shared `<SocialPostCard />` if not already; ensure props match |
+| `supabase/migrations/<ts>_post_comments.sql` | New table + RLS + index |
+| `src/hooks/usePostComments.ts` | New (fetch + add mutation) |
+| `src/components/PostCommentsDrawer.tsx` | New |
+| `src/pages/Kesfet.tsx` | Wire like/comment/share in feed render |
+| `src/pages/CoachProfile.tsx` | Same wiring for coach post grid |
+| (optional) `src/components/SocialPostCard.tsx` | If found/extracted, centralize logic here |
 
-No DB migration required (reuses existing `user_follows` and `social_posts` tables).
+No styling refactor — only data wiring + new drawer component matching existing dark aesthetic.
 
