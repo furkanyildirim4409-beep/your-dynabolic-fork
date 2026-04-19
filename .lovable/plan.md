@@ -1,51 +1,68 @@
 
 
-## Plan: Highlights Read-Side Resilience
+## Plan: Story/Highlights Strict Separation + Dedup Hardening
 
-Schema confirmed: `coach_stories.is_highlighted boolean default false` exists. Plan from Coach Panel team aligns.
+### Step A — `useCoachSpecificStories` audit
+Already correct. Current query (line ~138 in `useCoachDetail.ts`):
+```ts
+.eq("coach_id", coachId!)
+.gte("expires_at", new Date().toISOString())
+```
+Two minor tightenings:
+- Switch `.gte` → `.gt` (stories at the exact expiry instant should be excluded).
+- No `is_highlighted` clause exists here — already clean. Confirm in plan, no other change.
 
-### Step 1 — Rewrite `useCoachHighlights` in `src/hooks/useCoachDetail.ts`
+### Step B — `useCoachHighlights` case-insensitive grouping
 
-- Query: `.or("is_highlighted.eq.true,category.not.is.null")` (drop the `expires_at` filter — highlights are persistent regardless of 24h window)
-- Order: `created_at desc` (unchanged)
-- Mapping logic:
-  ```ts
-  const seenIds = new Set<string>();
-  const grouped = new Map<string, CoachStoryRow[]>();
-  for (const s of data ?? []) {
-    if (seenIds.has(s.id)) continue;
-    seenIds.add(s.id);
-    const rawCat = typeof s.category === "string" ? s.category.trim() : "";
-    const cat = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
-    if (!grouped.has(cat)) grouped.set(cat, []);
-    grouped.get(cat)!.push(mappedRow);
-  }
-  return Array.from(grouped.entries()).map(([category, stories]) => ({
-    category,
-    cover_image: stories[0].media_url,
+In `src/hooks/useCoachDetail.ts`, change grouping to use a normalized key while preserving the original display label:
+
+```ts
+const seenIds = new Set<string>();
+const grouped = new Map<string, { display: string; stories: CoachStoryRow[] }>();
+
+for (const s of (data ?? []) as any[]) {
+  if (!s?.id || seenIds.has(s.id)) continue;
+  seenIds.add(s.id);
+
+  const rawCat = typeof s.category === "string" ? s.category.trim() : "";
+  const display = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+  const key = display.toLocaleUpperCase("tr-TR");
+
+  const row: CoachStoryRow = { /* ...mapped... */ };
+
+  if (!grouped.has(key)) grouped.set(key, { display, stories: [] });
+  grouped.get(key)!.stories.push(row);
+}
+
+return Array.from(grouped.values())
+  .map(({ display, stories }) => ({
+    category: display,
+    cover_image: stories[0]?.media_url ?? "",
     stories,
-  }));
-  ```
-- Global `seenIds` ensures no story appears in two buckets and no duplicate row appears within one bucket.
+  }))
+  .filter((h) => !!h.cover_image && h.stories.length > 0);
+```
 
-### Step 2 — `CoachHighlightsRow.tsx` polish
+`tr-TR` locale upper-case ensures "i" → "İ" handles Turkish category names correctly. `seenIds` already prevents the same story landing in two buckets.
 
-Current code already:
-- Returns `null` while loading and when empty (no flicker)
-- Uses `cover_image` (= first story's `media_url`)
+### Step C — `CoachHighlightsRow.tsx` strict React keys
 
-Add one safety: filter out any group whose `stories[0]?.media_url` is falsy before rendering, so a malformed row never renders an empty circle. Single-line guard inside the hook's final `.map` is cleaner — drop groups with no usable cover.
-
-### Step 3 — Memory update
-
-Update `mem://features/coach-story-highlights` to record the new `is_highlighted` column + dual-filter contract + dedup rule.
+Current code uses `key={highlight.category}` already (good — not index-based). Two safety upgrades:
+1. Defensive top-level dedup by category at render time:
+   ```ts
+   const uniqueHighlights = Array.from(
+     new Map(highlights.map(h => [h.category, h])).values()
+   );
+   ```
+   Then map over `uniqueHighlights`. Guards against any upstream regression or StrictMode double-push.
+2. Keep `key={highlight.category}` (already in place).
 
 ### Files
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `src/hooks/useCoachDetail.ts` | Rewrite `useCoachHighlights` queryFn (filter, dedup Set, null-category fallback, drop empty-cover groups) |
-| `mem://features/coach-story-highlights` | Update with `is_highlighted` flag + dedup contract |
+| `src/hooks/useCoachDetail.ts` | `useCoachSpecificStories`: `.gte` → `.gt`. `useCoachHighlights`: normalized Turkish-locale uppercase key, preserved display label, drop empty groups. |
+| `src/components/CoachHighlightsRow.tsx` | Defensive `Map`-based dedup pass before render; keep stable `key={highlight.category}`. |
 
-No DB migration. No changes needed to `CoachHighlightsRow.tsx` (resilience handled upstream in the hook).
+No DB changes. No new hooks. No memory update needed (current `mem://features/coach-story-highlights` already covers the contract; this is internal hardening).
 
