@@ -1,5 +1,5 @@
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Trash2, Coins, Plus, Minus, Info, ExternalLink } from "lucide-react";
+import { X, ShoppingBag, Trash2, Coins, Plus, Minus } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { useCart } from "@/context/CartContext";
 import confetti from "canvas-confetti";
