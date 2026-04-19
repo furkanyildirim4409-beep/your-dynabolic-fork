@@ -8,6 +8,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { useShopifyProducts } from "@/hooks/useStoreData";
+import ShopifyProductDetailModal from "@/components/ShopifyProductDetailModal";
 import type { ShopifyProduct } from "@/lib/shopify";
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount, 10 BIO = 1 TL)
@@ -35,6 +36,7 @@ const SupplementShop = () => {
   const { profile, user, refreshProfile } = useAuth();
   const bioCoins = profile?.bio_coins ?? 0;
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
+  const [selectedProduct, setSelectedProduct] = useState<ShopifyProduct | null>(null);
 
   const { data: products, isLoading, error } = useShopifyProducts(20);
 
@@ -145,7 +147,10 @@ const SupplementShop = () => {
                 className="glass-card overflow-hidden"
               >
                 {/* Product Image */}
-                <div className="aspect-square bg-muted relative">
+                <button
+                  onClick={() => setSelectedProduct(product)}
+                  className="block w-full aspect-square bg-muted relative text-left"
+                >
                   {product.imageUrl ? (
                     <img
                       src={product.imageUrl}
@@ -165,13 +170,16 @@ const SupplementShop = () => {
                       </span>
                     </div>
                   )}
-                </div>
+                </button>
 
                 {/* Product Info */}
                 <div className="p-3">
-                  <p className="text-foreground text-xs font-medium line-clamp-2 h-8">
+                  <button
+                    onClick={() => setSelectedProduct(product)}
+                    className="text-foreground text-xs font-medium line-clamp-2 h-8 text-left w-full hover:text-primary transition-colors"
+                  >
                     {product.title}
-                  </p>
+                  </button>
 
                   {/* Price Display */}
                   <div className="flex items-center justify-between mt-2">
@@ -255,6 +263,14 @@ const SupplementShop = () => {
           })}
         </div>
       )}
+
+      {/* Shopify Product Detail Modal */}
+      <ShopifyProductDetailModal
+        isOpen={!!selectedProduct}
+        product={selectedProduct}
+        onClose={() => setSelectedProduct(null)}
+        cartType="supplement"
+      />
     </div>
   );
 };
