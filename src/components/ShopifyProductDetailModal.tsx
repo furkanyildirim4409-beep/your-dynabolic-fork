@@ -1,14 +1,10 @@
-import { useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
-import { X, ShoppingBag, Star, Truck, Shield, Loader2 } from "lucide-react";
+import { X, ShoppingBag, Star, Truck, Shield, Info } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
-import { Textarea } from "@/components/ui/textarea";
 import { Skeleton } from "@/components/ui/skeleton";
-import { toast } from "sonner";
 import { useCart } from "@/context/CartContext";
-import { useAuth } from "@/context/AuthContext";
-import { useProductReviews, useSubmitProductReview } from "@/hooks/useProductReviews";
+import { useProductReviews } from "@/hooks/useProductReviews";
 import type { ShopifyProduct } from "@/lib/shopify";
 
 interface ShopifyProductDetailModalProps {
