@@ -11,7 +11,7 @@ import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { Switch } from "@/components/ui/switch";
 
-const COIN_TO_TL = 1;        // 1 BioCoin = 1 TL
+const COIN_TO_TL = 0.1;      // 10 BioCoin = 1 TL
 const MAX_PCT = 0.20;        // Max 20% discount on eligible items
 
 const fireConfetti = () => {
