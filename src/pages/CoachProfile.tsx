@@ -14,9 +14,33 @@ import { useCoachStats } from "@/hooks/useCoachStats";
 import { useStory, type Story } from "@/context/StoryContext";
 
 import ProductDetail from "@/components/ProductDetail";
+import PostCommentsDrawer from "@/components/PostCommentsDrawer";
 import { useCart } from "@/context/CartContext";
 import { hapticLight } from "@/lib/haptics";
 import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
+
+const sharePost = async (postId: string, content?: string | null) => {
+  const url = `${window.location.origin}/post/${postId}`;
+  const shareData = {
+    title: "Dynabolic Gönderisi",
+    text: content ? content.substring(0, 50) + "..." : "Bu gönderiye göz at!",
+    url,
+  };
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Bağlantı kopyalandı!");
+  } catch {
+    toast.error("Paylaşım başarısız");
+  }
+};
 
 // Bio-Coin Constants (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
@@ -48,6 +72,7 @@ const CoachProfile = () => {
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [bioCoins, setBioCoins] = useState(USER_BIO_COINS);
   const [coinDiscounts, setCoinDiscounts] = useState<Record<string, boolean>>({});
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
 
   // Persistent story view tracking
   const { data: viewedStoryIds } = useMyViewedStoryIds();
@@ -352,10 +377,10 @@ const CoachProfile = () => {
                       <Heart className={`w-5 h-5 ${post.user_has_liked ? "fill-destructive" : ""}`} />
                       <span className="text-xs">{post.likes_count}</span>
                     </button>
-                    <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
-                      <MessageCircle className="w-5 h-5" /><span className="text-xs">0</span>
+                    <button onClick={() => setCommentsPostId(post.id)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                      <MessageCircle className="w-5 h-5" />
                     </button>
-                    <button onClick={() => toast("Link Kopyalandı (Demo)")} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto">
+                    <button onClick={() => sharePost(post.id, post.content)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto">
                       <Share2 className="w-5 h-5" />
                     </button>
                   </div>
@@ -466,6 +491,12 @@ const CoachProfile = () => {
           onAddToCart={handleAddToCart}
         />
       )}
+
+      <PostCommentsDrawer
+        postId={commentsPostId}
+        open={!!commentsPostId}
+        onOpenChange={(o) => { if (!o) setCommentsPostId(null); }}
+      />
     </>
   );
 };
