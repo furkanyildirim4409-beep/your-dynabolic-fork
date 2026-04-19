@@ -11,8 +11,8 @@ import { useAuth } from "@/context/AuthContext";
 import { useBioCoin } from "@/hooks/useBioCoin";
 import { Switch } from "@/components/ui/switch";
 
-const COIN_DISCOUNT_THRESHOLD = 100;
-const COIN_DISCOUNT_AMOUNT = 50; // 100 coins = 50₺
+const COIN_TO_TL = 1;        // 1 BioCoin = 1 TL
+const MAX_PCT = 0.20;        // Max 20% discount on eligible items
 
 const fireConfetti = () => {
   const count = 200;
@@ -37,8 +37,19 @@ const UniversalCartDrawer = () => {
   const [useCoinDiscount, setUseCoinDiscount] = useState(false);
 
   const totalCoinsUsed = items.reduce((acc, item) => acc + (item.coinsUsed || 0) * item.quantity, 0);
-  const canUseCoinDiscount = balance >= COIN_DISCOUNT_THRESHOLD && cartTotal >= COIN_DISCOUNT_AMOUNT;
-  const coinDiscount = useCoinDiscount && canUseCoinDiscount ? COIN_DISCOUNT_AMOUNT : 0;
+
+  // Rule engine: coaching excluded, max 20% on eligible subtotal, 1 coin = 1 TL
+  const eligibleItems = items.filter((i) => i.type !== "coaching");
+  const eligibleSubtotal = eligibleItems.reduce(
+    (s, i) => s + (i.discountedPrice ?? i.price) * i.quantity,
+    0,
+  );
+  const maxDiscountTL = Math.floor(eligibleSubtotal * MAX_PCT);
+  const maxCoinsUsable = Math.min(balance, Math.floor(maxDiscountTL / COIN_TO_TL));
+  const onlyCoaching = items.length > 0 && eligibleItems.length === 0;
+  const canUseCoinDiscount = !onlyCoaching && balance > 0 && maxDiscountTL > 0;
+  const coinDiscount = useCoinDiscount && canUseCoinDiscount ? maxCoinsUsable * COIN_TO_TL : 0;
+  const coinsSpent = useCoinDiscount && canUseCoinDiscount ? maxCoinsUsable : 0;
   const finalTotal = Math.max(0, cartTotal - coinDiscount);
 
   const getPaymentDetails = (): PaymentDetails => {
@@ -66,8 +77,8 @@ const UniversalCartDrawer = () => {
     if (!user) return;
 
     // Spend coins if discount was applied
-    if (useCoinDiscount && coinDiscount > 0) {
-      const success = await spendCoins(COIN_DISCOUNT_THRESHOLD, "purchase", "Sepet İndirimi");
+    if (coinsSpent > 0) {
+      const success = await spendCoins(coinsSpent, "purchase", "Sepet İndirimi");
       if (!success) return;
     }
 
@@ -75,7 +86,7 @@ const UniversalCartDrawer = () => {
       user_id: user.id,
       items: items.map(i => ({ id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type })) as any,
       total_price: finalTotal,
-      total_coins_used: totalCoinsUsed + (coinDiscount > 0 ? COIN_DISCOUNT_THRESHOLD : 0),
+      total_coins_used: totalCoinsUsed + coinsSpent,
       status: "pending",
     });
 
@@ -218,7 +229,7 @@ const UniversalCartDrawer = () => {
                         )}
 
                         {/* BioCoin Discount Section */}
-                        {canUseCoinDiscount && (
+                        {canUseCoinDiscount ? (
                           <motion.div
                             initial={{ opacity: 0, height: 0 }}
                             animate={{ opacity: 1, height: "auto" }}
@@ -229,8 +240,8 @@ const UniversalCartDrawer = () => {
                                 <Coins className="w-4 h-4 text-primary" />
                                 <div>
                                   <p className="text-xs font-display text-foreground">BİOCOİN İNDİRİMİ</p>
-                                  <p className="text-[10px] text-muted-foreground">
-                                    {COIN_DISCOUNT_THRESHOLD} coin = {COIN_DISCOUNT_AMOUNT}₺ indirim
+                                  <p className="text-[10px] text-muted-foreground leading-tight">
+                                    Maks. {maxDiscountTL}₺ ({maxCoinsUsable} coin) · Koçluk paketleri hariç
                                   </p>
                                 </div>
                               </div>
@@ -238,12 +249,19 @@ const UniversalCartDrawer = () => {
                             </div>
                             {useCoinDiscount && (
                               <div className="flex items-center justify-between text-xs text-primary font-display pt-1 border-t border-primary/10">
-                                <span>Bakiye: {balance} coin</span>
-                                <span>-{COIN_DISCOUNT_AMOUNT}₺</span>
+                                <span>Bakiye: {balance.toLocaleString()} coin</span>
+                                <span>-{coinDiscount}₺</span>
                               </div>
                             )}
                           </motion.div>
-                        )}
+                        ) : onlyCoaching ? (
+                          <div className="bg-muted/40 border border-border rounded-xl p-3 flex items-center gap-2">
+                            <Coins className="w-4 h-4 text-muted-foreground" />
+                            <p className="text-[11px] text-muted-foreground leading-tight">
+                              BioCoin indirimi koçluk paketlerinde geçerli değildir.
+                            </p>
+                          </div>
+                        ) : null}
 
                         {coinDiscount > 0 && (
                           <div className="flex items-center justify-between text-sm text-primary">
