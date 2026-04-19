@@ -128,7 +128,7 @@ export function useCoachSpecificStories(coachId: string | undefined) {
         .from("coach_stories")
         .select("id, coach_id, media_url, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
         .eq("coach_id", coachId!)
-        .gte("expires_at", new Date().toISOString())
+        .gt("expires_at", new Date().toISOString())
         .order("created_at", { ascending: false });
       if (error) throw error;
       return ((data ?? []) as any[]).map((s): CoachStoryRow => ({
@@ -168,14 +168,15 @@ export function useCoachHighlights(coachId: string | undefined) {
       if (error) throw error;
 
       const seenIds = new Set<string>();
-      const grouped = new Map<string, CoachStoryRow[]>();
+      const grouped = new Map<string, { display: string; stories: CoachStoryRow[] }>();
 
       for (const s of (data ?? []) as any[]) {
         if (!s?.id || seenIds.has(s.id)) continue;
         seenIds.add(s.id);
 
         const rawCat = typeof s.category === "string" ? s.category.trim() : "";
-        const cat = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+        const display = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+        const key = display.toLocaleUpperCase("tr-TR");
 
         const row: CoachStoryRow = {
           id: s.id,
@@ -189,13 +190,13 @@ export function useCoachHighlights(coachId: string | undefined) {
           },
         };
 
-        if (!grouped.has(cat)) grouped.set(cat, []);
-        grouped.get(cat)!.push(row);
+        if (!grouped.has(key)) grouped.set(key, { display, stories: [] });
+        grouped.get(key)!.stories.push(row);
       }
 
-      return Array.from(grouped.entries())
-        .map(([category, stories]) => ({
-          category,
+      return Array.from(grouped.values())
+        .map(({ display, stories }) => ({
+          category: display,
           cover_image: stories[0]?.media_url ?? "",
           stories,
         }))

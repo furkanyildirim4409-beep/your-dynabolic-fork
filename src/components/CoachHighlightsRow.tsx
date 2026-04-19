@@ -13,10 +13,14 @@ const CoachHighlightsRow = ({ coachId }: CoachHighlightsRowProps) => {
   if (isLoading) return null;
   if (!highlights || highlights.length === 0) return null;
 
+  const uniqueHighlights = Array.from(
+    new Map(highlights.map((h) => [h.category, h])).values()
+  );
+
   return (
     <div className="border-b border-white/5">
       <div className="flex gap-4 overflow-x-auto py-4 px-4 [&::-webkit-scrollbar]:hidden">
-        {highlights.map((highlight, index) => (
+        {uniqueHighlights.map((highlight, index) => (
           <motion.button
             key={highlight.category}
             initial={{ opacity: 0, scale: 0.85 }}
