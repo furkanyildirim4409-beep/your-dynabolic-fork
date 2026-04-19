@@ -179,8 +179,6 @@ const StoryViewer = () => {
       inputRef.current?.scrollIntoView({ block: "end", behavior: "smooth" });
     }, 250);
   };
-    setIsPaused(true);
-  };
 
   // Handle input blur
   const handleInputBlur = () => {
