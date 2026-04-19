@@ -8,8 +8,9 @@ import { Switch } from "@/components/ui/switch";
 import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useCoachStories, useLeaderboardCoaches, type CoachStoryRow } from "@/hooks/useDiscoveryData";
-import { useCoachProducts } from "@/hooks/useStoreData";
+import { useCoachProducts, useShopifyProducts } from "@/hooks/useStoreData";
 import type { CoachProduct } from "@/types/shared-models";
+import type { ShopifyProduct } from "@/lib/shopify";
 import ProductDetail from "@/components/ProductDetail";
 import { useStory, type Story } from "@/context/StoryContext";
 import { useCart } from "@/context/CartContext";
@@ -97,7 +98,9 @@ const Kesfet = () => {
   const { mutate: toggleLike } = useToggleLike();
   const { data: liveStories, isLoading: storiesLoading } = useCoachStories();
   const { data: liveLeaderboard, isLoading: leaderboardLoading } = useLeaderboardCoaches();
-  const { data: liveProducts, isLoading: productsLoading } = useCoachProducts();
+  const { data: liveProducts, isLoading: productsLoading, error: productsError } = useShopifyProducts({ limit: 50 });
+  // Coach-native products (kept for future hybrid display; currently unused in UI):
+  void useCoachProducts;
   const { data: viewedStoryIds } = useMyViewedStoryIds();
   const markViewed = useMarkStoryViewed();
 
