@@ -219,6 +219,7 @@ export default function PostDetail() {
                 className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
               >
                 <MessageCircle className="w-5 h-5" />
+                <CommentCountBadge postId={post.id} />
               </button>
               <button
                 onClick={() => sharePost(post.id, post.content)}
