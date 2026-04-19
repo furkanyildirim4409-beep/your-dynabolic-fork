@@ -4,7 +4,9 @@
 
 const API_VERSION = "2024-10";
 
-const DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN as string | undefined;
+// Strip protocol/trailing slash if accidentally included in env var
+const RAW_DOMAIN = import.meta.env.VITE_SHOPIFY_DOMAIN as string | undefined;
+const DOMAIN = RAW_DOMAIN?.replace(/^https?:\/\//, "").replace(/\/+$/, "");
 const TOKEN = import.meta.env.VITE_SHOPIFY_STOREFRONT_TOKEN as string | undefined;
 
 export interface ShopifyProduct {
