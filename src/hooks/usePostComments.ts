@@ -20,22 +20,35 @@ export function usePostComments(postId: string | null) {
     enabled: !!postId,
     queryFn: async () => {
       if (!postId) return [];
-      const { data, error } = await (supabase as any)
+      // Two-step fetch: no FK between post_comments.user_id and profiles.id
+      const { data: rows, error } = await (supabase as any)
         .from("post_comments")
-        .select("id, post_id, user_id, content, created_at, profiles!user_id(full_name, avatar_url)")
+        .select("id, post_id, user_id, content, created_at")
         .eq("post_id", postId)
         .order("created_at", { ascending: true });
       if (error) throw error;
-      return ((data ?? []) as any[]).map((row): PostComment => ({
+      const comments = (rows ?? []) as any[];
+      const userIds = Array.from(new Set(comments.map((c) => c.user_id))).filter(Boolean);
+      let profileMap: Record<string, { full_name: string; avatar_url: string | null }> = {};
+      if (userIds.length > 0) {
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, full_name, avatar_url")
+          .in("id", userIds);
+        (profiles ?? []).forEach((p: any) => {
+          profileMap[p.id] = {
+            full_name: p.full_name ?? "Kullanıcı",
+            avatar_url: p.avatar_url ?? null,
+          };
+        });
+      }
+      return comments.map((row): PostComment => ({
         id: row.id,
         post_id: row.post_id,
         user_id: row.user_id,
         content: row.content,
         created_at: row.created_at,
-        author: {
-          full_name: row.profiles?.full_name ?? "Kullanıcı",
-          avatar_url: row.profiles?.avatar_url ?? null,
-        },
+        author: profileMap[row.user_id] ?? { full_name: "Kullanıcı", avatar_url: null },
       }));
     },
   });
@@ -67,12 +80,16 @@ export function useAddComment() {
         .insert({ post_id: postId, user_id: user.id, content })
         .select("id, post_id, user_id, content, created_at")
         .single();
-      if (error) throw error;
+      if (error) {
+        console.error("[useAddComment] insert failed:", error);
+        throw error;
+      }
       return data;
     },
     onMutate: async ({ postId, content }) => {
       await queryClient.cancelQueries({ queryKey: ["post-comments", postId] });
       const previous = queryClient.getQueryData<PostComment[]>(["post-comments", postId]);
+      const previousCount = queryClient.getQueryData<number>(["post-comments-count", postId]);
       const optimistic: PostComment = {
         id: `optimistic-${Date.now()}`,
         post_id: postId,
@@ -85,10 +102,13 @@ export function useAddComment() {
         },
       };
       queryClient.setQueryData<PostComment[]>(["post-comments", postId], (old) => [...(old ?? []), optimistic]);
-      return { previous };
+      queryClient.setQueryData<number>(["post-comments-count", postId], (old) => (old ?? 0) + 1);
+      return { previous, previousCount };
     },
     onError: (_e, vars, ctx) => {
       if (ctx?.previous) queryClient.setQueryData(["post-comments", vars.postId], ctx.previous);
+      if (ctx?.previousCount !== undefined)
+        queryClient.setQueryData(["post-comments-count", vars.postId], ctx.previousCount);
     },
     onSettled: (_d, _e, vars) => {
       queryClient.invalidateQueries({ queryKey: ["post-comments", vars.postId] });
