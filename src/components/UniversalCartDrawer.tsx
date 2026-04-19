@@ -334,15 +334,18 @@ const UniversalCartDrawer = () => {
                           className="w-full bg-primary text-primary-foreground hover:bg-primary/90 font-display h-12"
                         >
                           {shopifyLoading ? (
-                            "SHOPIFY'A YÖNLENDİRİLİYOR..."
-                          ) : isHybrid ? (
-                            <span className="flex items-center gap-2">KOÇLUK + SHOPIFY ÖDE <ExternalLink className="w-4 h-4" /></span>
+                            "İŞLEM YAPILIYOR..."
                           ) : hasShopify ? (
-                            <span className="flex items-center gap-2">SHOPIFY İLE ÖDE <ExternalLink className="w-4 h-4" /></span>
+                            "SİPARİŞİ TAMAMLA"
                           ) : (
                             "ÖDEMEYE GEÇ"
                           )}
                         </Button>
+                        {hasShopify && (
+                          <p className="text-[10px] text-muted-foreground text-center leading-tight px-2">
+                            Fiziksel ürün siparişleri için adres ve ödeme adımı bir sonraki ekranda alınacaktır.
+                          </p>
+                        )}
                         <Button variant="outline" onClick={clearCart} className="w-full border-border text-muted-foreground hover:text-destructive h-10">
                           Sepeti Temizle
                         </Button>
