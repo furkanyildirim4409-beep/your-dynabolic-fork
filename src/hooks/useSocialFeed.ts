@@ -28,12 +28,29 @@ export function useSocialPosts() {
   const userId = user?.id;
 
   return useQuery<SocialPost[]>({
-    queryKey: ["social-posts", userId],
+    queryKey: ["social-posts", "following", userId],
     queryFn: async () => {
-      // 1. Fetch posts with coach profile join
+      if (!userId) return [];
+
+      // 1. Fetch the coaches the current user follows
+      const { data: follows, error: followsError } = await (supabase as any)
+        .from("user_follows")
+        .select("followed_id")
+        .eq("follower_id", userId);
+
+      if (followsError) throw followsError;
+
+      const followedIds = ((follows ?? []) as { followed_id: string }[])
+        .map((f) => f.followed_id)
+        .filter(Boolean);
+
+      if (followedIds.length === 0) return [];
+
+      // 2. Fetch posts from followed coaches only
       const { data: posts, error: postsError } = await (supabase as any)
         .from("social_posts")
         .select("*, profiles!coach_id(full_name, avatar_url)")
+        .in("coach_id", followedIds)
         .order("created_at", { ascending: false });
 
       if (postsError) throw postsError;
@@ -115,7 +132,7 @@ export function useToggleLike() {
     },
 
     onMutate: async ({ postId, isCurrentlyLiked }) => {
-      const queryKey = ["social-posts", userId];
+      const queryKey = ["social-posts", "following", userId];
       await queryClient.cancelQueries({ queryKey });
 
       const previousPosts = queryClient.getQueryData<SocialPost[]>(queryKey);
@@ -137,12 +154,13 @@ export function useToggleLike() {
 
     onError: (_err, _vars, context) => {
       if (context?.previousPosts) {
-        queryClient.setQueryData(["social-posts", userId], context.previousPosts);
+        queryClient.setQueryData(["social-posts", "following", userId], context.previousPosts);
       }
     },
 
     onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ["social-posts", userId] });
+      queryClient.invalidateQueries({ queryKey: ["social-posts", "following", userId] });
+      queryClient.invalidateQueries({ queryKey: ["coach-posts"] });
     },
   });
 }
