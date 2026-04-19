@@ -21,6 +21,12 @@ import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 import PostCommentsDrawer from "@/components/PostCommentsDrawer";
 import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
 import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
+import { usePostCommentsCount } from "@/hooks/usePostComments";
+
+const CommentCountBadge = ({ postId }: { postId: string }) => {
+  const { data: count } = usePostCommentsCount(postId);
+  return <span className="text-xs">{count ?? 0}</span>;
+};
 
 const sharePost = async (postId: string, content?: string | null) => {
   const url = `${window.location.origin}/post/${postId}`;
@@ -369,6 +375,7 @@ const Kesfet = () => {
                         className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
                       >
                         <MessageCircle className="w-5 h-5" />
+                        <CommentCountBadge postId={post.id} />
                       </button>
                       <button
                         onClick={() => sharePost(post.id, post.content)}

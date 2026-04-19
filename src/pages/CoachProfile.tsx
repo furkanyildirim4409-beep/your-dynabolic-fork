@@ -12,6 +12,13 @@ import { useToggleLike } from "@/hooks/useSocialFeed";
 import { useFollowStatus, useToggleFollow } from "@/hooks/useFollowSystem";
 import { useCoachStats } from "@/hooks/useCoachStats";
 import { useStory, type Story } from "@/context/StoryContext";
+import { usePostCommentsCount } from "@/hooks/usePostComments";
+import { useAuth } from "@/context/AuthContext";
+
+const CommentCountBadge = ({ postId }: { postId: string }) => {
+  const { data: count } = usePostCommentsCount(postId);
+  return <span className="text-xs">{count ?? 0}</span>;
+};
 
 import ProductDetail from "@/components/ProductDetail";
 import PostCommentsDrawer from "@/components/PostCommentsDrawer";
@@ -153,8 +160,15 @@ const CoachProfile = () => {
     );
   };
 
-  const handleMessage = () => {
-    toast("Mesaj (Demo)", { description: `${coachName} ile mesajlaşma yakında aktif olacak!` });
+  const { profile: currentProfile } = useAuth();
+  const handleMessage = async () => {
+    if (!coachId) return;
+    if (currentProfile?.coach_id === coachId) {
+      navigate("/kokpit");
+      setTimeout(() => window.dispatchEvent(new CustomEvent("openCoachChat")), 150);
+    } else {
+      toast.info("Bu koçla mesajlaşmak için önce paketini satın al veya takip et.");
+    }
   };
 
 
@@ -379,6 +393,7 @@ const CoachProfile = () => {
                     </button>
                     <button onClick={() => setCommentsPostId(post.id)} className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
                       <MessageCircle className="w-5 h-5" />
+                      <CommentCountBadge postId={post.id} />
                     </button>
                     <button onClick={() => sharePost(post.id, post.content)} className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto">
                       <Share2 className="w-5 h-5" />
