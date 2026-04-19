@@ -168,14 +168,15 @@ export function useCoachHighlights(coachId: string | undefined) {
       if (error) throw error;
 
       const seenIds = new Set<string>();
-      const grouped = new Map<string, CoachStoryRow[]>();
+      const grouped = new Map<string, { display: string; stories: CoachStoryRow[] }>();
 
       for (const s of (data ?? []) as any[]) {
         if (!s?.id || seenIds.has(s.id)) continue;
         seenIds.add(s.id);
 
         const rawCat = typeof s.category === "string" ? s.category.trim() : "";
-        const cat = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+        const display = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+        const key = display.toLocaleUpperCase("tr-TR");
 
         const row: CoachStoryRow = {
           id: s.id,
@@ -189,13 +190,13 @@ export function useCoachHighlights(coachId: string | undefined) {
           },
         };
 
-        if (!grouped.has(cat)) grouped.set(cat, []);
-        grouped.get(cat)!.push(row);
+        if (!grouped.has(key)) grouped.set(key, { display, stories: [] });
+        grouped.get(key)!.stories.push(row);
       }
 
-      return Array.from(grouped.entries())
-        .map(([category, stories]) => ({
-          category,
+      return Array.from(grouped.values())
+        .map(({ display, stories }) => ({
+          category: display,
           cover_image: stories[0]?.media_url ?? "",
           stories,
         }))
