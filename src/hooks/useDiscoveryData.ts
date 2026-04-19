@@ -65,16 +65,35 @@ export function useLeaderboardCoaches() {
 
       if (error) throw error;
 
-      const coaches: LeaderboardCoach[] = ((data ?? []) as any[]).map((p) => {
+      const rawCoaches = (data ?? []) as any[];
+      const coachIds = rawCoaches.map((c) => c.id);
+
+      // Batch fetch real student counts (athletes whose profiles.coach_id = coach.id)
+      const studentCountMap = new Map<string, number>();
+      if (coachIds.length > 0) {
+        const { data: athletes, error: aErr } = await supabase
+          .from("profiles")
+          .select("coach_id")
+          .in("coach_id", coachIds)
+          .eq("role", "athlete");
+        if (aErr) throw aErr;
+        (athletes ?? []).forEach((a: any) => {
+          if (!a.coach_id) return;
+          studentCountMap.set(a.coach_id, (studentCountMap.get(a.coach_id) ?? 0) + 1);
+        });
+      }
+
+      const coaches: LeaderboardCoach[] = rawCoaches.map((p) => {
         const level = p.level ?? 1;
+        const students = studentCountMap.get(p.id) ?? 0;
         return {
           id: p.id,
           name: p.full_name || "Koç",
           avatar: p.avatar_url || "",
           specialty: p.specialty || "Fitness",
           rating: 4.9,
-          students: 0,
-          score: level * 1000 + Math.floor(Math.random() * 500),
+          students,
+          score: level * 1000 + students * 10,
           level,
           hasNewStory: false,
         };
