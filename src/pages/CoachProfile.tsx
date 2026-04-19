@@ -322,6 +322,9 @@ const CoachProfile = () => {
           </div>
         )}
 
+        {/* Highlights */}
+        {coachId && <CoachHighlightsRow coachId={coachId} />}
+
         {/* Tab Navigation */}
         <Tabs value={activeTab} onValueChange={setActiveTab} className="w-full">
           <TabsList className="w-full bg-transparent border-b border-white/10 rounded-none h-12 p-0">
