@@ -136,15 +136,10 @@ const UniversalCartDrawer = () => {
     fireConfetti();
     coachingItems.forEach((i) => removeFromCart(i.id));
     setUseCoinDiscount(false);
-    toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Şimdi Shopify ürünlerine yönlendiriliyorsun..." });
+    toast({ title: "Koçluk Siparişi Tamamlandı! 🎉", description: "Koçun en kısa sürede seninle iletişime geçecek." });
 
-    // Continue to Shopify if hybrid
-    if (hasShopify) {
-      setTimeout(() => redirectToShopifyCheckout(), 600);
-    } else {
-      clearCart();
-      closeCart();
-    }
+    clearCart();
+    closeCart();
   };
 
   return (
