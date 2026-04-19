@@ -1,90 +1,53 @@
 
 
-## Plan: Discover Interaction Engine — Likes, Comments, Native Share
+## Plan: Comments Drawer UX, Post Routing & Share Fallback Hotfix
 
-### Pre-flight investigation needed
-1. Locate the actual feed post card — `SocialPostCard.tsx` is referenced but not in file list. Need to search to confirm whether posts in `Kesfet.tsx` are rendered inline or via a component.
-2. Check if `post_comments` table exists in DB; if not, create migration.
-3. Confirm current Like/Share/Comment button wiring in the rendering location.
+### Step A — Instant Comment Drawer
 
----
+Refactor `src/components/PostCommentsDrawer.tsx`:
+- Remove the centered `Loader2` blocking state. Drawer opens instantly.
+- When `isLoading`, render **3 skeleton rows**: `<Skeleton className="w-8 h-8 rounded-full" />` + two stacked text skeletons (name 80px, content 60% width).
+- Auto-focus the input via `useRef` on drawer `open` change (effect with small `setTimeout` to wait for vaul mount). Skip on mobile via `matchMedia("(pointer: coarse)")`.
+- `handleSubmit`: clear input instantly before awaiting mutation (already does this — keep).
 
-### Step A — Real Likes (Optimistic UI)
+Fix `src/hooks/usePostComments.ts` optimistic mismatch:
+- Current optimistic shape already matches `PostComment` interface — verified. But `onSettled` invalidates BOTH `post-comments` and `post-comments-count`, which can cause flicker if the count query refetches and the comment list refetches separately. Ensure `onMutate` also bumps the count cache optimistically:
+  ```ts
+  queryClient.setQueryData<number>(["post-comments-count", postId], (old) => (old ?? 0) + 1);
+  ```
+- Also fix the rare silent failure: wrap insert in explicit error logging via `toast` already done in the drawer — keep.
+- Ensure the SELECT query in `usePostComments` matches what's actually inserted — the join `profiles!user_id(...)` requires an FK from `post_comments.user_id` to `profiles.id`. **Will verify via supabase--read_query during implementation**; if FK is missing, switch to a manual two-step fetch (comments → profiles by user_id IN list) to avoid silent join failures.
 
-`useToggleLike` already exists in `useSocialFeed.ts` with optimistic cache updates. Work needed:
-- Locate the Like button in the feed render path (Kesfet.tsx or extracted component).
-- Wire `onClick={() => toggleLike.mutate({ postId: post.id, isCurrentlyLiked: post.user_has_liked })}`.
-- Bind heart icon classes: `fill-red-500 text-red-500` when `post.user_has_liked`, else neutral.
-- Show `post.likes_count` next to icon.
+### Step B — `/post/:id` Route (Fix 404)
 
-No new hook needed.
+Create `src/pages/PostDetail.tsx`:
+- `useParams<{ id: string }>()` → fetch single post via `supabase.from("social_posts").select("*, profiles!coach_id(full_name, avatar_url)").eq("id", id).maybeSingle()`.
+- Show skeleton while loading; show "Gönderi bulunamadı" if null.
+- Render layout matching `Kesfet` post card (inline JSX, since `SocialPostCard` is not extracted as a shared component). Include media (image/video/before-after), content, like/comment/share row wired to same handlers.
+- Top bar: back button (`navigate(-1)`) + "Gönderi" title.
+- Centered mobile container: `max-w-md mx-auto`.
 
----
-
-### Step B — Real Comments (Drawer)
-
-**DB Migration** (new):
-```sql
-CREATE TABLE public.post_comments (
-  id uuid PK default gen_random_uuid(),
-  post_id uuid NOT NULL,
-  user_id uuid NOT NULL,
-  content text NOT NULL,
-  created_at timestamptz NOT NULL default now()
-);
-ALTER TABLE post_comments ENABLE RLS;
--- SELECT: anyone authenticated can read comments on posts they can see (any auth user, since posts table is read-broad)
--- INSERT: user_id = auth.uid()
--- DELETE: user_id = auth.uid()
-CREATE INDEX idx_post_comments_post_id ON post_comments(post_id, created_at DESC);
+Wrap with `<P><AppPage>...</AppPage></P>` and register in `src/App.tsx`:
+```tsx
+<Route path="/post/:id" element={<P><AppPage><PostDetail /></AppPage></P>} />
 ```
 
-**New hook `src/hooks/usePostComments.ts`:**
-- `usePostComments(postId)` → fetch comments + joined `profiles(full_name, avatar_url)`, ordered by `created_at asc`.
-- `useAddComment()` mutation → insert + optimistic prepend; invalidate on settled.
-- Also bumps a `comments_count` derived from query length (no DB column needed yet).
+### Step C — Share Toast Copy
 
-**New component `src/components/PostCommentsDrawer.tsx`:**
-- shadcn `<Drawer>` opened from feed card.
-- Header: "Yorumlar".
-- Scrollable list: avatar + name + content + relative time (existing `formatDistanceToNow` patterns).
-- Sticky bottom input (`Textarea` autosize or `Input`) + Send button. Disabled while empty/sending.
-- Dark theme: `bg-zinc-950 border-zinc-800`, input `bg-zinc-900`, matches existing aesthetic per `mem://style/ui-aesthetic`.
-- Empty state: "İlk yorumu sen yap".
-
----
-
-### Step C — Native Share
-
-In the feed card:
-- Replace existing share handler with `navigator.share()` block (exact snippet from user's spec).
-- Fallback: `navigator.clipboard.writeText` + `toast.success("Bağlantı kopyalandı!")` from `sonner`.
-- Wrap in try/catch; ignore `AbortError` (user cancelled the share sheet) silently.
-
-Note: `/post/:id` route does not exist yet — link will currently 404. Out-of-scope for this step but flagged.
-
----
-
-### Step D — Render-path consolidation
-
-Will determine during execution:
-- If `Kesfet.tsx` renders post cards inline → wire Likes/Comments/Share directly there AND in `CoachProfile.tsx` post grid.
-- If a shared `SocialPostCard` exists → centralize all three handlers there.
-
-Goal: single source of truth for interaction logic across Discover and Coach Profile.
-
----
+In `src/pages/Kesfet.tsx` and `src/pages/CoachProfile.tsx`:
+- Update fallback `toast.success("Bağlantı kopyalandı!")` → `"Bağlantı kopyalandı! (Masaüstü panosuna)"`.
+- Keep silent `AbortError` handling.
 
 ### Files to change
 
 | File | Action |
 |------|--------|
-| `supabase/migrations/<ts>_post_comments.sql` | New table + RLS + index |
-| `src/hooks/usePostComments.ts` | New (fetch + add mutation) |
-| `src/components/PostCommentsDrawer.tsx` | New |
-| `src/pages/Kesfet.tsx` | Wire like/comment/share in feed render |
-| `src/pages/CoachProfile.tsx` | Same wiring for coach post grid |
-| (optional) `src/components/SocialPostCard.tsx` | If found/extracted, centralize logic here |
+| `src/components/PostCommentsDrawer.tsx` | Instant open + skeleton rows + autofocus |
+| `src/hooks/usePostComments.ts` | Optimistic count bump; verify FK join (fallback to 2-step) |
+| `src/pages/PostDetail.tsx` | New page |
+| `src/App.tsx` | Add `/post/:id` route |
+| `src/pages/Kesfet.tsx` | Update share toast copy |
+| `src/pages/CoachProfile.tsx` | Update share toast copy |
 
-No styling refactor — only data wiring + new drawer component matching existing dark aesthetic.
+No DB migration required (will only add FK if join verification fails — flagged as conditional during implementation).
 
