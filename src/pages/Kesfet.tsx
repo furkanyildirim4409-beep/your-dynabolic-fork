@@ -17,6 +17,7 @@ import { useAuth } from "@/context/AuthContext";
 import { supabase } from "@/integrations/supabase/client";
 
 import BioCoinWallet from "@/components/BioCoinWallet";
+import SupplementShop from "@/components/SupplementShop";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
 import PostCommentsDrawer from "@/components/PostCommentsDrawer";
 import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
@@ -263,11 +264,16 @@ const Kesfet = () => {
 
         {/* Tab Navigation */}
         <Tabs defaultValue="akis" className="w-full">
-          <TabsList className="w-full grid grid-cols-3 bg-secondary/50 border border-white/5">
+          <TabsList className="w-full grid grid-cols-4 bg-secondary/50 border border-white/5">
             <TabsTrigger value="akis" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">AKIŞ</TabsTrigger>
             <TabsTrigger value="koclar" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">KOÇLAR</TabsTrigger>
             <TabsTrigger value="magaza" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">MAĞAZA</TabsTrigger>
+            <TabsTrigger value="supplements" className="font-display text-xs data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">TAKVİYE</TabsTrigger>
           </TabsList>
+
+          <TabsContent value="supplements" className="mt-4">
+            <SupplementShop />
+          </TabsContent>
 
           <TabsContent value="akis" className="mt-4">
             <div className="space-y-4">
