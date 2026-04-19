@@ -1,125 +1,120 @@
 
 
-## Plan: Part 8.2 Revised — Client-Side Hybrid Checkout
+## Plan: Part 8.3 — Product Detail & Real Reviews Engine
 
-### Mimari Düzeltme Kabul
-Edge function yaklaşımı iptal. Tüm Shopify Storefront API çağrıları **client-side** (`src/lib/shopify.ts`) içinden yapılacak. Token public Storefront token olduğu için bu güvenli ve standart pattern.
+### Discovery Notes
+- Existing `src/components/ProductDetail.tsx` is mock-rated (hardcoded 4.0 stars), tied to old product shape (`type: ebook|pdf|apparel...`). Will be replaced — not adapted — to keep contracts clean.
+- `useShopifyProducts` already returns `ShopifyProduct` with `description`. Good.
+- `Kesfet.tsx` Mağaza grid + `SupplementShop.tsx` cards are the two click surfaces.
+- BioCoin scope: Per Part 8.2, Shopify items are **excluded** from BioCoin discount. Detail modal "Add to Cart" must NOT show BioCoin teaser — instead a small disabled-state note matching cart drawer ("Shopify ürünlerinde BioCoin yakında").
 
-⚠️ **Geçiş notu:** Mevcut `supabase/functions/shopify-products/` edge function silinmeyecek (kullanıcı talimatına sadık kalıyoruz: "Do NOT create any Supabase Edge Functions" — silme değil, sadece yeni oluşturmama). Ama `src/lib/shopify.ts` bu function'ı çağırmaktan vazgeçip direkt Shopify'a fetch atacak. Bunun için **iki yeni env değişkeni gerekli olacak** (`VITE_SHOPIFY_DOMAIN`, `VITE_SHOPIFY_STOREFRONT_TOKEN`) — şu an sadece backend secret olarak ekli. Bunu plan sonunda kullanıcıya soracağım.
+### Step A — DB Migration: `product_reviews`
 
-### Keşif (onay sonrası ilk iş)
-- `src/pages/Kesfet.tsx` → "Mağaza" sekmesi şu an ne render ediyor? (mock array mı, başka hook mu?)
-- Tab yapısı: Mağaza ana tab + alt-tab'lar (TAKVİYE/EKİPMAN) mı, yoksa düz iki ayrı tab mı?
+```sql
+CREATE TABLE public.product_reviews (
+  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
+  product_id text NOT NULL,        -- Shopify GID, e.g. gid://shopify/Product/123
+  user_id uuid NOT NULL,            -- NOT a FK to auth.users (Supabase rule)
+  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
+  comment text,
+  created_at timestamptz NOT NULL DEFAULT now(),
+  UNIQUE (product_id, user_id)      -- one review per user per product
+);
 
-### Step A — `src/lib/shopify.ts` genişlet
+ALTER TABLE public.product_reviews ENABLE ROW LEVEL SECURITY;
 
-**1. `getProducts` opsiyonel query parametresi:**
-```ts
-export async function getProducts(opts: { limit?: number; query?: string } = {}): Promise<ShopifyProduct[]>
+CREATE POLICY "Reviews viewable by everyone"
+  ON public.product_reviews FOR SELECT USING (true);
+
+CREATE POLICY "Users insert own reviews"
+  ON public.product_reviews FOR INSERT
+  WITH CHECK (auth.uid() = user_id);
+
+CREATE POLICY "Users update own reviews"
+  ON public.product_reviews FOR UPDATE
+  USING (auth.uid() = user_id);
+
+CREATE POLICY "Users delete own reviews"
+  ON public.product_reviews FOR DELETE
+  USING (auth.uid() = user_id);
+
+CREATE INDEX idx_product_reviews_product ON public.product_reviews(product_id, created_at DESC);
 ```
-Default: `first: 50`, query yok → tüm ürünler. (Collection handle sonra eklenir, şimdilik query string ile filter, örn. `tag:supplement`.)
 
-**2. Direkt client fetch'e geri dön:**
-- `supabase.functions.invoke("shopify-products")` çağrısını kaldır.
-- `shopifyFetch()` helper'ını canlandır (Part 8.1 plan taslağındaki gibi) → `https://${VITE_SHOPIFY_DOMAIN}/api/2024-10/graphql.json` direkt POST.
+⚠️ Deviation from spec: Removing `REFERENCES auth.users(id)` per project guideline "NEVER use a foreign key to auth.users". `user_id` is enforced via RLS. Also added UNIQUE constraint to prevent spam, and UPDATE/DELETE policies for review editing.
 
-**3. Yeni fonksiyon: `createShopifyCart`:**
+### Step B — Hook: `src/hooks/useProductReviews.ts`
+
 ```ts
-export async function createShopifyCart(
-  lines: { merchandiseId: string; quantity: number }[]
-): Promise<string> {
-  const mutation = `
-    mutation cartCreate($input: CartInput!) {
-      cartCreate(input: $input) {
-        cart { checkoutUrl }
-        userErrors { field message }
-      }
-    }`;
-  const data = await shopifyFetch<{ cartCreate: { cart: { checkoutUrl: string }, userErrors: any[] } }>({
-    query: mutation,
-    variables: { input: { lines: lines.map(l => ({ merchandiseId: l.merchandiseId, quantity: l.quantity })) } },
-  });
-  if (data.cartCreate.userErrors?.length) throw new Error(data.cartCreate.userErrors[0].message);
-  return data.cartCreate.cart.checkoutUrl;
+export function useProductReviews(productId: string) {
+  // Fetch reviews + LEFT JOIN profiles(full_name, avatar_url) via select string
+  // Returns: { reviews, averageRating, totalCount, userReview, isLoading, submitReview, isSubmitting }
+  // submitReview(rating, comment) → upsert on (product_id, user_id) so re-rating works
+  // After mutation: refetch via local state (no react-query in project — match useStoreData pattern)
 }
 ```
+Pattern matches existing hooks (`useFollowSystem`, `usePostComments`) — plain `useState` + `useEffect` + manual refetch, no react-query introduced.
 
-### Step B — Mağaza tab'ını Shopify'a bağla
-- `Kesfet.tsx` keşfinden sonra: ana "Mağaza" tab'ı `useShopifyProducts({ limit: 50 })` kullanır.
-- TAKVİYE alt-tab'ı zaten `<SupplementShop />` (mevcut hook'u kullanıyor) — dokunulmaz.
-- Genel mağaza için skeleton + error state aynı pattern.
-- Kart UI: SupplementShop ile aynı stil (image, title, price, "SEPETE EKLE"). Yardımcı için inline render ya da paylaşılan `<ShopifyProductCard />` çıkarılabilir (keşif sonrası karar).
+### Step C — `src/components/ShopifyProductDetailModal.tsx` (new)
 
-### Step C — `UniversalCartDrawer.tsx` Hibrit Orchestrator
+Replaces old `ProductDetail.tsx` for Shopify products. Layout:
 
-**Cart split:**
-```ts
-const shopifyItems = items.filter(i => i.type === "supplement" || i.type === "product");
-const coachingItems = items.filter(i => i.type === "coaching");
-const isHybrid = shopifyItems.length > 0 && coachingItems.length > 0;
+```
+┌─────────────────────────────────┐
+│ [X]    Hero image (aspect-square)│
+├─────────────────────────────────┤
+│ Title · Price · ★4.3 (12)       │
+│ ┌─[ SEPETE EKLE ]─┐             │
+│ "BioCoin yakında" mini disclaimer│
+├─────────────────────────────────┤
+│ AÇIKLAMA                        │
+│ {product.description}           │
+├─────────────────────────────────┤
+│ DEĞERLENDİRMELER (avg + count)  │
+│ ┌─ Write review (auth only) ──┐ │
+│ │  ★★★★★ click + textarea     │ │
+│ │  [ Gönder ]                 │ │
+│ └────────────────────────────┘ │
+│ • Avatar · Name · ★★★★ · date  │
+│   "Comment text..."             │
+│ • ... (list)                    │
+└─────────────────────────────────┘
 ```
 
-**UI eklemeler:**
-- Hibrit ise sepet özetinin üstünde info banner:
-  > *"Bu sepette 2 farklı ödeme akışı var. Koçluk ödemesi uygulama içinden, fiziksel ürün ödemesi Shopify üzerinden güvenle yapılacaktır."*
-- BioCoin toggle'ının altına küçük not (Shopify item varsa):
-  > *"Shopify ürünlerinde BioCoin kullanımı çok yakında (Part 8.3) aktif olacaktır."*
-- BioCoin discount hesabı zaten coaching'i hariç tutuyor — şimdi tam tersi, **sadece coaching'e** uygulanmalı (Shopify ürünleri Shopify checkout'a gidecek, indirim kodu yok). `eligibleItems` filter'ını `i.type === "coaching"` olarak güncelle. (BioCoin kuralları memo'su `mem://features/biocoin-economy-ledger` revize edilecek.)
+Style: glass-morphism, neon lime primary (`#b2d928`), framer-motion bottom-sheet on mobile / centered dialog on desktop — same pattern as existing `ProductDetail.tsx`. Drag-to-dismiss preserved.
 
-**Checkout orchestrator:**
+Add-to-cart payload:
 ```ts
-const handleCheckout = async () => {
-  // 1. Coaching varsa → native flow
-  if (coachingItems.length > 0) {
-    closeCart();
-    setShowPaymentModal(true);
-    // PaymentModal success → handlePaymentSuccess içinde Shopify redirect tetiklenir
-    return;
-  }
-  // 2. Sadece Shopify ise → direkt redirect
-  await redirectToShopifyCheckout();
-};
-
-const redirectToShopifyCheckout = async () => {
-  if (shopifyItems.length === 0) return;
-  try {
-    const url = await createShopifyCart(
-      shopifyItems.map(i => ({ merchandiseId: i.id, quantity: i.quantity }))
-    );
-    // Shopify item'larını sepetten temizle (coaching zaten Supabase'e yazıldı)
-    shopifyItems.forEach(i => removeFromCart(i.id));
-    window.location.href = url;
-  } catch (err) {
-    toast({ title: "Shopify checkout başarısız", description: err.message, variant: "destructive" });
-  }
-};
+addToCart({
+  id: product.id,                    // Shopify GID
+  shopifyVariantId: product.variantId,
+  type: "supplement",                // or "product" — passed via prop
+  title, price, image, ...
+});
 ```
 
-**`handlePaymentSuccess` güncelle:** coaching siparişini Supabase'e yazdıktan sonra, `shopifyItems.length > 0` ise `redirectToShopifyCheckout()` çağır.
+### Step D — Wire Click Handlers
 
-### Step D — Runtime Hatası Düzeltmesi
-Console'da görünen `Edge function returned 502: Error, {"error":""}` → mevcut `shopify-products` function 502 dönüyor çünkü secrets eksik veya domain hatalı. Step A'da client-side fetch'e geçince bu hata kendiliğinden çözülür (function artık çağrılmayacak).
+**`Kesfet.tsx` Mağaza grid:**
+- Add `const [selected, setSelected] = useState<ShopifyProduct | null>(null)`
+- Wrap card in `<button onClick={() => setSelected(p)}>` (keep "SEPETE EKLE" button as `stopPropagation` action)
+- Render `<ShopifyProductDetailModal isOpen={!!selected} product={selected} onClose={() => setSelected(null)} cartType="product" />`
 
-### Step E — Env Değişkenleri (kullanıcıdan istenecek)
-Build Secrets paneline (frontend için):
-- `VITE_SHOPIFY_DOMAIN` (örn. `dynabolic-store.myshopify.com`)
-- `VITE_SHOPIFY_STOREFRONT_TOKEN` (Storefront API public token)
+**`SupplementShop.tsx`:** identical pattern with `cartType="supplement"`.
 
-Backend secret'lar (`SHOPIFY_DOMAIN`, `SHOPIFY_STOREFRONT_TOKEN`) duruyor — ileride webhook/admin işlemleri için kalsın.
+### Step E — Cleanup
+- Old `src/components/ProductDetail.tsx` is still referenced? Quick search needed at exec time. If unused → delete. If referenced by legacy mock code → leave dormant.
 
-### Dosya Listesi
+### Files Changed
 
-| Dosya | Aksiyon |
+| File | Action |
 |------|--------|
-| `src/lib/shopify.ts` | Direkt fetch'e dönüş + `getProducts({query})` + `createShopifyCart()` |
-| `src/pages/Kesfet.tsx` | Mağaza tab'ı Shopify ürünleri (keşif sonrası netleşir) |
-| `src/components/UniversalCartDrawer.tsx` | Hibrit orchestrator + BioCoin scope değişimi + UI disclaimer |
-| `src/hooks/useStoreData.ts` | `useShopifyProducts` opsiyonel `query` parametresi |
-| `mem://features/biocoin-economy-ledger` | "BioCoin sadece coaching'e uygulanır" güncellemesi |
-| `mem://features/shopping-cart-system` | Hibrit checkout akışı eklenir |
+| `supabase/migrations/<ts>_product_reviews.sql` | New table + RLS |
+| `src/hooks/useProductReviews.ts` | New hook |
+| `src/components/ShopifyProductDetailModal.tsx` | New modal |
+| `src/pages/Kesfet.tsx` | Click handler + modal mount |
+| `src/components/SupplementShop.tsx` | Click handler + modal mount |
+| `mem://features/shopping-cart-system` | Append: product detail + reviews flow |
 
-**DB değişikliği yok. Yeni edge function yok.** Mevcut `shopify-products` edge function dormant kalır (silmiyoruz).
-
-### Açık Soru (plan onayı sonrası kullanıcıya sorulacak)
-Build Secrets'a `VITE_SHOPIFY_DOMAIN` ve `VITE_SHOPIFY_STOREFRONT_TOKEN` eklenmeli — değerler aynı backend secret'larıyla aynı mı, farklı mı?
+**No edge functions. No new env vars.**
 
