@@ -11,6 +11,8 @@ export interface CartItem {
   coachName?: string;
   type: "product" | "supplement" | "coaching";
   quantity: number;
+  /** Shopify variant GID, required for items routed to Shopify checkout */
+  shopifyVariantId?: string;
 }
 
 interface CartContextType {

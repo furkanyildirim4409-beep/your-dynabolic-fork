@@ -57,6 +57,7 @@ const SupplementShop = () => {
       image: product.imageUrl ?? "/placeholder.svg",
       coachName: "Shopify",
       type: "supplement",
+      shopifyVariantId: product.variantId,
     });
 
     if (isDiscountActive && user) {
