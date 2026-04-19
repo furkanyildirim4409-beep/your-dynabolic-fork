@@ -3,10 +3,12 @@ import { supabase } from "@/integrations/supabase/client";
 import type { CoachProduct } from "@/types/shared-models";
 import { getProducts, type ShopifyProduct } from "@/lib/shopify";
 
-export function useShopifyProducts(limit = 20) {
+export function useShopifyProducts(opts: { limit?: number; query?: string } | number = {}) {
+  const normalized = typeof opts === "number" ? { limit: opts } : opts;
+  const { limit = 50, query } = normalized;
   return useQuery<ShopifyProduct[]>({
-    queryKey: ["shopify-products", limit],
-    queryFn: () => getProducts(limit),
+    queryKey: ["shopify-products", limit, query ?? null],
+    queryFn: () => getProducts({ limit, query }),
     staleTime: 5 * 60_000,
     retry: 1,
   });
