@@ -161,14 +161,22 @@ export function useCoachHighlights(coachId: string | undefined) {
     queryFn: async () => {
       const { data, error } = await (supabase as any)
         .from("coach_stories")
-        .select("id, coach_id, media_url, category, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
+        .select("id, coach_id, media_url, category, is_highlighted, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
         .eq("coach_id", coachId!)
-        .not("category", "is", null)
+        .or("is_highlighted.eq.true,category.not.is.null")
         .order("created_at", { ascending: false });
       if (error) throw error;
 
+      const seenIds = new Set<string>();
       const grouped = new Map<string, CoachStoryRow[]>();
+
       for (const s of (data ?? []) as any[]) {
+        if (!s?.id || seenIds.has(s.id)) continue;
+        seenIds.add(s.id);
+
+        const rawCat = typeof s.category === "string" ? s.category.trim() : "";
+        const cat = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
+
         const row: CoachStoryRow = {
           id: s.id,
           coach_id: s.coach_id,
@@ -180,16 +188,18 @@ export function useCoachHighlights(coachId: string | undefined) {
             avatar_url: s.profiles?.avatar_url ?? null,
           },
         };
-        const cat = s.category as string;
+
         if (!grouped.has(cat)) grouped.set(cat, []);
         grouped.get(cat)!.push(row);
       }
 
-      return Array.from(grouped.entries()).map(([category, stories]) => ({
-        category,
-        cover_image: stories[0].media_url,
-        stories,
-      }));
+      return Array.from(grouped.entries())
+        .map(([category, stories]) => ({
+          category,
+          cover_image: stories[0]?.media_url ?? "",
+          stories,
+        }))
+        .filter((h) => !!h.cover_image && h.stories.length > 0);
     },
     staleTime: 300_000,
   });
