@@ -36,7 +36,16 @@ export const CartProvider = ({ children }: { children: ReactNode }) => {
   const [isCartOpen, setIsCartOpen] = useState(false);
 
   const addToCart = useCallback((item: Omit<CartItem, "quantity"> & { quantity?: number }) => {
+    let blocked = false;
     setItems((prev) => {
+      const hasCoaching = prev.some((i) => i.type === "coaching");
+      const hasPhysical = prev.some((i) => i.type === "supplement" || i.type === "product");
+      const incomingIsCoaching = item.type === "coaching";
+      const incomingIsPhysical = item.type === "supplement" || item.type === "product";
+      if ((hasCoaching && incomingIsPhysical) || (hasPhysical && incomingIsCoaching)) {
+        blocked = true;
+        return prev;
+      }
       const existingIndex = prev.findIndex((i) => i.id === item.id);
       if (existingIndex >= 0) {
         const updated = [...prev];
