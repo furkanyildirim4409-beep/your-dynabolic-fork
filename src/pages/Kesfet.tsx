@@ -18,8 +18,32 @@ import { supabase } from "@/integrations/supabase/client";
 
 import BioCoinWallet from "@/components/BioCoinWallet";
 import BioCoinTransactionHistory from "@/components/BioCoinTransactionHistory";
+import PostCommentsDrawer from "@/components/PostCommentsDrawer";
 import { useSocialPosts, useToggleLike } from "@/hooks/useSocialFeed";
 import { useMyViewedStoryIds, useMarkStoryViewed } from "@/hooks/useStoryViews";
+
+const sharePost = async (postId: string, content?: string | null) => {
+  const url = `${window.location.origin}/post/${postId}`;
+  const shareData = {
+    title: "Dynabolic Gönderisi",
+    text: content ? content.substring(0, 50) + "..." : "Bu gönderiye göz at!",
+    url,
+  };
+  if (typeof navigator !== "undefined" && navigator.share) {
+    try {
+      await navigator.share(shareData);
+      return;
+    } catch (err: any) {
+      if (err?.name === "AbortError") return;
+    }
+  }
+  try {
+    await navigator.clipboard.writeText(url);
+    toast.success("Bağlantı kopyalandı!");
+  } catch {
+    toast.error("Paylaşım başarısız");
+  }
+};
 
 // Bio-Coin Discount Calculator (GLOBAL RULE: Max 20% discount)
 const COIN_TO_TL_RATE = 0.1;
@@ -60,6 +84,7 @@ const Kesfet = () => {
   const [selectedProduct, setSelectedProduct] = useState<any>(null);
   const [showProductDetail, setShowProductDetail] = useState(false);
   const [showTransactionHistory, setShowTransactionHistory] = useState(false);
+  const [commentsPostId, setCommentsPostId] = useState<string | null>(null);
 
   const { data: livePosts, isLoading: feedLoading } = useSocialPosts();
   const { mutate: toggleLike } = useToggleLike();
