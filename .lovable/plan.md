@@ -1,57 +1,50 @@
 
 
-## Plan: Discover Page Part 4 — Comment Counts, Story Keyboard Fix, DM Activation
+## Investigation
 
-### Step A — Comment Counts on Feed
+`useCoachHighlights` already exists in `useCoachDetail.ts` — fetches `coach_stories` filtered by `coach_id` and `category IS NOT NULL`, grouped by `category`, returning `{ category, cover_image, stories }[]`.
 
-Add a small `<CommentCountBadge postId={post.id} />` component (inline, in `Kesfet.tsx`) that uses the existing `usePostCommentsCount` hook and renders the number next to `MessageCircle`. Reuse it in:
-- `src/pages/Kesfet.tsx` (line ~371)
-- `src/pages/CoachProfile.tsx` (line ~381)
-- `src/pages/PostDetail.tsx` (line ~215)
+Note: schema uses `coach_stories` (not `social_stories`) and `category` (not `highlight_category`). It also filters out non-categorized rows — which functionally serves as the "highlight" flag here. This is fine; no DB change.
 
-Render: `<MessageCircle className="w-5 h-5" /><span className="text-xs">{count ?? 0}</span>` — matches the existing likes_count styling. While loading, show `0` (no skeleton flicker since the value is small).
+`StoryViewer` is opened via `useStory().openStories(stories, index, opts)` where each story = `{ id, title, thumbnail, content: { image, text? } }`. Pattern matches `StoriesRing.tsx`.
 
-### Step B — Story Viewer Keyboard Fix
+## Plan
 
-Refactor reply container in `src/components/StoryViewer.tsx`:
-1. Change wrapper from `absolute bottom-6` → `fixed left-0 right-0 px-4 z-30` with dynamic `bottom` driven by `visualViewport`.
-2. Add a `useEffect` that subscribes to `window.visualViewport` `resize` + `scroll` events:
-   ```ts
-   const vv = window.visualViewport;
-   const update = () => {
-     const offset = window.innerHeight - vv.height - vv.offsetTop;
-     setKeyboardOffset(Math.max(offset, 0));
-   };
-   vv.addEventListener("resize", update);
-   vv.addEventListener("scroll", update);
-   ```
-3. Apply `style={{ bottom: \`calc(${keyboardOffset}px + env(safe-area-inset-bottom) + 1.5rem)\` }}`.
-4. On focus, `inputRef.current?.scrollIntoView({ block: "end" })` after a short delay so iOS doesn't crop it.
-5. Also change the parent `motion.div` from `touch-none` to allow keyboard interaction (already handled — input has `touch-auto`).
+### Step A — Data
+Reuse `useCoachHighlights(coachId)` as-is. Already grouped by category, ordered by `created_at desc`, cover = first story's `media_url`. No changes needed.
 
-Fallback for browsers without `visualViewport`: keep current `bottom-6 + safe-area-inset-bottom`.
+### Step B — New `CoachHighlightsRow` component
+`src/components/CoachHighlightsRow.tsx`:
+- Props: `coachId: string`
+- Calls `useCoachHighlights(coachId)`
+- If empty/loading-empty → `return null`
+- Renders horizontal scroll: `flex gap-4 overflow-x-auto py-4 px-4 [&::-webkit-scrollbar]:hidden`
+- Each item:
+  - 64px circle (`w-16 h-16 rounded-full`) with `ring-2 ring-primary/60 ring-offset-2 ring-offset-background p-[2px]`
+  - Inner `<img src={cover_image}>` `object-cover rounded-full`
+  - Below: truncated category label, `text-[11px] text-muted-foreground max-w-[72px] truncate`
+- onClick → convert category's stories to `Story[]` shape and call `openStories(...)`:
+  ```ts
+  openStories(
+    highlight.stories.map(s => ({
+      id: s.id,
+      title: highlight.category,
+      thumbnail: s.media_url,
+      content: { image: s.media_url },
+    })),
+    0,
+    { categoryLabel: highlight.category, categoryGradient: "from-primary to-primary/60" }
+  );
+  ```
 
-### Step C — Activate "Mesaj Gönder"
+### Step C — Inject into `CoachProfile.tsx`
+Place `<CoachHighlightsRow coachId={coachId} />` directly below the stats/follow row and above the `<Tabs>` block. Will locate the exact line during implementation.
 
-The app uses a single coach-chat (`useRealtimeChat` resolves coach via `profiles.coach_id`) opened via the `openCoachChat` window event in Kokpit. There is **no multi-conversation `chats` table**. Behavior:
-
-In `CoachProfile.tsx` rewrite `handleMessage`:
-1. Fetch current user's `profiles.coach_id`.
-2. **If `coach_id === viewedCoachId`** (this is their assigned coach):
-   - `navigate("/kokpit")` then `setTimeout(() => window.dispatchEvent(new CustomEvent("openCoachChat")), 150)` — exact pattern already used in `EliteDock.tsx` line 64.
-3. **Else** (viewing a coach who isn't theirs):
-   - `toast.info("Bu koçla mesajlaşmak için önce paketini satın al veya takip et.")` — keeps UX honest without inventing a non-existent multi-chat schema.
-
-No DB migration. No new table. No silent failures.
-
-### Optional follow-up flagged (not in this PR)
-A true multi-coach DM system would require a new `direct_chats(participant_a, participant_b)` + `direct_messages` schema. Out of scope per the user's "use existing messaging architecture" note.
-
-### Files to change
-| File | Change |
+### Files
+| File | Action |
 |------|--------|
-| `src/pages/Kesfet.tsx` | Inline `CommentCountBadge` next to MessageCircle |
-| `src/pages/CoachProfile.tsx` | Same badge + rewrite `handleMessage` |
-| `src/pages/PostDetail.tsx` | Same badge |
-| `src/components/StoryViewer.tsx` | `visualViewport` listener + dynamic bottom offset |
+| `src/components/CoachHighlightsRow.tsx` | New |
+| `src/pages/CoachProfile.tsx` | Inject component above tabs |
+
+No DB migration. No hook changes. No styling system changes.
 
