@@ -12,6 +12,13 @@ import { useToggleLike } from "@/hooks/useSocialFeed";
 import { useFollowStatus, useToggleFollow } from "@/hooks/useFollowSystem";
 import { useCoachStats } from "@/hooks/useCoachStats";
 import { useStory, type Story } from "@/context/StoryContext";
+import { usePostCommentsCount } from "@/hooks/usePostComments";
+import { useAuth } from "@/context/AuthContext";
+
+const CommentCountBadge = ({ postId }: { postId: string }) => {
+  const { data: count } = usePostCommentsCount(postId);
+  return <span className="text-xs">{count ?? 0}</span>;
+};
 
 import ProductDetail from "@/components/ProductDetail";
 import PostCommentsDrawer from "@/components/PostCommentsDrawer";
