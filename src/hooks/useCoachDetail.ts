@@ -159,18 +159,33 @@ export function useCoachHighlights(coachId: string | undefined) {
     queryKey: ["coach-highlights", coachId],
     enabled: !!coachId,
     queryFn: async () => {
-      const { data, error } = await (supabase as any)
-        .from("coach_stories")
-        .select("id, coach_id, media_url, category, is_highlighted, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
-        .eq("coach_id", coachId!)
-        .or("is_highlighted.eq.true,category.not.is.null")
-        .order("created_at", { ascending: false });
-      if (error) throw error;
+      const [storiesRes, metaRes] = await Promise.all([
+        (supabase as any)
+          .from("coach_stories")
+          .select("id, coach_id, media_url, category, is_highlighted, expires_at, created_at, profiles!coach_id(full_name, avatar_url)")
+          .eq("coach_id", coachId!)
+          .or("is_highlighted.eq.true,category.not.is.null")
+          .order("created_at", { ascending: false }),
+        (supabase as any)
+          .from("coach_highlight_metadata")
+          .select("category_name, custom_cover_url")
+          .eq("coach_id", coachId!),
+      ]);
+
+      if (storiesRes.error) throw storiesRes.error;
+
+      // Build normalized cover override map (Turkish-locale upper-case key)
+      const metaMap = new Map<string, string>();
+      for (const m of ((metaRes.data ?? []) as any[])) {
+        const name = typeof m?.category_name === "string" ? m.category_name.trim() : "";
+        if (!name || !m?.custom_cover_url) continue;
+        metaMap.set(name.toLocaleUpperCase("tr-TR"), m.custom_cover_url);
+      }
 
       const seenIds = new Set<string>();
       const grouped = new Map<string, { display: string; stories: CoachStoryRow[] }>();
 
-      for (const s of (data ?? []) as any[]) {
+      for (const s of (storiesRes.data ?? []) as any[]) {
         if (!s?.id || seenIds.has(s.id)) continue;
         seenIds.add(s.id);
 
@@ -194,10 +209,10 @@ export function useCoachHighlights(coachId: string | undefined) {
         grouped.get(key)!.stories.push(row);
       }
 
-      return Array.from(grouped.values())
-        .map(({ display, stories }) => ({
+      return Array.from(grouped.entries())
+        .map(([key, { display, stories }]) => ({
           category: display,
-          cover_image: stories[0]?.media_url ?? "",
+          cover_image: metaMap.get(key) ?? stories[0]?.media_url ?? "",
           stories,
         }))
         .filter((h) => !!h.cover_image && h.stories.length > 0);
