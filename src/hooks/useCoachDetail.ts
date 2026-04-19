@@ -174,12 +174,16 @@ export function useCoachHighlights(coachId: string | undefined) {
 
       if (storiesRes.error) throw storiesRes.error;
 
-      // Build normalized cover override map (Turkish-locale upper-case key)
+      // Normalized key (Turkish locale upper + strip whitespace) — applied identically on both sides
+      const normKey = (s: string) => s.trim().toLocaleUpperCase("tr-TR").replace(/\s+/g, "");
+
+      // Build cover override map safely
       const metaMap = new Map<string, string>();
-      for (const m of ((metaRes.data ?? []) as any[])) {
-        const name = typeof m?.category_name === "string" ? m.category_name.trim() : "";
-        if (!name || !m?.custom_cover_url) continue;
-        metaMap.set(name.toLocaleUpperCase("tr-TR"), m.custom_cover_url);
+      for (const m of ((metaRes?.data ?? []) as any[])) {
+        const name = typeof m?.category_name === "string" ? m.category_name : "";
+        const url = typeof m?.custom_cover_url === "string" ? m.custom_cover_url : "";
+        if (!name.trim() || !url.trim()) continue;
+        metaMap.set(normKey(name), url);
       }
 
       const seenIds = new Set<string>();
@@ -191,7 +195,7 @@ export function useCoachHighlights(coachId: string | undefined) {
 
         const rawCat = typeof s.category === "string" ? s.category.trim() : "";
         const display = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
-        const key = display.toLocaleUpperCase("tr-TR");
+        const key = normKey(display);
 
         const row: CoachStoryRow = {
           id: s.id,
@@ -209,13 +213,16 @@ export function useCoachHighlights(coachId: string | undefined) {
         grouped.get(key)!.stories.push(row);
       }
 
-      return Array.from(grouped.entries())
-        .map(([key, { display, stories }]) => ({
-          category: display,
-          cover_image: metaMap.get(key) ?? stories[0]?.media_url ?? "",
-          stories,
-        }))
-        .filter((h) => !!h.cover_image && h.stories.length > 0);
+      return Array.from(grouped.values())
+        .map(({ display, stories }) => {
+          const key = normKey(display);
+          let cover = metaMap.get(key);
+          if (!cover || !cover.trim()) {
+            cover = stories[0]?.media_url ?? "";
+          }
+          return { category: display, cover_image: cover, stories };
+        })
+        .filter((h) => h.cover_image.trim().length > 0 && h.stories.length > 0);
     },
     staleTime: 300_000,
   });
