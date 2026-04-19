@@ -39,7 +39,7 @@ const sharePost = async (postId: string, content?: string | null) => {
   }
   try {
     await navigator.clipboard.writeText(url);
-    toast.success("Bağlantı kopyalandı!");
+    toast.success("Bağlantı kopyalandı! (Masaüstü panosuna)");
   } catch {
     toast.error("Paylaşım başarısız");
   }

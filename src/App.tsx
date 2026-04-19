@@ -43,6 +43,7 @@ import Destek from "./pages/Destek";
 import Waitlist from "./pages/Waitlist";
 import CoachWaitlist from "./pages/CoachWaitlist";
 import AutoLogin from "./pages/AutoLogin";
+import PostDetail from "./pages/PostDetail";
 
 const queryClient = new QueryClient();
 
@@ -100,6 +101,7 @@ const App = () => {
                             <Route path="/leaderboard" element={<P><Leaderboard /></P>} />
                             <Route path="/sporcularim" element={<P><CoachAthletes /></P>} />
                             <Route path="/destek" element={<P><AppPage><Destek /></AppPage></P>} />
+                            <Route path="/post/:id" element={<P><AppPage><PostDetail /></AppPage></P>} />
 
                             <Route path="/index" element={<Navigate to="/" replace />} />
                             <Route path="*" element={<NotFound />} />
