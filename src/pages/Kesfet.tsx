@@ -522,9 +522,8 @@ const Kesfet = () => {
                         image: product.imageUrl ?? "/placeholder.svg",
                         coachName: "Shopify",
                         type: "product",
-                        // Store the Shopify variant GID for checkout via variantId-prefixed id is fine;
-                        // UniversalCartDrawer parses item.id back to variantId for cartCreate.
-                      } as any)}
+                        shopifyVariantId: product.variantId,
+                      })}
                       className="w-full mt-2 text-[10px] py-1.5 rounded-lg font-medium bg-primary/20 text-primary border border-primary/30 hover:bg-primary/30 flex items-center justify-center gap-1"
                     >
                       <ShoppingBag className="w-3 h-3" />
