@@ -1,120 +1,71 @@
 
 
-## Plan: Part 8.3 — Product Detail & Real Reviews Engine
+## Plan: Part 8.4 — Cart Isolation & Review Gating
 
-### Discovery Notes
-- Existing `src/components/ProductDetail.tsx` is mock-rated (hardcoded 4.0 stars), tied to old product shape (`type: ebook|pdf|apparel...`). Will be replaced — not adapted — to keep contracts clean.
-- `useShopifyProducts` already returns `ShopifyProduct` with `description`. Good.
-- `Kesfet.tsx` Mağaza grid + `SupplementShop.tsx` cards are the two click surfaces.
-- BioCoin scope: Per Part 8.2, Shopify items are **excluded** from BioCoin discount. Detail modal "Add to Cart" must NOT show BioCoin teaser — instead a small disabled-state note matching cart drawer ("Shopify ürünlerinde BioCoin yakında").
+### Discovery
+- `CartContext.addToCart` currently merges anything → needs type-conflict guard.
+- `UniversalCartDrawer` has hybrid orchestrator (sequential native→Shopify), `isHybrid` banner, split totals. With strict isolation, hybrid path is dead code → remove.
+- `ShopifyProductDetailModal` has writable review form (rating stars + textarea + submit). Need to gate behind purchase verification — but Part 8.4 spec says **defer actual verification to Part 8.5** and just show a banner now.
+- Existing reviews list stays read-only and visible.
 
-### Step A — DB Migration: `product_reviews`
+### Step A — Cart Isolation (`src/context/CartContext.tsx`)
 
-```sql
-CREATE TABLE public.product_reviews (
-  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
-  product_id text NOT NULL,        -- Shopify GID, e.g. gid://shopify/Product/123
-  user_id uuid NOT NULL,            -- NOT a FK to auth.users (Supabase rule)
-  rating integer NOT NULL CHECK (rating >= 1 AND rating <= 5),
-  comment text,
-  created_at timestamptz NOT NULL DEFAULT now(),
-  UNIQUE (product_id, user_id)      -- one review per user per product
-);
-
-ALTER TABLE public.product_reviews ENABLE ROW LEVEL SECURITY;
-
-CREATE POLICY "Reviews viewable by everyone"
-  ON public.product_reviews FOR SELECT USING (true);
-
-CREATE POLICY "Users insert own reviews"
-  ON public.product_reviews FOR INSERT
-  WITH CHECK (auth.uid() = user_id);
-
-CREATE POLICY "Users update own reviews"
-  ON public.product_reviews FOR UPDATE
-  USING (auth.uid() = user_id);
-
-CREATE POLICY "Users delete own reviews"
-  ON public.product_reviews FOR DELETE
-  USING (auth.uid() = user_id);
-
-CREATE INDEX idx_product_reviews_product ON public.product_reviews(product_id, created_at DESC);
-```
-
-⚠️ Deviation from spec: Removing `REFERENCES auth.users(id)` per project guideline "NEVER use a foreign key to auth.users". `user_id` is enforced via RLS. Also added UNIQUE constraint to prevent spam, and UPDATE/DELETE policies for review editing.
-
-### Step B — Hook: `src/hooks/useProductReviews.ts`
-
+Modify `addToCart`:
 ```ts
-export function useProductReviews(productId: string) {
-  // Fetch reviews + LEFT JOIN profiles(full_name, avatar_url) via select string
-  // Returns: { reviews, averageRating, totalCount, userReview, isLoading, submitReview, isSubmitting }
-  // submitReview(rating, comment) → upsert on (product_id, user_id) so re-rating works
-  // After mutation: refetch via local state (no react-query in project — match useStoreData pattern)
+const COACHING = "coaching";
+const PHYSICAL = new Set(["supplement", "product"]);
+
+addToCart(item) {
+  const hasCoaching = items.some(i => i.type === COACHING);
+  const hasPhysical = items.some(i => PHYSICAL.has(i.type));
+  const incomingIsCoaching = item.type === COACHING;
+  const incomingIsPhysical = PHYSICAL.has(item.type);
+
+  if ((hasCoaching && incomingIsPhysical) || (hasPhysical && incomingIsCoaching)) {
+    toast({
+      title: "Sepet Tipi Uyuşmuyor",
+      description: "Koçluk paketleri ile fiziksel ürünler aynı sepette birleştirilemez. Lütfen önce mevcut sepetinizi onaylayın.",
+      variant: "destructive",
+    });
+    return; // do NOT add
+  }
+  // ... existing add/merge logic
 }
 ```
-Pattern matches existing hooks (`useFollowSystem`, `usePostComments`) — plain `useState` + `useEffect` + manual refetch, no react-query introduced.
+Note: project uses `toast` from `@/hooks/use-toast` (not sonner's `toast.error`). Mirror existing pattern with `variant: "destructive"`.
 
-### Step C — `src/components/ShopifyProductDetailModal.tsx` (new)
+### Step B — Drawer Cleanup (`src/components/UniversalCartDrawer.tsx`)
 
-Replaces old `ProductDetail.tsx` for Shopify products. Layout:
+Since cart is now homogenous:
+1. Remove `isHybrid` variable and the hybrid disclaimer banner.
+2. Remove the sequential orchestrator's "if hasCoaching && hasShopify → run both" branch in `handlePaymentSuccess` — now it's one or the other.
+3. Simplify `handleCheckout`:
+   - coaching-only → open `PaymentModal`
+   - shopify-only → keep current (will become native checkout in Part 8.5, see Step C)
+4. Simplify CTA button label logic: only two states (`SHOPIFY İLE ÖDE` → become `SİPARİŞİ TAMAMLA`, or `ÖDEMEYE GEÇ` for coaching).
+5. Per Step C: change Shopify CTA copy to **"SİPARİŞİ TAMAMLA"** + add small helper text below CTA when `hasShopify`: *"Fiziksel ürün siparişleri için adres ve ödeme adımı bir sonraki ekranda alınacaktır."*
+6. Keep current Shopify redirect (`createShopifyCart`) intact for now — Part 8.5 will swap it for native checkout form. Don't break existing flow.
+7. Keep BioCoin section as-is (already coaching-only post 8.2).
 
-```
-┌─────────────────────────────────┐
-│ [X]    Hero image (aspect-square)│
-├─────────────────────────────────┤
-│ Title · Price · ★4.3 (12)       │
-│ ┌─[ SEPETE EKLE ]─┐             │
-│ "BioCoin yakında" mini disclaimer│
-├─────────────────────────────────┤
-│ AÇIKLAMA                        │
-│ {product.description}           │
-├─────────────────────────────────┤
-│ DEĞERLENDİRMELER (avg + count)  │
-│ ┌─ Write review (auth only) ──┐ │
-│ │  ★★★★★ click + textarea     │ │
-│ │  [ Gönder ]                 │ │
-│ └────────────────────────────┘ │
-│ • Avatar · Name · ★★★★ · date  │
-│   "Comment text..."             │
-│ • ... (list)                    │
-└─────────────────────────────────┘
-```
+### Step C — Review Gating (`src/components/ShopifyProductDetailModal.tsx`)
 
-Style: glass-morphism, neon lime primary (`#b2d928`), framer-motion bottom-sheet on mobile / centered dialog on desktop — same pattern as existing `ProductDetail.tsx`. Drag-to-dismiss preserved.
-
-Add-to-cart payload:
-```ts
-addToCart({
-  id: product.id,                    // Shopify GID
-  shopifyVariantId: product.variantId,
-  type: "supplement",                // or "product" — passed via prop
-  title, price, image, ...
-});
-```
-
-### Step D — Wire Click Handlers
-
-**`Kesfet.tsx` Mağaza grid:**
-- Add `const [selected, setSelected] = useState<ShopifyProduct | null>(null)`
-- Wrap card in `<button onClick={() => setSelected(p)}>` (keep "SEPETE EKLE" button as `stopPropagation` action)
-- Render `<ShopifyProductDetailModal isOpen={!!selected} product={selected} onClose={() => setSelected(null)} cartType="product" />`
-
-**`SupplementShop.tsx`:** identical pattern with `cartType="supplement"`.
-
-### Step E — Cleanup
-- Old `src/components/ProductDetail.tsx` is still referenced? Quick search needed at exec time. If unused → delete. If referenced by legacy mock code → leave dormant.
+1. Remove the writable review block: star-picker + textarea + submit button + related state (`newRating`, `newComment`, `useSubmitProductReview` mutation call).
+2. Replace with a passive info banner above the reviews list:
+   ```
+   ┌─ ℹ️ Sadece bu ürünü satın alan kullanıcılar değerlendirme yapabilir.
+   ```
+   Style: muted background + border, `Info` lucide icon, small text.
+3. Keep `useProductReviews` fetch + read-only list rendering 100% intact (avg rating, count, comment cards).
+4. Leave `useSubmitProductReview` hook in `useProductReviews.ts` untouched — it'll be reused from the Orders page in Part 8.5.
 
 ### Files Changed
 
-| File | Action |
+| File | Change |
 |------|--------|
-| `supabase/migrations/<ts>_product_reviews.sql` | New table + RLS |
-| `src/hooks/useProductReviews.ts` | New hook |
-| `src/components/ShopifyProductDetailModal.tsx` | New modal |
-| `src/pages/Kesfet.tsx` | Click handler + modal mount |
-| `src/components/SupplementShop.tsx` | Click handler + modal mount |
-| `mem://features/shopping-cart-system` | Append: product detail + reviews flow |
+| `src/context/CartContext.tsx` | Add type-conflict guard in `addToCart` |
+| `src/components/UniversalCartDrawer.tsx` | Strip hybrid logic, simplify checkout, update Shopify CTA copy + helper text |
+| `src/components/ShopifyProductDetailModal.tsx` | Remove write-review form, add gating banner |
+| `mem://features/shopping-cart-system` | Update: cart is strictly homogenous, reviews gated to verified buyers (full enforcement Part 8.5) |
 
-**No edge functions. No new env vars.**
+**No DB migration. No new hooks. No edge functions.** `useSubmitProductReview` preserved for Part 8.5 wiring on the Orders page.
 
