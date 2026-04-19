@@ -1,68 +1,68 @@
 
 
-## Plan: Story/Highlights Strict Separation + Dedup Hardening
+## Tespit edilen iki kök neden (DB ile doğrulandı)
 
-### Step A — `useCoachSpecificStories` audit
-Already correct. Current query (line ~138 in `useCoachDetail.ts`):
-```ts
-.eq("coach_id", coachId!)
-.gte("expires_at", new Date().toISOString())
+Mevcut koç (`c21a5a19...`) için `coach_stories` tablosunda 4 satır var:
+
+| id | category | is_highlighted | expires_at | Durum |
+|----|----------|---------------|-----------|-------|
+| d011… | Değişimler | true | gelecek | aktif |
+| 7cd4… | NULL | false | gelecek | sadece 24h |
+| 50ce… | Değişimler | true | **geçmiş** | **arşivden öne çıkarılmış** |
+| 3567… | Soru-Cevap | false | geçmiş | arşiv |
+
+### Kök neden #1 — RLS arşivlenmiş highlight'ları engelliyor
+`coach_stories` üzerindeki public SELECT policy:
 ```
-Two minor tightenings:
-- Switch `.gte` → `.gt` (stories at the exact expiry instant should be excluded).
-- No `is_highlighted` clause exists here — already clean. Confirm in plan, no other change.
-
-### Step B — `useCoachHighlights` case-insensitive grouping
-
-In `src/hooks/useCoachDetail.ts`, change grouping to use a normalized key while preserving the original display label:
-
-```ts
-const seenIds = new Set<string>();
-const grouped = new Map<string, { display: string; stories: CoachStoryRow[] }>();
-
-for (const s of (data ?? []) as any[]) {
-  if (!s?.id || seenIds.has(s.id)) continue;
-  seenIds.add(s.id);
-
-  const rawCat = typeof s.category === "string" ? s.category.trim() : "";
-  const display = rawCat.length > 0 ? rawCat : "Öne Çıkanlar";
-  const key = display.toLocaleUpperCase("tr-TR");
-
-  const row: CoachStoryRow = { /* ...mapped... */ };
-
-  if (!grouped.has(key)) grouped.set(key, { display, stories: [] });
-  grouped.get(key)!.stories.push(row);
-}
-
-return Array.from(grouped.values())
-  .map(({ display, stories }) => ({
-    category: display,
-    cover_image: stories[0]?.media_url ?? "",
-    stories,
-  }))
-  .filter((h) => !!h.cover_image && h.stories.length > 0);
+"Herkes aktif hikayeleri görebilir": USING (now() < expires_at)
 ```
+24 saati dolmuş highlight kayıtlar (50ce…) athlete app tarafından **hiç okunamıyor**. Hook ne yazarsa yazsın RLS blokluyor. Koç panelinde görünüyor çünkü panel kendi koç session'ı ile "Coaches can view own stories" policy'sini kullanıyor.
 
-`tr-TR` locale upper-case ensures "i" → "İ" handles Turkish category names correctly. `seenIds` already prevents the same story landing in two buckets.
+### Kök neden #2 — `CoachProfile.tsx` highlight'ı iki kez render ediyor
+`src/pages/CoachProfile.tsx` satır 299–327'de **iki ayrı highlight bloğu** mevcut:
+1. İnline "ÖNE ÇIKANLAR" bölümü (satır 299–324) — `useCoachHighlights` + `handleHighlightClick`.
+2. `<CoachHighlightsRow coachId={coachId} />` (satır 327) — aynı hook'u tekrar çağırıyor ve aynı verileri tekrar çiziyor.
 
-### Step C — `CoachHighlightsRow.tsx` strict React keys
+Bu yüzden ekranda her bucket iki kez görünüyor.
 
-Current code uses `key={highlight.category}` already (good — not index-based). Two safety upgrades:
-1. Defensive top-level dedup by category at render time:
-   ```ts
-   const uniqueHighlights = Array.from(
-     new Map(highlights.map(h => [h.category, h])).values()
-   );
-   ```
-   Then map over `uniqueHighlights`. Guards against any upstream regression or StrictMode double-push.
-2. Keep `key={highlight.category}` (already in place).
+## Düzeltme planı
 
-### Files
+### A) DB migration — RLS policy'yi highlight için aç
+`coach_stories` tablosunun public SELECT politikasını şöyle değiştir:
+```sql
+DROP POLICY "Herkes aktif hikayeleri görebilir" ON public.coach_stories;
 
-| File | Change |
+CREATE POLICY "Public can view active or highlighted stories"
+ON public.coach_stories
+FOR SELECT
+TO public
+USING (
+  now() < expires_at
+  OR is_highlighted = true
+  OR category IS NOT NULL
+);
+```
+Böylece:
+- Aktif 24h ring davranışı korunur (`useCoachSpecificStories` yine `.gt('expires_at', now)` filtresi koyuyor → ring asla highlight göstermez).
+- Highlight bucket'ı geçmiş kayıtları da okuyabilir.
+
+### B) `src/pages/CoachProfile.tsx` — duplicate render'ı sil
+Satır 299–324 arasındaki inline "ÖNE ÇIKANLAR" bloğunu **tamamen kaldır**. Yalnızca `<CoachHighlightsRow coachId={coachId} />` kalsın. Artık ihtiyaç kalmadığı için `highlights`, `highlightsLoading`, `useCoachHighlights`, `handleHighlightClick`, `CoachHighlight` ve `Skeleton` import'larındaki kullanımları temizle (Skeleton başka yerde de kullanılıyor, sadece highlight kullanımını kaldır).
+
+### C) `CoachHighlightsRow.tsx` — başlık ekle (UX paritesi için)
+Silinen inline blokta görünen "ÖNE ÇIKANLAR" başlığı kayboldu; aynı tipografide tek satırlık başlığı `CoachHighlightsRow`'un üstüne ekle.
+
+### D) Memory güncelle
+`mem://features/coach-story-highlights` notuna RLS sözleşmesini ekle: "public SELECT artık `now() < expires_at OR is_highlighted = true OR category IS NOT NULL`". 24h ring `useCoachSpecificStories` içindeki `.gt(expires_at, now)` ile zorlanır.
+
+## Dosya listesi
+
+| Dosya | Aksiyon |
 |------|--------|
-| `src/hooks/useCoachDetail.ts` | `useCoachSpecificStories`: `.gte` → `.gt`. `useCoachHighlights`: normalized Turkish-locale uppercase key, preserved display label, drop empty groups. |
-| `src/components/CoachHighlightsRow.tsx` | Defensive `Map`-based dedup pass before render; keep stable `key={highlight.category}`. |
+| Yeni migration | `coach_stories` SELECT policy'sini yeniden yaz |
+| `src/pages/CoachProfile.tsx` | İnline highlight bloğunu sil, kullanılmayan import/handler'ları temizle |
+| `src/components/CoachHighlightsRow.tsx` | "ÖNE ÇIKANLAR" başlığı ekle |
+| `mem://features/coach-story-highlights` | RLS kontratını yansıt |
 
-No DB changes. No new hooks. No memory update needed (current `mem://features/coach-story-highlights` already covers the contract; this is internal hardening).
+Koç paneli tarafında değişiklik gerekmiyor — `useUpdateStoryCategory` zaten `is_highlighted=true` ve `category` alanlarını UPDATE ile doğru yazıyor, INSERT yapmıyor.
 
