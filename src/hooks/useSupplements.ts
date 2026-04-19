@@ -15,6 +15,8 @@ interface DBSupplement {
   servings_left: number;
   total_servings: number;
   is_active: boolean;
+  shopify_product_id: string | null;
+  shopify_variant_id: string | null;
 }
 
 function getTodayKey(userId: string) {
@@ -39,7 +41,9 @@ function mapToSupplement(row: DBSupplement, takenSet: Set<string>): Supplement {
     totalServings: row.total_servings,
     takenToday: takenSet.has(row.id),
     icon: row.icon,
-  };
+    shopifyProductId: row.shopify_product_id ?? undefined,
+    shopifyVariantId: row.shopify_variant_id ?? undefined,
+  } as Supplement;
 }
 
 const fallbackSupplements: Supplement[] = mockSupplements.map((s) => ({
@@ -77,7 +81,7 @@ export function useSupplements() {
     queryFn: async () => {
       const { data, error } = await supabase
         .from("assigned_supplements")
-        .select("id, name_and_dosage, dosage, timing, icon, servings_left, total_servings, is_active")
+        .select("id, name_and_dosage, dosage, timing, icon, servings_left, total_servings, is_active, shopify_product_id, shopify_variant_id")
         .eq("athlete_id", user!.id)
         .eq("is_active", true);
       if (error) throw error;

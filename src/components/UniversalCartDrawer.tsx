@@ -139,24 +139,49 @@ const UniversalCartDrawer = () => {
   const handleShopifyPaymentSuccess = async () => {
     if (!user || !pendingAddress) return;
 
-    const { error } = await supabase.from("orders").insert({
-      user_id: user.id,
-      order_type: "shopify",
-      items: shopifyItems.map((i) => ({
-        id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type,
-        shopifyVariantId: i.shopifyVariantId,
-      })) as any,
-      total_price: cartTotal,
-      shipping_address: pendingAddress as any,
-      status: "processing",
-      external_reference_id: `SHOP-${Date.now()}`,
-    });
-
-    // TODO Part 8.6: Call Supabase Edge Function to mirror order to Shopify Admin API
+    const { data: inserted, error } = await supabase
+      .from("orders")
+      .insert({
+        user_id: user.id,
+        order_type: "shopify",
+        items: shopifyItems.map((i) => ({
+          id: i.id, title: i.title, price: i.price, quantity: i.quantity, image: i.image, type: i.type,
+          shopifyVariantId: i.shopifyVariantId,
+        })) as any,
+        total_price: cartTotal,
+        shipping_address: pendingAddress as any,
+        status: "processing",
+        external_reference_id: `SHOP-${Date.now()}`,
+      })
+      .select("id")
+      .single();
 
     if (error) {
       toast({ title: "Sipariş kaydedilemedi", description: error.message, variant: "destructive" });
       return;
+    }
+
+    // Fire-and-forget: mirror order to Shopify Admin (warehouse fulfillment)
+    if (inserted?.id) {
+      const validShopifyItems = shopifyItems.filter((i) => i.shopifyVariantId);
+      if (validShopifyItems.length > 0) {
+        supabase.functions
+          .invoke("sync-shopify-order", {
+            body: {
+              orderId: inserted.id,
+              shippingAddress: pendingAddress,
+              items: validShopifyItems.map((i) => ({
+                shopifyVariantId: i.shopifyVariantId!,
+                quantity: i.quantity,
+                price: i.price,
+                title: i.title,
+              })),
+            },
+          })
+          .then(({ error: syncErr }) => {
+            if (syncErr) console.error("Shopify Admin sync failed:", syncErr);
+          });
+      }
     }
 
     fireConfetti();
