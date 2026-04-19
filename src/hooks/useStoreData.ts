@@ -1,6 +1,16 @@
 import { useQuery, useMutation } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import type { CoachProduct } from "@/types/shared-models";
+import { getProducts, type ShopifyProduct } from "@/lib/shopify";
+
+export function useShopifyProducts(limit = 20) {
+  return useQuery<ShopifyProduct[]>({
+    queryKey: ["shopify-products", limit],
+    queryFn: () => getProducts(limit),
+    staleTime: 5 * 60_000,
+    retry: 1,
+  });
+}
 
 export function useCoachProducts() {
   return useQuery<CoachProduct[]>({
