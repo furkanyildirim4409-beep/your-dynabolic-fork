@@ -364,12 +364,14 @@ const Kesfet = () => {
                         <Heart className={`w-5 h-5 ${post.user_has_liked ? "fill-destructive" : ""}`} />
                         <span className="text-xs">{post.likes_count.toLocaleString()}</span>
                       </button>
-                      <button className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors">
+                      <button
+                        onClick={() => setCommentsPostId(post.id)}
+                        className="flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors"
+                      >
                         <MessageCircle className="w-5 h-5" />
-                        <span className="text-xs">0</span>
                       </button>
                       <button
-                        onClick={() => toast("Link Kopyalandı (Demo)")}
+                        onClick={() => sharePost(post.id, post.content)}
                         className="flex items-center gap-2 text-muted-foreground hover:text-foreground transition-colors ml-auto"
                       >
                         <Share2 className="w-5 h-5" />
