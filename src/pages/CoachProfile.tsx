@@ -9,7 +9,8 @@ import { Skeleton } from "@/components/ui/skeleton";
 import { toast } from "sonner";
 import { useCoachDetail, useCoachPosts, useCoachDetailProducts, useCoachSpecificStories, useCoachHighlights, type CoachHighlight } from "@/hooks/useCoachDetail";
 import { useToggleLike } from "@/hooks/useSocialFeed";
-import { useFollowStatus, useToggleFollow, useFollowerCount } from "@/hooks/useFollowSystem";
+import { useFollowStatus, useToggleFollow } from "@/hooks/useFollowSystem";
+import { useCoachStats } from "@/hooks/useCoachStats";
 import { useStory, type Story } from "@/context/StoryContext";
 
 import ProductDetail from "@/components/ProductDetail";
@@ -61,7 +62,7 @@ const CoachProfile = () => {
   const toggleLike = useToggleLike();
   const { openStories } = useStory();
   const { data: isFollowing, isLoading: isFollowLoading } = useFollowStatus(coachId);
-  const { data: followerCount } = useFollowerCount(coachId);
+  const { data: coachStats } = useCoachStats(coachId);
   const toggleFollow = useToggleFollow();
 
   const coachName = profile?.full_name || "Koç";
@@ -201,11 +202,11 @@ const CoachProfile = () => {
             <div className="flex-1 pt-2">
               <div className="flex items-center gap-6">
                 <div className="text-center">
-                  <p className="font-display text-xl text-foreground">{followerCount ?? 0}</p>
+                  <p className="font-display text-xl text-foreground">{coachStats?.followerCount ?? 0}</p>
                   <p className="text-muted-foreground text-xs flex items-center gap-1"><Users className="w-3 h-3" /> Takipçi</p>
                 </div>
                 <div className="text-center">
-                  <p className="font-display text-xl text-foreground">0</p>
+                  <p className="font-display text-xl text-foreground">{coachStats?.studentCount ?? 0}</p>
                   <p className="text-muted-foreground text-xs flex items-center gap-1"><GraduationCap className="w-3 h-3" /> Öğrenci</p>
                 </div>
                 <div className="text-center">
