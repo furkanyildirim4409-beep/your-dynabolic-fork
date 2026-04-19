@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Verified, Users, GraduationCap, Star, ShoppingBag, Briefcase, Grid3X3, Play, Coins, Check, Info } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Verified, Users, GraduationCap, Star, ShoppingBag, Briefcase, Grid3X3, Play, Coins, Check, Info, ScanLine, Eye, LayoutDashboard, Mail } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
@@ -280,6 +280,32 @@ const CoachProfile = () => {
           </div>
         </div>
 
+
+        {/* B2B: Powered by Dynabolic */}
+        <div className="px-4 pt-2 pb-4">
+          <div className="glass-card p-4 border border-primary/20">
+            <div className="flex items-center gap-2 mb-3">
+              <div className="w-1.5 h-1.5 rounded-full bg-primary neon-glow" />
+              <p className="text-[11px] font-display tracking-[0.18em] text-primary">DYNABOLIC ALTYAPISI</p>
+            </div>
+            <p className="text-foreground text-xs mb-3 leading-relaxed">
+              Bu koç sporcularına <span className="text-primary font-medium">Dynabolic</span>'in profesyonel altyapısıyla hizmet veriyor.
+            </p>
+            <div className="grid grid-cols-2 gap-2">
+              {[
+                { icon: ScanLine, label: "AI NutriScanner" },
+                { icon: Eye, label: "Vision AI Analiz" },
+                { icon: LayoutDashboard, label: "Kişisel Panel" },
+                { icon: Mail, label: "Profesyonel E-posta" },
+              ].map(({ icon: Icon, label }) => (
+                <div key={label} className="flex items-center gap-2 px-2.5 py-2 rounded-lg bg-secondary/40 border border-white/5">
+                  <Icon className="w-3.5 h-3.5 text-primary flex-shrink-0" />
+                  <span className="text-[11px] text-foreground font-medium truncate">{label}</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
 
         {/* Highlights */}
         {coachId && <CoachHighlightsRow coachId={coachId} />}
