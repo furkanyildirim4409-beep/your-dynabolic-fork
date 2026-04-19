@@ -1,64 +1,63 @@
 
 
-## Tespit (DB ile doğrulandı)
+## Plan: BioCoin Rule Engine Overhaul + Supplement Tab Restoration
 
-**Network log**: `GET /coach_highlight_metadata?coach_id=eq.c21a5a19...` → `200 []` (boş dizi).
+### Tespit
+- `Kesfet.tsx` Mağaza sekmesi var ama "Supplementler" sekmesi yok. `<SupplementShop />` bileşeni mevcut (`shopSupplements` mock data ile), hiçbir yerden import edilmiyor.
+- `UniversalCartDrawer.tsx`'te BioCoin mantığı sabit `100 coin = 50₺` flat indirim. Sepet türünden (coaching dahil) bağımsız uygulanıyor — kural ihlali.
+- `CartItem.type` union: `"product" | "supplement" | "coaching"`. Eligible türler: `product` ve `supplement`. Coaching hariç.
 
-**DB sorgusu**: Aynı satır gerçekte mevcut:
-```
-category_name = 'Değişimler'
-custom_cover_url = .../highlight-covers/c21a5a19.../2f600872-...jpg
-```
+### Step A — Supplement sekmesi geri ekle (`src/pages/Kesfet.tsx`)
+- `TabsList`'i 3 → 4 kolona çıkar (`grid-cols-4`).
+- Yeni `TabsTrigger value="supplements"` → "TAKVİYE" başlığı.
+- Yeni `TabsContent value="supplements"` → `<SupplementShop />` render eder.
+- Üst kısma `import SupplementShop from "@/components/SupplementShop"`.
+- Mevcut tema (`glass-card`, primary lime) zaten `SupplementShop` içinde uygulanmış, ek stil gerekmez.
 
-**RLS policy listesi** (`coach_highlight_metadata`):
-```
-"Coaches manage own highlight metadata"  ALL  USING (auth.uid() = coach_id)
-```
-Tek policy bu. Yani sadece koçun kendisi okuyabiliyor — sporcu profili ziyaret ettiğinde RLS satırı filtreliyor ve boş dönüyor. Hook sessizce `stories[0].media_url`'e düşüyor → koçun manuel olarak kırptığı kapak athlete app'te asla görünmüyor.
+### Step B — Cart Rule Engine (`src/components/UniversalCartDrawer.tsx`)
+Eski `COIN_DISCOUNT_THRESHOLD/AMOUNT` flat sabitleri kaldırılır. Yeni saf hesaplama:
 
-Coach Panel tarafı ise doğru çalışıyor:
-- `HighlightCoverCropper` → `social-media` bucket'a yüklüyor (public, OK)
-- `useUpsertHighlightMetadata` → `coach_highlight_metadata`'ya `coach_id + category_name + custom_cover_url` UPSERT'liyor (kendi coach session'ı ile policy geçiyor)
-- Hook'lar (`useCoachHighlights` panel tarafı) custom cover'ı doğru gösteriyor
+```ts
+const COIN_TO_TL = 1;            // 1 BioCoin = 1 TL
+const MAX_PCT = 0.20;            // %20 cap
 
-Sorun **sadece** athlete app okuma yetkisinde.
+// Eligible items only (coaching hariç)
+const eligibleItems = items.filter(i => i.type !== "coaching");
+const eligibleSubtotal = eligibleItems.reduce((s, i) => s + i.price * i.quantity, 0);
 
-## Düzeltme planı
+const maxDiscountTL = Math.floor(eligibleSubtotal * MAX_PCT);
+const maxCoinsUsable = Math.min(balance, Math.floor(maxDiscountTL / COIN_TO_TL));
+const coinDiscount = useCoinDiscount ? maxCoinsUsable * COIN_TO_TL : 0;
+const finalTotal = Math.max(0, cartTotal - coinDiscount);
 
-### A) DB migration — public SELECT policy ekle
-
-`coach_highlight_metadata` non-sensitive: yalnızca koç ID + kategori adı + halka açık `social-media` bucket URL'i içeriyor (zaten public bucket). Tıpkı `coach_stories` ve `coach_products` gibi public okumaya açılmalı.
-
-```sql
-CREATE POLICY "Public can view highlight metadata"
-ON public.coach_highlight_metadata
-FOR SELECT
-TO public
-USING (true);
+const onlyCoaching = items.length > 0 && eligibleItems.length === 0;
+const canUseCoinDiscount = !onlyCoaching && balance > 0 && maxDiscountTL > 0;
 ```
 
-Mevcut `ALL` policy korunur (yazma yetkisi sadece koça ait kalır). Athlete app artık `category_name` + `custom_cover_url` çiftini okuyabilecek.
+Doğrulama: 1000₺ supplement + 5000₺ coaching → eligibleSubtotal=1000, maxDiscountTL=200, kullanıcı yeterli coin'e sahipse tam 200₺ indirim, coaching dokunulmaz. ✓
 
-### B) Frontend doğrulaması — değişiklik gerekmiyor
+### Step C — UI Geri Bildirim (aynı dosya)
+BioCoin bloğu yeniden tasarlanır:
 
-`src/hooks/useCoachDetail.ts` içindeki `useCoachHighlights` zaten:
-- `coach_highlight_metadata`'yı paralel fetch'liyor
-- Türkçe locale uppercase + whitespace-strip ile normalize key map kuruyor (`Değişimler` → `DEĞİŞİMLER`)
-- `cover = metaMap.get(key) ?? stories[0].media_url` fallback ile çözüyor
+1. **Aktif kart** (`canUseCoinDiscount` true):
+   - Başlık: "BİOCOİN İNDİRİMİ"
+   - Alt satır: `"Maks. indirim: {maxDiscountTL}₺ ({maxCoinsUsable} coin) · Koçluk paketleri hariç"`
+   - Switch açıkken: "Bakiye: {balance} coin" + "-{coinDiscount}₺"
+2. **Sadece coaching durumu** (`onlyCoaching` true):
+   - Switch disabled, küçük info satırı: *"BioCoin indirimi koçluk paketlerinde geçerli değildir."*
+3. Order kaydında `total_coins_used = coinDiscount / COIN_TO_TL` (yani gerçekte kullanılan coin sayısı), `spendCoins(maxCoinsUsable, ...)` çağrılır.
 
-RLS açıldığı an athlete koçun kırptığı dairesel kapağı anında görecek; fallback yalnızca metadata yoksa devreye girecek.
+### Step D — Memory güncelle
+`mem://features/biocoin-economy-ledger` notu güncellenir:
+> Yeni kural: 1 BioCoin = 1 TL. Sepetteki **eligible** (`product` + `supplement`) ürünlerin toplamının maksimum **%20**'sine kadar indirim. `coaching` türü daima hariç. Sadece coaching içeren sepette toggle disabled.
 
-### C) Memory güncelle
-
-`mem://features/coach-story-highlights` notuna ek:
-> `coach_highlight_metadata` public SELECT açıktır (`USING (true)`); yazma `auth.uid() = coach_id` ile koça kilitlidir. Athlete profili ziyaret ettiğinde koçun custom cropped kapağını okuyabilmek için zorunludur.
-
-## Dosya listesi
+### Dosya Listesi
 
 | Dosya | Aksiyon |
 |------|--------|
-| Yeni migration | `coach_highlight_metadata` üzerine `Public can view highlight metadata` SELECT policy ekle |
-| `mem://features/coach-story-highlights` | RLS kontratını güncelle |
+| `src/pages/Kesfet.tsx` | 4. tab "TAKVİYE" + `<SupplementShop />` mount |
+| `src/components/UniversalCartDrawer.tsx` | Flat threshold mantığını sil, rule engine + UI badge + disabled state |
+| `mem://features/biocoin-economy-ledger` | Yeni kural setini yansıt |
 
-Frontend (athlete app) ve Coach Panel kodunda **hiçbir değişiklik gerekmiyor** — sorun saf RLS engelleme. Migration uygulandığı an, koçun panelden atadığı dairesel kapaklar `/coach/:id` sayfasındaki "ÖNE ÇIKANLAR" satırında doğrudan görünür hâle gelecek.
+DB değişikliği yok. `CartContext` API'si (items, balance) zaten yeterli — context'e dokunulmaz, hesaplama drawer içinde kalır (yalnızca tüketici drawer olduğu için).
 
