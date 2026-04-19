@@ -103,6 +103,24 @@ const StoryViewer = () => {
     }
   }, [isOpen, initialIndex]);
 
+  // Track virtual keyboard via visualViewport
+  useEffect(() => {
+    if (!isOpen) return;
+    const vv = (window as any).visualViewport;
+    if (!vv) return;
+    const update = () => {
+      const offset = window.innerHeight - vv.height - vv.offsetTop;
+      setKeyboardOffset(Math.max(offset, 0));
+    };
+    update();
+    vv.addEventListener("resize", update);
+    vv.addEventListener("scroll", update);
+    return () => {
+      vv.removeEventListener("resize", update);
+      vv.removeEventListener("scroll", update);
+    };
+  }, [isOpen]);
+
   // Handle tap zones
   const handleTap = (e: React.MouseEvent | React.TouchEvent) => {
     // Don't handle taps if input is focused
