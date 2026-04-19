@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { motion } from "framer-motion";
 import { useNavigate, useParams } from "react-router-dom";
-import { ArrowLeft, Heart, MessageCircle, Share2, Verified, Users, GraduationCap, Star, ShoppingBag, Briefcase, Grid3X3, Play, Coins, Check, Info } from "lucide-react";
+import { ArrowLeft, Heart, MessageCircle, Share2, Verified, Users, GraduationCap, Star, ShoppingBag, Briefcase, Grid3X3, Play, Coins, Check, Info, ScanLine, Eye, LayoutDashboard, Mail } from "lucide-react";
 import { Avatar, AvatarImage, AvatarFallback } from "@/components/ui/avatar";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Switch } from "@/components/ui/switch";
