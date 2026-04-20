@@ -165,7 +165,7 @@ const UniversalCartDrawer = () => {
     if (inserted?.id) {
       const validShopifyItems = shopifyItems.filter((i) => i.shopifyVariantId);
       if (validShopifyItems.length > 0) {
-        supabase.functions
+        void supabase.functions
           .invoke("sync-shopify-order", {
             body: {
               orderId: inserted.id,
@@ -178,8 +178,18 @@ const UniversalCartDrawer = () => {
               })),
             },
           })
-          .then(({ error: syncErr }) => {
-            if (syncErr) console.error("Shopify Admin sync failed:", syncErr);
+          .then(({ data, error: syncErr }) => {
+            if (syncErr) {
+              console.warn("Shopify Admin sync failed; order kept locally for manual reconciliation.", syncErr);
+              return;
+            }
+
+            if (data && typeof data === "object" && "deferred" in data && data.deferred) {
+              console.warn("Shopify Admin sync deferred until merchant approval for write_orders scope.", data);
+            }
+          })
+          .catch((syncErr) => {
+            console.warn("Shopify Admin sync request failed; order kept locally for manual reconciliation.", syncErr);
           });
       }
     }

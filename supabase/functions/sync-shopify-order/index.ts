@@ -160,7 +160,31 @@ Deno.serve(async (req) => {
 
     const shopifyJson = await shopifyRes.json().catch(() => ({}));
     if (!shopifyRes.ok) {
+      const details = shopifyJson as { errors?: string | string[] };
+      const rawError = Array.isArray(details?.errors)
+        ? details.errors.join(" ")
+        : typeof details?.errors === "string"
+          ? details.errors
+          : "";
+      const requiresMerchantApproval =
+        shopifyRes.status === 403 && /merchant approval|write_orders/i.test(rawError);
+
       console.error("Shopify Admin error", shopifyRes.status, shopifyJson);
+
+      if (requiresMerchantApproval) {
+        return new Response(
+          JSON.stringify({
+            ok: false,
+            deferred: true,
+            reason: "merchant_approval_required",
+            message: "Shopify app requires merchant approval for write_orders scope.",
+            details: shopifyJson,
+            status: shopifyRes.status,
+          }),
+          { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } },
+        );
+      }
+
       return new Response(
         JSON.stringify({ error: "Shopify Admin rejected order", details: shopifyJson, status: shopifyRes.status }),
         { status: 502, headers: { ...corsHeaders, "Content-Type": "application/json" } },
